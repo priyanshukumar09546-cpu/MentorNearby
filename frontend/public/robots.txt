@@ -1,0 +1,32 @@
+# ================================================
+# MentorNearby — robots.txt
+# Production domain: https://mentornearby.com
+# ================================================
+
+User-agent: *
+Allow: /
+
+# Disallow private and administrative panels from public indexing
+Disallow: /admin/
+Disallow: /admin
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /tutor/dashboard
+Disallow: /student/
+Disallow: /messages
+Disallow: /notifications
+Disallow: /settings
+Disallow: /profile
+
+# Allow search crawlers on all educational directories
+Allow: /search
+Allow: /tutor/
+Allow: /courses
+Allow: /study-resources/
+Allow: /book-bank
+Allow: /books
+Allow: /how-it-works
+Allow: /safety
+
+# Official XML Sitemap
+Sitemap: https://mentornearby.com/sitemap.xml

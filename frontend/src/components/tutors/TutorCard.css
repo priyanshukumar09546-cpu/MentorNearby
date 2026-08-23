@@ -1,0 +1,208 @@
+.mn-tutor-full-card {
+  background: var(--card-bg, #FFFFFF);
+  border: 1px solid var(--card-border, #E8E2D8);
+  border-radius: 18px;
+  padding: 20px;
+  color: var(--color-text-primary, #18181B);
+  box-shadow: var(--card-shadow, 0 4px 18px rgba(0, 0, 0, 0.04));
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mn-tutor-full-card:hover {
+  border-color: var(--color-gold, #D97706);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover, 0 10px 28px rgba(0, 0, 0, 0.07));
+}
+
+.mn-tutor-main-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.mn-tutor-avatar-frame {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--card-border, #E8E2D8);
+  background: var(--color-gold-subtle, rgba(217, 119, 6, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mn-tutor-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mn-tutor-avatar-fallback {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-gold, #D97706);
+}
+
+.mn-tutor-info-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mn-tutor-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mn-tutor-card-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-text-primary, #18181B);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mn-verified-pill {
+  background: var(--color-success-bg, #D1FAE5);
+  color: var(--color-success-text, #065F46);
+  border: 1px solid var(--color-success-border, #A7F3D0);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.mn-tutor-headline-txt {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-gold, #D97706);
+  margin: 0;
+}
+
+.mn-tutor-rating-pill {
+  background: var(--color-gold-subtle, rgba(217, 119, 6, 0.08));
+  border: 1px solid var(--color-gold-border, #F0D28C);
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--color-gold, #D97706);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mn-tutor-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--color-text-secondary, #57534E);
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.mn-tutor-chips-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.mn-subject-pill-tag {
+  background: var(--color-gold-subtle, rgba(217, 119, 6, 0.08));
+  color: var(--color-gold, #D97706);
+  border: 1px solid var(--color-gold-border, #F0D28C);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.mn-subject-more-tag {
+  background: var(--color-surface-raised, #F5EFE6);
+  color: var(--color-text-muted, #8C827A);
+  border: 1px solid var(--color-border, #E8E2D8);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.mn-tutor-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border-subtle, #F0EAE0);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mn-tutor-fee-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted, #8C827A);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mn-tutor-fee-amount {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--color-text-primary, #18181B);
+  margin: 0;
+}
+
+.mn-tutor-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mn-tutor-btn-outline {
+  padding: 8px 16px;
+  background: var(--card-bg, #FFFFFF);
+  border: 1px solid var(--color-gold-border, #F0D28C);
+  color: var(--color-gold, #D97706);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.mn-tutor-btn-outline:hover {
+  background: var(--color-gold-subtle, rgba(217, 119, 6, 0.08));
+  border-color: var(--color-gold, #D97706);
+}
+
+.mn-tutor-btn-unlock {
+  padding: 8px 16px;
+  background: var(--color-gold, #D97706);
+  border: 1px solid var(--color-gold, #D97706);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2);
+  transition: all 0.15s ease;
+}
+
+.mn-tutor-btn-unlock:hover {
+  background: var(--color-gold-hover, #B45309);
+  border-color: var(--color-gold-hover, #B45309);
+}

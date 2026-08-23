@@ -1,0 +1,586 @@
+/* ============================================================
+   pages/Legal/HowItWorksPage.css
+   MentorNearby "How It Works" Production Styles
+   Exact Match to Reference Screenshot media_1787468100407.png
+   ============================================================ */
+
+.hiw-page-root {
+  min-height: calc(100vh - 70px);
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFFDFB 35%, #FFF7ED 100%);
+  padding: 48px 20px 80px;
+  font-family: inherit;
+  color: #0F172A;
+}
+
+.hiw-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ------------------------------------------------------------ */
+/* 1. HERO SECTION & TOGGLE                                     */
+/* ------------------------------------------------------------ */
+.hiw-hero-section {
+  text-align: center;
+  margin-bottom: 44px;
+}
+
+.hiw-main-heading {
+  font-size: 38px;
+  font-weight: 900;
+  color: #0F172A;
+  margin: 0 0 12px;
+  letter-spacing: -0.03em;
+}
+
+.hiw-brand-mentor {
+  color: #0F172A;
+}
+
+.hiw-brand-nearby {
+  color: #EA580C;
+}
+
+.hiw-subheading {
+  font-size: 16.5px;
+  color: #475569;
+  max-width: 600px;
+  margin: 0 auto 28px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+/* Segmented Toggle */
+.hiw-toggle-container {
+  display: inline-flex;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  padding: 4px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  gap: 4px;
+}
+
+.hiw-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hiw-toggle-btn:hover {
+  color: #0F172A;
+}
+
+.hiw-toggle-btn.active-student {
+  background: #EA580C;
+  color: #FFFFFF;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(234, 88, 12, 0.3);
+}
+
+.hiw-toggle-btn.active-tutor {
+  background: #7C3AED;
+  color: #FFFFFF;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.3);
+}
+
+.hiw-toggle-icon {
+  font-size: 16px;
+}
+
+.hiw-flow-section {
+  margin-bottom: 56px;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hiw-flow-section.view-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hiw-flow-section.view-inactive {
+  opacity: 0.75;
+  filter: grayscale(0.15);
+}
+
+.hiw-flow-section.view-inactive:hover {
+  opacity: 0.95;
+  filter: none;
+}
+
+.hiw-section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+.hiw-divider-line {
+  flex: 1;
+  max-width: 200px;
+  height: 1px;
+  background: #FED7AA;
+}
+
+.hiw-divider-line.purple-line {
+  background: #E9D5FF;
+}
+
+.hiw-divider-label {
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.student-divider .hiw-divider-label {
+  color: #EA580C;
+}
+
+.tutor-divider .hiw-divider-label {
+  color: #7C3AED;
+}
+
+/* ------------------------------------------------------------ */
+/* 3. DESKTOP 5-STEP HORIZONTAL PROCESS ROW                     */
+/* ------------------------------------------------------------ */
+.hiw-desktop-process-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 10px;
+  position: relative;
+}
+
+.hiw-desktop-process-row::before {
+  content: '';
+  position: absolute;
+  top: 17px;
+  left: 60px;
+  right: 60px;
+  height: 2px;
+  background-image: linear-gradient(to right, #FED7AA 50%, rgba(255, 255, 255, 0) 0%);
+  background-position: top;
+  background-size: 10px 2px;
+  background-repeat: repeat-x;
+  z-index: 1;
+}
+
+.tutor-theme .hiw-desktop-process-row::before {
+  background-image: linear-gradient(to right, #DDD6FE 50%, rgba(255, 255, 255, 0) 0%);
+}
+
+.hiw-step-card-wrapper {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  padding-top: 18px;
+  cursor: pointer;
+}
+
+/* Numbered Badges */
+.hiw-step-badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #FFFFFF;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+.orange-badge {
+  background: #EA580C;
+}
+
+.purple-badge {
+  background: #7C3AED;
+}
+
+/* Step Cards */
+.hiw-step-card {
+  border-radius: 18px;
+  padding: 26px 16px 22px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hiw-step-card.orange-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+}
+
+.hiw-step-card.purple-card {
+  background: #FAF8FF;
+  border: 1px solid #EDE9FE;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.03);
+}
+
+.hiw-step-card-wrapper:hover .hiw-step-card {
+  transform: translateY(-5px);
+}
+
+.hiw-step-card-wrapper:hover .orange-card {
+  border-color: #FED7AA;
+  box-shadow: 0 12px 28px rgba(234, 88, 12, 0.1);
+}
+
+.hiw-step-card-wrapper:hover .purple-card {
+  border-color: #DDD6FE;
+  box-shadow: 0 12px 28px rgba(124, 58, 237, 0.1);
+}
+
+/* Card Illustration Box */
+.hiw-card-illus-box {
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.hiw-illus-svg {
+  width: 90px;
+  height: 72px;
+}
+
+/* Card Text */
+.hiw-step-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+.hiw-step-desc {
+  font-size: 12.5px;
+  color: #64748B;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Connecting Arrow Indicators */
+.hiw-arrow-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 900;
+  align-self: center;
+  margin-top: 18px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.orange-arrow {
+  color: #FB923C;
+}
+
+.purple-arrow {
+  color: #A78BFA;
+}
+
+/* ------------------------------------------------------------ */
+/* 4. MOBILE VERTICAL TIMELINE                                  */
+/* ------------------------------------------------------------ */
+.hiw-mobile-timeline {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hiw-mobile-step-item {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  cursor: pointer;
+}
+
+.hiw-mobile-badge-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.hiw-mobile-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+  flex-shrink: 0;
+}
+
+.hiw-mobile-connector-line {
+  flex: 1;
+  width: 2px;
+  background-image: linear-gradient(to bottom, #FED7AA 50%, rgba(255, 255, 255, 0) 0%);
+  background-position: left;
+  background-size: 2px 8px;
+  background-repeat: repeat-y;
+  margin: 4px 0;
+  min-height: 20px;
+}
+
+.hiw-mobile-connector-line.purple-connector {
+  background-image: linear-gradient(to bottom, #DDD6FE 50%, rgba(255, 255, 255, 0) 0%);
+}
+
+.hiw-mobile-step-card {
+  flex: 1;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: transform 0.15s ease;
+}
+
+.hiw-mobile-step-card.orange-mobile-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.hiw-mobile-step-card.purple-mobile-card {
+  background: #FAF8FF;
+  border: 1px solid #EDE9FE;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.03);
+}
+
+.hiw-mobile-step-item:active .hiw-mobile-step-card {
+  transform: scale(0.98);
+}
+
+.hiw-mobile-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.orange-icon-box {
+  background: #FFF7ED;
+}
+
+.purple-icon-box {
+  background: #EDE9FE;
+}
+
+.hiw-mobile-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.hiw-mobile-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 3px;
+}
+
+.hiw-mobile-desc {
+  font-size: 12px;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.hiw-mobile-arrow {
+  font-size: 20px;
+  color: #94A3B8;
+  font-weight: 800;
+}
+
+/* ------------------------------------------------------------ */
+/* 5. BOTTOM WARM PEACH CTA BANNER                              */
+/* ------------------------------------------------------------ */
+.hiw-bottom-cta-banner {
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  border-radius: 20px;
+  padding: 24px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.05);
+  margin-top: 20px;
+}
+
+.hiw-cta-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.hiw-cta-avatar-box {
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+}
+
+.hiw-cta-avatar-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hiw-cta-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hiw-cta-heading {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.hiw-cta-sub {
+  font-size: 14px;
+  color: #475569;
+  margin: 0;
+  font-weight: 500;
+}
+
+.hiw-cta-btn-wrap {
+  flex-shrink: 0;
+}
+
+.hiw-cta-btn {
+  background: #EA580C;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 14px 28px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25);
+  transition: all 0.15s ease;
+}
+
+.hiw-cta-btn:hover {
+  background: #C2410C;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.35);
+}
+
+/* ------------------------------------------------------------ */
+/* 6. RESPONSIVE BREAKPOINTS (Mobile Reference UI)              */
+/* ------------------------------------------------------------ */
+@media (max-width: 960px) {
+  .hiw-flow-section.view-inactive {
+    display: none;
+  }
+
+  .hiw-flow-section.view-active {
+    display: block;
+    animation: hiwMobileFade 0.3s ease;
+  }
+
+  .hiw-desktop-process-row {
+    display: none;
+  }
+
+  .hiw-mobile-timeline {
+    display: flex;
+  }
+
+  .hiw-main-heading {
+    font-size: 28px;
+  }
+
+  .hiw-subheading {
+    font-size: 14.5px;
+  }
+
+  .hiw-bottom-cta-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 20px;
+  }
+
+  .hiw-cta-left {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .hiw-cta-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hiw-toggle-container {
+    width: 100%;
+    display: flex;
+  }
+
+  .hiw-toggle-btn {
+    flex: 1;
+    padding: 9px 12px;
+    font-size: 13px;
+    justify-content: center;
+  }
+
+  .hiw-main-heading {
+    font-size: 24px;
+  }
+}
+
+@keyframes hiwMobileFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

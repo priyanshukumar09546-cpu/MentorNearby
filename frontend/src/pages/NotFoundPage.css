@@ -1,0 +1,136 @@
+/* ============================================================
+   pages/NotFoundPage.css
+   MentorNearby 404 Page Styles
+   ============================================================ */
+
+.mn-404-root {
+  min-height: calc(100vh - 120px);
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFFDFB 40%, #FFF7ED 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px 80px;
+  font-family: inherit;
+}
+
+.mn-404-card {
+  background: #FFFFFF;
+  border: 1px solid #FED7AA;
+  border-radius: 24px;
+  padding: 48px 36px;
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 12px 36px rgba(234, 88, 12, 0.08);
+}
+
+.mn-404-icon-box {
+  margin-bottom: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.mn-404-number {
+  font-size: 84px;
+  font-weight: 900;
+  color: #FF6A00;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  opacity: 0.9;
+  text-shadow: 0 4px 16px rgba(255, 106, 0, 0.2);
+}
+
+.mn-404-emoji {
+  font-size: 32px;
+  margin-top: 6px;
+}
+
+.mn-404-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #0F172A;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.mn-404-desc {
+  font-size: 14.5px;
+  color: #64748B;
+  line-height: 1.6;
+  margin: 0 0 32px;
+}
+
+.mn-404-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mn-404-btn-primary {
+  background: #FF6A00;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 12px 24px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(255, 106, 0, 0.25);
+  transition: all 0.15s ease;
+}
+
+.mn-404-btn-primary:hover {
+  background: #EA580C;
+  transform: translateY(-1px);
+}
+
+.mn-404-btn-secondary {
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  color: #334155;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 11px 18px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.mn-404-btn-secondary:hover {
+  background: #FFFFFF;
+  border-color: #FF6A00;
+  color: #FF6A00;
+}
+
+@media (max-width: 480px) {
+  .mn-404-card {
+    padding: 32px 20px;
+  }
+
+  .mn-404-number {
+    font-size: 64px;
+  }
+
+  .mn-404-title {
+    font-size: 22px;
+  }
+
+  .mn-404-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .mn-404-btn-primary,
+  .mn-404-btn-secondary {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+}

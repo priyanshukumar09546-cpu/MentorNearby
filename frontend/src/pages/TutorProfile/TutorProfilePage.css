@@ -1,0 +1,1171 @@
+/* ============================================================
+   TutorProfilePage.css
+   Pixel-Perfect Tutor Marketplace Profile Styling (Vanilla CSS)
+   No Tailwind dependency — Full standard CSS with Flexbox/Grid
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* --- ROOT CONTAINER --- */
+.tp-root,
+.tp-page {
+  min-height: 100vh;
+  background-color: #F8F9FD;
+  color: #1E293B;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  padding: 24px 16px 80px;
+  box-sizing: border-box;
+}
+
+.tp-container,
+.tp-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+/* --- BREADCRUMB --- */
+.tp-breadcrumb,
+.tp-bc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748B;
+  margin-bottom: -4px;
+}
+
+.tp-breadcrumb a,
+.tp-bc a {
+  color: #64748B;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.tp-breadcrumb a:hover,
+.tp-bc a:hover {
+  color: #4F46E5;
+}
+
+.tp-breadcrumb-sep,
+.tp-bc-sep {
+  color: #CBD5E1;
+  font-size: 12px;
+}
+
+.tp-breadcrumb-active,
+.tp-bc-cur {
+  color: #0F172A;
+  font-weight: 700;
+}
+
+/* --- 2-COLUMN MARKETPLACE LAYOUT GRID (70% / 30%) --- */
+.tp-layout-grid,
+.tp-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.tp-main-col,
+.tp-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.tp-side-col,
+.tp-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* --- BASE CARD STYLING --- */
+.tp-card {
+  background: #FFFFFF;
+  border: 1px solid #EEF2F6;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.tp-card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.tp-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.tp-card-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #4F46E5;
+  font-size: 18px;
+}
+
+/* ============================================================ */
+/* 1. PROFILE HEADER CARD                                       */
+/* ============================================================ */
+.tp-header-card {
+  background: #FFFFFF;
+  border: 1px solid #EEF2F6;
+  border-radius: 16px;
+  padding: 26px 28px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.tp-header-content {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Avatar Container */
+.tp-avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.tp-avatar-wrapper {
+  position: relative;
+  width: 124px;
+  height: 124px;
+  border-radius: 50%;
+  padding: 3px;
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+}
+
+.tp-avatar-img,
+.tp-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.tp-avatar-fallback {
+  background: #EEF2FF;
+  color: #4F46E5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  font-weight: 800;
+}
+
+.tp-online-indicator {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 16px;
+  height: 16px;
+  background: #10B981;
+  border: 2.5px solid #FFFFFF;
+  border-radius: 50%;
+}
+
+.tp-verified-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #F5F3FF;
+  color: #6D28D9;
+  border: 1px solid #DDD6FE;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* Header Info Area */
+.tp-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tp-name-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.tp-name-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tp-tutor-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.tp-verified-check-icon {
+  width: 20px;
+  height: 20px;
+  color: #2563EB;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* Header Action Buttons */
+.tp-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tp-btn-header-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.tp-btn-header-outline:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+.tp-btn-header-outline.saved {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border-color: #C7D2FE;
+}
+
+.tp-btn-header-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #475569;
+  font-size: 16px;
+  transition: all 0.15s ease;
+}
+
+.tp-btn-header-icon:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+}
+
+/* Rating Row */
+.tp-rating-pill-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.tp-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.tp-rating-star-icon {
+  color: #F59E0B;
+  font-size: 15px;
+}
+
+.tp-reviews-count-text {
+  color: #64748B;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.tp-top-rated-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #F5F3FF;
+  color: #6D28D9;
+  border: 1px solid #DDD6FE;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+/* Metadata Rows */
+.tp-meta-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.tp-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.tp-meta-icon {
+  color: #64748B;
+  font-size: 14px;
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+/* Big Action Buttons Row */
+.tp-main-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tp-btn-message-tutor {
+  background: #4F46E5;
+  color: #FFFFFF;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 8px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+  border: none;
+  cursor: pointer;
+}
+
+.tp-btn-message-tutor:hover {
+  background: #4338CA;
+  transform: translateY(-1px);
+}
+
+.tp-btn-unlock-contact {
+  background: #FFFFFF;
+  color: #4F46E5;
+  border: 1.5px solid #C7D2FE;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 9px 20px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.tp-btn-unlock-contact:hover {
+  background: #EEF2FF;
+  border-color: #A5B4FC;
+}
+
+.tp-unlock-subbadge {
+  font-size: 11px;
+  color: #6D28D9;
+  font-weight: 600;
+}
+
+/* More Menu Dropdown */
+.tp-more-dropdown {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  width: 160px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+  border: 1px solid #E2E8F0;
+  padding: 6px 0;
+  z-index: 60;
+}
+
+.tp-more-dropdown-item {
+  width: 100%;
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155;
+  transition: background 0.1s;
+}
+
+.tp-more-dropdown-item:hover {
+  background: #F8FAFC;
+}
+
+.tp-more-dropdown-item.danger {
+  color: #DC2626;
+}
+
+.tp-more-dropdown-item.danger:hover {
+  background: #FEF2F2;
+}
+
+/* ============================================================ */
+/* 2. THREE-CARD MIDDLE ROW (About Me | Subjects | Classes)     */
+/* ============================================================ */
+.tp-tri-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.tp-card-about {
+  display: flex;
+  flex-direction: column;
+}
+
+.tp-about-text {
+  font-size: 12.5px;
+  color: #475569;
+  line-height: 1.65;
+  flex: 1;
+}
+
+.tp-read-more-btn {
+  background: none;
+  border: none;
+  color: #4F46E5;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 8px;
+  display: block;
+  font-family: inherit;
+}
+
+.tp-read-more-btn:hover {
+  text-decoration: underline;
+}
+
+/* Subjects Chips */
+.tp-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tp-subject-chip {
+  background: #EEF2FF;
+  color: #4338CA;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Classes Boxes Grid */
+.tp-classes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.tp-class-box {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  transition: all 0.15s ease;
+}
+
+.tp-class-box:hover {
+  border-color: #4F46E5;
+  color: #4F46E5;
+  background: #EEF2FF;
+}
+
+/* ============================================================ */
+/* 3. HORIZONTAL 5-COLUMN DETAIL STRIP CARD                     */
+/* ============================================================ */
+.tp-detail-strip-card {
+  background: #FFFFFF;
+  border: 1px solid #EEF2F6;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.tp-strip-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 1.2fr 1.4fr 1.4fr;
+  gap: 20px;
+}
+
+.tp-strip-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-right: 1px solid #F1F5F9;
+  padding-right: 16px;
+}
+
+.tp-strip-column:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.tp-strip-col-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tp-strip-col-title-icon {
+  color: #4F46E5;
+  font-size: 15px;
+}
+
+.tp-strip-content {
+  font-size: 12.5px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.tp-strip-highlight {
+  color: #4F46E5;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.tp-strip-subtext {
+  color: #64748B;
+  font-size: 11.5px;
+}
+
+.tp-mode-check-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #1E293B;
+  font-weight: 600;
+}
+
+.tp-mode-check-icon {
+  color: #10B981;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.tp-distance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #059669;
+  font-weight: 600;
+  font-size: 11.5px;
+  margin-top: 4px;
+}
+
+.tp-fee-pill {
+  display: inline-block;
+  background: #EEF2FF;
+  color: #4338CA;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-top: 4px;
+  width: fit-content;
+}
+
+/* Collapsible Map Section */
+.tp-map-collapsible {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.tp-map-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.tp-map-header-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.tp-map-privacy-tag {
+  font-size: 10.5px;
+  color: #94A3B8;
+}
+
+/* ============================================================ */
+/* 4. REVIEWS & RATINGS CARD                                    */
+/* ============================================================ */
+.tp-reviews-card {
+  background: #FFFFFF;
+  border: 1px solid #EEF2F6;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.tp-reviews-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.tp-stars-gold {
+  color: #F59E0B;
+  letter-spacing: 2px;
+}
+
+.tp-review-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 0;
+  border-bottom: 1px solid #F8FAFC;
+}
+
+.tp-review-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.tp-reviewer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #EEF2FF;
+  color: #4F46E5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.tp-review-content {
+  flex: 1;
+}
+
+.tp-reviewer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tp-reviewer-name-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tp-reviewer-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.tp-verified-student-pill {
+  background: #ECFDF5;
+  color: #047857;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tp-review-date {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.tp-review-stars-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.tp-review-score {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.tp-review-body {
+  font-size: 12.5px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================================ */
+/* 5. SIDEBAR: TRUST & VERIFICATION CARD                        */
+/* ============================================================ */
+.tp-trust-card {
+  background: #FFFFFF;
+  border: 1px solid #EEF2F6;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.tp-trust-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.tp-trust-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tp-trust-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tp-trust-row.verified {
+  color: #1E293B;
+}
+
+.tp-trust-row.unverified {
+  color: #94A3B8;
+}
+
+.tp-trust-check-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #10B981;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.tp-trust-check-circle.inactive {
+  background: #E2E8F0;
+  color: #94A3B8;
+}
+
+.tp-trust-bottom-note {
+  font-size: 11px;
+  color: #64748B;
+  border-top: 1px dashed #E2E8F0;
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ============================================================ */
+/* 6. SIDEBAR: AVAILABILITY CARD                                */
+/* ============================================================ */
+.tp-availability-card {
+  background: #FFFFFF;
+  border: 1px solid #EEF2F6;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.tp-avail-status-tag {
+  color: #059669;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  display: block;
+}
+
+.tp-avail-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tp-avail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  padding: 4px 0;
+}
+
+.tp-avail-day {
+  font-weight: 700;
+  color: #1E293B;
+  width: 50px;
+}
+
+.tp-avail-slot {
+  color: #4338CA;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.tp-avail-slot.not-avail {
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+/* ============================================================ */
+/* 7. SIDEBAR: RESPONSE & STATS CARD                            */
+/* ============================================================ */
+.tp-stats-card {
+  background: #FFFFFF;
+  border: 1px solid #EEF2F6;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.tp-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.tp-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tp-stat-icon {
+  color: #4F46E5;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.tp-stat-value {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.tp-stat-label {
+  font-size: 10px;
+  color: #64748B;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* ============================================================ */
+/* 8. SIDEBAR: WHY STUDENTS CHOOSE ME CARD                      */
+/* ============================================================ */
+.tp-why-choose-card {
+  background: #FFFFFF;
+  border: 1px solid #EEF2F6;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.tp-why-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tp-why-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #334155;
+  line-height: 1.45;
+}
+
+.tp-why-icon {
+  color: #4F46E5;
+  font-size: 13px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ============================================================ */
+/* MODALS                                                       */
+/* ============================================================ */
+.tp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.tp-modal-box {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.tp-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 4px;
+}
+
+.tp-modal-sub {
+  font-size: 12.5px;
+  color: #64748B;
+  margin: 0 0 18px;
+}
+
+.tp-modal-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.tp-modal-input,
+.tp-modal-select,
+.tp-modal-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: #1E293B;
+  box-sizing: border-box;
+  outline: none;
+  background: #FFFFFF;
+}
+
+.tp-modal-input:focus,
+.tp-modal-select:focus,
+.tp-modal-textarea:focus {
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.tp-modal-field {
+  margin-bottom: 14px;
+}
+
+.tp-modal-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.tp-modal-btn-cancel {
+  flex: 1;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tp-modal-btn-submit {
+  flex: 1;
+  background: #4F46E5;
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tp-modal-btn-submit:hover {
+  background: #4338CA;
+}
+
+.tp-modal-btn-submit.danger {
+  background: #DC2626;
+}
+
+.tp-modal-btn-submit.danger:hover {
+  background: #B91C1C;
+}
+
+/* ============================================================ */
+/* RESPONSIVE DESIGN BREAKPOINTS                                */
+/* ============================================================ */
+@media (max-width: 1024px) {
+  .tp-layout-grid {
+    grid-template-columns: 1fr;
+  }
+  .tp-tri-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .tp-strip-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .tp-strip-column {
+    border-right: none;
+    border-bottom: 1px solid #F1F5F9;
+    padding-bottom: 12px;
+    padding-right: 0;
+  }
+  .tp-strip-column:last-child {
+    border-bottom: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .tp-header-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .tp-name-top-row {
+    flex-direction: column;
+    align-items: center;
+  }
+  .tp-name-area {
+    justify-content: center;
+  }
+  .tp-rating-pill-row {
+    justify-content: center;
+  }
+  .tp-main-actions-row {
+    justify-content: center;
+    width: 100%;
+  }
+  .tp-btn-message-tutor,
+  .tp-btn-unlock-contact {
+    width: 100%;
+    justify-content: center;
+  }
+  .tp-strip-grid {
+    grid-template-columns: 1fr;
+  }
+  .tp-classes-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .tp-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}

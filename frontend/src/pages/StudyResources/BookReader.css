@@ -1,0 +1,491 @@
+/* ============================================================
+   BookReader.css — MentorNearby Dedicated In-Browser PDF Reader
+   ============================================================ */
+
+.mn-reader-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0F172A;
+  color: #F8FAFC;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 1. Header */
+.mn-reader-header {
+  height: 64px;
+  background: #1E293B;
+  border-bottom: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  gap: 16px;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.mn-reader-header-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.mn-reader-back-btn {
+  background: #334155;
+  color: #F8FAFC;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.mn-reader-back-btn:hover {
+  background: #475569;
+  color: #FFFFFF;
+}
+
+.mn-reader-title-box {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mn-reader-book-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
+.mn-reader-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #94A3B8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mn-reader-breadcrumbs a {
+  color: #94A3B8;
+  text-decoration: none;
+}
+
+.mn-reader-breadcrumbs a:hover {
+  color: #EA580C;
+}
+
+.mn-reader-breadcrumbs span.current {
+  color: #F59E0B;
+  font-weight: 700;
+}
+
+.mn-reader-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mn-reader-header-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.mn-reader-header-btn.outline {
+  background: #334155;
+  color: #F1F5F9;
+  border: 1px solid #475569;
+}
+
+.mn-reader-header-btn.outline:hover {
+  background: #475569;
+}
+
+.mn-reader-header-btn.download {
+  background: #EA580C;
+  color: #FFFFFF;
+}
+
+.mn-reader-header-btn.download:hover {
+  background: #C2410C;
+}
+
+/* 2. Main Reader Body */
+.mn-reader-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Left Chapters Sidebar */
+.mn-reader-sidebar {
+  width: 320px;
+  background: #1E293B;
+  border-right: 1px solid #334155;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 15;
+}
+
+.mn-reader-sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid #334155;
+}
+
+.mn-reader-sidebar-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #F8FAFC;
+  margin: 0 0 10px;
+}
+
+.mn-reader-sidebar-search {
+  width: 100%;
+  height: 32px;
+  background: #0F172A;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: #FFFFFF;
+  font-size: 12px;
+}
+
+.mn-reader-sidebar-search:focus {
+  outline: none;
+  border-color: #EA580C;
+}
+
+.mn-reader-chapters-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mn-reader-ch-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.mn-reader-ch-item:hover {
+  background: #334155;
+}
+
+.mn-reader-ch-item.active {
+  background: #334155;
+  border-color: #EA580C;
+  box-shadow: inset 3px 0 0 #EA580C;
+}
+
+.mn-reader-ch-num {
+  background: #0F172A;
+  color: #F59E0B;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.mn-reader-ch-item.active .mn-reader-ch-num {
+  background: #EA580C;
+  color: #FFFFFF;
+}
+
+.mn-reader-ch-info {
+  min-width: 0;
+}
+
+.mn-reader-ch-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #F1F5F9;
+  line-height: 1.35;
+}
+
+.mn-reader-ch-sub {
+  font-size: 11px;
+  color: #94A3B8;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mn-reader-sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.mn-reader-sidebar-footer .free-badge {
+  color: #10B981;
+  font-weight: 700;
+}
+
+.mn-reader-sidebar-footer .board-badge {
+  background: #334155;
+  color: #CBD5E1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+}
+
+/* 3. Center Canvas & Floating Toolbar */
+.mn-reader-canvas-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #0F172A;
+  overflow: hidden;
+}
+
+.mn-reader-toolbar {
+  height: 48px;
+  background: #1E293B;
+  border-bottom: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.mn-reader-tb-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mn-reader-tb-btn {
+  height: 28px;
+  padding: 0 10px;
+  background: #334155;
+  border: 1px solid #475569;
+  color: #F8FAFC;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.mn-reader-tb-btn:hover:not(:disabled) {
+  background: #475569;
+  color: #FFFFFF;
+}
+
+.mn-reader-tb-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mn-reader-tb-btn.active {
+  background: #EA580C;
+  border-color: #EA580C;
+  color: #FFFFFF;
+}
+
+.mn-reader-page-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #CBD5E1;
+}
+
+.mn-reader-page-input {
+  width: 44px;
+  height: 26px;
+  background: #0F172A;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mn-reader-zoom-val {
+  font-size: 12px;
+  color: #CBD5E1;
+  font-weight: 700;
+  min-width: 38px;
+  text-align: center;
+}
+
+/* 4. Frame & Watermark */
+.mn-reader-frame-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  background: #0F172A;
+}
+
+.mn-reader-zoom-container {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  min-height: 900px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mn-reader-iframe {
+  width: 100%;
+  height: calc(100vh - 170px);
+  min-height: 850px;
+  border: none;
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+.mn-reader-watermark-strip {
+  padding: 8px 12px;
+  background: #F8FAFC;
+  border-top: 1px solid #E2E8F0;
+  color: #64748B;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 0 0 8px 8px;
+}
+
+/* 5. Loader & Error states */
+.mn-reader-loading-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #0F172A;
+  color: #94A3B8;
+  gap: 16px;
+}
+
+.mn-reader-frame-loader {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #F8FAFC;
+  z-index: 10;
+}
+
+.mn-reader-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #334155;
+  border-top-color: #EA580C;
+  border-radius: 50%;
+  animation: mn-spin 0.8s linear infinite;
+}
+
+@keyframes mn-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mn-reader-error-box {
+  background: #1E293B;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  max-width: 480px;
+  margin: auto;
+}
+
+.mn-reader-error-box h3 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 12px 0 6px;
+}
+
+.mn-reader-error-box p {
+  font-size: 13px;
+  color: #94A3B8;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .mn-reader-sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 280px;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.6);
+  }
+}
+
+@media (max-width: 600px) {
+  .mn-reader-header {
+    padding: 0 12px;
+    height: 56px;
+  }
+  .mn-reader-back-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .mn-reader-book-title {
+    font-size: 13.5px;
+  }
+  .mn-reader-toolbar {
+    overflow-x: auto;
+  }
+}

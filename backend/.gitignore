@@ -1,0 +1,10 @@
+# Backend dependencies & local secrets
+node_modules/
+.env
+.env.*
+!.env.example
+logs/
+*.log
+uploads/
+private/
+kyc-docs/

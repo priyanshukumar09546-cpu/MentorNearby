@@ -1,0 +1,531 @@
+/* ============================================================
+   pages/Admin/AdminLogin.css
+   MentorNearby Modern Split-Screen Admin Login Styles
+   Exact Match to Reference Design media_1787473009931.png
+   ============================================================ */
+
+.mn-admin-split-root {
+  min-height: 100vh;
+  display: flex;
+  background: #FFFFFF;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #0F172A;
+  overflow-x: hidden;
+}
+
+/* ------------------------------------------------------------ */
+/* 1. LEFT SIDE: BRAND SHOWCASE & DASHBOARD ILLUSTRATION        */
+/* ------------------------------------------------------------ */
+.mn-admin-left-side {
+  flex: 1.15;
+  background: linear-gradient(145deg, #FFFDF9 0%, #FFF5EC 60%, #FEEDDC 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 56px 40px;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  border-right: 1px solid #FED7AA;
+}
+
+/* Decorative Dotted Matrix */
+.mn-admin-decor-matrix {
+  position: absolute;
+  top: 36px;
+  left: 36px;
+  display: grid;
+  grid-template-columns: repeat(3, 8px);
+  gap: 8px;
+  opacity: 0.35;
+}
+
+.mn-matrix-dot {
+  width: 6px;
+  height: 6px;
+  background: #FF6B00;
+  border-radius: 50%;
+}
+
+/* Subtle Glowing Circle */
+.mn-admin-glow-circle {
+  position: absolute;
+  top: 15%;
+  right: -10%;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(255, 107, 0, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Brand Header */
+.mn-admin-brand-header {
+  position: relative;
+  z-index: 2;
+}
+
+.mn-admin-logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.mn-admin-logo-svg {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(255, 107, 0, 0.25);
+  border-radius: 14px;
+}
+
+.mn-admin-brand-text-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.mn-admin-brand-title {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.mn-brand-mentor {
+  color: #0F172A;
+}
+
+.mn-brand-nearby {
+  color: #FF6B00;
+}
+
+.mn-admin-brand-subtitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #64748B;
+  margin: 2px 0 0;
+  letter-spacing: -0.01em;
+}
+
+.mn-admin-brand-tagline {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #334155;
+  margin: 18px 0 0;
+  line-height: 1.5;
+}
+
+/* Illustration Box */
+.mn-admin-illus-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  margin: 20px 0;
+}
+
+.mn-admin-desk-svg {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  filter: drop-shadow(0 16px 32px rgba(234, 88, 12, 0.08));
+}
+
+/* ------------------------------------------------------------ */
+/* 2. RIGHT SIDE: WHITE ADMIN LOGIN CARD                        */
+/* ------------------------------------------------------------ */
+.mn-admin-right-side {
+  flex: 1;
+  background: #FAFAFA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.mn-admin-card-container {
+  background: #FFFFFF;
+  border: 1px solid #F1F5F9;
+  border-radius: 20px;
+  padding: 44px 40px 36px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.06);
+  box-sizing: border-box;
+}
+
+/* Top Shield Badge */
+.mn-admin-shield-badge-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.mn-admin-shield-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #FFF7ED;
+  border: 1px solid #FFEDD5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(255, 107, 0, 0.15);
+}
+
+.mn-shield-lock-svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* Card Heading & Subtitle */
+.mn-admin-card-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #0F172A;
+  text-align: center;
+  margin: 0 0 6px;
+  letter-spacing: -0.03em;
+}
+
+.mn-admin-card-sub {
+  font-size: 14px;
+  color: #64748B;
+  text-align: center;
+  margin: 0 0 26px;
+  font-weight: 500;
+}
+
+/* Error Alert */
+.mn-admin-error-box {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.mn-error-alert-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.mn-error-text {
+  line-height: 1.4;
+}
+
+/* Form Groups & Inputs */
+.mn-admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.mn-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mn-form-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1E293B;
+}
+
+.mn-input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mn-input-lead-icon {
+  position: absolute;
+  left: 14px;
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.mn-form-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 44px 0 42px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 14.5px;
+  color: #0F172A;
+  background: #FFFFFF;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.mn-form-input::placeholder {
+  color: #94A3B8;
+  font-size: 14px;
+}
+
+.mn-form-input:focus {
+  outline: none;
+  border-color: #FF6B00;
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.14);
+}
+
+/* Password Eye Toggle */
+.mn-pwd-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+
+.mn-pwd-toggle-btn:hover {
+  color: #334155;
+}
+
+/* Checkbox & Forgot Password Row */
+.mn-form-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  margin-top: -2px;
+}
+
+.mn-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.mn-checkbox-input {
+  width: 16px;
+  height: 16px;
+  accent-color: #FF6B00;
+  cursor: pointer;
+}
+
+.mn-forgot-password-link {
+  color: #FF6B00;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.mn-forgot-password-link:hover {
+  color: #EA580C;
+  text-decoration: underline;
+}
+
+/* Primary "Sign In" Button */
+.mn-admin-signin-btn {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #FF6B00 0%, #EA580C 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  font-size: 15.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 107, 0, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 4px;
+}
+
+.mn-admin-signin-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(255, 107, 0, 0.35);
+}
+
+.mn-admin-signin-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.mn-btn-icon {
+  font-size: 16px;
+}
+
+.mn-btn-loader {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: mnBtnSpin 0.75s linear infinite;
+}
+
+@keyframes mnBtnSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* OR Divider */
+.mn-or-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 0;
+}
+
+.mn-or-line {
+  flex: 1;
+  height: 1px;
+  background: #E2E8F0;
+}
+
+.mn-or-text {
+  font-size: 12px;
+  font-weight: 800;
+  color: #94A3B8;
+  letter-spacing: 0.05em;
+}
+
+/* Google Sign In Button */
+.mn-google-signin-btn {
+  width: 100%;
+  height: 46px;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mn-google-signin-btn:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+/* Bottom Security Note */
+.mn-admin-security-footer {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #F1F5F9;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mn-sec-shield-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #FFF7ED;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mn-sec-text-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mn-sec-heading {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+}
+
+.mn-sec-sub {
+  font-size: 12px;
+  color: #64748B;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------ */
+/* 3. RESPONSIVE BREAKPOINTS (Mobile & Tablet)                  */
+/* ------------------------------------------------------------ */
+@media (max-width: 1024px) {
+  .mn-admin-left-side {
+    padding: 36px 32px;
+  }
+
+  .mn-admin-brand-title {
+    font-size: 26px;
+  }
+
+  .mn-admin-card-container {
+    padding: 36px 28px 28px;
+  }
+}
+
+@media (max-width: 860px) {
+  .mn-admin-split-root {
+    flex-direction: column;
+  }
+
+  .mn-admin-left-side {
+    padding: 36px 24px 28px;
+    border-right: none;
+    border-bottom: 1px solid #FED7AA;
+    text-align: center;
+  }
+
+  .mn-admin-logo-wrapper {
+    justify-content: center;
+  }
+
+  .mn-admin-brand-tagline {
+    margin-top: 8px;
+    font-size: 14.5px;
+  }
+
+  .mn-admin-illus-container {
+    display: none; /* Hide heavy desk graphic on mobile to keep focus on login */
+  }
+
+  .mn-admin-right-side {
+    padding: 32px 16px 48px;
+  }
+
+  .mn-admin-card-container {
+    max-width: 400px;
+    padding: 32px 20px;
+  }
+}

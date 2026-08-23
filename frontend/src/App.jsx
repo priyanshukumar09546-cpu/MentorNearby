@@ -1,0 +1,260 @@
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { NotificationProvider } from './context/NotificationContext';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
+import ProtectedRoute from './components/common/ProtectedRoute';
+
+// Primary Core Routes (Eagerly loaded for instant first paint)
+import HomePage from './pages/Home/HomePage';
+import LoginPage from './pages/Auth/LoginPage';
+import RegisterPage from './pages/Auth/RegisterPage';
+import BecomeTutorPage from './pages/Auth/BecomeTutorPage';
+import SearchPage from './pages/Search/SearchPage';
+import TutorProfilePage from './pages/TutorProfile/TutorProfilePage';
+import HowItWorksPage from './pages/Legal/HowItWorksPage';
+import NotesAndPdfsPage from './pages/StudyResources/NotesAndPdfsPage';
+import StudyResourcesPage from './pages/StudyResources/StudyResourcesPage';
+import BookReaderPage from './pages/StudyResources/BookReaderPage';
+import NotFoundPage from './pages/NotFoundPage';
+
+// Secondary & Auth Routes (Code-split with React.lazy)
+const ForgotPasswordPage = lazy(() => import('./pages/Auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/Auth/ResetPasswordPage'));
+const VerifyEmailPage = lazy(() => import('./pages/Auth/VerifyEmailPage'));
+const StudentDashboardPage = lazy(() => import('./pages/StudentDashboard/StudentDashboardPage'));
+const TutorDashboardPage = lazy(() => import('./pages/TutorDashboard/TutorDashboardPage'));
+const EditTutorProfilePage = lazy(() => import('./pages/TutorProfile/EditTutorProfilePage'));
+const KYCPage = lazy(() => import('./pages/KYC/KYCPage'));
+const SavedTutorsPage = lazy(() => import('./pages/SavedTutors/SavedTutorsPage'));
+const PostRequirementPage = lazy(() => import('./pages/StudentDashboard/PostRequirementPage'));
+const StudentRequirementsPage = lazy(() => import('./pages/StudentDashboard/StudentRequirementsPage'));
+const TutorRequestsPage = lazy(() => import('./pages/TutorDashboard/TutorRequestsPage'));
+const ChatPage = lazy(() => import('./pages/Chat/ChatPage'));
+const NotificationsPage = lazy(() => import('./pages/Notifications/NotificationsPage'));
+
+// Admin Code-Split Routes
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
+const AdminDashboardPage = lazy(() => import('./pages/Admin/AdminDashboardPage'));
+const AdminKYCPage = lazy(() => import('./pages/Admin/AdminKYCPage'));
+const AdminUsersPage = lazy(() => import('./pages/Admin/AdminUsersPage'));
+const AdminStudentsPage = lazy(() => import('./pages/Admin/AdminStudentsPage'));
+const AdminTutorsPage = lazy(() => import('./pages/Admin/AdminTutorsPage'));
+const AdminRequestsPage = lazy(() => import('./pages/Admin/AdminRequestsPage'));
+const AdminReportsPage = lazy(() => import('./pages/Admin/AdminReportsPage'));
+const AdminPaymentsPage = lazy(() => import('./pages/Admin/AdminPaymentsPage'));
+const AdminContactUnlocksPage = lazy(() => import('./pages/Admin/AdminContactUnlocksPage'));
+const AdminAnalyticsPage = lazy(() => import('./pages/Admin/AdminAnalyticsPage'));
+const AdminNotificationsPage = lazy(() => import('./pages/Admin/AdminNotificationsPage'));
+const AdminSettingsPage = lazy(() => import('./pages/Admin/AdminSettingsPage'));
+const AdminAuditLogsPage = lazy(() => import('./pages/Admin/AdminAuditLogsPage'));
+const AdminLoginPage = lazy(() => import('./pages/Admin/AdminLoginPage'));
+const AdminContentPage = lazy(() => import('./pages/Admin/AdminContentPage'));
+const AdminCoursesPage = lazy(() => import('./pages/Admin/AdminCoursesPage'));
+const AdminStudyResourcesPage = lazy(() => import('./pages/Admin/AdminStudyResourcesPage'));
+const AdminFooterCmsPage = lazy(() => import('./pages/Admin/AdminFooterCmsPage'));
+
+// Books & Courses Secondary Routes
+const BooksHomePage = lazy(() => import('./pages/Books/BooksHomePage'));
+const BooksListPage = lazy(() => import('./pages/Books/BooksListPage'));
+const BookDetailPage = lazy(() => import('./pages/Books/BookDetailPage'));
+const BookmarksPage = lazy(() => import('./pages/Books/BookmarksPage'));
+const BookChaptersPage = lazy(() => import('./pages/StudyResources/BookChaptersPage'));
+const ChapterDetailPage = lazy(() => import('./pages/StudyResources/ChapterDetailPage'));
+const StudyBookDetailPage = lazy(() => import('./pages/StudyResources/BookDetailPage'));
+const SubjectResourcesPage = lazy(() => import('./pages/StudyResources/SubjectResourcesPage'));
+const StudentPurchasesPage = lazy(() => import('./pages/StudentDashboard/StudentPurchasesPage'));
+const CoursesPage = lazy(() => import('./pages/Courses/CoursesPage'));
+const CourseDetailPage = lazy(() => import('./pages/Courses/CourseDetailPage'));
+const CourseWatchPage = lazy(() => import('./pages/Courses/CourseWatchPage'));
+const MyCoursesPage = lazy(() => import('./pages/StudentDashboard/MyCoursesPage'));
+
+// Legal & Informational Code-Split Routes
+const PrivacyPolicyPage = lazy(() => import('./pages/Legal/PrivacyPolicyPage'));
+const TermsPage = lazy(() => import('./pages/Legal/TermsPage'));
+const RefundPolicyPage = lazy(() => import('./pages/Legal/RefundPolicyPage'));
+const CancellationPolicyPage = lazy(() => import('./pages/Legal/CancellationPolicyPage'));
+const SafetyPage = lazy(() => import('./pages/Legal/SafetyPage'));
+const FaqsPage = lazy(() => import('./pages/Legal/FaqsPage'));
+const ReportIssuePage = lazy(() => import('./pages/Legal/ReportIssuePage'));
+const ContactPage = lazy(() => import('./pages/Contact/ContactPage'));
+const ProfilePage = lazy(() => import('./pages/Profile/ProfilePage'));
+const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
+
+// Suspense Fallback
+const RouteLoadingFallback = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+    <div className="spinner" style={{ width: '36px', height: '36px', borderColor: '#FED7AA', borderTopColor: '#FF6A00' }}></div>
+  </div>
+);
+
+const App = () => {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <NotificationProvider>
+            <BrowserRouter>
+              <Suspense fallback={<RouteLoadingFallback />}>
+                <Routes>
+                  {/* Public Admin Entry & Login */}
+                  <Route path="/admin" element={<AdminLoginPage />} />
+                  <Route path="/admin/login" element={<AdminLoginPage />} />
+
+                  {/* Admin Control Center Protected Routes */}
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <ProtectedRoute roles={['ADMIN']}>
+                        <AdminLayout>
+                          <Routes>
+                            <Route path="/dashboard" element={<AdminDashboardPage />} />
+                            <Route path="/" element={<AdminDashboardPage />} />
+                            <Route path="/users" element={<AdminUsersPage />} />
+                            <Route path="/students" element={<AdminStudentsPage />} />
+                            <Route path="/tutors" element={<AdminTutorsPage />} />
+                            <Route path="/kyc" element={<AdminKYCPage />} />
+                            <Route path="/requests" element={<AdminRequestsPage />} />
+                            <Route path="/courses" element={<AdminCoursesPage />} />
+                            <Route path="/study-resources" element={<AdminStudyResourcesPage />} />
+                            <Route path="/content" element={<AdminContentPage />} />
+                            <Route path="/footer-content" element={<AdminFooterCmsPage />} />
+                            <Route path="/footer" element={<AdminFooterCmsPage />} />
+                            <Route path="/reports" element={<AdminReportsPage />} />
+                            <Route path="/payments" element={<AdminPaymentsPage />} />
+                            <Route path="/contact-unlocks" element={<AdminContactUnlocksPage />} />
+                            <Route path="/analytics" element={<AdminAnalyticsPage />} />
+                            <Route path="/notifications" element={<AdminNotificationsPage />} />
+                            <Route path="/settings" element={<AdminSettingsPage />} />
+                            <Route path="/audit-logs" element={<AdminAuditLogsPage />} />
+                          </Routes>
+                        </AdminLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Public & Main Application Layout */}
+                  <Route
+                    path="*"
+                    element={
+                      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                        <Navbar />
+                        <div style={{ flex: 1 }}>
+                          <Routes>
+                            <Route path="/" element={<HomePage />} />
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/register" element={<RegisterPage />} />
+                            <Route path="/become-a-tutor" element={<BecomeTutorPage />} />
+                            <Route path="/tutor/register" element={<BecomeTutorPage />} />
+                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+                            <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+                            
+                            {/* 🧑‍🏫 Tutor Protected Routes */}
+                            <Route path="/tutor/dashboard" element={<ProtectedRoute roles={['TUTOR']}><TutorDashboardPage /></ProtectedRoute>} />
+                            <Route path="/tutor/requests" element={<ProtectedRoute roles={['TUTOR']}><TutorRequestsPage /></ProtectedRoute>} />
+                            <Route path="/tutor/profile" element={<ProtectedRoute roles={['TUTOR']}><EditTutorProfilePage /></ProtectedRoute>} />
+                            <Route path="/tutor/profile/edit" element={<ProtectedRoute roles={['TUTOR']}><EditTutorProfilePage /></ProtectedRoute>} />
+                            <Route path="/tutor/kyc" element={<ProtectedRoute roles={['TUTOR']}><KYCPage /></ProtectedRoute>} />
+                            <Route path="/tutor/:id" element={<TutorProfilePage />} />
+
+                            {/* 🔍 Tutor & Student Search Routes */}
+                            <Route path="/search" element={<SearchPage />} />
+                            <Route path="/find-tutors" element={<SearchPage />} />
+                            <Route path="/tutors" element={<SearchPage />} />
+                            <Route path="/requirements" element={<SearchPage />} />
+
+                            {/* 🎓 Courses & PYQ Mastery Routes */}
+                            <Route path="/courses" element={<CoursesPage />} />
+                            <Route path="/courses/:slugOrId" element={<CourseDetailPage />} />
+                            <Route path="/courses/watch/:courseId/:paperId" element={<CourseWatchPage />} />
+                            <Route path="/my-courses" element={<ProtectedRoute><MyCoursesPage /></ProtectedRoute>} />
+                            <Route path="/dashboard/student/my-courses" element={<ProtectedRoute><MyCoursesPage /></ProtectedRoute>} />
+
+                            {/* 📄 Notes & PDFs Page */}
+                            <Route path="/study-resources" element={<NotesAndPdfsPage />} />
+                            <Route path="/study-resources/notes" element={<NotesAndPdfsPage />} />
+                            <Route path="/notes" element={<NotesAndPdfsPage />} />
+                            <Route path="/notes-and-pdfs" element={<NotesAndPdfsPage />} />
+
+                            {/* 📚 Book Bank */}
+                            <Route path="/book-bank" element={<StudyResourcesPage />} />
+                            <Route path="/study-resources/book-bank" element={<StudyResourcesPage />} />
+                            <Route path="/book-bank/:bookId" element={<BookReaderPage />} />
+                            <Route path="/book-bank/:bookId/chapter/:chapterNumber" element={<BookReaderPage />} />
+                            <Route path="/study-resources/book-bank/:bookId" element={<BookReaderPage />} />
+                            <Route path="/study-resources/reader/:bookId" element={<BookReaderPage />} />
+                            <Route path="/study-resources/reader/:bookId/:chapterNumber" element={<BookReaderPage />} />
+                            <Route path="/study-resources/book-bank/class-:classLevel/:subject" element={<BookReaderPage />} />
+                            <Route path="/study-resources/book/:bookId" element={<BookChaptersPage />} />
+                            <Route path="/study-resources/book/:bookId/chapter/:chapterNumber" element={<ChapterDetailPage />} />
+                            <Route path="/study-resources/chapters/:bookId" element={<BookChaptersPage />} />
+                            <Route path="/study-resources/books/:board/:classLevel/:slug" element={<BookChaptersPage />} />
+                            <Route path="/study-resources/resource/:id" element={<StudyBookDetailPage />} />
+                            <Route path="/study-resources/class/:classLevel/:subject" element={<SubjectResourcesPage />} />
+                            <Route path="/student/purchases" element={<ProtectedRoute><StudentPurchasesPage /></ProtectedRoute>} />
+
+                            {/* Educational Resources & Books Routes */}
+                            <Route path="/books" element={<BooksHomePage />} />
+                            <Route path="/ncert" element={<BooksHomePage />} />
+                            <Route path="/ncert-books" element={<BooksHomePage />} />
+                            <Route path="/free-books" element={<BooksHomePage />} />
+                            <Route path="/books/browse" element={<BooksListPage />} />
+                            <Route path="/books/resource/:id" element={<BookDetailPage />} />
+                            <Route path="/bookmarks" element={<ProtectedRoute><BookmarksPage /></ProtectedRoute>} />
+
+                            {/* Legal & Safety Routes */}
+                            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                            <Route path="/terms" element={<TermsPage />} />
+                            <Route path="/terms-and-conditions" element={<TermsPage />} />
+                            <Route path="/terms-conditions" element={<TermsPage />} />
+                            <Route path="/refund" element={<RefundPolicyPage />} />
+                            <Route path="/refund-policy" element={<RefundPolicyPage />} />
+                            <Route path="/cancellation" element={<CancellationPolicyPage />} />
+                            <Route path="/cancellation-policy" element={<CancellationPolicyPage />} />
+                            <Route path="/safety" element={<SafetyPage />} />
+                            <Route path="/safety-trust" element={<SafetyPage />} />
+                            <Route path="/how-it-works" element={<HowItWorksPage />} />
+                            <Route path="/faqs" element={<FaqsPage />} />
+                            <Route path="/faq" element={<FaqsPage />} />
+                            <Route path="/report-issue" element={<ReportIssuePage />} />
+                            <Route path="/report" element={<ReportIssuePage />} />
+                            <Route path="/contact" element={<ContactPage />} />
+                            <Route path="/contact-us" element={<ContactPage />} />
+
+                            {/* Student Dashboard */}
+                            <Route path="/dashboard" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/purchases" element={<ProtectedRoute><StudentPurchasesPage /></ProtectedRoute>} />
+                            <Route path="/saved-tutors" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><SavedTutorsPage /></ProtectedRoute>} />
+                            <Route path="/post-requirement" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><PostRequirementPage /></ProtectedRoute>} />
+                            <Route path="/student/requirements" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentRequirementsPage /></ProtectedRoute>} />
+
+                            {/* User Channels */}
+                            <Route path="/messages" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+                            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+                            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+
+                            {/* 404 Catch-All */}
+                            <Route path="*" element={<NotFoundPage />} />
+                          </Routes>
+                        </div>
+                        <Footer />
+                      </div>
+                    }
+                  />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </NotificationProvider>
+        </ToastProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+};
+
+export default App;

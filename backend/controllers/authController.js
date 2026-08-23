@@ -513,7 +513,8 @@ exports.getGoogleAuthUrl = asyncHandler(async (req, res, next) => {
   }
 
   const role = req.query.role || 'STUDENT';
-  const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}/api`;
+  const defaultBackendBase = process.env.NODE_ENV === 'production' ? 'https://mentornearby-2.onrender.com/api' : `http://localhost:${process.env.PORT || 5000}/api`;
+  const backendUrl = process.env.BACKEND_URL || defaultBackendBase;
   const callbackUrl = process.env.GOOGLE_CALLBACK_URL || `${backendUrl}/auth/google/callback`;
 
   const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=code&scope=${encodeURIComponent('openid email profile')}&access_type=offline&prompt=select_account&state=${encodeURIComponent(role)}`;
@@ -526,7 +527,8 @@ exports.getGoogleAuthUrl = asyncHandler(async (req, res, next) => {
 // @access  Public
 exports.googleCallback = asyncHandler(async (req, res, next) => {
   const { code, state, error: googleErr } = req.query;
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const defaultFrontendUrl = process.env.NODE_ENV === 'production' ? 'https://mentor-nearby.vercel.app' : 'http://localhost:5173';
+  const frontendUrl = process.env.FRONTEND_URL || defaultFrontendUrl;
 
   if (googleErr || !code) {
     return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent('Google authentication was cancelled or failed')}`);
@@ -539,7 +541,8 @@ exports.googleCallback = asyncHandler(async (req, res, next) => {
     return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent('Google Cloud OAuth credentials (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) missing in .env')}`);
   }
 
-  const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}/api`;
+  const defaultBackendBase = process.env.NODE_ENV === 'production' ? 'https://mentornearby-2.onrender.com/api' : `http://localhost:${process.env.PORT || 5000}/api`;
+  const backendUrl = process.env.BACKEND_URL || defaultBackendBase;
   const callbackUrl = process.env.GOOGLE_CALLBACK_URL || `${backendUrl}/auth/google/callback`;
 
   let tokenRes;

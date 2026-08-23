@@ -268,7 +268,9 @@ const StudyResourceViewerModalInner = ({
     if (!url) return '';
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     if (url.startsWith('/api/') || url.startsWith('/uploads/')) {
-      const backendBase = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') : 'http://localhost:5000';
+      const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
+        ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
+        : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
       return `${backendBase}${url}`;
     }
     return url;
@@ -347,7 +349,9 @@ const StudyResourceViewerModalInner = ({
       const downloadUrl = res?.data?.downloadUrl || res?.downloadUrl || res?.fileUrl || `/api/study-resources/stream/${resId}?download=true`;
       const cleanFileName = res?.data?.fileName || res?.fileName || `${(resource?.title || 'MentorNearby_Study_Material').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
 
-      const backendBase = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') : 'http://localhost:5000';
+      const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
+        ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
+        : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
       const streamUrl = downloadUrl.startsWith('http') ? downloadUrl : `${backendBase}${downloadUrl}`;
 
       const response = await fetch(streamUrl, { credentials: 'include' });

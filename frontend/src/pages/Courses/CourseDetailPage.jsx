@@ -136,7 +136,9 @@ const CourseDetailPage = () => {
       const cleanFileName = paper.ppt?.filename || `MentorNearby_Class_${course?.classLevel}_${course?.subject}_${paper.year}_Solution_Notes.pdf`;
       const fileUrl = paper.ppt?.url || `/api/study-resources/stream/${paper._id}?download=true`;
 
-      const backendBase = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') : 'http://localhost:5000';
+      const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
+        ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
+        : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
       const streamUrl = fileUrl.startsWith('http') ? fileUrl : `${backendBase}${fileUrl}`;
 
       const response = await fetch(streamUrl, { credentials: 'include' });

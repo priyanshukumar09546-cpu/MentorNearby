@@ -37,7 +37,16 @@ mongoose.connection.on('reconnected', () => {
   console.log('✅ MongoDB Reconnected successfully');
 });
 
+let cachedConn = null;
+
 const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+  if (cachedConn) {
+    return cachedConn;
+  }
+
   const MONGO_URI = process.env.MONGO_URI;
 
   if (!MONGO_URI || MONGO_URI.includes('<username>')) {
@@ -55,13 +64,12 @@ const connectDB = async () => {
   };
 
   try {
-    const conn = await mongoose.connect(MONGO_URI, options);
-    // Actively verify database readiness with a ping
-    await conn.connection.db.admin().ping();
-    console.log(`✅ MongoDB Atlas Ready and Verified (Host: ${conn.connection.host})`);
-    return conn;
+    cachedConn = await mongoose.connect(MONGO_URI, options);
+    console.log(`✅ MongoDB Atlas Ready and Verified (Host: ${cachedConn.connection.host})`);
+    return cachedConn;
   } catch (error) {
     console.error(`❌ Failed to connect to MongoDB Atlas: ${error.message}`);
+    cachedConn = null;
     throw error;
   }
 };

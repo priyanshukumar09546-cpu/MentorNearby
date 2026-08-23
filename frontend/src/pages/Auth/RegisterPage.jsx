@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import client from '../../api/client';
+import { getGoogleAuthUrl } from '../../api/auth';
 import StudentRegistration from './StudentRegistration';
 import TutorRegistration from './TutorRegistration';
 import './LoginPage.css';
@@ -175,8 +175,8 @@ const RegisterPage = () => {
     setGoogleLoading(true);
 
     try {
-      const res = await client.get(`/auth/google/url?role=${selectedRole}`);
-      if (res.data.data?.url) {
+      const res = await getGoogleAuthUrl(selectedRole);
+      if (res.data?.data?.url) {
         window.location.href = res.data.data.url;
       } else {
         throw new Error('Could not retrieve Google OAuth URL');

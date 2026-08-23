@@ -102,7 +102,9 @@ const BookDetailPage = () => {
     if (!book) return;
     const cleanFileName = `${(book.title || 'study-material').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
     const streamUrl = `/api/study-resources/stream/${book.id}?download=true`;
-    const backendBase = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') : 'http://localhost:5000';
+    const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
+      ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
+      : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
     const finalUrl = `${backendBase}${streamUrl}`;
 
     window.open(finalUrl, '_blank');

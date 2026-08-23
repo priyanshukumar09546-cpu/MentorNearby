@@ -72,16 +72,32 @@ app.use(helmet({
 // CORS — Allowed origins
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  'https://mentor-nearby-frontend.vercel.app',
+  'https://mentor-nearby.vercel.app',
+  'https://mentornearby.vercel.app',
   'https://mentornearby.com',
   'https://www.mentornearby.com',
   'https://admin.mentornearby.com',
   'http://localhost:5173',
   'http://localhost:5174',
+  'http://localhost:3000',
 ].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
+    try {
+      const parsedUrl = new URL(origin);
+      const isAllowedDomain = allowedOrigins.includes(origin);
+      const isVercel = parsedUrl.hostname.endsWith('.vercel.app') || parsedUrl.hostname === 'vercel.app';
+      const isRender = parsedUrl.hostname.endsWith('.onrender.com');
+      const isLocalhost = parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1';
+
+      if (isAllowedDomain || isVercel || isRender || isLocalhost || process.env.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
+    } catch (_) {}
+    
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
@@ -90,8 +106,22 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
+
+// Ensure Database connection for every incoming request (Serverless & Container support)
+app.use(async (req, res, next) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
+    next();
+  } catch (dbErr) {
+    console.error('Database connection middleware error:', dbErr.message);
+    next(dbErr);
+  }
+});
+
 
 // Request body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -256,6 +286,11 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Start HTTP server only if executed directly (e.g. node server.js), not in serverless runtime
+if (require.main === module && !process.env.VERCEL) {
+  startServer();
+} else {
+  connectDB().catch((err) => console.error('Serverless DB connect error:', err.message));
+}
 
 module.exports = app;

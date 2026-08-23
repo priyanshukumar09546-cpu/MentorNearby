@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import client from '../../api/client';
+import { getGoogleAuthUrl } from '../../api/auth';
 
 const GoogleSignInButton = ({ defaultRole = 'STUDENT', buttonText = 'Continue with Google' }) => {
   const [loading, setLoading] = useState(false);
@@ -10,8 +10,8 @@ const GoogleSignInButton = ({ defaultRole = 'STUDENT', buttonText = 'Continue wi
     setLoading(true);
 
     try {
-      const res = await client.get(`/auth/google/url?role=${encodeURIComponent(defaultRole)}`);
-      if (res.data.data?.url) {
+      const res = await getGoogleAuthUrl(defaultRole);
+      if (res.data?.data?.url) {
         window.location.href = res.data.data.url;
       } else {
         throw new Error('Could not retrieve Google OAuth authorization URL');

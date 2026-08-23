@@ -17,6 +17,8 @@ export const verifyEmail = (token) =>
   client.get(`/auth/verify-email/${token}`);
 
 export const googleAuth = (data) => client.post('/auth/google', data);
+export const getGoogleAuthUrl = (role = 'STUDENT') =>
+  client.get(`/auth/google/url?role=${encodeURIComponent(role)}`);
 
 // OTP & Identity Verification APIs
 export const sendVerificationOtp = (identifier, purpose = 'IDENTITY_VERIFICATION') =>

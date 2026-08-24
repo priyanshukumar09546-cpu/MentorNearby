@@ -321,7 +321,12 @@ exports.getMe = asyncHandler(async (req, res, next) => {
     data.studentProfile = studentProfile;
   }
 
-  return success(res, 'User data retrieved', data);
+  return res.status(200).json({
+    success: true,
+    message: 'User data retrieved',
+    user: userObj,
+    data
+  });
 });
 
 exports.verifyEmail = asyncHandler(async (req, res, next) => {

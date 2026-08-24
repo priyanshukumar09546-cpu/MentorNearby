@@ -4,36 +4,69 @@ import { getMe, login as apiLogin, register as apiRegister, logout as apiLogout,
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
+      if (savedUser && token) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed.role) {
+          parsed.role = parsed.role.toString().trim().toUpperCase();
+        }
+        return parsed;
+      }
+    } catch (_) {}
+    return null;
+  });
+
+  const [isLoading, setIsLoading] = useState(() => {
+    // If we already restored a user from localStorage, not in hard loading state
+    const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
+    return !!token;
+  });
 
   const refreshUser = async () => {
+    const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
+    if (!token) {
+      setUser(null);
+      setIsLoading(false);
+      return null;
+    }
+
     try {
+      console.log('[AuthContext] Verifying session with /api/auth/me...');
       const res = await getMe();
-      const payload = res.data?.data;
-      if (payload && payload.user) {
-        const userObj = { ...payload.user };
-        if (payload.tutorProfile) {
-          userObj.tutorProfile = payload.tutorProfile;
-        }
-        if (userObj.role) {
-          userObj.role = userObj.role.toString().trim().toUpperCase();
-        }
-        setUser(userObj);
-        return userObj;
-      } else if (payload) {
+      console.log('[AuthContext] /api/auth/me response:', res.status, res.data);
+
+      const payload = res.data?.user || res.data?.data?.user || res.data?.data;
+      if (payload && (payload._id || payload.id || payload.email)) {
         const userObj = { ...payload };
+        if (res.data?.data?.tutorProfile) {
+          userObj.tutorProfile = res.data.data.tutorProfile;
+        }
         if (userObj.role) {
           userObj.role = userObj.role.toString().trim().toUpperCase();
         }
         setUser(userObj);
+        try {
+          localStorage.setItem('user', JSON.stringify(userObj));
+          localStorage.setItem('role', userObj.role.toLowerCase());
+        } catch (_) {}
         return userObj;
       } else {
-        setUser(null);
         return null;
       }
     } catch (error) {
-      setUser(null);
+      console.error('[AuthContext] Session verification failed:', error.response?.status, error.response?.data || error.message);
+      if (error.response?.status === 401) {
+        setUser(null);
+        try {
+          localStorage.removeItem('token');
+          localStorage.removeItem('mn_token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('role');
+        } catch (_) {}
+      }
       return null;
     } finally {
       setIsLoading(false);
@@ -47,8 +80,24 @@ export const AuthProvider = ({ children }) => {
   const login = async (data) => {
     try {
       const res = await apiLogin(data);
+      const token = res.data?.token || res.data?.data?.token;
+      const userPayload = res.data?.user || res.data?.data?.user;
+      if (token) {
+        try {
+          localStorage.setItem('token', token);
+          localStorage.setItem('mn_token', token);
+        } catch (_) {}
+      }
+      if (userPayload) {
+        try {
+          localStorage.setItem('user', JSON.stringify(userPayload));
+          if (userPayload.role) {
+            localStorage.setItem('role', userPayload.role.toString().toLowerCase());
+          }
+        } catch (_) {}
+      }
       const refreshedUser = await refreshUser();
-      return { ...res, user: refreshedUser };
+      return { ...res, user: refreshedUser || userPayload };
     } finally {
       setIsLoading(false);
     }
@@ -57,8 +106,24 @@ export const AuthProvider = ({ children }) => {
   const register = async (data) => {
     try {
       const res = await apiRegister(data);
+      const token = res.data?.token || res.data?.data?.token;
+      const userPayload = res.data?.user || res.data?.data?.user;
+      if (token) {
+        try {
+          localStorage.setItem('token', token);
+          localStorage.setItem('mn_token', token);
+        } catch (_) {}
+      }
+      if (userPayload) {
+        try {
+          localStorage.setItem('user', JSON.stringify(userPayload));
+          if (userPayload.role) {
+            localStorage.setItem('role', userPayload.role.toString().toLowerCase());
+          }
+        } catch (_) {}
+      }
       const refreshedUser = await refreshUser();
-      return { ...res, user: refreshedUser };
+      return { ...res, user: refreshedUser || userPayload };
     } finally {
       setIsLoading(false);
     }
@@ -67,8 +132,24 @@ export const AuthProvider = ({ children }) => {
   const googleLogin = async (data) => {
     try {
       const res = await apiGoogleAuth(data);
+      const token = res.data?.token || res.data?.data?.token;
+      const userPayload = res.data?.user || res.data?.data?.user;
+      if (token) {
+        try {
+          localStorage.setItem('token', token);
+          localStorage.setItem('mn_token', token);
+        } catch (_) {}
+      }
+      if (userPayload) {
+        try {
+          localStorage.setItem('user', JSON.stringify(userPayload));
+          if (userPayload.role) {
+            localStorage.setItem('role', userPayload.role.toString().toLowerCase());
+          }
+        } catch (_) {}
+      }
       const refreshedUser = await refreshUser();
-      return { ...res, user: refreshedUser };
+      return { ...res, user: refreshedUser || userPayload };
     } finally {
       setIsLoading(false);
     }
@@ -81,6 +162,12 @@ export const AuthProvider = ({ children }) => {
     finally {
       setUser(null);
       setIsLoading(false);
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('mn_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('role');
+      } catch (_) {}
     }
   };
 

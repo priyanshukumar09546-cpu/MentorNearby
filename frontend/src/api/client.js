@@ -40,7 +40,11 @@ const client = axios.create({
 // Request interceptor: attach Bearer token if stored locally
 client.interceptors.request.use((config) => {
   try {
-    const token = localStorage.getItem('mn_token') || sessionStorage.getItem('mn_token');
+    const token =
+      localStorage.getItem('token') ||
+      localStorage.getItem('mn_token') ||
+      sessionStorage.getItem('token') ||
+      sessionStorage.getItem('mn_token');
     if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -51,11 +55,21 @@ client.interceptors.request.use((config) => {
 // Response interceptor: capture token on auth responses & handle 401
 client.interceptors.response.use(
   (response) => {
-    // Automatically preserve token locally when returned
-    const token = response.data?.data?.token || response.data?.token;
+    // Automatically preserve token and user locally when returned
+    const token = response.data?.token || response.data?.data?.token;
+    const user = response.data?.user || response.data?.data?.user;
     if (token) {
       try {
+        localStorage.setItem('token', token);
         localStorage.setItem('mn_token', token);
+      } catch (_) {}
+    }
+    if (user) {
+      try {
+        localStorage.setItem('user', JSON.stringify(user));
+        if (user.role) {
+          localStorage.setItem('role', user.role.toString().toLowerCase());
+        }
       } catch (_) {}
     }
     return response;
@@ -66,7 +80,10 @@ client.interceptors.response.use(
 
     if (error.response?.status === 401 && !isAuthCheck) {
       try {
+        localStorage.removeItem('token');
         localStorage.removeItem('mn_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('role');
       } catch (_) {}
       if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
         window.location.href = '/admin/login';

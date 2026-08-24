@@ -47,15 +47,23 @@ const AdminLoginPage = () => {
       console.log('[AdminLogin] Response received:', response.status, response.data);
 
       if (response.data.success) {
-        const token = response.data.data?.token || response.data?.token;
+        const token = response.data.token || response.data.data?.token;
+        const userObj = response.data.user || response.data.data?.user;
+
         if (token) {
           try {
-            localStorage.setItem('mn_token', token);
             localStorage.setItem('token', token);
-            localStorage.setItem('role', 'ADMIN');
+            localStorage.setItem('mn_token', token);
+          } catch (_) {}
+        }
+        if (userObj) {
+          try {
+            localStorage.setItem('user', JSON.stringify(userObj));
+            localStorage.setItem('role', 'admin');
             localStorage.setItem('mn_role', 'ADMIN');
           } catch (_) {}
         }
+
         await refreshUser();
         showToast('Admin authenticated successfully', 'success');
         navigate('/admin/dashboard', { replace: true });

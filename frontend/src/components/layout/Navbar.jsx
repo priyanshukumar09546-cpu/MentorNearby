@@ -293,7 +293,7 @@ const Navbar = () => {
                     <div className="nav-dd-sub">Let verified tutors reach out to you</div>
                   </div>
                 </Link>
-                <Link to="/become-a-tutor" className="nav-dropdown-item">
+                <Link to="/become-tutor" className="nav-dropdown-item">
                   <span className="nav-dd-icon">🧑‍🏫</span>
                   <div>
                     <div className="nav-dd-title">Become a Tutor</div>
@@ -458,8 +458,9 @@ const Navbar = () => {
           </Link>
 
           <Link
-            to="/become-a-tutor"
+            to="/become-tutor"
             onClick={() => setMobileMenuOpen(false)}
+            className={isActive('/become-tutor') ? 'active' : ''}
           >
             <span>🧑‍🏫 Become a Tutor</span>
             <span>→</span>

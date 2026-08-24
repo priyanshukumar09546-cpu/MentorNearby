@@ -104,7 +104,7 @@ const BookDetailPage = () => {
     const streamUrl = `/api/study-resources/stream/${book.id}?download=true`;
     const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
       ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
-      : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+      : (typeof window !== 'undefined' ? window.location.origin : 'https://mentornearby-2.onrender.com');
     const finalUrl = `${backendBase}${streamUrl}`;
 
     window.open(finalUrl, '_blank');

@@ -1162,7 +1162,14 @@
     grid-template-columns: 1fr;
   }
   .tp-classes-grid {
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tp-class-box {
+    flex: 0 0 auto;
+    min-width: 60px;
+    padding: 0 12px;
   }
   .tp-stats-grid {
     grid-template-columns: repeat(2, 1fr);

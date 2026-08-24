@@ -497,7 +497,7 @@ const SearchPage = () => {
                     Clear Filters
                   </button>
                   <Link
-                    to="/become-a-tutor"
+                    to="/become-tutor"
                     className="mn-find-become-action-btn"
                   >
                     Become a Tutor

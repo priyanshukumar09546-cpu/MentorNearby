@@ -1,0 +1,263 @@
+/* ============================================================
+   FaqsPage.css — MentorNearby Help & Support / FAQs Page
+   Adaptive Light (Ivory) & Dark (Obsidian) Theme
+   ============================================================ */
+
+.mn-faqs-root {
+  background: var(--color-bg, #FAF8F5);
+  min-height: 80vh;
+  padding: 48px 0 80px;
+  color: var(--color-text-primary, #18181B);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.mn-faqs-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.mn-faqs-hero {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.mn-faqs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-red-subtle, rgba(225, 29, 72, 0.08));
+  color: var(--color-red, #E11D48);
+  border: 1px solid var(--color-red-border, #FDA4AF);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.mn-faqs-title {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--color-text-primary, #18181B);
+  margin: 0 0 12px;
+}
+
+.mn-faqs-sub {
+  font-size: 15.5px;
+  color: var(--color-text-secondary, #57534E);
+  max-width: 580px;
+  margin: 0 auto 24px;
+  line-height: 1.6;
+}
+
+.mn-faqs-search-wrap {
+  max-width: 540px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.mn-faqs-search-input {
+  width: 100%;
+  padding: 14px 20px 14px 46px;
+  border-radius: 14px;
+  border: 1.5px solid var(--card-border, #E8E2D8);
+  background: var(--input-bg, #FFFFFF);
+  color: var(--color-text-primary, #18181B);
+  font-size: 14px;
+  outline: none;
+  box-shadow: var(--card-shadow, 0 2px 10px rgba(0, 0, 0, 0.04));
+  box-sizing: border-box;
+}
+
+.mn-faqs-search-input:focus {
+  border-color: var(--color-gold, #D97706);
+}
+
+.mn-faqs-search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--color-text-muted, #8C827A);
+  pointer-events: none;
+}
+
+.mn-faqs-categories-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 36px;
+}
+
+.mn-faqs-cat-btn {
+  background: var(--card-bg, #FFFFFF);
+  color: var(--color-text-secondary, #57534E);
+  border: 1px solid var(--card-border, #E8E2D8);
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mn-faqs-cat-btn:hover {
+  border-color: var(--color-gold, #D97706);
+  color: var(--color-text-primary, #18181B);
+}
+
+.mn-faqs-cat-btn.active {
+  background: var(--color-gold, #D97706);
+  color: #FFFFFF;
+  border-color: var(--color-gold, #D97706);
+}
+
+.mn-faqs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mn-faqs-item-card {
+  background: var(--card-bg, #FFFFFF);
+  border-radius: 16px;
+  border: 1px solid var(--card-border, #E8E2D8);
+  overflow: hidden;
+  box-shadow: var(--card-shadow, 0 2px 8px rgba(0, 0, 0, 0.02));
+  transition: all 0.2s ease;
+}
+
+.mn-faqs-item-header {
+  width: 100%;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--card-bg, #FFFFFF);
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mn-faqs-question-text {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-text-primary, #18181B);
+}
+
+.mn-faqs-toggle-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-bg-secondary, #F5EFE6);
+  color: var(--color-text-secondary, #57534E);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.mn-faqs-toggle-btn.open {
+  background: var(--color-gold, #D97706);
+  color: #FFFFFF;
+}
+
+.mn-faqs-answer-box {
+  padding: 0 24px 22px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-text-secondary, #57534E);
+  border-top: 1px solid var(--color-border-subtle, #F0EAE0);
+  background: var(--color-surface-hover, #FCFAF7);
+}
+
+.mn-faqs-help-card {
+  margin-top: 48px;
+  background: var(--card-bg, #FFFFFF);
+  border-radius: 18px;
+  border: 1px solid var(--card-border, #E8E2D8);
+  padding: 28px;
+  text-align: center;
+  box-shadow: var(--card-shadow, 0 4px 18px rgba(0, 0, 0, 0.03));
+}
+
+.mn-faqs-help-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary, #18181B);
+  margin: 0 0 6px;
+}
+
+.mn-faqs-help-sub {
+  font-size: 13.5px;
+  color: var(--color-text-secondary, #57534E);
+  margin: 0 0 16px;
+}
+
+.mn-faqs-contact-btn {
+  background: var(--color-gold, #D97706);
+  color: #FFFFFF;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================================
+   DARK THEME OVERRIDES
+   ============================================================ */
+[data-theme="dark"] .mn-faqs-root,
+.theme-dark .mn-faqs-root,
+.dark .mn-faqs-root {
+  background: #09090C !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .mn-faqs-item-card,
+[data-theme="dark"] .mn-faqs-item-header,
+[data-theme="dark"] .mn-faqs-help-card,
+.dark .mn-faqs-item-card,
+.dark .mn-faqs-item-header,
+.dark .mn-faqs-help-card {
+  background: #14141A !important;
+  border-color: #22222E !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .mn-faqs-answer-box,
+.dark .mn-faqs-answer-box {
+  background: #181822 !important;
+  border-color: #282838 !important;
+  color: #94A3B8 !important;
+}
+
+[data-theme="dark"] .mn-faqs-search-input,
+.dark .mn-faqs-search-input {
+  background: #181822 !important;
+  border-color: #282838 !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .mn-faqs-cat-btn,
+.dark .mn-faqs-cat-btn {
+  background: #181822;
+  border-color: #282838;
+  color: #94A3B8;
+}
+
+[data-theme="dark"] .mn-faqs-cat-btn.active,
+.dark .mn-faqs-cat-btn.active {
+  background: #F59E0B;
+  color: #09090C;
+}

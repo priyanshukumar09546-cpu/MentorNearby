@@ -94,6 +94,9 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 body {
@@ -106,15 +109,41 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+}
+
+#root {
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+section,
+header,
+footer,
+main,
+article,
+nav,
+aside {
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 img,
 picture,
 video,
 canvas,
-svg {
+svg,
+iframe {
   display: block;
   max-width: 100%;
+  height: auto;
 }
 
 input,
@@ -122,6 +151,8 @@ button,
 textarea,
 select {
   font: inherit;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 p,
@@ -130,8 +161,47 @@ h2,
 h3,
 h4,
 h5,
-h6 {
+h6,
+span,
+a,
+label {
   overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Universal Tag, Pill, & Chip Wrapping */
+.mn-chips-container,
+.mn-tutor-chips-row,
+.tpm-subjects-wrap,
+.tpm-classes-wrap,
+.tpm-tags-edit-box,
+.tp-chips-grid,
+.tp-classes-grid,
+.mn-tag-group,
+.mn-chips-row,
+.tag-cloud,
+.chips-wrap,
+.subject-chips,
+.class-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px 8px;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.mn-removable-chip,
+.mn-subject-pill-tag,
+.mn-subject-more-tag,
+.tpm-subject-pill,
+.tpm-class-pill,
+.tp-subject-chip,
+.tp-class-box {
+  max-width: 100% !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
 }
 
 ul {

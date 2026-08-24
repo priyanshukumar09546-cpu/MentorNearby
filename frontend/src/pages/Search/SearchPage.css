@@ -1036,9 +1036,27 @@
 }
 
 @media (max-width: 540px) {
+  .mn-find-container {
+    padding: 0 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
   .mn-find-search-bar-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
+  }
+
+  .mn-find-search-input-wrap {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mn-find-top-trust-card {
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .mn-find-tutor-cards-grid {
@@ -1048,6 +1066,7 @@
   .mn-find-bottom-cta-banner {
     flex-direction: column;
     align-items: flex-start;
+    padding: 20px 16px;
   }
 
   .mn-bottom-cta-btn {

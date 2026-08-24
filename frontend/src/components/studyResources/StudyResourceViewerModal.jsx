@@ -270,7 +270,7 @@ const StudyResourceViewerModalInner = ({
     if (url.startsWith('/api/') || url.startsWith('/uploads/')) {
       const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
         ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
-        : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+        : (typeof window !== 'undefined' ? window.location.origin : 'https://mentornearby-2.onrender.com');
       return `${backendBase}${url}`;
     }
     return url;
@@ -351,7 +351,7 @@ const StudyResourceViewerModalInner = ({
 
       const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
         ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
-        : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+        : (typeof window !== 'undefined' ? window.location.origin : 'https://mentornearby-2.onrender.com');
       const streamUrl = downloadUrl.startsWith('http') ? downloadUrl : `${backendBase}${downloadUrl}`;
 
       const response = await fetch(streamUrl, { credentials: 'include' });

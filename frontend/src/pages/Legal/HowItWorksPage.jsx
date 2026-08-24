@@ -377,10 +377,10 @@ const HowItWorksPage = () => {
             {/* Step 1 */}
             <div
               className="hiw-step-card-wrapper"
-              onClick={() => navigate('/become-a-tutor')}
+              onClick={() => navigate('/become-tutor')}
               tabIndex={0}
               role="button"
-              onKeyDown={(e) => e.key === 'Enter' && navigate('/become-a-tutor')}
+              onKeyDown={(e) => e.key === 'Enter' && navigate('/become-tutor')}
             >
               <div className="hiw-step-badge purple-badge">1</div>
               <div className="hiw-step-card purple-card">
@@ -553,7 +553,7 @@ const HowItWorksPage = () => {
                 title: 'Create Your Profile',
                 desc: 'Sign up and create a professional profile that highlights your skills and expertise.',
                 icon: '👤',
-                link: '/become-a-tutor',
+                link: '/become-tutor',
               },
               {
                 num: 2,
@@ -645,7 +645,7 @@ const HowItWorksPage = () => {
 
           <div className="hiw-cta-btn-wrap">
             <Link
-              to={activeTab === 'TUTOR' ? '/become-a-tutor' : '/search'}
+              to={activeTab === 'TUTOR' ? '/become-tutor' : '/search'}
               className="hiw-cta-btn"
             >
               {activeTab === 'TUTOR' ? 'Become a Tutor Now →' : 'Find Tutors Now →'}

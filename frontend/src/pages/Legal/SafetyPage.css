@@ -1,0 +1,222 @@
+/* ============================================================
+   SafetyPage.css — MentorNearby Safety & Trust Page
+   Adaptive Light (Ivory) & Dark (Obsidian) Theme
+   ============================================================ */
+
+.mn-safety-root {
+  background: var(--color-bg, #FAF8F5);
+  min-height: 80vh;
+  padding: 48px 0 80px;
+  color: var(--color-text-primary, #18181B);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.mn-safety-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.mn-safety-hero {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.mn-safety-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-red-subtle, rgba(225, 29, 72, 0.08));
+  color: var(--color-red, #E11D48);
+  border: 1px solid var(--color-red-border, #FDA4AF);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.mn-safety-title {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--color-text-primary, #18181B);
+  margin: 0 0 14px;
+}
+
+.mn-safety-sub {
+  font-size: 16px;
+  color: var(--color-text-secondary, #57534E);
+  max-width: 640px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.mn-safety-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.mn-safety-card {
+  background: var(--card-bg, #FFFFFF);
+  border-radius: 18px;
+  border: 1px solid var(--card-border, #E8E2D8);
+  padding: 28px;
+  box-shadow: var(--card-shadow, 0 4px 18px rgba(0, 0, 0, 0.04));
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.mn-safety-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-gold, #D97706);
+}
+
+.mn-safety-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.mn-safety-icon-box.red {
+  background: rgba(225, 29, 72, 0.1);
+  border: 1.5px solid var(--color-red-border, #FDA4AF);
+  color: var(--color-red, #E11D48);
+}
+
+.mn-safety-icon-box.blue {
+  background: rgba(37, 99, 235, 0.1);
+  border: 1.5px solid #BFDBFE;
+  color: #2563EB;
+}
+
+.mn-safety-icon-box.green {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1.5px solid #A7F3D0;
+  color: #059669;
+}
+
+.mn-safety-icon-box.purple {
+  background: rgba(147, 51, 234, 0.1);
+  border: 1.5px solid #E9D5FF;
+  color: #9333EA;
+}
+
+.mn-safety-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary, #18181B);
+  margin: 0 0 8px;
+}
+
+.mn-safety-card-desc {
+  font-size: 13.5px;
+  color: var(--color-text-secondary, #57534E);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.mn-safety-guidelines-box {
+  background: var(--card-bg, #FFFFFF);
+  border-radius: 20px;
+  border: 1px solid var(--card-border, #E8E2D8);
+  padding: 36px 40px;
+  box-shadow: var(--card-shadow, 0 4px 20px rgba(0, 0, 0, 0.04));
+}
+
+.mn-safety-guidelines-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--color-text-primary, #18181B);
+  margin-bottom: 18px;
+}
+
+.mn-safety-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 14px;
+  color: var(--color-text-secondary, #57534E);
+}
+
+.mn-safety-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.mn-safety-check-icon {
+  color: var(--color-success, #10B981);
+  font-weight: 900;
+}
+
+.mn-safety-action-banner {
+  background: var(--color-red-subtle, rgba(225, 29, 72, 0.08));
+  border: 1px solid var(--color-red-border, #FDA4AF);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.mn-safety-action-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-red, #E11D48);
+}
+
+.mn-safety-action-sub {
+  font-size: 12.5px;
+  color: var(--color-text-secondary, #57534E);
+}
+
+.mn-safety-action-btn {
+  background: var(--color-red, #E11D48);
+  color: #FFFFFF;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.mn-safety-action-btn:hover {
+  opacity: 0.9;
+}
+
+/* ============================================================
+   DARK THEME OVERRIDES
+   ============================================================ */
+[data-theme="dark"] .mn-safety-root,
+.theme-dark .mn-safety-root,
+.dark .mn-safety-root {
+  background: #09090C !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .mn-safety-card,
+[data-theme="dark"] .mn-safety-guidelines-box,
+.dark .mn-safety-card,
+.dark .mn-safety-guidelines-box {
+  background: #14141A !important;
+  border-color: #22222E !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .mn-safety-action-banner,
+.dark .mn-safety-action-banner {
+  background: rgba(225, 29, 72, 0.12) !important;
+  border-color: rgba(225, 29, 72, 0.3) !important;
+}

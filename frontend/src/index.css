@@ -13,24 +13,60 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   background-color: var(--color-bg);
   color: var(--color-text-primary);
+  position: relative;
 }
 
 #root {
   width: 100%;
+  max-width: 100vw;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+section,
+header,
+footer,
+main,
+article,
+nav,
+aside {
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
   color: var(--color-text-primary);
+  overflow-wrap: break-word;
 }
 
 p {
   margin: 0;
+  overflow-wrap: break-word;
 }
+

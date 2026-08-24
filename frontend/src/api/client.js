@@ -1,16 +1,42 @@
 import axios from 'axios';
 
+const PRODUCTION_API_URL = 'https://mentornearby-2.onrender.com/api';
+
 const getBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
+  // Support Vite, Next.js, and standard environment variables
+  let envUrl = '';
+  try {
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      envUrl = import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.NEXT_PUBLIC_BASE_URL;
+    }
+  } catch (_) {}
+
+  if (!envUrl && typeof process !== 'undefined' && process.env) {
+    envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.VITE_API_URL || process.env.REACT_APP_API_URL;
+  }
+
   if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
     const cleanUrl = envUrl.trim().replace(/\/+$/, '');
     return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
   }
-  // In production (e.g. Vercel deployment), default to relative '/api'
-  if (import.meta.env.PROD) {
-    return '/api';
+
+  // If in browser on deployed domains, use relative /api or production Render endpoint
+  if (typeof window !== 'undefined' && window.location) {
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return '/api';
+    }
   }
-  return 'http://localhost:5000/api';
+
+  // In production builds, default to /api or production Render endpoint
+  try {
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD) {
+      return '/api';
+    }
+  } catch (_) {}
+
+  // Fallback safely to production API rather than failing on localhost
+  return PRODUCTION_API_URL;
 };
 
 const client = axios.create({

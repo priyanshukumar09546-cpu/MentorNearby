@@ -606,3 +606,53 @@
     flex-wrap: wrap;
   }
 }
+
+/* ============================================================
+   DARK THEME COMPONENT OVERRIDES FOR BOOKS
+   ============================================================ */
+[data-theme="dark"] .books-page-root,
+.theme-dark .books-page-root,
+.dark .books-page-root {
+  background-color: #09090C !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .book-card-item,
+[data-theme="dark"] .chapter-item-card,
+[data-theme="dark"] .books-filter-box,
+[data-theme="dark"] .books-search-box,
+[data-theme="dark"] .books-empty-state,
+[data-theme="dark"] .book-detail-card,
+.dark .book-card-item,
+.dark .chapter-item-card,
+.dark .books-filter-box,
+.dark .books-search-box,
+.dark .books-empty-state,
+.dark .book-detail-card {
+  background: #14141A !important;
+  border-color: #22222E !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .books-search-input,
+.dark .books-search-input {
+  background: transparent !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .book-card-title,
+[data-theme="dark"] .chapter-title,
+[data-theme="dark"] .books-empty-title,
+.dark .book-card-title,
+.dark .chapter-title,
+.dark .books-empty-title {
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .btn-download-pdf,
+.dark .btn-download-pdf {
+  background: #181822 !important;
+  border-color: #282838 !important;
+  color: #F8FAFC !important;
+}
+

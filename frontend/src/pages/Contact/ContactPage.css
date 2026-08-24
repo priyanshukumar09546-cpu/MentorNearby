@@ -1,0 +1,279 @@
+/* ============================================================
+   ContactPage.css — MentorNearby Contact Us Page
+   Adaptive Light (Ivory) & Dark (Obsidian) Theme
+   ============================================================ */
+
+.mn-contact-root {
+  background: var(--color-bg, #FAF8F5);
+  min-height: 80vh;
+  padding: 48px 0 80px;
+  color: var(--color-text-primary, #18181B);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.mn-contact-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.mn-contact-hero {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.mn-contact-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-red-subtle, rgba(225, 29, 72, 0.08));
+  color: var(--color-red, #E11D48);
+  border: 1px solid var(--color-red-border, #FDA4AF);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.mn-contact-title {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--color-text-primary, #18181B);
+  margin: 0 0 12px;
+}
+
+.mn-contact-sub {
+  font-size: 16px;
+  color: var(--color-text-secondary, #57534E);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.mn-contact-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 36px;
+  align-items: flex-start;
+}
+
+.mn-contact-channels-card {
+  background: var(--card-bg, #FFFFFF);
+  border-radius: 18px;
+  border: 1px solid var(--card-border, #E8E2D8);
+  padding: 28px;
+  box-shadow: var(--card-shadow, 0 4px 18px rgba(0, 0, 0, 0.04));
+}
+
+.mn-contact-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary, #18181B);
+  margin: 0 0 18px;
+}
+
+.mn-contact-channel-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.mn-contact-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.mn-contact-icon-box.blue {
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
+}
+
+.mn-contact-icon-box.green {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.mn-contact-icon-box.purple {
+  background: rgba(147, 51, 234, 0.1);
+  color: #9333EA;
+}
+
+.mn-contact-channel-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text-muted, #8C827A);
+  text-transform: uppercase;
+}
+
+.mn-contact-channel-link {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--color-text-primary, #18181B);
+  text-decoration: none;
+}
+
+.mn-contact-channel-link:hover {
+  color: var(--color-gold, #D97706);
+}
+
+.mn-contact-quick-card {
+  background: var(--color-red-subtle, rgba(225, 29, 72, 0.08));
+  border: 1px solid var(--color-red-border, #FDA4AF);
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.mn-contact-quick-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-red, #E11D48);
+  margin: 0 0 8px;
+}
+
+.mn-contact-quick-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary, #57534E);
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.mn-contact-quick-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.mn-contact-btn-outline {
+  background: var(--card-bg, #FFFFFF);
+  color: var(--color-red, #E11D48);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid var(--color-red-border, #FDA4AF);
+}
+
+.mn-contact-btn-filled {
+  background: var(--color-red, #E11D48);
+  color: #FFFFFF;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.mn-contact-form-card {
+  background: var(--card-bg, #FFFFFF);
+  border-radius: 20px;
+  border: 1px solid var(--card-border, #E8E2D8);
+  padding: 36px 40px;
+  box-shadow: var(--card-shadow, 0 4px 20px rgba(0, 0, 0, 0.04));
+}
+
+.mn-contact-form-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--color-text-primary, #18181B);
+  margin-bottom: 6px;
+}
+
+.mn-contact-form-sub {
+  font-size: 13.5px;
+  color: var(--color-text-secondary, #57534E);
+  margin-bottom: 24px;
+}
+
+.mn-contact-input,
+.mn-contact-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border, #E8E2D8);
+  background: var(--input-bg, #FFFFFF);
+  color: var(--color-text-primary, #18181B);
+  font-size: 13.5px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.mn-contact-input:focus,
+.mn-contact-textarea:focus {
+  border-color: var(--color-gold, #D97706);
+}
+
+.mn-contact-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text-primary, #18181B);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.mn-contact-submit-btn {
+  background: var(--color-gold, #D97706);
+  color: #FFFFFF;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  margin-top: 6px;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);
+  transition: all 0.15s ease;
+}
+
+.mn-contact-submit-btn:hover {
+  background: var(--color-gold-hover, #B45309);
+}
+
+@media (max-width: 860px) {
+  .mn-contact-layout {
+    grid-template-columns: 1fr;
+  }
+  .mn-contact-form-card {
+    padding: 24px 20px;
+  }
+}
+
+/* ============================================================
+   DARK THEME OVERRIDES
+   ============================================================ */
+[data-theme="dark"] .mn-contact-root,
+.theme-dark .mn-contact-root,
+.dark .mn-contact-root {
+  background: #09090C !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .mn-contact-channels-card,
+[data-theme="dark"] .mn-contact-form-card,
+.dark .mn-contact-channels-card,
+.dark .mn-contact-form-card {
+  background: #14141A !important;
+  border-color: #22222E !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .mn-contact-input,
+[data-theme="dark"] .mn-contact-textarea,
+.dark .mn-contact-input,
+.dark .mn-contact-textarea {
+  background: #181822 !important;
+  border-color: #282838 !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .mn-contact-quick-card,
+.dark .mn-contact-quick-card {
+  background: rgba(225, 29, 72, 0.12) !important;
+  border-color: rgba(225, 29, 72, 0.3) !important;
+}

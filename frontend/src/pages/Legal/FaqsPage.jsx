@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchFaqs } from '../../api/cms';
+import './FaqsPage.css';
 
 const CATEGORIES = [
   { id: 'ALL', label: 'All Questions' },
@@ -89,65 +90,45 @@ const FaqsPage = () => {
   });
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '80vh', padding: '48px 0 80px' }}>
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px' }}>
+    <div className="mn-faqs-root">
+      <div className="mn-faqs-container">
         
         {/* Hero Header */}
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FFF1F2', color: '#E11D48', padding: '6px 14px', borderRadius: 9999, fontSize: 12.5, fontWeight: 800, marginBottom: 14 }}>
+        <div className="mn-faqs-hero">
+          <div className="mn-faqs-badge">
             <span>❓</span>
             <span>HELP &amp; SUPPORT CENTER</span>
           </div>
-          <h1 style={{ fontSize: 34, fontWeight: 900, color: '#0F172A', margin: '0 0 12px' }}>
+          <h1 className="mn-faqs-title">
             Frequently Asked Questions
           </h1>
-          <p style={{ fontSize: 15.5, color: '#64748B', maxWidth: 580, margin: '0 auto 24px', lineHeight: 1.6 }}>
+          <p className="mn-faqs-sub">
             Find quick answers regarding finding nearby tutors, free study resources, offline PDF downloads, and tutor verification.
           </p>
 
           {/* Search Input */}
-          <div style={{ maxWidth: 540, margin: '0 auto', position: 'relative' }}>
+          <div className="mn-faqs-search-wrap">
             <input
               type="text"
               placeholder="Search your question (e.g. refund, KYC, study notes)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '14px 20px',
-                paddingLeft: 46,
-                borderRadius: 14,
-                border: '1.5px solid #CBD5E1',
-                fontSize: 14,
-                outline: 'none',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-              }}
+              className="mn-faqs-search-input"
             />
-            <span style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#94A3B8' }}>
+            <span className="mn-faqs-search-icon">
               🔍
             </span>
           </div>
         </div>
 
         {/* Category Filter Chips */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 36 }}>
+        <div className="mn-faqs-categories-row">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               type="button"
               onClick={() => setActiveCategory(cat.id)}
-              style={{
-                background: activeCategory === cat.id ? '#0F172A' : '#FFFFFF',
-                color: activeCategory === cat.id ? '#FFFFFF' : '#475569',
-                border: '1px solid',
-                borderColor: activeCategory === cat.id ? '#0F172A' : '#E2E8F0',
-                padding: '8px 16px',
-                borderRadius: 9999,
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
+              className={`mn-faqs-cat-btn ${activeCategory === cat.id ? 'active' : ''}`}
             >
               {cat.label}
             </button>
@@ -155,71 +136,29 @@ const FaqsPage = () => {
         </div>
 
         {/* FAQs Accordion List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="mn-faqs-list">
           {filteredFaqs.map((faq) => {
             const isOpen = openFaqId === (faq._id || faq.id || faq.question);
             return (
               <div
                 key={faq._id || faq.id || faq.question}
-                style={{
-                  background: '#FFFFFF',
-                  borderRadius: 16,
-                  border: '1px solid #E2E8F0',
-                  overflow: 'hidden',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                  transition: 'all 0.2s ease',
-                }}
+                className="mn-faqs-item-card"
               >
                 <button
                   type="button"
                   onClick={() => toggleFaq(faq._id || faq.id || faq.question)}
-                  style={{
-                    width: '100%',
-                    padding: '20px 24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 16,
-                    background: isOpen ? '#F8FAFC' : '#FFFFFF',
-                    border: 'none',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                  }}
+                  className="mn-faqs-item-header"
                 >
-                  <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
+                  <span className="mn-faqs-question-text">
                     {faq.question}
                   </span>
-                  <span
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: isOpen ? '#E11D48' : '#F1F5F9',
-                      color: isOpen ? '#FFFFFF' : '#64748B',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 14,
-                      fontWeight: 900,
-                      flexShrink: 0,
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
+                  <span className={`mn-faqs-toggle-btn ${isOpen ? 'open' : ''}`}>
                     {isOpen ? '−' : '+'}
                   </span>
                 </button>
 
                 {isOpen && (
-                  <div
-                    style={{
-                      padding: '0 24px 22px',
-                      fontSize: 14,
-                      lineHeight: 1.7,
-                      color: '#475569',
-                      borderTop: '1px solid #F1F5F9',
-                      background: '#F8FAFC',
-                    }}
-                  >
+                  <div className="mn-faqs-answer-box">
                     <div style={{ paddingTop: 14 }}>{faq.answer}</div>
                   </div>
                 )}
@@ -229,27 +168,16 @@ const FaqsPage = () => {
         </div>
 
         {/* Still have questions card */}
-        <div style={{ marginTop: 48, background: '#FFFFFF', borderRadius: 18, border: '1px solid #E2E8F0', padding: 28, textAlign: 'center', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: '0 0 6px' }}>
+        <div className="mn-faqs-help-card">
+          <h3 className="mn-faqs-help-title">
             Still have questions?
           </h3>
-          <p style={{ fontSize: 13.5, color: '#64748B', margin: '0 0 16px' }}>
+          <p className="mn-faqs-help-sub">
             Our team is always ready to assist students, parents, and tutors.
           </p>
           <Link
             to="/contact"
-            style={{
-              background: '#0F172A',
-              color: '#FFFFFF',
-              padding: '10px 22px',
-              borderRadius: 10,
-              fontSize: 13.5,
-              fontWeight: 800,
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
+            className="mn-faqs-contact-btn"
           >
             <span>💬</span> Contact Support Team →
           </Link>
@@ -261,3 +189,4 @@ const FaqsPage = () => {
 };
 
 export default FaqsPage;
+

@@ -202,7 +202,7 @@ const HomePage = () => {
                   <span className="mn-cta-card-arrow">›</span>
                 </Link>
 
-                <Link to="/become-a-tutor" className="mn-cta-card">
+                <Link to="/become-tutor" className="mn-cta-card">
                   <div className="mn-cta-card-icon-wrap">
                     <span className="mn-cta-icon">👤</span>
                   </div>
@@ -450,7 +450,7 @@ const HomePage = () => {
                   <div className="mn-tutors-empty-icon">👨‍🏫</div>
                   <h4 className="mn-tutors-empty-title">No tutors available yet</h4>
                   <p className="mn-tutors-empty-sub">Be the first tutor to join MentorNearby.</p>
-                  <Link to="/become-a-tutor" className="mn-tutors-empty-btn">
+                  <Link to="/become-tutor" className="mn-tutors-empty-btn">
                     Become a Tutor
                   </Link>
                 </div>

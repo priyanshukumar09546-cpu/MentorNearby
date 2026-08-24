@@ -38,18 +38,29 @@ const AdminLoginPage = () => {
     setErrorMsg('');
 
     try {
+      console.log('[AdminLogin] Submitting admin credentials:', { email: email.trim() });
       const response = await client.post('/admin/login', {
         email: email.trim(),
         password,
       });
 
+      console.log('[AdminLogin] Response received:', response.status, response.data);
+
       if (response.data.success) {
+        const token = response.data.data?.token || response.data?.token;
+        if (token) {
+          try {
+            localStorage.setItem('mn_token', token);
+            localStorage.setItem('role', 'ADMIN');
+          } catch (_) {}
+        }
         await refreshUser();
         showToast('Admin authenticated successfully', 'success');
         navigate('/admin/dashboard', { replace: true });
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Invalid admin credentials. Access restricted.';
+      console.error('[AdminLogin Error]:', err.response?.status, err.response?.data || err.message);
+      const msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Invalid admin credentials. Access restricted.';
       setErrorMsg(msg);
       showToast(msg, 'error');
     } finally {

@@ -26,20 +26,24 @@ exports.adminLogin = asyncHandler(async (req, res, next) => {
 
   const cleanEmail = email.toString().trim().toLowerCase();
   const user = await User.findOne({ email: cleanEmail }).select('+password');
-  console.log('Login attempt:', email, 'found:', !!user, 'role:', user?.role);
+  console.log('Admin login attempt:', cleanEmail, 'found:', !!user, 'role:', user?.role);
 
   if (!user || (user.role && user.role.toString().trim().toUpperCase() !== 'ADMIN')) {
+    console.warn(`Admin login failed: User not found or role not ADMIN (${cleanEmail})`);
     return error(res, 'Invalid admin credentials', 401);
   }
 
   const isMatch = await user.comparePassword(password);
-  console.log('Login attempt password match:', isMatch);
+  console.log('Admin password match result for', cleanEmail, ':', isMatch);
   if (!isMatch) {
+    console.warn(`Admin login failed: Password mismatch for ${cleanEmail}`);
     return error(res, 'Invalid admin credentials', 401);
   }
 
-  user.lastLogin = Date.now();
-  await user.save({ validateBeforeSave: false });
+  await User.updateOne(
+    { _id: user._id },
+    { $set: { lastLogin: Date.now() } }
+  );
 
   sendTokenResponse(user, 200, res);
 });

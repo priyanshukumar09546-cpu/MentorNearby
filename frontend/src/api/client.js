@@ -20,22 +20,15 @@ const getBaseUrl = () => {
     return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
   }
 
-  // If in browser on deployed domains, use relative /api or production Render endpoint
+  // If the frontend is hosted directly on the Render backend server
   if (typeof window !== 'undefined' && window.location) {
     const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    if (hostname.includes('mentornearby-2.onrender.com')) {
       return '/api';
     }
   }
 
-  // In production builds, default to /api or production Render endpoint
-  try {
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD) {
-      return '/api';
-    }
-  } catch (_) {}
-
-  // Fallback safely to production API rather than failing on localhost
+  // Default target for production www.mentornearby.com, Vercel, and dev fallbacks
   return PRODUCTION_API_URL;
 };
 

@@ -6,12 +6,17 @@ const ToastContext = createContext(null);
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   const showToast = (message, type = 'info') => {
-    const id = Date.now();
+    if (!message) return;
+    const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+      removeToast(id);
+    }, 4500);
   };
 
   const success = (message) => showToast(message, 'success');
@@ -19,13 +24,35 @@ export const ToastProvider = ({ children }) => {
   const warning = (message) => showToast(message, 'warning');
   const info = (message) => showToast(message, 'info');
 
+  const getIcon = (type) => {
+    switch (type) {
+      case 'success':
+        return '✓';
+      case 'error':
+        return '✕';
+      case 'warning':
+        return '⚠';
+      default:
+        return 'ℹ';
+    }
+  };
+
   return (
     <ToastContext.Provider value={{ showToast, success, error, warning, info }}>
       {children}
-      <div className="toast-container">
+      <div className="toast-container" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.type}`}>
-            {t.message}
+          <div key={t.id} className={`toast toast-${t.type} bg-white dark:bg-gray-800 text-gray-900 dark:text-white`}>
+            <span className={`toast-icon-badge toast-badge-${t.type}`}>{getIcon(t.type)}</span>
+            <span className="toast-text">{t.message}</span>
+            <button
+              type="button"
+              className="toast-close-btn"
+              onClick={() => removeToast(t.id)}
+              aria-label="Close notification"
+            >
+              ✕
+            </button>
           </div>
         ))}
       </div>

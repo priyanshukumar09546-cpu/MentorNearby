@@ -451,7 +451,7 @@ p {
 .form-textarea {
   width: 100%;
   padding: 10px 14px;
-  font-size: var(--font-size-base);
+  font-size: 16px !important;
   color: var(--color-text-primary);
   background: var(--color-surface);
   border: 1.5px solid var(--color-border-dark);
@@ -459,6 +459,24 @@ p {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   outline: none;
   appearance: none;
+  box-sizing: border-box;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: var(--color-text-primary, #18181B) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+[data-theme="dark"] input:-webkit-autofill,
+[data-theme="dark"] input:-webkit-autofill:hover, 
+[data-theme="dark"] input:-webkit-autofill:focus, 
+[data-theme="dark"] input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #18181B inset !important;
+  -webkit-text-fill-color: #FAF8F5 !important;
 }
 
 .form-input:focus,

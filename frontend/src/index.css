@@ -13,28 +13,18 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+}
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-}
-
-html {
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
-  background-color: var(--color-bg);
-  color: var(--color-text-primary);
-  position: relative;
 }
 
 #root {
@@ -45,6 +35,7 @@ body {
   flex-direction: column;
   box-sizing: border-box;
   overflow-x: hidden;
+  position: relative;
 }
 
 section,
@@ -58,6 +49,33 @@ aside {
   max-width: 100vw;
   box-sizing: border-box;
   overflow-x: hidden;
+}
+
+/* iOS Input Auto-Zoom Prevention */
+input,
+select,
+textarea {
+  font-size: 16px !important;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Chrome / Safari Yellow Autofill Override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: var(--color-text-primary, #18181B) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+[data-theme="dark"] input:-webkit-autofill,
+[data-theme="dark"] input:-webkit-autofill:hover, 
+[data-theme="dark"] input:-webkit-autofill:focus, 
+[data-theme="dark"] input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #18181B inset !important;
+  -webkit-text-fill-color: #FAF8F5 !important;
 }
 
 h1, h2, h3, h4, h5, h6 {

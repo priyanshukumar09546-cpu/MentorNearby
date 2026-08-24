@@ -45,28 +45,43 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (data) => {
-    const res = await apiLogin(data);
-    const refreshedUser = await refreshUser();
-    return { ...res, user: refreshedUser };
+    try {
+      const res = await apiLogin(data);
+      const refreshedUser = await refreshUser();
+      return { ...res, user: refreshedUser };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const register = async (data) => {
-    const res = await apiRegister(data);
-    const refreshedUser = await refreshUser();
-    return { ...res, user: refreshedUser };
+    try {
+      const res = await apiRegister(data);
+      const refreshedUser = await refreshUser();
+      return { ...res, user: refreshedUser };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const googleLogin = async (data) => {
-    const res = await apiGoogleAuth(data);
-    const refreshedUser = await refreshUser();
-    return { ...res, user: refreshedUser };
+    try {
+      const res = await apiGoogleAuth(data);
+      const refreshedUser = await refreshUser();
+      return { ...res, user: refreshedUser };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = async () => {
     try {
       await apiLogout();
     } catch (_) {}
-    setUser(null);
+    finally {
+      setUser(null);
+      setIsLoading(false);
+    }
   };
 
   return (

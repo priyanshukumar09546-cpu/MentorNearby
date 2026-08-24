@@ -86,32 +86,32 @@ const EditTutorProfilePage = () => {
           state: tProfile.location?.state || ''
         });
 
-        setLanguagesList(Array.isArray(tProfile.languages) && tProfile.languages.length > 0 ? tProfile.languages : ['English', 'Hindi']);
-        setModesList(Array.isArray(tProfile.teachingModes) && tProfile.teachingModes.length > 0 ? tProfile.teachingModes : ['Online', 'Offline', 'Hybrid']);
+        setLanguagesList(Array.isArray(tProfile.languages) && tProfile.languages.length > 0 ? tProfile.languages : (tProfile.languages ? [tProfile.languages] : []));
+        setModesList(Array.isArray(tProfile.teachingModes) && tProfile.teachingModes.length > 0 ? tProfile.teachingModes : []);
         
         const exp = tProfile.experience || {};
         const edu = (tProfile.education && tProfile.education[0]) || {};
         const cert = (tProfile.certificates && tProfile.certificates[0]) || {};
 
         setExperienceForm({
-          totalYears: exp.years !== undefined ? String(exp.years) : '4',
-          degree: edu.degree || 'B.Tech in Computer Science Engineering',
-          institution: edu.institution || 'AKTU, Lucknow',
-          eduYears: edu.year ? `${edu.year - 4} - ${edu.year}` : '2015 - 2019',
-          certification: cert.name || 'Data Structures & Algorithms – Udemy',
-          certYear: cert.year || '2021'
+          totalYears: exp.years !== undefined ? String(exp.years) : '',
+          degree: edu.degree || '',
+          institution: edu.institution || '',
+          eduYears: edu.year ? `${edu.year - 4} - ${edu.year}` : '',
+          certification: cert.name || '',
+          certYear: cert.year ? String(cert.year) : ''
         });
 
         setSubjectsList(
           Array.isArray(tProfile.subjects) && tProfile.subjects.length > 0
             ? tProfile.subjects
-            : ['Data Structures & Algorithms', 'Web Development', 'Database Management Systems', 'Operating Systems', 'Computer Networks', 'C++ Programming']
+            : []
         );
 
         setClassesList(
           Array.isArray(tProfile.grades) && tProfile.grades.length > 0
             ? tProfile.grades
-            : ['Class 9', 'Class 10', 'Class 11', 'Class 12', 'B.Tech (CS/IT)', 'BCA', 'MCA']
+            : []
         );
       }
     } catch (err) {
@@ -279,11 +279,6 @@ const EditTutorProfilePage = () => {
 
   const getPercent = (star) => {
     if (totalRevCount === 0) {
-      // Default reference presentation if no reviews recorded
-      if (star === 5) return 92;
-      if (star === 4) return 6;
-      if (star === 3) return 1;
-      if (star === 2) return 1;
       return 0;
     }
     return Math.round((ratingCounts[star] / totalRevCount) * 100);
@@ -552,7 +547,7 @@ const EditTutorProfilePage = () => {
               <div className="tpm-hero-details-col">
                 {/* Name & Verified Badge */}
                 <div className="tpm-hero-title-wrap">
-                  <h1 className="tpm-hero-name">{tUser.name || 'Anjali Sharma'}</h1>
+                  <h1 className="tpm-hero-name">{tUser.name || 'Tutor'}</h1>
                   <i className="fa-solid fa-circle-check tpm-name-check" title="Verified Tutor"></i>
                 </div>
 
@@ -572,7 +567,7 @@ const EditTutorProfilePage = () => {
                   <span>
                     {tProfile.location?.city
                       ? `${tProfile.location.city}${tProfile.location.state ? `, ${tProfile.location.state}` : ''}, India`
-                      : 'Ghaziabad, Uttar Pradesh, India'}
+                      : 'Not set'}
                   </span>
                 </div>
 
@@ -580,45 +575,46 @@ const EditTutorProfilePage = () => {
                 <div className="tpm-hero-meta-row">
                   <div className="tpm-hero-meta-item">
                     <i className="fa-regular fa-user"></i>
-                    <span>{tProfile.gender || 'Female'}</span>
+                    <span>{tProfile.gender || 'Not set'}</span>
                   </div>
                   <div className="tpm-hero-meta-item">
                     <i className="fa-regular fa-calendar"></i>
-                    <span>{tProfile.age ? `${tProfile.age} Years` : '28 Years'}</span>
+                    <span>{tProfile.age ? `${tProfile.age} Years` : 'Not set'}</span>
                   </div>
                   <div className="tpm-hero-meta-item">
                     <i className="fa-solid fa-briefcase"></i>
-                    <span>{tProfile.experience?.years ? `Exp. ${tProfile.experience.years}+ Years` : 'Exp. 4+ Years'}</span>
+                    <span>{tProfile.experience?.years ? `Exp. ${tProfile.experience.years}+ Years` : (tProfile.experience?.description || 'Not set')}</span>
                   </div>
                 </div>
 
                 {/* Bio Summary */}
                 <p className="tpm-hero-bio">
-                  {tProfile.bio ||
-                    'Passionate Computer Science tutor with 4+ years of teaching experience. I help students understand complex concepts in a simple and practical way.'}
+                  {tProfile.bio || 'No bio added yet. Click edit to describe your teaching background and qualifications.'}
                 </p>
 
                 {/* Contact Pills & Actions Row */}
                 <div className="tpm-hero-actions-row">
                   <div className="tpm-contact-tag">
                     <i className="fa-regular fa-envelope"></i>
-                    <span>{tUser.email || 'anjalisharma.tutor@gmail.com'}</span>
+                    <span>{tUser.email || 'Not set'}</span>
                   </div>
                   
                   <div className="tpm-contact-tag">
                     <i className="fa-solid fa-phone"></i>
-                    <span>{tUser.phone ? `+91 ${tUser.phone.replace(/(\d{5})(\d{5})/, '$1 $2')}` : '+91 98765 43210'}</span>
+                    <span>{tUser.phone && tUser.phone !== '0000000000' ? `+91 ${tUser.phone.replace(/(\d{5})(\d{5})/, '$1 $2')}` : 'Not set'}</span>
                   </div>
 
-                  <a
-                    href={`https://wa.me/91${tUser.phone || '9876543210'}?text=Hi%20${encodeURIComponent(tUser.name || 'Tutor')},%20I%20found%20your%20profile%20on%20MentorNearby.`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="tpm-whatsapp-btn"
-                  >
-                    <i className="fa-brands fa-whatsapp"></i>
-                    <span>Connect on WhatsApp</span>
-                  </a>
+                  {tUser.phone && tUser.phone !== '0000000000' ? (
+                    <a
+                      href={`https://wa.me/91${tUser.phone}?text=Hi%20${encodeURIComponent(tUser.name || 'Tutor')},%20I%20found%20your%20profile%20on%20MentorNearby.`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tpm-whatsapp-btn"
+                    >
+                      <i className="fa-brands fa-whatsapp"></i>
+                      <span>Connect on WhatsApp</span>
+                    </a>
+                  ) : null}
 
                   <button
                     className="tpm-preview-profile-btn"
@@ -723,8 +719,8 @@ const EditTutorProfilePage = () => {
               </div>
               <div className="tpm-kpi-content">
                 <span className="tpm-kpi-label">Profile Views</span>
-                <span className="tpm-kpi-value">{tStats.profileViews ? Number(tStats.profileViews).toLocaleString('en-IN') : '1,248'}</span>
-                <span className="tpm-kpi-sub tpm-sub-blue">This Month</span>
+                <span className="tpm-kpi-value">{Number(tStats.profileViews || 0).toLocaleString('en-IN')}</span>
+                <span className="tpm-kpi-sub tpm-sub-blue">Total views</span>
               </div>
             </div>
 
@@ -735,8 +731,8 @@ const EditTutorProfilePage = () => {
               </div>
               <div className="tpm-kpi-content">
                 <span className="tpm-kpi-label">Student Requests</span>
-                <span className="tpm-kpi-value">{tStats.studentRequests !== undefined ? tStats.studentRequests : '32'}</span>
-                <span className="tpm-kpi-sub tpm-sub-green">This Month</span>
+                <span className="tpm-kpi-value">{Number(tStats.studentRequests || 0).toLocaleString('en-IN')}</span>
+                <span className="tpm-kpi-sub tpm-sub-green">Direct requests</span>
               </div>
             </div>
 
@@ -747,8 +743,8 @@ const EditTutorProfilePage = () => {
               </div>
               <div className="tpm-kpi-content">
                 <span className="tpm-kpi-label">Contact Unlocks</span>
-                <span className="tpm-kpi-value">{tStats.contactUnlocks !== undefined ? tStats.contactUnlocks : '18'}</span>
-                <span className="tpm-kpi-sub tpm-sub-purple">This Month</span>
+                <span className="tpm-kpi-value">{Number(tStats.contactUnlocks || 0).toLocaleString('en-IN')}</span>
+                <span className="tpm-kpi-sub tpm-sub-purple">Student unlocks</span>
               </div>
             </div>
 
@@ -759,8 +755,8 @@ const EditTutorProfilePage = () => {
               </div>
               <div className="tpm-kpi-content">
                 <span className="tpm-kpi-label">Total Earnings</span>
-                <span className="tpm-kpi-value">₹{tStats.totalEarnings ? Number(tStats.totalEarnings).toLocaleString('en-IN') : '28,450'}</span>
-                <span className="tpm-kpi-sub tpm-sub-orange">This Month</span>
+                <span className="tpm-kpi-value">₹{Number(tStats.totalEarnings || 0).toLocaleString('en-IN')}</span>
+                <span className="tpm-kpi-sub tpm-sub-orange">{Number(tStats.totalEarnings || 0) === 0 ? 'No earnings yet' : 'Total earnings'}</span>
               </div>
             </div>
 
@@ -771,8 +767,12 @@ const EditTutorProfilePage = () => {
               </div>
               <div className="tpm-kpi-content">
                 <span className="tpm-kpi-label">Rating</span>
-                <span className="tpm-kpi-value">{tStats.averageRating ? tStats.averageRating.toFixed(1) : '4.8'}</span>
-                <span className="tpm-kpi-sub tpm-sub-gray">({totalRevCount || 126} Reviews)</span>
+                <span className="tpm-kpi-value">
+                  {tStats.averageRating && Number(tStats.averageRating) > 0 ? Number(tStats.averageRating).toFixed(1) : 'No reviews yet'}
+                </span>
+                {tStats.totalReviews && Number(tStats.totalReviews) > 0 ? (
+                  <span className="tpm-kpi-sub tpm-sub-gray">({tStats.totalReviews} Reviews)</span>
+                ) : null}
               </div>
             </div>
           </section>
@@ -1220,12 +1220,14 @@ const EditTutorProfilePage = () => {
                     {/* Left: Big Rating Number & Stars */}
                     <div className="tpm-rating-score-box">
                       <div className="tpm-big-rating-number">
-                        {tStats.averageRating ? tStats.averageRating.toFixed(1) : '4.8'}
+                        {tStats.averageRating && Number(tStats.averageRating) > 0 ? Number(tStats.averageRating).toFixed(1) : '0.0'}
                       </div>
                       <div className="tpm-big-stars-row">
-                        ★★★★★
+                        {tStats.averageRating && Number(tStats.averageRating) > 0 ? '★★★★★' : '☆☆☆☆☆'}
                       </div>
-                      <span className="tpm-total-rev-count">({totalRevCount || 126} Reviews)</span>
+                      <span className="tpm-total-rev-count">
+                        {tStats.totalReviews && Number(tStats.totalReviews) > 0 ? `(${tStats.totalReviews} Reviews)` : 'No reviews yet'}
+                      </span>
                     </div>
 
                     {/* Right: 5 Distribution Bars */}

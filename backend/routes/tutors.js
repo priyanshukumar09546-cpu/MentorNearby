@@ -10,6 +10,7 @@ const {
   uploadProfilePhoto,
   uploadIntroVideo,
   getTutorDashboard,
+  getTutorStats,
   updateAvailability,
   updateSafetyPreferences,
   toggleProfileVisibility,
@@ -18,6 +19,7 @@ const { protect, authorize } = require('../middleware/auth');
 const { uploadPhoto, uploadVideo } = require('../middleware/upload');
 
 // Protected routes (tutor own profile)
+router.get('/stats', protect, authorize('TUTOR'), getTutorStats);
 router.get('/dashboard/me', protect, authorize('TUTOR'), getTutorDashboard);
 router.get('/dashboard', protect, authorize('TUTOR'), getTutorDashboard);
 router.put('/profile/me', protect, authorize('TUTOR'), updateTutorProfile);

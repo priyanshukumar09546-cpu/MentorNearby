@@ -2,6 +2,8 @@ const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const TutorProfile = require('../models/TutorProfile');
 const ContactUnlock = require('../models/ContactUnlock');
+const Review = require('../models/Review');
+const TutorRequest = require('../models/TutorRequest');
 const cloudinaryService = require('../services/cloudinaryService');
 
 exports.getTutorProfile = asyncHandler(async (req, res, next) => {
@@ -159,4 +161,45 @@ exports.toggleProfileVisibility = asyncHandler(async (req, res, next) => {
   await tutorProfile.save();
 
   return success(res, 'Profile visibility toggled successfully', { profileVisibility: tutorProfile.profileVisibility });
+});
+
+exports.getTutorStats = asyncHandler(async (req, res, next) => {
+  const tutorProfile = await TutorProfile.findOne({ user: req.user.id });
+  if (!tutorProfile) {
+    return success(res, 'Tutor statistics retrieved', {
+      totalEarnings: 0,
+      profileViews: 0,
+      totalReviews: 0,
+      averageRating: 0,
+      studentRequests: 0,
+      contactUnlocks: 0
+    });
+  }
+
+  const unlockCount = await ContactUnlock.countDocuments({ tutor: req.user.id, status: 'COMPLETED' });
+  const paidUnlocks = await ContactUnlock.find({ tutor: req.user.id, status: 'COMPLETED', type: 'PAID' });
+  const totalEarnings = tutorProfile.totalEarnings || paidUnlocks.reduce((acc, u) => acc + (u.amount || 49), 0);
+
+  const totalReviews = await Review.countDocuments({ tutor: req.user.id, isHidden: false });
+  let avgRating = 0;
+  if (totalReviews > 0) {
+    const allRev = await Review.find({ tutor: req.user.id, isHidden: false }).select('rating');
+    const sum = allRev.reduce((acc, r) => acc + (r.rating || 0), 0);
+    avgRating = Number((sum / totalReviews).toFixed(1));
+  } else if (tutorProfile.averageRating && tutorProfile.totalReviews > 0) {
+    avgRating = tutorProfile.averageRating;
+  }
+
+  const studentRequestsCount = await TutorRequest.countDocuments({ tutor: req.user.id });
+
+  const stats = {
+    totalEarnings,
+    profileViews: tutorProfile.profileViews || 0,
+    totalReviews: totalReviews || 0,
+    averageRating: avgRating || 0,
+    studentRequests: studentRequestsCount || 0,
+    contactUnlocks: unlockCount || 0
+  };
+
+  return success(res, 'Tutor statistics retrieved', stats);
 });

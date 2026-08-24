@@ -147,6 +147,24 @@ const TutorProfileSchema = new mongoose.Schema({
   totalReviews: {
     type: Number,
     default: 0
+  },
+  totalEarnings: {
+    type: Number,
+    default: 0
+  },
+  studentRequests: {
+    type: Number,
+    default: 0
+  },
+  contactUnlocks: {
+    type: Number,
+    default: 0
+  },
+  gender: {
+    type: String
+  },
+  age: {
+    type: Number
   }
 }, {
   timestamps: true

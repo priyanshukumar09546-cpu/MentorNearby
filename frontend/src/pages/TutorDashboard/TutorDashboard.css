@@ -216,21 +216,27 @@
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
+  flex-wrap: nowrap;
+  padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 30;
   box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
 }
 
 .td-topbar-left {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   flex: 1;
-  max-width: 480px;
+  max-width: 400px;
+  min-width: 0;
 }
 
 .td-hamburger-btn {
@@ -245,20 +251,26 @@
   font-size: 18px;
   color: #475569;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .td-search-form {
   position: relative;
   width: 100%;
+  flex: 1;
+  max-width: 400px;
+  min-width: 0;
 }
 
 .td-search-input {
   width: 100%;
+  flex: 1;
+  min-width: 0;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 8px 36px 8px 14px;
-  font-size: 13.5px;
+  font-size: 13px;
   color: #1e293b;
   outline: none;
   transition: all 0.15s ease;
@@ -288,8 +300,12 @@
 
 .td-topbar-right {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .td-icon-btn {
@@ -307,6 +323,7 @@
   font-size: 16px;
   text-decoration: none;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .td-icon-btn:hover {
@@ -334,18 +351,22 @@
 /* User Profile Widget */
 .td-user-dropdown-wrap {
   position: relative;
+  flex-shrink: 0;
 }
 
 .td-user-btn {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 12px;
   transition: background-color 0.15s ease;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .td-user-btn:hover {
@@ -353,8 +374,8 @@
 }
 
 .td-user-avatar {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
   background: #2563eb;
@@ -363,7 +384,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 14px;
   border: 2px solid #e2e8f0;
   flex-shrink: 0;
   overflow: hidden;
@@ -372,26 +393,43 @@
 .td-user-meta {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   text-align: left;
+  min-width: 0;
+  max-width: 130px;
 }
 
 .td-user-name {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   color: #0f172a;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  min-width: 0;
+  display: block;
 }
 
 .td-user-role {
   font-size: 11px;
   color: #64748b;
   font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  min-width: 0;
+  display: block;
 }
 
 .td-user-chevron {
   font-size: 12px;
   color: #94a3b8;
   margin-left: 2px;
+  flex-shrink: 0;
 }
 
 .td-dropdown-menu {
@@ -1218,14 +1256,50 @@
   }
 }
 
+@media (max-width: 768px) {
+  .td-topbar {
+    padding: 0 12px;
+    height: 60px;
+  }
+
+  .td-topbar-left {
+    max-width: 220px;
+    gap: 8px;
+  }
+
+  .td-search-input {
+    font-size: 12px;
+    padding: 6px 30px 6px 10px;
+  }
+
+  .td-topbar-right {
+    gap: 6px;
+  }
+
+  .td-icon-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+
+  .td-user-role {
+    display: none !important;
+  }
+
+  .td-user-name {
+    max-width: 85px;
+    font-size: 12px;
+  }
+}
+
 @media (max-width: 640px) {
   .td-topbar {
-    padding: 0 16px;
+    padding: 0 10px;
   }
 
   .td-canvas {
-    padding: 16px;
-    gap: 16px;
+    padding: 14px;
+    gap: 14px;
   }
 
   .td-stats-row {
@@ -1237,11 +1311,29 @@
   }
 
   .td-user-meta {
-    display: none;
+    display: none !important;
   }
 
   .td-quick-actions-bar {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .td-topbar {
+    padding: 0 8px;
+  }
+
+  .td-topbar-left {
+    max-width: 160px;
+  }
+
+  .td-search-form {
+    max-width: 160px;
+  }
+
+  .td-user-meta {
+    display: none !important;
   }
 }

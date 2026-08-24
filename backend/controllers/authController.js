@@ -644,7 +644,15 @@ exports.googleCallback = asyncHandler(async (req, res, next) => {
         bio: 'Welcome to my MentorNearby professional profile.',
         profilePhoto: { url: googleUser.picture || '', publicId: '' },
         kycStatus: 'NOT_SUBMITTED',
-        profileVisibility: false
+        profileVisibility: false,
+        profileViews: 0,
+        totalEarnings: 0,
+        totalReviews: 0,
+        averageRating: 0,
+        studentRequests: 0,
+        contactUnlocks: 0,
+        savedCount: 0,
+        searchAppearances: 0
       });
     } else {
       const StudentProfile = require('../models/StudentProfile');

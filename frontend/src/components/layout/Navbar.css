@@ -19,9 +19,12 @@
   padding: 0 24px;
   height: 70px;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  flex-wrap: nowrap;
+  gap: 16px;
+  min-width: 0;
 }
 
 /* ============================================================

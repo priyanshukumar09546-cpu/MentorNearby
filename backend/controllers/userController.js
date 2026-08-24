@@ -102,20 +102,23 @@ exports.getProfile = asyncHandler(async (req, res, next) => {
     try {
       const profileViews = profile?.profileViews || 0;
       const studentRequestsCount = await TutorRequest.countDocuments({ tutor: user._id });
-      const contactUnlocksCount = await ContactUnlock.countDocuments({ tutor: user._id });
-      const totalEarnings = contactUnlocksCount * 49;
+      const contactUnlocksCount = await ContactUnlock.countDocuments({ tutor: user._id, status: 'COMPLETED' });
+      const paidUnlocks = await ContactUnlock.find({ tutor: user._id, status: 'COMPLETED', type: 'PAID' });
+      const totalEarnings = profile?.totalEarnings || paidUnlocks.reduce((acc, u) => acc + (u.amount || 49), 0);
 
-      const tutorReviews = await Review.find({ tutor: user._id })
+      const tutorReviews = await Review.find({ tutor: user._id, isHidden: false })
         .sort({ createdAt: -1 })
         .limit(10)
         .populate('reviewer', 'name avatar');
 
-      const totalReviews = await Review.countDocuments({ tutor: user._id });
-      let avgRating = profile?.averageRating || 5.0;
+      const totalReviews = await Review.countDocuments({ tutor: user._id, isHidden: false });
+      let avgRating = 0;
       if (totalReviews > 0) {
-        const allRev = await Review.find({ tutor: user._id }).select('rating');
-        const sum = allRev.reduce((acc, r) => acc + (r.rating || 5), 0);
+        const allRev = await Review.find({ tutor: user._id, isHidden: false }).select('rating');
+        const sum = allRev.reduce((acc, r) => acc + (r.rating || 0), 0);
         avgRating = Number((sum / totalReviews).toFixed(1));
+      } else if (profile?.averageRating && profile?.totalReviews > 0) {
+        avgRating = profile.averageRating;
       }
 
       stats = {

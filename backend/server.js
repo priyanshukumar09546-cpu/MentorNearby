@@ -199,6 +199,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tutors', tutorRoutes);
+app.use('/api/tutor', tutorRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/contact-unlocks', contactUnlockRoutes);

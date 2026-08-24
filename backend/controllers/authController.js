@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { generateToken, sendTokenResponse, setTokenCookie } = require('../utils/generateToken');
@@ -654,11 +655,24 @@ exports.googleCallback = asyncHandler(async (req, res, next) => {
     }
   }
 
-  setTokenCookie(user, res);
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
 
-  const normalizedUserRole = (user.role || '').toString().trim().toUpperCase();
-  const targetDashboard = (normalizedUserRole === 'ADMIN') ? '/admin' : (normalizedUserRole === 'TUTOR') ? '/tutor/dashboard' : '/dashboard';
-  return res.redirect(`${frontendUrl}${targetDashboard}`);
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+  
+  const frontendUrl = process.env.FRONTEND_URL || 'https://www.mentornearby.com';
+  return res.redirect(`${frontendUrl}/auth/callback?token=${token}&role=${user.role}`);
 });
 
 // @desc    Send OTP for Identity / Mobile / Email Verification

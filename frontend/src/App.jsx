@@ -19,6 +19,7 @@ import HowItWorksPage from './pages/Legal/HowItWorksPage';
 import NotesAndPdfsPage from './pages/StudyResources/NotesAndPdfsPage';
 import StudyResourcesPage from './pages/StudyResources/StudyResourcesPage';
 import BookReaderPage from './pages/StudyResources/BookReaderPage';
+import AuthCallback from './pages/AuthCallback';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Secondary & Auth Routes (Code-split with React.lazy)
@@ -147,6 +148,7 @@ const App = () => {
                             <Route path="/" element={<HomePage />} />
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterPage />} />
+                            <Route path="/auth/callback" element={<AuthCallback />} />
                             <Route path="/become-tutor" element={<BecomeTutorPage />} />
                             <Route path="/become-a-tutor" element={<BecomeTutorPage />} />
                             <Route path="/tutor/register" element={<BecomeTutorPage />} />
@@ -156,6 +158,7 @@ const App = () => {
                             
                             {/* 🧑‍🏫 Tutor Protected Routes */}
                             <Route path="/tutor/dashboard" element={<ProtectedRoute roles={['TUTOR']}><TutorDashboardPage /></ProtectedRoute>} />
+                            <Route path="/mentor/dashboard" element={<ProtectedRoute roles={['TUTOR']}><TutorDashboardPage /></ProtectedRoute>} />
                             <Route path="/tutor/requests" element={<ProtectedRoute roles={['TUTOR']}><TutorRequestsPage /></ProtectedRoute>} />
                             <Route path="/tutor/profile" element={<ProtectedRoute roles={['TUTOR']}><EditTutorProfilePage /></ProtectedRoute>} />
                             <Route path="/tutor/profile/edit" element={<ProtectedRoute roles={['TUTOR']}><EditTutorProfilePage /></ProtectedRoute>} />
@@ -229,6 +232,7 @@ const App = () => {
 
                             {/* Student Dashboard */}
                             <Route path="/dashboard" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/student/dashboard" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
                             <Route path="/purchases" element={<ProtectedRoute><StudentPurchasesPage /></ProtectedRoute>} />
                             <Route path="/saved-tutors" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><SavedTutorsPage /></ProtectedRoute>} />
                             <Route path="/post-requirement" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><PostRequirementPage /></ProtectedRoute>} />

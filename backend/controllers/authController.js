@@ -528,7 +528,7 @@ exports.getGoogleAuthUrl = asyncHandler(async (req, res, next) => {
 // @access  Public
 exports.googleCallback = asyncHandler(async (req, res, next) => {
   const { code, state, error: googleErr } = req.query;
-  const defaultFrontendUrl = process.env.NODE_ENV === 'production' ? 'https://mentor-nearby.vercel.app' : 'http://localhost:5173';
+  const defaultFrontendUrl = process.env.NODE_ENV === 'production' ? 'https://www.mentornearby.com' : 'http://localhost:5173';
   const frontendUrl = process.env.FRONTEND_URL || defaultFrontendUrl;
 
   if (googleErr || !code) {
@@ -671,7 +671,6 @@ exports.googleCallback = asyncHandler(async (req, res, next) => {
     maxAge: 7 * 24 * 60 * 60 * 1000
   });
   
-  const frontendUrl = process.env.FRONTEND_URL || 'https://www.mentornearby.com';
   return res.redirect(`${frontendUrl}/auth/callback?token=${token}&role=${user.role}`);
 });
 

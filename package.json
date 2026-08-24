@@ -13,8 +13,7 @@
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "build": "cd frontend && npm run build",
     "start:backend": "cd backend && npm start",
-    "seed": "cd backend && npm run seed",
-    "reset-admin": "node resetAdmin.js"
+    "seed": "cd backend && npm run seed"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

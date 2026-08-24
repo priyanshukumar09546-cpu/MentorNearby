@@ -46,6 +46,9 @@ const { initScheduledSync } = require('./services/ncertSyncService');
 
 const app = express();
 
+// Trust proxy for reverse proxy platforms like Render/Vercel (fixes ERR_UNEXPECTED_X_FORWARDED_FOR)
+app.set('trust proxy', 1);
+
 // ============================================================
 // SECURITY MIDDLEWARE
 // ============================================================
@@ -150,6 +153,7 @@ const globalLimiter = rateLimit({
   max: 1500, // 1500 requests per 15 minutes per IP
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     success: false,
     message: 'Too many requests from this IP. Please try again later.',
@@ -163,6 +167,7 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     success: false,
     message: 'Too many authentication attempts. Please try again in 15 minutes.',

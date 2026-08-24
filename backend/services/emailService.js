@@ -7,32 +7,40 @@
 
 const nodemailer = require('nodemailer');
 
-const EMAIL_CONFIGURED =
-  process.env.EMAIL_HOST &&
-  process.env.EMAIL_USER &&
-  process.env.EMAIL_PASSWORD;
+const SMTP_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST;
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT, 10) || 587;
+const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
+const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS;
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || process.env.EMAIL_SECURE === 'true' || SMTP_PORT === 465;
+
+const EMAIL_CONFIGURED = !!(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
 let transporter = null;
 
 if (EMAIL_CONFIGURED) {
   transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE, // for 587 false, for 465 true
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
+      user: SMTP_USER,
+      pass: SMTP_PASS,
     },
+    family: 4, // FIX: Force IPv4, do not use IPv6 on Render
     tls: {
-      rejectUnauthorized: process.env.NODE_ENV === 'production',
+      ciphers: 'SSLv3',
+      rejectUnauthorized: false,
     },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 
   // Verify connection on startup (non-blocking)
   transporter.verify().then(() => {
-    console.log('✅ Email service ready');
+    console.log('✅ Email service ready (IPv4)');
   }).catch((err) => {
-    console.warn('⚠️  Email service connection failed:', err.message);
+    console.warn('⚠️  Email service connection warning (non-blocking):', err.message);
   });
 } else {
   console.warn('⚠️  [DEV STUB] Email credentials not configured. Emails will be logged to console only.');
@@ -51,7 +59,6 @@ const sendEmail = async (options) => {
     console.log(`  To: ${to}`);
     console.log(`  Subject: ${subject}`);
     console.log(`  Body (text): ${text || '(html only)'}`);
-    console.log('  (Configure EMAIL_* env vars to send real emails)\n');
     return { messageId: `stub_${Date.now()}`, stub: true };
   }
 
@@ -60,16 +67,22 @@ const sendEmail = async (options) => {
     return { messageId: `test_${Date.now()}`, stub: true };
   }
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || `MentorNearby <${process.env.EMAIL_USER || 'noreply@mentornearby.com'}>`,
-    to,
-    subject,
-    html,
-    text: text || html.replace(/<[^>]*>/g, ''), // Fallback text
-  };
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.SMTP_FROM || `MentorNearby <${SMTP_USER || 'noreply@mentornearby.com'}>`,
+      to,
+      subject,
+      html,
+      text: text || (html ? html.replace(/<[^>]*>/g, '') : ''), // Fallback text
+    };
 
-  const info = await transporter.sendMail(mailOptions);
-  return info;
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ [EMAIL SENT] Message ID: ${info.messageId} to ${to}`);
+    return info;
+  } catch (err) {
+    console.error('⚠️  [EMAIL SEND ERROR] (non-blocking):', err.message);
+    return { error: err.message, failed: true };
+  }
 };
 
 // ============================================================

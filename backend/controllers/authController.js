@@ -222,11 +222,9 @@ exports.register = asyncHandler(async (req, res, next) => {
       subject: 'Verify your email for MentorNearby',
       text: `Please verify your email by clicking: ${verifyUrl}`
     });
-  } catch (err) {
-    console.error('Email sending failed', err);
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
-    await user.save({ validateBeforeSave: false });
+  } catch (emailError) {
+    console.error('Email failed but user created:', emailError.message);
+    // Don't throw error, let registration continue smoothly
   }
 
   console.log('[DEBUG REGISTER] returned user ID:', user._id, 'email:', user.email, 'role:', user.role);

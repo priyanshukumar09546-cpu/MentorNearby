@@ -116,11 +116,15 @@ exports.verifyPaymentAndUnlock = asyncHandler(async (req, res, next) => {
 
   const tutorProfile = await TutorProfile.findOne({ user: unlockRecord.tutor }).populate('user', 'name email');
 
-  await emailService.sendEmail({
-    to: req.user.email,
-    subject: 'Contact Unlocked (Paid)',
-    text: `You have successfully unlocked contact details for ${tutorProfile.user.name}`
-  });
+  try {
+    await emailService.sendEmail({
+      to: req.user.email,
+      subject: 'Contact Unlocked (Paid)',
+      text: `You have successfully unlocked contact details for ${tutorProfile?.user?.name || 'Tutor'}`
+    });
+  } catch (emailErr) {
+    console.error('Contact unlock email notification failed (non-blocking):', emailErr.message);
+  }
 
   await createNotification(
     user._id,

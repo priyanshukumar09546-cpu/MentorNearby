@@ -1,5 +1,6 @@
 import client from './client';
 
+export const adminLogin = (data) => client.post('/auth/admin/login', data);
 export const getDashboardStats = () => client.get('/admin/stats');
 export const getUsers = (params) => client.get('/admin/users', { params });
 export const getUserDetail = (id) => client.get(`/admin/users/${id}`);

@@ -39,10 +39,22 @@ const AdminLoginPage = () => {
 
     try {
       console.log('[AdminLogin] Submitting admin credentials:', { email: email.trim() });
-      const response = await client.post('/admin/login', {
-        email: email.trim(),
-        password,
-      });
+      let response;
+      try {
+        response = await client.post('/auth/admin/login', {
+          email: email.trim(),
+          password,
+        });
+      } catch (firstErr) {
+        if (firstErr.response?.status === 404) {
+          response = await client.post('/admin/login', {
+            email: email.trim(),
+            password,
+          });
+        } else {
+          throw firstErr;
+        }
+      }
 
       console.log('[AdminLogin] Response received:', response.status, response.data);
 

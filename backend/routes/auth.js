@@ -63,6 +63,7 @@ const resetPasswordValidation = [
 router.post('/register', validate(registerValidation), register);
 router.post('/login', validate(loginValidation), login);
 router.post('/admin-login', adminLogin);
+router.post('/admin/login', adminLogin);
 router.get('/google/url', getGoogleAuthUrl);
 router.get('/google/callback', googleCallback);
 router.post('/google', googleAuth);

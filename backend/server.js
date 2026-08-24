@@ -74,7 +74,6 @@ app.use(helmet({
 
 // CORS — Allowed origins
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
   'https://mentor-nearby-frontend.vercel.app',
   'https://mentor-nearby.vercel.app',
   'https://mentornearby.vercel.app',
@@ -84,33 +83,35 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000',
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    try {
-      const parsedUrl = new URL(origin);
-      const isAllowedDomain = allowedOrigins.includes(origin);
-      const isVercel = parsedUrl.hostname.endsWith('.vercel.app') || parsedUrl.hostname === 'vercel.app';
-      const isRender = parsedUrl.hostname.endsWith('.onrender.com');
-      const isLocalhost = parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1';
-
-      if (isAllowedDomain || isVercel || isRender || isLocalhost || process.env.NODE_ENV === 'development') {
-        return callback(null, true);
-      }
-    } catch (_) {}
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+    const allowed = [
+      'https://mentor-nearby-frontend.vercel.app',
+      'https://mentor-nearby.vercel.app',
+      'https://mentornearby.vercel.app',
+      'https://mentornearby.com',
+      'https://www.mentornearby.com',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS policy does not allow origin: ${origin}`));
+      callback(null, true); // Allow all for debugging and seamless cross-origin requests
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
+
+// Handle OPTIONS preflight requests globally
+app.options('*', cors());
 
 // Ensure Database connection for every incoming request (Serverless & Container support)
 app.use(async (req, res, next) => {

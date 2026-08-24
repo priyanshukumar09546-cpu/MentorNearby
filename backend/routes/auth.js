@@ -22,6 +22,7 @@ const {
   sendAadhaarOtp,
   verifyAadhaarOtp,
 } = require('../controllers/authController');
+const { adminLogin } = require('../controllers/adminController');
 const { protect } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 
@@ -61,6 +62,7 @@ const resetPasswordValidation = [
 // Routes
 router.post('/register', validate(registerValidation), register);
 router.post('/login', validate(loginValidation), login);
+router.post('/admin-login', adminLogin);
 router.get('/google/url', getGoogleAuthUrl);
 router.get('/google/callback', googleCallback);
 router.post('/google', googleAuth);

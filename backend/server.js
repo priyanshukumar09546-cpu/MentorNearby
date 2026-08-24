@@ -254,7 +254,17 @@ const startServer = async () => {
     // 1. Await database connection before accepting any HTTP requests
     await connectDB();
 
-    // 2. Initialize background schedulers
+    // 2. Automated Admin Seeder (when SEED_ADMIN === 'true')
+    if (process.env.SEED_ADMIN === 'true') {
+      try {
+        const seedAdmin = require('./seedAdmin');
+        await seedAdmin();
+      } catch (seedErr) {
+        console.error('⚠️ [SEED_ADMIN WARNING]:', seedErr.message);
+      }
+    }
+
+    // 3. Initialize background schedulers
     try {
       initScheduledSync();
     } catch (schedErr) {

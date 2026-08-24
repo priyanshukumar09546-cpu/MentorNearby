@@ -24,13 +24,16 @@ exports.adminLogin = asyncHandler(async (req, res, next) => {
     return error(res, 'Please provide email and password', 400);
   }
 
-  const user = await User.findOne({ email }).select('+password');
+  const cleanEmail = email.toString().trim().toLowerCase();
+  const user = await User.findOne({ email: cleanEmail }).select('+password');
+  console.log('Login attempt:', email, 'found:', !!user, 'role:', user?.role);
 
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || (user.role && user.role.toString().trim().toUpperCase() !== 'ADMIN')) {
     return error(res, 'Invalid admin credentials', 401);
   }
 
   const isMatch = await user.comparePassword(password);
+  console.log('Login attempt password match:', isMatch);
   if (!isMatch) {
     return error(res, 'Invalid admin credentials', 401);
   }

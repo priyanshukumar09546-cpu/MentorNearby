@@ -46,6 +46,11 @@ export const ThemeProvider = ({ children }) => {
       const root = document.documentElement;
       root.setAttribute('data-theme', active);
       root.className = `theme-${active}`;
+      if (active === 'dark' || active === 'eye-comfort') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
 
       if (active === 'light') {
         root.style.colorScheme = 'light';

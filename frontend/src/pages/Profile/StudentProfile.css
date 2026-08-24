@@ -213,8 +213,12 @@
 
 .sp-topbar-right {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .sp-icon-btn {
@@ -230,6 +234,7 @@
   padding: 6px;
   border-radius: 8px;
   transition: background 0.15s;
+  flex-shrink: 0;
 }
 
 .sp-icon-btn:hover {
@@ -254,12 +259,16 @@
 
 .sp-user-pill {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 10px;
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 10px;
   transition: background 0.15s;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .sp-user-pill:hover {
@@ -273,6 +282,7 @@
   object-fit: cover;
   background-color: #EFF6FF;
   border: 1px solid #BFDBFE;
+  flex-shrink: 0;
 }
 
 .sp-avatar-fallback-sm {
@@ -286,11 +296,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .sp-user-info-sm {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .sp-user-name-sm {
@@ -298,6 +311,10 @@
   font-weight: 700;
   color: #0F172A;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
 
 .sp-user-role-sm {

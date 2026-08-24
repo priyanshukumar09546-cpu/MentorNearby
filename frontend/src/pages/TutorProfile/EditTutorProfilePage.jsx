@@ -472,12 +472,12 @@ const EditTutorProfilePage = () => {
             {/* Profile Pill & Dropdown */}
             <div className="tpm-user-menu" onClick={() => setUserDropdownOpen(!userDropdownOpen)}>
               <img
-                src={tUser.avatar || tProfile.profilePhoto?.url || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'}
+                src={tUser.avatar || tProfile.profilePhoto?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(tUser.name || 'Tutor')}&background=1E3A5F&color=fff`}
                 alt={tUser.name || 'Tutor Avatar'}
                 className="tpm-topbar-avatar"
               />
               <div className="tpm-topbar-text">
-                <span className="tpm-topbar-name">{tUser.name || 'Anjali Sharma'}</span>
+                <span className="tpm-topbar-name">{tUser.name || 'Tutor'}</span>
                 <span className="tpm-topbar-role">Tutor</span>
               </div>
               <i className="fa-solid fa-chevron-down tpm-chevron-icon"></i>
@@ -517,7 +517,7 @@ const EditTutorProfilePage = () => {
               <div className="tpm-hero-avatar-col">
                 <div className="tpm-hero-avatar-box">
                   <img
-                    src={tUser.avatar || tProfile.profilePhoto?.url || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80'}
+                    src={tUser.avatar || tProfile.profilePhoto?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(tUser.name || 'Tutor')}&background=1E3A5F&color=fff`}
                     alt={tUser.name || 'Tutor Avatar'}
                     className="tpm-hero-avatar-img"
                   />
@@ -892,7 +892,19 @@ const EditTutorProfilePage = () => {
                   
                   {/* Left Half: Intro Video */}
                   <div className="tpm-split-half">
-                    <h2 className="tpm-card-title-sm">Introduction Video</h2>
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className="tpm-card-title-sm">Introduction Video</h2>
+                      {tProfile.introVideo?.url && (
+                        <button
+                          type="button"
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium underline bg-transparent border-0 cursor-pointer"
+                          onClick={() => videoInputRef.current?.click()}
+                          disabled={uploadingVideo}
+                        >
+                          Change Video
+                        </button>
+                      )}
+                    </div>
                     <div className="tpm-video-thumbnail-box">
                       {tProfile.introVideo?.url ? (
                         <video
@@ -901,21 +913,29 @@ const EditTutorProfilePage = () => {
                           className="tpm-real-video"
                         ></video>
                       ) : (
-                        <div className="tpm-mock-video-wrapper">
-                          <img
-                            src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80"
-                            alt="Video Thumbnail"
-                            className="tpm-video-thumbnail-img"
-                          />
+                        <div
+                          className="tpm-no-video-box"
+                          onClick={() => videoInputRef.current?.click()}
+                          title="Click to upload introduction video"
+                        >
+                          <div className="tpm-no-video-icon">
+                            {uploadingVideo ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-video"></i>}
+                          </div>
+                          <div className="tpm-no-video-text">
+                            <span className="tpm-no-video-title">
+                              {uploadingVideo ? 'Uploading Video...' : 'Upload Introduction Video'}
+                            </span>
+                            <span className="tpm-no-video-desc">
+                              MP4 or WebM (Max 50MB). Tutors with intro videos get 3x more inquiries!
+                            </span>
+                          </div>
                           <button
-                            className="tpm-play-overlay-btn"
-                            title="Upload / Play Video"
-                            onClick={() => videoInputRef.current?.click()}
+                            type="button"
+                            className="tpm-upload-video-action-btn"
                             disabled={uploadingVideo}
                           >
-                            <i className="fa-solid fa-play"></i>
+                            <i className="fa-solid fa-cloud-arrow-up"></i> Select Video
                           </button>
-                          <span className="tpm-video-duration-badge">01:15</span>
                         </div>
                       )}
                       <input

@@ -103,7 +103,10 @@
 }
 
 /* 2. DARK THEME (Cinematic Obsidian + Charcoal + Radiant Gold) */
-[data-theme="dark"] {
+:root[data-theme="dark"],
+[data-theme="dark"],
+.dark,
+.theme-dark {
   --theme-name: 'dark';
 
   /* Page & Surfaces */
@@ -201,7 +204,9 @@
 }
 
 /* 3. EYE COMFORT THEME (Warm Amber / Reduced Eye Strain) */
-[data-theme="eye-comfort"] {
+:root[data-theme="eye-comfort"],
+[data-theme="eye-comfort"],
+.theme-eye-comfort {
   --theme-name: 'eye-comfort';
 
   /* Page & Surfaces */

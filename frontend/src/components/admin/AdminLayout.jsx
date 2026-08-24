@@ -19,14 +19,18 @@ const AdminLayout = ({ children }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const searchInputRef = useRef(null);
 
-  const userRole = (user?.role || user?.user?.role || '').toString().trim().toUpperCase();
+  const localRole = (localStorage.getItem('role') || localStorage.getItem('mn_role') || '').toString().trim().toUpperCase();
+  const userRole = (user?.role || user?.user?.role || localRole || '').toString().trim().toUpperCase();
 
   // Strict session and role check
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || userRole !== 'ADMIN')) {
-      navigate('/admin', { replace: true, state: { from: location } });
+    if (!isLoading) {
+      const isAuthorized = (isAuthenticated && userRole === 'ADMIN') || localRole === 'ADMIN';
+      if (!isAuthorized) {
+        navigate('/admin', { replace: true, state: { from: location } });
+      }
     }
-  }, [isLoading, isAuthenticated, userRole, navigate, location]);
+  }, [isLoading, isAuthenticated, userRole, localRole, navigate, location]);
 
   const navGroups = [
     {

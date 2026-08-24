@@ -62,8 +62,11 @@ const ProtectedRoute = ({ children, roles }) => {
     );
   }
 
+  const localRole = (localStorage.getItem('role') || localStorage.getItem('mn_role') || '').toUpperCase();
+  const localToken = localStorage.getItem('mn_token') || localStorage.getItem('token');
+
   // If not authenticated or no user object in state
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated && !user && !(isAdminPath && localRole === 'ADMIN' && localToken)) {
     if (isAdminPath) {
       return <Navigate to="/admin" state={{ from: location }} replace />;
     }
@@ -71,7 +74,7 @@ const ProtectedRoute = ({ children, roles }) => {
   }
 
   // Extract normalized role
-  const userRole = extractUserRole(user);
+  const userRole = extractUserRole(user) || (localRole === 'ADMIN' ? 'ADMIN' : '');
 
   // If specific roles are required (e.g. ['ADMIN'])
   if (roles && Array.isArray(roles) && roles.length > 0) {

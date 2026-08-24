@@ -51,12 +51,21 @@ const AdminLoginPage = () => {
         if (token) {
           try {
             localStorage.setItem('mn_token', token);
+            localStorage.setItem('token', token);
             localStorage.setItem('role', 'ADMIN');
+            localStorage.setItem('mn_role', 'ADMIN');
           } catch (_) {}
         }
         await refreshUser();
         showToast('Admin authenticated successfully', 'success');
         navigate('/admin/dashboard', { replace: true });
+        
+        // Safety timeout fallback to ensure page transitions cleanly
+        setTimeout(() => {
+          if (window.location.pathname === '/admin' || window.location.pathname === '/admin/login') {
+            window.location.replace('/admin/dashboard');
+          }
+        }, 300);
       }
     } catch (err) {
       console.error('[AdminLogin Error]:', err.response?.status, err.response?.data || err.message);

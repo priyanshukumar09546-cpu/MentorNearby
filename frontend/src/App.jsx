@@ -112,25 +112,27 @@ const App = () => {
                       <ProtectedRoute roles={['ADMIN']}>
                         <AdminLayout>
                           <Routes>
-                            <Route path="/dashboard" element={<AdminDashboardPage />} />
-                            <Route path="/" element={<AdminDashboardPage />} />
-                            <Route path="/users" element={<AdminUsersPage />} />
-                            <Route path="/students" element={<AdminStudentsPage />} />
-                            <Route path="/tutors" element={<AdminTutorsPage />} />
-                            <Route path="/kyc" element={<AdminKYCPage />} />
-                            <Route path="/requests" element={<AdminRequestsPage />} />
-                            <Route path="/courses" element={<AdminCoursesPage />} />
-                            <Route path="/study-resources" element={<AdminStudyResourcesPage />} />
-                            <Route path="/content" element={<AdminContentPage />} />
-                            <Route path="/footer-content" element={<AdminFooterCmsPage />} />
-                            <Route path="/footer" element={<AdminFooterCmsPage />} />
-                            <Route path="/reports" element={<AdminReportsPage />} />
-                            <Route path="/payments" element={<AdminPaymentsPage />} />
-                            <Route path="/contact-unlocks" element={<AdminContactUnlocksPage />} />
-                            <Route path="/analytics" element={<AdminAnalyticsPage />} />
-                            <Route path="/notifications" element={<AdminNotificationsPage />} />
-                            <Route path="/settings" element={<AdminSettingsPage />} />
-                            <Route path="/audit-logs" element={<AdminAuditLogsPage />} />
+                            <Route index element={<AdminDashboardPage />} />
+                            <Route path="dashboard" element={<AdminDashboardPage />} />
+                            <Route path="dashboard/*" element={<AdminDashboardPage />} />
+                            <Route path="users" element={<AdminUsersPage />} />
+                            <Route path="students" element={<AdminStudentsPage />} />
+                            <Route path="tutors" element={<AdminTutorsPage />} />
+                            <Route path="kyc" element={<AdminKYCPage />} />
+                            <Route path="requests" element={<AdminRequestsPage />} />
+                            <Route path="courses" element={<AdminCoursesPage />} />
+                            <Route path="study-resources" element={<AdminStudyResourcesPage />} />
+                            <Route path="content" element={<AdminContentPage />} />
+                            <Route path="footer-content" element={<AdminFooterCmsPage />} />
+                            <Route path="footer" element={<AdminFooterCmsPage />} />
+                            <Route path="reports" element={<AdminReportsPage />} />
+                            <Route path="payments" element={<AdminPaymentsPage />} />
+                            <Route path="contact-unlocks" element={<AdminContactUnlocksPage />} />
+                            <Route path="analytics" element={<AdminAnalyticsPage />} />
+                            <Route path="notifications" element={<AdminNotificationsPage />} />
+                            <Route path="settings" element={<AdminSettingsPage />} />
+                            <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+                            <Route path="*" element={<AdminDashboardPage />} />
                           </Routes>
                         </AdminLayout>
                       </ProtectedRoute>

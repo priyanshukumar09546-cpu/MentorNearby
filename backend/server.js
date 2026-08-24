@@ -49,6 +49,15 @@ const app = express();
 // Trust proxy for reverse proxy platforms like Render/Vercel (fixes ERR_UNEXPECTED_X_FORWARDED_FOR)
 app.set('trust proxy', 1);
 
+// Direct Global CORS & Preflight handler
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 // ============================================================
 // SECURITY MIDDLEWARE
 // ============================================================

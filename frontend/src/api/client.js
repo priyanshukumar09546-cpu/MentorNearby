@@ -1,39 +1,8 @@
 import axios from 'axios';
-
-const PRODUCTION_API_URL = 'https://mentornearby-2.onrender.com/api';
-
-const getBaseUrl = () => {
-  // Support Vite, Next.js, and standard environment variables
-  let envUrl = '';
-  try {
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-      envUrl = import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.NEXT_PUBLIC_BASE_URL;
-    }
-  } catch (_) {}
-
-  if (!envUrl && typeof process !== 'undefined' && process.env) {
-    envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.VITE_API_URL || process.env.REACT_APP_API_URL;
-  }
-
-  if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
-    const cleanUrl = envUrl.trim().replace(/\/+$/, '');
-    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
-  }
-
-  // If the frontend is hosted directly on the Render backend server
-  if (typeof window !== 'undefined' && window.location) {
-    const hostname = window.location.hostname;
-    if (hostname.includes('mentornearby-2.onrender.com')) {
-      return '/api';
-    }
-  }
-
-  // Default target for production www.mentornearby.com, Vercel, and dev fallbacks
-  return PRODUCTION_API_URL;
-};
+import { API_BASE_URL } from './config';
 
 const client = axios.create({
-  baseURL: getBaseUrl(),
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 

@@ -282,8 +282,8 @@
   background: var(--input-bg, #FFFFFF);
   border: 1px solid var(--input-border, #E8E2D8);
   border-radius: 10px;
-  padding: 9px 12px;
-  font-size: 13px;
+  padding: 10px 12px;
+  font-size: 16px !important;
   font-weight: 500;
   color: var(--input-text, #18181B);
   font-family: inherit;

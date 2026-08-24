@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getGoogleAuthUrl } from '../../api/auth';
 import StudentRegistration from './StudentRegistration';
-import TutorRegistration from './TutorRegistration';
+import TutorRegistrationWizard from '../../components/tutors/TutorRegistrationWizard';
 import './LoginPage.css';
 
 /* ── Inline SVG Icons ── */
@@ -82,22 +82,17 @@ const RegisterPage = () => {
     }
   }, []);
 
-  // If user selected advanced multi-step wizard
+  // If Tutor role is selected, directly render the Unified 8-Step Wizard
+  if (selectedRole === 'TUTOR') {
+    return <TutorRegistrationWizard onBackToRoleSelect={() => setSelectedRole('STUDENT')} />;
+  }
+
+  // If Student selected advanced multi-step wizard
   if (fullWizardMode && selectedRole === 'STUDENT') {
     return (
       <div className="auth-page-wrapper">
         <div className="container" style={{ maxWidth: '800px' }}>
           <StudentRegistration onBack={() => setFullWizardMode(false)} />
-        </div>
-      </div>
-    );
-  }
-
-  if (fullWizardMode && selectedRole === 'TUTOR') {
-    return (
-      <div className="auth-page-wrapper">
-        <div className="container" style={{ maxWidth: '840px' }}>
-          <TutorRegistration onBack={() => setFullWizardMode(false)} />
         </div>
       </div>
     );
@@ -136,18 +131,14 @@ const RegisterPage = () => {
     setErrorMsg('');
 
     try {
-      const res = await register({
+      await register({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         password,
-        role: selectedRole === 'TUTOR' ? 'TUTOR' : 'STUDENT'
+        role: 'STUDENT'
       });
-      const userObj = res?.user || res?.data?.data?.user || res?.data?.user;
-      const role = extractUserRole(userObj) || (selectedRole === 'TUTOR' ? 'TUTOR' : 'STUDENT');
-      console.log('[AUTH ROLE AFTER REGISTER]', role);
-      const targetDashboard = getRoleDashboard(role);
-      navigate(targetDashboard, { replace: true });
+      navigate('/student/dashboard', { replace: true });
     } catch (err) {
       const fieldErrors = err?.response?.data?.errors;
       let msg = err?.response?.data?.message;
@@ -175,7 +166,7 @@ const RegisterPage = () => {
     setGoogleLoading(true);
 
     try {
-      const res = await getGoogleAuthUrl(selectedRole);
+      const res = await getGoogleAuthUrl('STUDENT');
       if (res.data?.data?.url) {
         window.location.href = res.data.data.url;
       } else {
@@ -263,15 +254,15 @@ const RegisterPage = () => {
             
             {/* Header */}
             <div className="auth-form-header">
-              <h1 className="auth-form-title">Create Your Account ✨</h1>
-              <p className="auth-form-subtitle">Join MentorNearby and start your learning journey</p>
+              <h1 className="auth-form-title">Create Student Account ✨</h1>
+              <p className="auth-form-subtitle">Join MentorNearby to find and connect with top tutors</p>
             </div>
 
             {/* Role Switcher Tabs */}
             <div className="auth-role-tabs">
               <button
                 type="button"
-                className={`auth-role-tab-btn ${selectedRole === 'STUDENT' ? 'active' : ''}`}
+                className="auth-role-tab-btn active"
                 onClick={() => { setSelectedRole('STUDENT'); setErrorMsg(''); }}
               >
                 <span>🎓</span>
@@ -279,11 +270,11 @@ const RegisterPage = () => {
               </button>
               <button
                 type="button"
-                className={`auth-role-tab-btn ${selectedRole === 'TUTOR' ? 'active' : ''}`}
+                className="auth-role-tab-btn"
                 onClick={() => { setSelectedRole('TUTOR'); setErrorMsg(''); }}
               >
                 <span>🧑‍🏫</span>
-                <span>Tutor</span>
+                <span>Tutor (8-Step Wizard)</span>
               </button>
             </div>
 
@@ -292,23 +283,6 @@ const RegisterPage = () => {
               <div className="auth-alert-error" role="alert">
                 <span className="auth-alert-icon">⚠️</span>
                 <span>{errorMsg}</span>
-              </div>
-            )}
-
-            {/* Form */}
-            {selectedRole === 'TUTOR' && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl mb-4 text-xs text-blue-900 leading-relaxed flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-bold text-xs text-blue-950 mb-0.5">🧑‍🏫 Fast Educator Registration</p>
-                  <span>Create your tutor account to access your Tutor Dashboard.</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFullWizardMode(true)}
-                  className="text-xs text-blue-700 font-bold underline whitespace-nowrap"
-                >
-                  Full 9-Step Form →
-                </button>
               </div>
             )}
 
@@ -360,8 +334,9 @@ const RegisterPage = () => {
                     type="tel"
                     className="auth-input-element"
                     placeholder="10-digit mobile number"
+                    maxLength={10}
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                     autoComplete="tel"
                     required
                   />
@@ -430,7 +405,7 @@ const RegisterPage = () => {
                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                 />
                 <label htmlFor="register-terms" className="cursor-pointer">
-                  I agree to the <Link to="/terms" className="text-blue-600 hover:underline">Terms</Link> & <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
+                  I agree to the <Link to="/terms" className="text-blue-600 hover:underline">Terms</Link> &amp; <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
                 </label>
               </div>
 
@@ -443,10 +418,10 @@ const RegisterPage = () => {
                 {loading ? (
                   <>
                     <span className="auth-btn-spinner" />
-                    <span>Creating {selectedRole === 'TUTOR' ? 'Tutor' : 'Student'} Account...</span>
+                    <span>Creating Student Account...</span>
                   </>
                 ) : (
-                  <span>{selectedRole === 'TUTOR' ? 'Create Tutor Account (Tutor Dashboard) →' : 'Create Account'}</span>
+                  <span>Create Account</span>
                 )}
               </button>
             </form>
@@ -466,7 +441,7 @@ const RegisterPage = () => {
               disabled={googleLoading}
             >
               <GoogleIcon />
-              <span>{googleLoading ? 'Connecting...' : `Continue with Google (${selectedRole === 'TUTOR' ? 'Tutor' : 'Student'})`}</span>
+              <span>{googleLoading ? 'Connecting...' : 'Continue with Google (Student)'}</span>
             </button>
 
             {/* Sign In Navigation */}
@@ -490,4 +465,3 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
-

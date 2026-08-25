@@ -7,6 +7,10 @@ const router = express.Router();
 const {
   adminLogin,
   getDashboardStats,
+  getRecentUsers,
+  getRecentActivities,
+  getUserGrowth,
+  getUserDistribution,
   getUsers,
   getUserDetail,
   suspendUser,
@@ -49,6 +53,10 @@ router.use(protect, authorize('ADMIN'));
 // Dashboard & Analytics
 router.get('/dashboard', getDashboardStats);
 router.get('/stats', getDashboardStats);
+router.get('/users/recent', getRecentUsers);
+router.get('/activities', getRecentActivities);
+router.get('/user-growth', getUserGrowth);
+router.get('/user-distribution', getUserDistribution);
 router.get('/analytics', getAnalytics);
 router.get('/audit-logs', getAuditLogs);
 

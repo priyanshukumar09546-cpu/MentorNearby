@@ -1,7 +1,11 @@
 import client from './client';
 
 export const adminLogin = (data) => client.post('/auth/admin/login', data);
-export const getDashboardStats = () => client.get('/admin/stats');
+export const getDashboardStats = (params) => client.get('/admin/stats', { params });
+export const getRecentUsers = (params) => client.get('/admin/users/recent', { params });
+export const getRecentActivities = (params) => client.get('/admin/activities', { params });
+export const getUserGrowth = (params) => client.get('/admin/user-growth', { params });
+export const getUserDistribution = () => client.get('/admin/user-distribution');
 export const getUsers = (params) => client.get('/admin/users', { params });
 export const getUserDetail = (id) => client.get(`/admin/users/${id}`);
 export const getKycList = (params) => client.get('/admin/kyc', { params });

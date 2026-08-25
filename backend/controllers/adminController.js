@@ -282,6 +282,163 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
   });
 });
 
+// GET /api/admin/users/recent
+exports.getRecentUsers = asyncHandler(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 8;
+  const users = await User.find({ role: { $in: ['STUDENT', 'TUTOR', 'PARENT'] } })
+    .select('+phone -password')
+    .sort({ createdAt: -1 })
+    .limit(limit);
+
+  const usersWithProfiles = await Promise.all(
+    users.map(async (u) => {
+      const obj = u.toObject();
+      if (u.role === 'TUTOR') {
+        const profile = await TutorProfile.findOne({ user: u._id }).select('kycStatus verificationStatus profilePhoto');
+        if (profile) {
+          obj.kycStatus = profile.kycStatus;
+          obj.isVerified = profile.kycStatus === 'VERIFIED';
+        }
+      }
+      return obj;
+    })
+  );
+
+  return success(res, 'Recent users fetched', usersWithProfiles);
+});
+
+// GET /api/admin/activities
+exports.getRecentActivities = asyncHandler(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  
+  const [logs, recentUsers, recentKycs, recentUnlocks, recentReports] = await Promise.all([
+    AuditLog.find().populate('user', 'name role').sort({ createdAt: -1 }).limit(limit),
+    User.find({ role: { $in: ['STUDENT', 'TUTOR', 'PARENT'] } }).sort({ createdAt: -1 }).limit(5),
+    KYC.find({ status: { $in: ['VERIFIED', 'PENDING'] } }).populate('user', 'name').sort({ updatedAt: -1 }).limit(5),
+    ContactUnlock.find().populate('user', 'name').populate('tutor', 'name').sort({ createdAt: -1 }).limit(5),
+    Report.find().populate('reporter', 'name').sort({ createdAt: -1 }).limit(5)
+  ]);
+
+  const activities = [];
+
+  logs.forEach(log => {
+    activities.push({
+      _id: log._id,
+      type: 'AUDIT',
+      title: log.action || 'Admin Action',
+      description: log.details?.action || log.details?.description || `${log.user?.name || 'Admin'} performed ${log.action}`,
+      time: log.createdAt,
+      createdAt: log.createdAt,
+    });
+  });
+
+  recentUsers.forEach(u => {
+    activities.push({
+      _id: `user-${u._id}`,
+      type: u.role === 'TUTOR' ? 'TUTOR_SIGNUP' : 'STUDENT_SIGNUP',
+      title: u.role === 'TUTOR' ? `New tutor ${u.name} registered` : `New student ${u.name} registered`,
+      description: `${u.email} joined as ${u.role}`,
+      time: u.createdAt,
+      createdAt: u.createdAt,
+      user: { name: u.name, role: u.role }
+    });
+  });
+
+  recentKycs.forEach(k => {
+    activities.push({
+      _id: `kyc-${k._id}`,
+      type: 'KYC_UPDATE',
+      title: k.status === 'VERIFIED' ? `KYC approved for ${k.user?.name || 'Tutor'}` : `KYC submitted by ${k.user?.name || 'Tutor'}`,
+      description: `Verification status: ${k.status}`,
+      time: k.updatedAt || k.createdAt,
+      createdAt: k.updatedAt || k.createdAt,
+    });
+  });
+
+  recentUnlocks.forEach(c => {
+    activities.push({
+      _id: `unlock-${c._id}`,
+      type: 'UNLOCK',
+      title: `Contact unlocked by user ${c.user?.name || 'Student'}`,
+      description: `Unlocked contact for ${c.tutor?.name || 'Tutor'}`,
+      time: c.createdAt,
+      createdAt: c.createdAt,
+    });
+  });
+
+  recentReports.forEach(r => {
+    activities.push({
+      _id: `report-${r._id}`,
+      type: 'REPORT',
+      title: `Report submitted on ${r.category || 'Safety Concern'}`,
+      description: r.description ? r.description.slice(0, 60) : 'Report filed',
+      time: r.createdAt,
+      createdAt: r.createdAt,
+    });
+  });
+
+  activities.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const result = activities.slice(0, limit);
+
+  return success(res, 'Recent activities fetched', result);
+});
+
+// GET /api/admin/user-growth
+exports.getUserGrowth = asyncHandler(async (req, res) => {
+  const { range = '7d' } = req.query;
+  const now = new Date();
+  const numDays = range === '30d' ? 30 : range === '90d' ? 90 : 7;
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  const growthSeries = [];
+  for (let i = numDays - 1; i >= 0; i--) {
+    const dStart = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    dStart.setHours(0, 0, 0, 0);
+    const dEnd = new Date(dStart.getTime() + 24 * 60 * 60 * 1000);
+
+    const [dayStudents, dayTutors] = await Promise.all([
+      User.countDocuments({ role: { $in: ['STUDENT', 'PARENT'] }, createdAt: { $gte: dStart, $lt: dEnd } }),
+      User.countDocuments({ role: 'TUTOR', createdAt: { $gte: dStart, $lt: dEnd } })
+    ]);
+    const dayUsers = dayStudents + dayTutors;
+
+    growthSeries.push({
+      date: `${dStart.getDate()} ${monthNames[dStart.getMonth()]}`,
+      dateLabel: `${dStart.getDate()} ${monthNames[dStart.getMonth()]}`,
+      dayName: dayNames[dStart.getDay()],
+      users: dayUsers,
+      students: dayStudents,
+      tutors: dayTutors,
+    });
+  }
+
+  return success(res, 'User growth data fetched', growthSeries);
+});
+
+// GET /api/admin/user-distribution
+exports.getUserDistribution = asyncHandler(async (req, res) => {
+  const [totalStudents, totalTutors] = await Promise.all([
+    User.countDocuments({ role: { $in: ['STUDENT', 'PARENT'] } }),
+    User.countDocuments({ role: 'TUTOR' })
+  ]);
+  const total = totalStudents + totalTutors;
+  const studentPct = total > 0 ? parseFloat(((totalStudents / total) * 100).toFixed(1)) : 0;
+  const tutorPct = total > 0 ? parseFloat(((totalTutors / total) * 100).toFixed(1)) : 0;
+
+  return success(res, 'User distribution fetched', {
+    students: totalStudents,
+    tutors: totalTutors,
+    total,
+    studentPct,
+    tutorPct,
+    data: [
+      { name: 'Students', value: totalStudents, percentage: studentPct, color: '#3B82F6' },
+      { name: 'Tutors', value: totalTutors, percentage: tutorPct, color: '#F59E0B' }
+    ]
+  });
+});
+
 exports.getUsers = asyncHandler(async (req, res, next) => {
   const { role, isActive, isSuspended, search, page = 1, limit = 100 } = req.query;
   const query = {};

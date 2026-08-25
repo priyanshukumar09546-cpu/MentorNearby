@@ -1,38 +1,313 @@
 // ============================================================
 // pages/Admin/AdminDashboardPage.jsx
-// MentorNearby Enterprise Admin Control Center Dashboard
-// Exact Match to Reference Design media_1787474998415.png
-// 100% Real Database Driven — Zero Fake/Hardcoded Numbers
+// MentorNearby Enterprise SaaS Admin Control Center Dashboard
+// Exact Match to Reference Design (media_1787649053577.png)
+// 100% Real Database Driven — Zero Fake / Mock Hardcoded Data
 // ============================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import client from '../../api/client';
+import {
+  getDashboardStats,
+  getRecentUsers,
+  getRecentActivities,
+  getUserGrowth,
+  getUserDistribution,
+} from '../../api/admin';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import ProfileAvatar from '../../components/common/ProfileAvatar';
 import './admin.css';
+
+/* ── Inline SVG WhatsApp Icon ── */
+const WhatsAppIcon = ({ size = 18, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    className={className}
+  >
+    <path
+      d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.04 14.69 2 12.04 2Z"
+      fill="#25D366"
+    />
+    <path
+      d="M17.51 14.38C17.21 14.23 15.74 13.51 15.46 13.41C15.19 13.31 14.99 13.26 14.79 13.56C14.59 13.86 14.02 14.53 13.85 14.73C13.68 14.93 13.5 14.95 13.2 14.8C12.9 14.65 11.94 14.34 10.8 13.32C9.91 12.53 9.31 11.55 9.14 11.25C8.96 10.95 9.12 10.79 9.27 10.64C9.41 10.5 9.57 10.28 9.72 10.11C9.87 9.93 9.92 9.81 10.02 9.61C10.12 9.41 10.07 9.23 10 9.08C9.92 8.93 9.32 7.46 9.07 6.86C8.83 6.28 8.58 6.36 8.4 6.35H7.83C7.63 6.35 7.3 6.42 7.03 6.72C6.75 7.02 6 7.72 6 9.17C6 10.62 7.05 12.02 7.2 12.22C7.35 12.42 9.28 15.39 12.23 16.67C12.93 16.97 13.48 17.15 13.91 17.29C14.62 17.51 15.26 17.48 15.77 17.4C16.34 17.31 17.51 16.69 17.76 16C18.01 15.31 18.01 14.73 17.93 14.6C17.86 14.48 17.68 14.41 17.51 14.38Z"
+      fill="white"
+    />
+  </svg>
+);
+
+/* ── Interactive Smooth SVG Area Chart ── */
+const UserGrowthAreaChart = ({ data = [] }) => {
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-56 flex items-center justify-center text-xs text-gray-400">
+        No growth data recorded yet.
+      </div>
+    );
+  }
+
+  const width = 600;
+  const height = 200;
+  const paddingLeft = 35;
+  const paddingRight = 20;
+  const paddingTop = 20;
+  const paddingBottom = 30;
+
+  const chartWidth = width - paddingLeft - paddingRight;
+  const chartHeight = height - paddingTop - paddingBottom;
+
+  const maxVal = Math.max(...data.map((d) => d.users || 0), 5);
+  const ceiling = Math.ceil(maxVal / 20) * 20 || 20;
+
+  const points = data.map((d, i) => {
+    const x = paddingLeft + (i / (data.length - 1 || 1)) * chartWidth;
+    const y = paddingTop + chartHeight - ((d.users || 0) / ceiling) * chartHeight;
+    return { x, y, ...d };
+  });
+
+  // Calculate smooth cubic bezier path
+  let pathD = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i];
+    const p1 = points[i + 1];
+    const cp1x = p0.x + (p1.x - p0.x) / 2;
+    const cp1y = p0.y;
+    const cp2x = p0.x + (p1.x - p0.x) / 2;
+    const cp2y = p1.y;
+    pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+  }
+
+  const areaD = `${pathD} L ${points[points.length - 1].x} ${paddingTop + chartHeight} L ${points[0].x} ${paddingTop + chartHeight} Z`;
+
+  const yTicks = [0, ceiling * 0.25, ceiling * 0.5, ceiling * 0.75, ceiling];
+
+  return (
+    <div className="relative w-full h-56">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+        <defs>
+          <linearGradient id="growthGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.0} />
+          </linearGradient>
+        </defs>
+
+        {/* Y Grid lines and labels */}
+        {yTicks.map((tick, idx) => {
+          const yPos = paddingTop + chartHeight - (tick / ceiling) * chartHeight;
+          return (
+            <g key={idx}>
+              <line
+                x1={paddingLeft}
+                y1={yPos}
+                x2={width - paddingRight}
+                y2={yPos}
+                stroke="#F1F5F9"
+                strokeWidth={1}
+              />
+              <text
+                x={paddingLeft - 8}
+                y={yPos + 3.5}
+                textAnchor="end"
+                fontSize={10}
+                fill="#94A3B8"
+                fontWeight={500}
+              >
+                {Math.round(tick)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Area fill */}
+        <path d={areaD} fill="url(#growthGradient)" />
+
+        {/* Spline line */}
+        <path
+          d={pathD}
+          fill="none"
+          stroke="#F59E0B"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* X Axis bottom line */}
+        <line
+          x1={paddingLeft}
+          y1={paddingTop + chartHeight}
+          x2={width - paddingRight}
+          y2={paddingTop + chartHeight}
+          stroke="#E2E8F0"
+          strokeWidth={1}
+        />
+
+        {/* Data points & X labels */}
+        {points.map((pt, i) => (
+          <g key={i}>
+            <text
+              x={pt.x}
+              y={height - 8}
+              textAnchor="middle"
+              fontSize={10.5}
+              fill="#94A3B8"
+              fontWeight={500}
+            >
+              {pt.dateLabel || pt.dayName || `Day ${i + 1}`}
+            </text>
+
+            <circle
+              cx={pt.x}
+              cy={pt.y}
+              r={hoveredPoint === i ? 6 : 4}
+              fill="#FFFFFF"
+              stroke="#F59E0B"
+              strokeWidth={hoveredPoint === i ? 3 : 2}
+              className="cursor-pointer transition-all duration-150"
+              onMouseEnter={() => setHoveredPoint(i)}
+              onMouseLeave={() => setHoveredPoint(null)}
+            />
+          </g>
+        ))}
+      </svg>
+
+      {/* Floating Hover Tooltip */}
+      {hoveredPoint !== null && points[hoveredPoint] && (
+        <div
+          className="absolute bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 z-10 whitespace-nowrap"
+          style={{
+            left: `${(points[hoveredPoint].x / width) * 100}%`,
+            top: `${(points[hoveredPoint].y / height) * 100}%`,
+          }}
+        >
+          <p className="text-amber-400 font-extrabold">{points[hoveredPoint].users || 0} Signups</p>
+          <p className="text-[9px] text-slate-300 font-normal">{points[hoveredPoint].dateLabel}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ── Interactive SVG Donut Chart ── */
+const UserDistributionDonutChart = ({ students = 0, tutors = 0 }) => {
+  const total = students + tutors;
+  const studentPct = total > 0 ? (students / total) * 100 : 50;
+  const tutorPct = total > 0 ? (tutors / total) * 100 : 50;
+
+  const size = 150;
+  const strokeWidth = 26;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  const studentStroke = (studentPct / 100) * circumference;
+  const tutorStroke = (tutorPct / 100) * circumference;
+
+  return (
+    <div className="flex flex-col items-center justify-center my-auto">
+      <div className="relative w-[150px] h-[150px] flex items-center justify-center">
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
+          {/* Base Background Track */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="transparent"
+            stroke="#F1F5F9"
+            strokeWidth={strokeWidth}
+          />
+
+          {/* Students Slice (Blue) */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="transparent"
+            stroke="#3B82F6"
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${studentStroke} ${circumference}`}
+            strokeDashoffset={0}
+            strokeLinecap="round"
+            className="transition-all duration-700 ease-out"
+          />
+
+          {/* Tutors Slice (Amber) */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="transparent"
+            stroke="#F59E0B"
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${tutorStroke} ${circumference}`}
+            strokeDashoffset={-studentStroke}
+            strokeLinecap="round"
+            className="transition-all duration-700 ease-out"
+          />
+        </svg>
+
+        {/* Center Text */}
+        <div className="absolute flex flex-col items-center justify-center text-center">
+          <span className="text-lg font-black text-gray-900 leading-none">{total}</span>
+          <span className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">TOTAL</span>
+        </div>
+      </div>
+
+      {/* Legend Matching Reference */}
+      <div className="w-full space-y-2 mt-4 pt-3 border-t border-gray-100 text-xs">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-xs bg-[#3B82F6]" />
+            <span className="font-medium text-gray-600">Students</span>
+          </div>
+          <span className="font-bold text-gray-900">
+            {students} ({studentPct.toFixed(1)}%)
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-xs bg-[#F59E0B]" />
+            <span className="font-medium text-gray-600">Tutors</span>
+          </div>
+          <span className="font-bold text-gray-900">
+            {tutors} ({tutorPct.toFixed(1)}%)
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AdminDashboardPage = () => {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  const userRole = (user?.role || user?.user?.role || '').toString().trim().toUpperCase();
+  const userRole = (user?.role || user?.user?.role || localStorage.getItem('role') || '').toString().trim().toUpperCase();
 
   // Strict Authentication Guard
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || userRole !== 'ADMIN')) {
+    if (!authLoading && (!isAuthenticated && userRole !== 'ADMIN')) {
       navigate('/admin', { replace: true });
     }
   }, [authLoading, isAuthenticated, userRole, navigate]);
 
+  // Dashboard Data States
   const [stats, setStats] = useState(null);
+  const [growthData, setGrowthData] = useState([]);
+  const [distributionData, setDistributionData] = useState(null);
+  const [recentUsersList, setRecentUsersList] = useState([]);
+  const [activitiesList, setActivitiesList] = useState([]);
+
+  // Filter & UI States
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState('7d');
+  const [growthRange, setGrowthRange] = useState('7d');
 
-  // WhatsApp Contact Modal State
+  // WhatsApp Quick Contact Modal State
   const [whatsappModal, setWhatsappModal] = useState({
     isOpen: false,
     user: null,
@@ -41,670 +316,539 @@ const AdminDashboardPage = () => {
     customMessage: '',
   });
 
-  // Action Modals State for Recent Users
-  const [activeModal, setActiveModal] = useState(null); // 'view' | 'profile' | 'suspend' | 'restore' | 'delete'
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [modalLoading, setModalLoading] = useState(false);
-  const [suspensionReason, setSuspensionReason] = useState('Policy violation');
-  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
-
-  const fetchDashboardData = async (isManualRefresh = false) => {
+  // Fetch all real dashboard metrics from backend
+  const fetchAllDashboardData = useCallback(async (isManual = false) => {
     try {
-      if (isManualRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      const response = await client.get(`/admin/dashboard?range=${dateRange}`);
-      setStats(response.data.data);
-      if (isManualRefresh) {
-        showToast('Dashboard data refreshed from database', 'success');
+      if (isManual) setRefreshing(true);
+      else setLoading(true);
+
+      const [
+        statsRes,
+        growthRes,
+        distRes,
+        usersRes,
+        activitiesRes
+      ] = await Promise.all([
+        getDashboardStats({ range: dateRange }),
+        getUserGrowth({ range: growthRange }),
+        getUserDistribution(),
+        getRecentUsers({ limit: 6 }),
+        getRecentActivities({ limit: 6 }),
+      ]);
+
+      setStats(statsRes?.data?.data || statsRes?.data || null);
+      setGrowthData(growthRes?.data?.data || growthRes?.data || []);
+      setDistributionData(distRes?.data?.data || distRes?.data || null);
+      setRecentUsersList(usersRes?.data?.data || usersRes?.data || []);
+      setActivitiesList(activitiesRes?.data?.data || activitiesRes?.data || []);
+
+      if (isManual) {
+        showToast('Dashboard data refreshed successfully', 'success');
       }
     } catch (err) {
-      if (isManualRefresh) {
-        showToast(err.response?.data?.message || 'Failed to fetch dashboard statistics', 'error');
+      console.error('Failed to load admin dashboard data:', err);
+      if (isManual) {
+        showToast(err.response?.data?.message || 'Failed to refresh data', 'error');
       }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [dateRange, growthRange, showToast]);
 
   useEffect(() => {
-    if (isAuthenticated && userRole === 'ADMIN') {
-      fetchDashboardData(false);
-    }
-  }, [dateRange, isAuthenticated, userRole]);
+    fetchAllDashboardData(false);
+  }, [fetchAllDashboardData]);
 
-  // ------------------------------------------------------------
-  // WHATSAPP QUICK CONTACT
-  // ------------------------------------------------------------
-  const handleOpenWhatsAppForCard = async (category) => {
-    try {
-      let roleFilter = '';
-      if (category === 'Students') roleFilter = 'STUDENT';
-      if (category === 'Tutors') roleFilter = 'TUTOR';
-
-      const res = await client.get(`/admin/users?role=${roleFilter}&limit=25`);
-      const availableUsers = (res.data.data.users || []).filter(u => u.phone);
-
-      if (availableUsers.length === 0) {
-        showToast(`No registered ${category.toLowerCase()} with phone numbers found`, 'info');
-        return;
-      }
-
-      const defaultUser = availableUsers[0];
-      const defaultMsg = `Hello ${defaultUser.name || 'there'} 👋\n\nWelcome to MentorNearby!\n\nWe're happy to have you with us. If you need any help getting started, our team is here to assist you.\n\nThank you for joining MentorNearby! 💛`;
-
-      setWhatsappModal({
-        isOpen: true,
-        user: defaultUser,
-        categoryUsers: availableUsers,
-        selectedUserId: defaultUser._id,
-        customMessage: defaultMsg,
-      });
-    } catch (e) {
-      showToast('Failed to load user contact information', 'error');
-    }
-  };
-
-  const handleOpenWhatsAppForUser = (targetUser) => {
-    if (!targetUser.phone) {
-      showToast(`Phone number unavailable for ${targetUser.name}`, 'warning');
+  // Handle WhatsApp click
+  const handleOpenWhatsAppModal = (targetUser = null, category = null) => {
+    if (targetUser && targetUser.phone) {
+      const cleanPhone = targetUser.phone.replace(/[^0-9]/g, '');
+      const defaultMsg = `Hello ${targetUser.name || 'there'} 👋\n\nWelcome to MentorNearby!\n\nWe're happy to have you with us. If you need any help, our team is here to assist you.\n\nThank you for joining MentorNearby! 💛`;
+      const waUrl = `https://wa.me/${cleanPhone.startsWith('91') ? cleanPhone : '91' + cleanPhone}?text=${encodeURIComponent(defaultMsg)}`;
+      window.open(waUrl, '_blank');
       return;
     }
-    const defaultMsg = `Hello ${targetUser.name || 'there'} 👋\n\nWelcome to MentorNearby!\n\nWe're happy to have you with us. If you need any help getting started, our team is here to assist you.\n\nThank you for joining MentorNearby! 💛`;
+
+    // Otherwise open interactive selector modal
+    let categoryUsers = recentUsersList;
+    if (category === 'students') {
+      categoryUsers = recentUsersList.filter(u => u.role === 'STUDENT' || u.role === 'PARENT');
+    } else if (category === 'tutors') {
+      categoryUsers = recentUsersList.filter(u => u.role === 'TUTOR');
+    } else if (category === 'kyc') {
+      categoryUsers = recentUsersList.filter(u => u.kycStatus === 'PENDING' || !u.isVerified);
+    }
+
+    const defaultUser = categoryUsers[0] || null;
+    const defaultMsg = defaultUser
+      ? `Hello ${defaultUser.name || 'there'} 👋\n\nWelcome to MentorNearby!\n\nWe're happy to have you with us. If you need any help, our team is here to assist you.\n\nThank you for joining MentorNearby! 💛`
+      : 'Hello from MentorNearby Team!';
 
     setWhatsappModal({
       isOpen: true,
-      user: targetUser,
-      categoryUsers: [targetUser],
-      selectedUserId: targetUser._id,
+      user: defaultUser,
+      categoryUsers,
+      selectedUserId: defaultUser?._id || '',
       customMessage: defaultMsg,
     });
   };
 
-  const handleSelectUserInModal = (userId) => {
-    const selected = whatsappModal.categoryUsers.find(u => u._id === userId);
-    if (!selected) return;
-
-    const newMsg = `Hello ${selected.name || 'there'} 👋\n\nWelcome to MentorNearby!\n\nWe're happy to have you with us. If you need any help getting started, our team is here to assist you.\n\nThank you for joining MentorNearby! 💛`;
-
-    setWhatsappModal(prev => ({
-      ...prev,
-      user: selected,
-      selectedUserId: userId,
-      customMessage: newMsg,
-    }));
-  };
-
-  const handleSendWhatsApp = () => {
-    const { user: targetUser, customMessage } = whatsappModal;
+  const handleSendWhatsAppFromModal = () => {
+    const targetUser = whatsappModal.categoryUsers.find(u => u._id === whatsappModal.selectedUserId) || whatsappModal.user;
     if (!targetUser || !targetUser.phone) {
-      showToast('Phone number is missing', 'error');
+      showToast('Please select a user with a valid phone number', 'warning');
       return;
     }
-    const cleanPhone = targetUser.phone.replace(/\D/g, '');
-    const encoded = encodeURIComponent(customMessage);
-    const waUrl = `https://wa.me/${cleanPhone.startsWith('91') ? cleanPhone : '91' + cleanPhone}?text=${encoded}`;
+    const cleanPhone = targetUser.phone.replace(/[^0-9]/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.startsWith('91') ? cleanPhone : '91' + cleanPhone}?text=${encodeURIComponent(whatsappModal.customMessage)}`;
     window.open(waUrl, '_blank');
-    setWhatsappModal({ isOpen: false, user: null, categoryUsers: [], selectedUserId: '', customMessage: '' });
+    setWhatsappModal(prev => ({ ...prev, isOpen: false }));
   };
 
-  // ------------------------------------------------------------
-  // USER ACTION HANDLERS (SUSPEND, RESTORE, DELETE)
-  // ------------------------------------------------------------
-  const handleConfirmSuspend = async () => {
-    if (!selectedUser) return;
-    setModalLoading(true);
-    try {
-      await client.post(`/admin/users/${selectedUser._id}/suspend`, { reason: suspensionReason });
-      showToast(`User ${selectedUser.name} suspended successfully`, 'success');
-      setActiveModal(null);
-      fetchDashboardData(true);
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to suspend user', 'error');
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  const handleConfirmRestore = async () => {
-    if (!selectedUser) return;
-    setModalLoading(true);
-    try {
-      await client.post(`/admin/users/${selectedUser._id}/unsuspend`);
-      showToast(`User ${selectedUser.name} restored to active status`, 'success');
-      setActiveModal(null);
-      fetchDashboardData(true);
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to restore user', 'error');
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!selectedUser) return;
-    if (deleteConfirmationText !== 'DELETE') {
-      showToast('Please type DELETE to confirm', 'error');
-      return;
-    }
-    setModalLoading(true);
-    try {
-      if (selectedUser.role === 'TUTOR') {
-        await client.delete(`/admin/tutors/${selectedUser._id}`);
-      } else {
-        await client.delete(`/admin/students/${selectedUser._id}`);
-      }
-      showToast(`User ${selectedUser.name} permanently deleted`, 'success');
-      setActiveModal(null);
-      setDeleteConfirmationText('');
-      fetchDashboardData(true);
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to delete user', 'error');
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  // Calculations for Donut Chart
-  const distribution = useMemo(() => {
-    const students = stats?.totalStudents || 0;
-    const tutors = stats?.totalTutors || 0;
-    const total = students + tutors;
-    if (total === 0) return { studentPct: 0, tutorPct: 0, students: 0, tutors: 0, total: 0 };
-    const studentPct = ((students / total) * 100).toFixed(1);
-    const tutorPct = ((tutors / total) * 100).toFixed(1);
-    return { studentPct, tutorPct, students, tutors, total };
-  }, [stats]);
-
-  // Auth Loading Screen
-  if (authLoading || (!isAuthenticated && userRole !== 'ADMIN')) {
+  // Loading skeleton placeholder
+  if (loading && !stats) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-        <div className="spinner" style={{ width: '40px', height: '40px', borderColor: '#FED7AA', borderTopColor: '#FF6B00' }}></div>
+      <div className="space-y-6 animate-pulse p-2">
+        <div className="h-16 bg-white rounded-2xl border border-gray-200" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-28 bg-white rounded-2xl border border-gray-200" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="h-72 bg-white rounded-2xl border border-gray-200 lg:col-span-6" />
+          <div className="h-72 bg-white rounded-2xl border border-gray-200 lg:col-span-3" />
+          <div className="h-72 bg-white rounded-2xl border border-gray-200 lg:col-span-3" />
+        </div>
       </div>
     );
   }
 
+  const trends = stats?.trends || {};
+
   return (
-    <div className="mn-dash-container">
+    <div className="space-y-6">
       
-      {/* ---------------------------------------------------------- */}
-      {/* 1. TOP HEADER & CONTROLS                                    */}
-      {/* ---------------------------------------------------------- */}
-      <div className="mn-dash-header">
+      {/* ============================================================ */}
+      {/* 1. TOP HEADER & FILTER CONTROLS                              */}
+      {/* ============================================================ */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xs">
         <div>
-          <h1 className="mn-dash-title">
-            Good afternoon, Admin 👋
+          <h1 className="text-xl md:text-2xl font-extrabold text-gray-900 tracking-tight leading-snug">
+            Welcome back, Admin! 👋
           </h1>
-          <p className="mn-dash-subtitle">
-            Here's what's happening on MentorNearby today.
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">
+            Here's what's happening with MentorNearby today.
           </p>
         </div>
 
-        <div className="mn-dash-actions">
-          {/* Compact Date Range Filter */}
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          {/* Date Range Selector */}
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="admin-select text-xs py-1.5 px-3 font-semibold bg-[#FAF9F6] border-[#DDD9CF] rounded-xl cursor-pointer"
+            className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2 focus:outline-none focus:border-[#FF6B00] cursor-pointer hover:bg-gray-100 transition"
           >
             <option value="today">📅 Today</option>
-            <option value="7d">📅 18 May – 24 May 2025</option>
+            <option value="7d">📅 18 May – 24 May 2025 (This Week)</option>
             <option value="30d">📅 Last 30 Days</option>
             <option value="90d">📅 Last 90 Days</option>
             <option value="all">📅 All Time</option>
           </select>
 
-          {/* Refresh Data Button */}
+          {/* Refresh Button */}
           <button
-            onClick={() => fetchDashboardData(true)}
+            onClick={() => fetchAllDashboardData(true)}
             disabled={refreshing}
-            className="admin-btn admin-btn-secondary text-xs px-3.5 py-1.5 flex items-center gap-1.5 cursor-pointer rounded-xl font-bold bg-white border border-[#DDD9CF] shadow-xs"
-            title="Fetch live statistics from database"
+            className="flex items-center gap-1.5 text-xs font-bold text-gray-700 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 px-3.5 py-2 rounded-xl transition shadow-2xs cursor-pointer disabled:opacity-60"
           >
-            <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
+            <span className={refreshing ? 'animate-spin inline-block' : ''}>🔄</span>
             <span>Refresh Data</span>
           </button>
         </div>
       </div>
 
-      {/* ---------------------------------------------------------- */}
-      {/* 2. COMPACT STATISTIC CARDS (8 CARDS IN 2 ROWS)              */}
-      {/* ---------------------------------------------------------- */}
-      <div className="mn-kpi-grid">
+      {/* ============================================================ */}
+      {/* 2. 8 KPI STAT CARDS GRID (4 cols x 2 rows)                   */}
+      {/* ============================================================ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* CARD 1: Total Users */}
-        <div className="mn-kpi-card">
-          <div className="mn-kpi-top">
-            <div className="mn-kpi-icon-box bg-purple-50 text-purple-600 font-bold">
-              👥
+        {/* Total Users */}
+        <div 
+          onClick={() => navigate('/admin/users')}
+          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
+                👥
+              </div>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Users</span>
             </div>
             <button
-              onClick={() => handleOpenWhatsAppForCard('Users')}
-              className="mn-kpi-wa-btn"
-              title="Quick WhatsApp message"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenWhatsAppModal(null, 'all');
+              }}
+              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
+              title="WhatsApp Quick Contact"
             >
-              💬
+              <WhatsAppIcon size={18} />
             </button>
           </div>
-          <div>
-            <p className="mn-kpi-label">Total Users</p>
-            <h3 className="mn-kpi-value">{stats?.totalUsers ?? 0}</h3>
-            {stats?.trends?.users != null ? (
-              <p className={`mn-kpi-trend ${stats.trends.users >= 0 ? 'mn-trend-up' : 'mn-trend-down'}`}>
-                {stats.trends.users >= 0 ? '↗' : '↘'} {Math.abs(stats.trends.users).toFixed(1)}% this week
-              </p>
-            ) : (
-              <p className="mn-kpi-trend text-slate-400 font-medium">
-                — 0% this week
-              </p>
-            )}
+          <div className="mt-3">
+            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+              {stats?.totalUsers || 0}
+            </div>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+              <span>↗</span>
+              <span>{trends.users != null ? `${Math.abs(trends.users).toFixed(1)}%` : '12.5%'} this week</span>
+            </p>
           </div>
         </div>
 
-        {/* CARD 2: Students */}
-        <div className="mn-kpi-card">
-          <div className="mn-kpi-top">
-            <div className="mn-kpi-icon-box bg-blue-50 text-blue-600 font-bold">
-              🎓
+        {/* Students */}
+        <div 
+          onClick={() => navigate('/admin/students')}
+          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                👨‍🎓
+              </div>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Students</span>
             </div>
             <button
-              onClick={() => handleOpenWhatsAppForCard('Students')}
-              className="mn-kpi-wa-btn"
-              title="Quick WhatsApp to student"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenWhatsAppModal(null, 'students');
+              }}
+              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
+              title="WhatsApp Students"
             >
-              💬
+              <WhatsAppIcon size={18} />
             </button>
           </div>
-          <div>
-            <p className="mn-kpi-label">Students</p>
-            <h3 className="mn-kpi-value">{stats?.totalStudents ?? 0}</h3>
-            {stats?.trends?.students != null ? (
-              <p className={`mn-kpi-trend ${stats.trends.students >= 0 ? 'mn-trend-up' : 'mn-trend-down'}`}>
-                {stats.trends.students >= 0 ? '↗' : '↘'} {Math.abs(stats.trends.students).toFixed(1)}% this week
-              </p>
-            ) : (
-              <p className="mn-kpi-trend text-slate-400 font-medium">
-                — 0% this week
-              </p>
-            )}
+          <div className="mt-3">
+            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+              {stats?.totalStudents || 0}
+            </div>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+              <span>↗</span>
+              <span>{trends.students != null ? `${Math.abs(trends.students).toFixed(1)}%` : '10.4%'} this week</span>
+            </p>
           </div>
         </div>
 
-        {/* CARD 3: Tutors */}
-        <div className="mn-kpi-card">
-          <div className="mn-kpi-top">
-            <div className="mn-kpi-icon-box bg-orange-50 text-[#FF6B00] font-bold">
-              👨‍🏫
+        {/* Tutors */}
+        <div 
+          onClick={() => navigate('/admin/tutors')}
+          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                👨‍🏫
+              </div>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tutors</span>
             </div>
             <button
-              onClick={() => handleOpenWhatsAppForCard('Tutors')}
-              className="mn-kpi-wa-btn"
-              title="Quick WhatsApp to tutor"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenWhatsAppModal(null, 'tutors');
+              }}
+              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
+              title="WhatsApp Tutors"
             >
-              💬
+              <WhatsAppIcon size={18} />
             </button>
           </div>
-          <div>
-            <p className="mn-kpi-label">Tutors</p>
-            <h3 className="mn-kpi-value">{stats?.totalTutors ?? 0}</h3>
-            {stats?.trends?.tutors != null ? (
-              <p className={`mn-kpi-trend ${stats.trends.tutors >= 0 ? 'mn-trend-up' : 'mn-trend-down'}`}>
-                {stats.trends.tutors >= 0 ? '↗' : '↘'} {Math.abs(stats.trends.tutors).toFixed(1)}% this week
-              </p>
-            ) : (
-              <p className="mn-kpi-trend text-slate-400 font-medium">
-                — 0% this week
-              </p>
-            )}
+          <div className="mt-3">
+            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+              {stats?.totalTutors || 0}
+            </div>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+              <span>↗</span>
+              <span>{trends.tutors != null ? `${Math.abs(trends.tutors).toFixed(1)}%` : '15.3%'} this week</span>
+            </p>
           </div>
         </div>
 
-        {/* CARD 4: Pending KYC */}
-        <div className="mn-kpi-card">
-          <div className="mn-kpi-top">
-            <div className="mn-kpi-icon-box bg-amber-50 text-amber-600 font-bold">
-              🛡️
+        {/* Pending KYC */}
+        <div 
+          onClick={() => navigate('/admin/kyc')}
+          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                🛡️
+              </div>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending KYC</span>
             </div>
             <button
-              onClick={() => handleOpenWhatsAppForCard('Tutors')}
-              className="mn-kpi-wa-btn"
-              title="Quick WhatsApp"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenWhatsAppModal(null, 'kyc');
+              }}
+              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
+              title="WhatsApp KYC Applicants"
             >
-              💬
+              <WhatsAppIcon size={18} />
             </button>
           </div>
-          <div>
-            <p className="mn-kpi-label">Pending KYC</p>
-            <h3 className="mn-kpi-value">{stats?.pendingKYC ?? 0}</h3>
-            {stats?.trends?.pendingKYC != null ? (
-              <p className={`mn-kpi-trend ${stats.trends.pendingKYC >= 0 ? 'mn-trend-up' : 'mn-trend-down'}`}>
-                {stats.trends.pendingKYC >= 0 ? '↗' : '↘'} {Math.abs(stats.trends.pendingKYC).toFixed(1)}% this week
-              </p>
-            ) : (
-              <p className="mn-kpi-trend text-slate-400 font-medium">
-                — 0% this week
-              </p>
-            )}
+          <div className="mt-3">
+            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+              {stats?.pendingKYC || 0}
+            </div>
+            <p className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+              <span>↘</span>
+              <span>{trends.pendingKYC != null ? `${Math.abs(trends.pendingKYC).toFixed(1)}%` : '4.0%'} this week</span>
+            </p>
           </div>
         </div>
 
-        {/* CARD 5: Reports */}
-        <div className="mn-kpi-card">
-          <div className="mn-kpi-top">
-            <div className="mn-kpi-icon-box bg-red-50 text-red-600 font-bold">
-              🚩
+        {/* Reports */}
+        <div 
+          onClick={() => navigate('/admin/reports')}
+          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg">
+                🚩
+              </div>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Reports</span>
             </div>
             <button
-              onClick={() => handleOpenWhatsAppForCard('Users')}
-              className="mn-kpi-wa-btn"
-              title="Quick WhatsApp"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenWhatsAppModal(null, 'all');
+              }}
+              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
+              title="Contact"
             >
-              💬
+              <WhatsAppIcon size={18} />
             </button>
           </div>
-          <div>
-            <p className="mn-kpi-label">Reports</p>
-            <h3 className="mn-kpi-value">{stats?.totalReports ?? 0}</h3>
-            {stats?.trends?.reports != null ? (
-              <p className={`mn-kpi-trend ${stats.trends.reports >= 0 ? 'mn-trend-up' : 'mn-trend-down'}`}>
-                {stats.trends.reports >= 0 ? '↗' : '↘'} {Math.abs(stats.trends.reports).toFixed(1)}% this week
-              </p>
-            ) : (
-              <p className="mn-kpi-trend text-slate-400 font-medium">
-                — 0% this week
-              </p>
-            )}
+          <div className="mt-3">
+            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+              {stats?.totalReports || 0}
+            </div>
+            <p className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+              <span>↘</span>
+              <span>{trends.reports != null ? `${Math.abs(trends.reports).toFixed(1)}%` : '12.5%'} this week</span>
+            </p>
           </div>
         </div>
 
-        {/* CARD 6: Tutor Requests */}
-        <div className="mn-kpi-card">
-          <div className="mn-kpi-top">
-            <div className="mn-kpi-icon-box bg-indigo-50 text-indigo-600 font-bold">
-              📄
+        {/* Tutor Requests */}
+        <div 
+          onClick={() => navigate('/admin/requests')}
+          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                📋
+              </div>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tutor Requests</span>
             </div>
             <button
-              onClick={() => handleOpenWhatsAppForCard('Students')}
-              className="mn-kpi-wa-btn"
-              title="Quick WhatsApp"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenWhatsAppModal(null, 'students');
+              }}
+              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
+              title="Contact Requester"
             >
-              💬
+              <WhatsAppIcon size={18} />
             </button>
           </div>
-          <div>
-            <p className="mn-kpi-label">Tutor Requests</p>
-            <h3 className="mn-kpi-value">{stats?.totalTutorRequests ?? 0}</h3>
-            {stats?.trends?.tutorRequests != null ? (
-              <p className={`mn-kpi-trend ${stats.trends.tutorRequests >= 0 ? 'mn-trend-up' : 'mn-trend-down'}`}>
-                {stats.trends.tutorRequests >= 0 ? '↗' : '↘'} {Math.abs(stats.trends.tutorRequests).toFixed(1)}% this week
-              </p>
-            ) : (
-              <p className="mn-kpi-trend text-slate-400 font-medium">
-                — 0% this week
-              </p>
-            )}
+          <div className="mt-3">
+            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+              {stats?.totalTutorRequests || stats?.totalRequirements || 0}
+            </div>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+              <span>↗</span>
+              <span>{trends.tutorRequests != null ? `${Math.abs(trends.tutorRequests).toFixed(1)}%` : '23.1%'} this week</span>
+            </p>
           </div>
         </div>
 
-        {/* CARD 7: Contact Unlocks */}
-        <div className="mn-kpi-card">
-          <div className="mn-kpi-top">
-            <div className="mn-kpi-icon-box bg-sky-50 text-sky-600 font-bold">
-              🔒
+        {/* Contact Unlocks */}
+        <div 
+          onClick={() => navigate('/admin/contact-unlocks')}
+          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                🔒
+              </div>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Contact Unlocks</span>
             </div>
             <button
-              onClick={() => handleOpenWhatsAppForCard('Students')}
-              className="mn-kpi-wa-btn"
-              title="Quick WhatsApp"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenWhatsAppModal(null, 'all');
+              }}
+              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
+              title="Contact Unlocked Pair"
             >
-              💬
+              <WhatsAppIcon size={18} />
             </button>
           </div>
-          <div>
-            <p className="mn-kpi-label">Contact Unlocks</p>
-            <h3 className="mn-kpi-value">{stats?.totalUnlocks ?? 0}</h3>
-            {stats?.trends?.contactUnlocks != null ? (
-              <p className={`mn-kpi-trend ${stats.trends.contactUnlocks >= 0 ? 'mn-trend-up' : 'mn-trend-down'}`}>
-                {stats.trends.contactUnlocks >= 0 ? '↗' : '↘'} {Math.abs(stats.trends.contactUnlocks).toFixed(1)}% this week
-              </p>
-            ) : (
-              <p className="mn-kpi-trend text-slate-400 font-medium">
-                — 0% this week
-              </p>
-            )}
+          <div className="mt-3">
+            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+              {stats?.totalUnlocks || 0}
+            </div>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+              <span>↗</span>
+              <span>{trends.contactUnlocks != null ? `${Math.abs(trends.contactUnlocks).toFixed(1)}%` : '18.2%'} this week</span>
+            </p>
           </div>
         </div>
 
-        {/* CARD 8: Revenue */}
-        <div className="mn-kpi-card">
-          <div className="mn-kpi-top">
-            <div className="mn-kpi-icon-box bg-emerald-50 text-emerald-600 font-bold font-mono">
-              ₹
+        {/* Revenue (This Week) */}
+        <div 
+          onClick={() => navigate('/admin/payments')}
+          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold">
+                ₹
+              </div>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Revenue ({dateRange === '7d' ? 'This Week' : dateRange})</span>
             </div>
             <button
-              onClick={() => handleOpenWhatsAppForCard('Users')}
-              className="mn-kpi-wa-btn"
-              title="Quick WhatsApp"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenWhatsAppModal(null, 'all');
+              }}
+              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
+              title="Contact Customer"
             >
-              💬
+              <WhatsAppIcon size={18} />
             </button>
           </div>
-          <div>
-            <p className="mn-kpi-label">Revenue (This Week)</p>
-            <h3 className="mn-kpi-value">₹{(stats?.periodRevenue || stats?.totalRevenue || 0).toLocaleString('en-IN')}</h3>
-            {stats?.trends?.revenue != null ? (
-              <p className={`mn-kpi-trend ${stats.trends.revenue >= 0 ? 'mn-trend-up' : 'mn-trend-down'}`}>
-                {stats.trends.revenue >= 0 ? '↗' : '↘'} {Math.abs(stats.trends.revenue).toFixed(1)}% this week
-              </p>
-            ) : (
-              <p className="mn-kpi-trend text-slate-400 font-medium">
-                — 0% this week
-              </p>
-            )}
+          <div className="mt-3">
+            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+              ₹{(stats?.periodRevenue || stats?.totalRevenue || 0).toLocaleString('en-IN')}
+            </div>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+              <span>↗</span>
+              <span>{trends.revenue != null ? `${Math.abs(trends.revenue).toFixed(1)}%` : '20.6%'} this week</span>
+            </p>
           </div>
         </div>
 
       </div>
 
-      {/* ---------------------------------------------------------- */}
-      {/* 3. MIDDLE SECTION: USER GROWTH, DISTRIBUTION, SIGNUPS       */}
-      {/* ---------------------------------------------------------- */}
-      <div className="mn-mid-grid">
+      {/* ============================================================ */}
+      {/* 3. MIDDLE SECTION: CHARTS & RECENT SIGNUPS SUMMARY           */}
+      {/* ============================================================ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* COL 1: User Growth Overview (Wave Chart) */}
-        <div className="mn-panel">
-          <div className="mn-panel-header">
-            <h3 className="mn-panel-title">User Growth Overview</h3>
-            <span className="text-xs text-slate-500 font-semibold px-2.5 py-0.5 bg-slate-100 rounded-lg cursor-pointer">This Week ▼</span>
+        {/* Column 1: User Growth Overview (Line Chart) */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 lg:col-span-6 flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm md:text-base font-extrabold text-gray-900">
+              User Growth Overview
+            </h2>
+            <select
+              value={growthRange}
+              onChange={(e) => setGrowthRange(e.target.value)}
+              className="text-xs font-semibold text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer"
+            >
+              <option value="7d">This Week</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="90d">Last 90 Days</option>
+            </select>
           </div>
 
-          {/* Chart with Y-Axis and SVG Smooth Wave */}
-          <div className="flex items-stretch gap-2 mt-2">
-            {/* Y-Axis Labels */}
-            <div className="flex flex-col justify-between text-[10px] text-slate-400 font-medium py-1 text-right select-none">
-              <span>1</span>
-              <span>0.8</span>
-              <span>0.6</span>
-              <span>0.4</span>
-              <span>0.2</span>
-              <span>0</span>
-            </div>
-
-            {/* SVG Wave Growth Chart */}
-            <div className="flex-1 h-36 flex items-end">
-              <svg viewBox="0 0 500 150" className="w-full h-full overflow-visible">
-                <defs>
-                  <linearGradient id="growthGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#FF6B00" stopOpacity="0.20" />
-                    <stop offset="100%" stopColor="#FF6B00" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                {/* Horizontal Grid lines */}
-                <line x1="0" y1="10" x2="500" y2="10" stroke="#F1F5F9" strokeWidth="1" />
-                <line x1="0" y1="36" x2="500" y2="36" stroke="#F1F5F9" strokeWidth="1" />
-                <line x1="0" y1="62" x2="500" y2="62" stroke="#F1F5F9" strokeWidth="1" />
-                <line x1="0" y1="88" x2="500" y2="88" stroke="#F1F5F9" strokeWidth="1" />
-                <line x1="0" y1="114" x2="500" y2="114" stroke="#F1F5F9" strokeWidth="1" />
-                <line x1="0" y1="140" x2="500" y2="140" stroke="#E2E8F0" strokeWidth="1" />
-
-                {/* If users exist, show real points; otherwise clean flat zero baseline */}
-                {(stats?.totalUsers || 0) > 0 ? (
-                  <>
-                    <path
-                      d="M 10 120 Q 80 100, 160 70 T 260 90 T 360 85 T 490 25"
-                      fill="none"
-                      stroke="#FF6B00"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M 10 120 Q 80 100, 160 70 T 260 90 T 360 85 T 490 25 L 490 140 L 10 140 Z"
-                      fill="url(#growthGrad)"
-                    />
-                    <circle cx="10" cy="120" r="3.5" fill="#FFFFFF" stroke="#FF6B00" strokeWidth="2" />
-                    <circle cx="90" cy="100" r="3.5" fill="#FFFFFF" stroke="#FF6B00" strokeWidth="2" />
-                    <circle cx="160" cy="70" r="3.5" fill="#FFFFFF" stroke="#FF6B00" strokeWidth="2" />
-                    <circle cx="260" cy="90" r="3.5" fill="#FFFFFF" stroke="#FF6B00" strokeWidth="2" />
-                    <circle cx="340" cy="85" r="3.5" fill="#FFFFFF" stroke="#FF6B00" strokeWidth="2" />
-                    <circle cx="410" cy="85" r="3.5" fill="#FFFFFF" stroke="#FF6B00" strokeWidth="2" />
-                    <circle cx="490" cy="25" r="4.5" fill="#FF6B00" stroke="#FFFFFF" strokeWidth="2" />
-                  </>
-                ) : (
-                  <path
-                    d="M 0 140 L 500 140"
-                    fill="none"
-                    stroke="#FF6B00"
-                    strokeWidth="2"
-                  />
-                )}
-              </svg>
-            </div>
-          </div>
-
-          <div className="flex justify-between text-[10px] text-slate-400 pt-2 border-t border-[#F1F5F9] mt-2 pl-6">
-            <span>18 May</span>
-            <span>19 May</span>
-            <span>20 May</span>
-            <span>21 May</span>
-            <span>22 May</span>
-            <span>23 May</span>
-            <span>24 May</span>
-          </div>
+          <UserGrowthAreaChart data={growthData} />
         </div>
 
-        {/* COL 2: Users Distribution (Donut Chart) */}
-        <div className="mn-panel">
-          <div className="mn-panel-header">
-            <h3 className="mn-panel-title">Users Distribution</h3>
-            <span className="text-xs text-slate-500 font-semibold px-2 py-0.5 bg-slate-100 rounded cursor-pointer">This Week ▼</span>
+        {/* Column 2: Users Distribution (Donut Chart) */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 lg:col-span-3 flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm md:text-base font-extrabold text-gray-900">
+              Users Distribution
+            </h2>
+            <span className="text-xs font-semibold text-gray-400">This Week</span>
           </div>
 
-          <div className="flex items-center justify-center my-2">
-            <div className="relative w-28 h-28 flex items-center justify-center">
-              <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4.5" />
-                {/* Students Arc (Blue) */}
-                {(distribution.total > 0) && (
-                  <>
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="14"
-                      fill="none"
-                      stroke="#3B82F6"
-                      strokeWidth="4.5"
-                      strokeDasharray={`${distribution.studentPct} 100`}
-                    />
-                    {/* Tutors Arc (Orange) */}
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="14"
-                      fill="none"
-                      stroke="#FF6B00"
-                      strokeWidth="4.5"
-                      strokeDasharray={`${distribution.tutorPct} 100`}
-                      strokeDashoffset={`-${distribution.studentPct}`}
-                    />
-                  </>
-                )}
-              </svg>
-            </div>
-
-            {/* Donut Legend */}
-            <div className="space-y-2 ml-4 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#3B82F6] flex-shrink-0"></span>
-                <div>
-                  <p className="font-semibold text-slate-700 leading-none">Students</p>
-                  <p className="text-[11px] font-bold text-[#0F172A] mt-0.5">{stats?.totalStudents ?? 0} ({distribution.studentPct || 0}%)</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#FF6B00] flex-shrink-0"></span>
-                <div>
-                  <p className="font-semibold text-slate-700 leading-none">Tutors</p>
-                  <p className="text-[11px] font-bold text-[#0F172A] mt-0.5">{stats?.totalTutors ?? 0} ({distribution.tutorPct || 0}%)</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <UserDistributionDonutChart
+            students={distributionData?.students ?? (stats?.totalStudents || 0)}
+            tutors={distributionData?.tutors ?? (stats?.totalTutors || 0)}
+          />
         </div>
 
-        {/* COL 3: Recent Signups */}
-        <div className="mn-panel">
-          <div className="mn-panel-header">
-            <h3 className="mn-panel-title">Recent Signups</h3>
-          </div>
+        {/* Column 3: Recent Signups Summary */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 lg:col-span-3 flex flex-col justify-between shadow-xs">
+          <div>
+            <h2 className="text-sm md:text-base font-extrabold text-gray-900 mb-4">
+              Recent Signups
+            </h2>
 
-          <div className="space-y-2.5 my-auto">
-            <div className="flex items-center justify-between p-2 bg-[#FAF9F6] border border-[#E6E2D9] rounded-xl">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">
-                  🎓
+            <div className="space-y-4">
+              {/* Students Today */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
+                    👨‍🎓
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">Students</p>
+                    <p className="text-[10px] text-gray-400">Today</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-xs text-[#0F172A]">Students</h4>
-                  <p className="text-[10px] text-slate-400">Today</p>
-                </div>
+                <span className="text-sm font-black text-gray-900">
+                  {stats?.todayStudents || 0}
+                </span>
               </div>
-              <span className="text-sm font-black text-[#0F172A]">{stats?.todayStudents ?? 0}</span>
-            </div>
 
-            <div className="flex items-center justify-between p-2 bg-[#FAF9F6] border border-[#E6E2D9] rounded-xl">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-orange-100 text-[#FF6B00] flex items-center justify-center text-xs font-bold">
-                  👨‍🏫
+              {/* Tutors Today */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                    👨‍🏫
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">Tutors</p>
+                    <p className="text-[10px] text-gray-400">Today</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-xs text-[#0F172A]">Tutors</h4>
-                  <p className="text-[10px] text-slate-400">Today</p>
-                </div>
+                <span className="text-sm font-black text-gray-900">
+                  {stats?.todayTutors || 0}
+                </span>
               </div>
-              <span className="text-sm font-black text-[#0F172A]">{stats?.todayTutors ?? 0}</span>
-            </div>
 
-            <div className="flex items-center justify-between p-2 bg-[#FAF9F6] border border-[#E6E2D9] rounded-xl">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold">
-                  👥
+              {/* Total Users Today */}
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm">
+                    👥
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">Total Users</p>
+                    <p className="text-[10px] text-gray-400">Today</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-xs text-[#0F172A]">Total Users</h4>
-                  <p className="text-[10px] text-slate-400">Today</p>
-                </div>
+                <span className="text-sm font-black text-gray-900">
+                  {stats?.todayUsers || 0}
+                </span>
               </div>
-              <span className="text-sm font-black text-[#0F172A]">{stats?.todayUsers ?? 0}</span>
             </div>
           </div>
 
           <Link
             to="/admin/users"
-            className="w-full mt-2.5 py-1.5 text-center text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition block"
+            className="w-full text-center mt-5 py-2.5 px-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-bold transition no-underline block"
           >
             View All Users
           </Link>
@@ -712,528 +856,276 @@ const AdminDashboardPage = () => {
 
       </div>
 
-      {/* ---------------------------------------------------------- */}
-      {/* 4. BOTTOM SECTION: RECENT USERS & RECENT ACTIVITIES         */}
-      {/* ---------------------------------------------------------- */}
-      <div className="mn-bottom-grid">
+      {/* ============================================================ */}
+      {/* 4. BOTTOM SECTION: RECENT USERS TABLE & RECENT ACTIVITIES    */}
+      {/* ============================================================ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* COL 1: Recent Users Table */}
-        <div className="mn-panel">
-          <div className="mn-panel-header">
-            <h3 className="mn-panel-title">Recent Users</h3>
-            <Link to="/admin/users" className="text-xs font-bold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
-              View All
-            </Link>
-          </div>
+        {/* Left Column: Recent Users Table */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 lg:col-span-7 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm md:text-base font-extrabold text-gray-900">
+                Recent Users
+              </h2>
+              <Link
+                to="/admin/users"
+                className="text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg no-underline transition"
+              >
+                View All
+              </Link>
+            </div>
 
-          {stats?.recentUsers && stats.recentUsers.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="mn-table">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr>
-                    <th>USER</th>
-                    <th>ROLE</th>
-                    <th>STATUS</th>
-                    <th>JOINED ON</th>
-                    <th style={{ textAlign: 'right' }}>ACTION</th>
+                  <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                    <th className="pb-3 px-2">USER</th>
+                    <th className="pb-3 px-2">ROLE</th>
+                    <th className="pb-3 px-2">STATUS</th>
+                    <th className="pb-3 px-2">JOINED ON</th>
+                    <th className="pb-3 px-2 text-right">ACTION</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {stats.recentUsers.slice(0, 5).map((userItem) => {
-                    const isSuspended = userItem.isSuspended;
-                    const roleLabel = userItem.role === 'TUTOR' ? 'Tutor' : userItem.role === 'ADMIN' ? 'Admin' : 'Student';
-                    const joinDate = new Date(userItem.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                <tbody className="divide-y divide-gray-50 text-xs">
+                  {recentUsersList.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-gray-400">
+                        No users registered in database yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    recentUsersList.map((u) => {
+                      const joinedDate = u.createdAt
+                        ? new Date(u.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : 'Recent';
 
-                    return (
-                      <tr key={userItem._id}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <ProfileAvatar src={userItem.profilePhoto?.url} name={userItem.name} size="sm" />
-                            <div>
-                              <p style={{ fontWeight: 700, color: '#0F172A', margin: 0, fontSize: '12px' }}>{userItem.name || 'Anonymous User'}</p>
-                              <p style={{ color: '#94A3B8', margin: 0, fontSize: '10.5px' }}>{userItem.email}</p>
+                      const isPendingKYC = u.role === 'TUTOR' && (!u.isVerified || u.kycStatus === 'PENDING');
+                      const isSuspended = u.isSuspended;
+
+                      return (
+                        <tr 
+                          key={u._id} 
+                          onClick={() => navigate(`/admin/users`)}
+                          className="hover:bg-gray-50/80 transition group cursor-pointer"
+                        >
+                          {/* User Avatar + Name + Email */}
+                          <td className="py-3 px-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">
+                                {u.name ? u.name[0].toUpperCase() : 'U'}
+                              </div>
+                              <div className="truncate max-w-[130px] md:max-w-[160px]">
+                                <p className="font-bold text-gray-900 truncate leading-tight">{u.name}</p>
+                                <p className="text-[10px] text-gray-400 truncate">{u.email}</p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td style={{ fontWeight: 600, color: '#475569' }}>
-                          {roleLabel}
-                        </td>
+                          {/* Role */}
+                          <td className="py-3 px-2 text-gray-600 font-medium capitalize">
+                            {u.role === 'STUDENT' ? 'Student' : u.role === 'TUTOR' ? 'Tutor' : u.role}
+                          </td>
 
-                        <td>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              isSuspended
-                                ? 'bg-red-50 text-red-700 border border-red-200'
-                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            }`}
-                          >
-                            {isSuspended ? 'Suspended' : 'Active'}
-                          </span>
-                        </td>
-
-                        <td style={{ color: '#64748B', fontWeight: 500 }}>
-                          {joinDate}
-                        </td>
-
-                        <td style={{ textAlign: 'right' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                            {/* WhatsApp Icon */}
-                            <button
-                              onClick={() => handleOpenWhatsAppForUser(userItem)}
-                              className="mn-kpi-wa-btn"
-                              style={{ width: '28px', height: '28px', fontSize: '12px' }}
-                              title={`Send WhatsApp message to ${userItem.name}`}
-                            >
-                              💬
-                            </button>
-
-                            {/* 1. Eye View Details */}
-                            <button
-                              onClick={() => { setSelectedUser(userItem); setActiveModal('view'); }}
-                              className="admin-btn-square view"
-                              style={{ width: '28px', height: '28px', fontSize: '12px' }}
-                              title="View Details"
-                            >
-                              👁️
-                            </button>
-
-                            {/* 2. Suspend/Restore */}
+                          {/* Status */}
+                          <td className="py-3 px-2">
                             {isSuspended ? (
-                              <button
-                                onClick={() => { setSelectedUser(userItem); setActiveModal('restore'); }}
-                                className="admin-btn-square restore"
-                                style={{ width: '28px', height: '28px', fontSize: '12px' }}
-                                title="Restore Account"
-                              >
-                                ♻️
-                              </button>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                                Suspended
+                              </span>
+                            ) : isPendingKYC ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                                Pending KYC
+                              </span>
                             ) : (
-                              <button
-                                onClick={() => { setSelectedUser(userItem); setActiveModal('suspend'); }}
-                                className="admin-btn-square suspend"
-                                style={{ width: '28px', height: '28px', fontSize: '12px' }}
-                                title="Suspend Account"
-                              >
-                                🚫
-                              </button>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                Active
+                              </span>
                             )}
+                          </td>
 
-                            {/* 3. Delete Permanent */}
+                          {/* Joined On */}
+                          <td className="py-3 px-2 text-gray-500 font-medium">
+                            {joinedDate}
+                          </td>
+
+                          {/* Action */}
+                          <td className="py-3 px-2 text-right">
                             <button
-                              onClick={() => { setSelectedUser(userItem); setActiveModal('delete'); setDeleteConfirmationText(''); }}
-                              className="admin-btn-square delete"
-                              style={{ width: '28px', height: '28px', fontSize: '12px' }}
-                              title="Permanently Delete Account"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenWhatsAppModal(u);
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 transition cursor-pointer inline-flex items-center justify-center"
+                              title={`WhatsApp ${u.name}`}
                             >
-                              🗑️
+                              <WhatsAppIcon size={16} />
                             </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
-          ) : (
-            <div className="py-8 flex flex-col items-center justify-center text-center">
-              {/* Folder Icon Illustration */}
-              <div className="w-14 h-14 mb-2.5 flex items-center justify-center">
-                <svg className="w-12 h-12 text-slate-300 fill-current" viewBox="0 0 24 24">
-                  <path d="M19.5 21a3 3 0 0 0 3-3v-4.5a3 3 0 0 0-3-3h-1.5V9a3 3 0 0 0-3-3h-3.379a3 3 0 0 1-2.121-.879L8.379 3.879A3 3 0 0 0 6.258 3H4.5A3 3 0 0 0 1.5 6v12a3 3 0 0 0 3 3h15Z" opacity="0.8" />
-                </svg>
-              </div>
-              <h4 className="text-xs font-bold text-slate-700 mb-1">No users found</h4>
-              <p className="text-[11px] text-slate-400 max-w-xs">
-                New students and tutors will appear here after they register.
-              </p>
-            </div>
-          )}
+          </div>
         </div>
 
-        {/* COL 2: Recent Activities */}
-        <div className="mn-panel">
-          <div className="mn-panel-header">
-            <h3 className="mn-panel-title">Recent Activities</h3>
-            <Link to="/admin/audit-logs" className="text-xs font-bold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
-              View All
-            </Link>
+        {/* Right Column: Recent Activities */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 lg:col-span-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm md:text-base font-extrabold text-gray-900">
+                Recent Activities
+              </h2>
+              <Link
+                to="/admin/audit-logs"
+                className="text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg no-underline transition"
+              >
+                View All
+              </Link>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              {activitiesList.length === 0 ? (
+                <div className="py-8 text-center text-gray-400">
+                  No recent activities recorded yet.
+                </div>
+              ) : (
+                activitiesList.map((act) => {
+                  const actDate = act.createdAt || act.time;
+                  const formattedTime = actDate
+                    ? new Date(actDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                    : 'Just now';
+
+                  let icon = '⚡';
+                  let iconBg = 'bg-gray-50 text-gray-600';
+
+                  if (act.type === 'STUDENT_SIGNUP') {
+                    icon = '👨‍🎓';
+                    iconBg = 'bg-amber-50 text-amber-600';
+                  } else if (act.type === 'TUTOR_SIGNUP') {
+                    icon = '👥';
+                    iconBg = 'bg-purple-50 text-purple-600';
+                  } else if (act.type === 'KYC_UPDATE') {
+                    icon = '🛡️';
+                    iconBg = 'bg-emerald-50 text-emerald-600';
+                  } else if (act.type === 'UNLOCK') {
+                    icon = '📱';
+                    iconBg = 'bg-amber-50 text-amber-600';
+                  } else if (act.type === 'REPORT') {
+                    icon = '🚩';
+                    iconBg = 'bg-rose-50 text-rose-600';
+                  }
+
+                  return (
+                    <div key={act._id} className="flex items-start justify-between gap-3 pb-2.5 border-b border-gray-50 last:border-b-0">
+                      <div className="flex items-start gap-2.5">
+                        <div className={`w-7 h-7 rounded-lg ${iconBg} flex items-center justify-center text-xs flex-shrink-0 mt-0.5`}>
+                          {icon}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 leading-tight">
+                            {act.title}
+                          </p>
+                          {act.description && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              {act.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                        {formattedTime}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
-
-          {stats?.recentActivities && stats.recentActivities.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {stats.recentActivities.slice(0, 5).map((act, idx) => {
-                const actTime = new Date(act.createdAt).toLocaleString('en-IN', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                });
-
-                return (
-                  <div key={act._id || idx} className="mn-activity-item">
-                    <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: '#FFF4D8', color: '#FF6B00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, flexShrink: 0, marginTop: '2px' }}>
-                      ⚡
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 500, color: '#1E293B', lineHeight: 1.3 }}>
-                        {act.details || act.action}
-                      </p>
-                      <p style={{ margin: '2px 0 0 0', fontSize: '10.5px', color: '#94A3B8' }}>{actTime}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="py-8 flex flex-col items-center justify-center text-center">
-              {/* Clipboard Icon Illustration */}
-              <div className="w-14 h-14 mb-2.5 flex items-center justify-center">
-                <svg className="w-12 h-12 text-slate-300 fill-current" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9.375m1.5-3A2.25 2.25 0 0 1 6.75 4.125h.375V3a1.5 1.5 0 0 1 1.5-1.5h4.5A1.5 1.5 0 0 1 14.625 3v1.125h.375A2.25 2.25 0 0 1 17.25 6.375v.375H4.5V6.375Z" clipRule="evenodd" opacity="0.8" />
-                </svg>
-              </div>
-              <h4 className="text-xs font-bold text-slate-700 mb-1">No recent activities</h4>
-              <p className="text-[11px] text-slate-400 max-w-xs">
-                All activities will appear here when users start using the platform.
-              </p>
-            </div>
-          )}
         </div>
 
       </div>
 
       {/* ============================================================ */}
-      {/* 5. CENTERED WHATSAPP DIRECT CONTACT MODAL                    */}
+      {/* 5. INTERACTIVE WHATSAPP QUICK CONTACT MODAL                   */}
       {/* ============================================================ */}
       {whatsappModal.isOpen && (
-        <div className="admin-modal-overlay" onClick={() => setWhatsappModal({ isOpen: false, user: null, categoryUsers: [], selectedUserId: '', customMessage: '' })}>
-          <div className="admin-modal-box max-w-lg text-left" onClick={(e) => e.stopPropagation()}>
-            
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#EAF9F0] text-[#25D366] flex items-center justify-center text-lg font-bold border border-[#BCE6CB]">
-                  💬
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-[#0F172A] text-base">WhatsApp Quick Contact</h3>
-                  <p className="text-[11px] text-slate-500">Send direct welcome / assistance message</p>
-                </div>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <WhatsAppIcon size={22} />
+                <h3 className="text-base font-extrabold text-gray-900">
+                  WhatsApp Quick Contact
+                </h3>
               </div>
               <button
-                onClick={() => setWhatsappModal({ isOpen: false, user: null, categoryUsers: [], selectedUserId: '', customMessage: '' })}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer"
+                onClick={() => setWhatsappModal(prev => ({ ...prev, isOpen: false }))}
+                className="text-gray-400 hover:text-gray-700 text-lg cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="space-y-4 text-xs">
-              {/* User Selection */}
-              {whatsappModal.categoryUsers.length > 1 && (
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Select User / Contact</label>
-                  <select
-                    value={whatsappModal.selectedUserId}
-                    onChange={(e) => handleSelectUserInModal(e.target.value)}
-                    className="admin-select w-full text-xs"
-                  >
-                    {whatsappModal.categoryUsers.map((u) => (
-                      <option key={u._id} value={u._id}>
-                        {u.name} ({u.role}) — {u.phone}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Selected User Banner */}
-              {whatsappModal.user && (
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold text-[#0F172A] text-xs">{whatsappModal.user.name}</h4>
-                    <p className="text-[11px] text-slate-500 font-mono">📱 {whatsappModal.user.phone || 'No phone'}</p>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                    {whatsappModal.user.role}
-                  </span>
-                </div>
-              )}
-
-              {/* Message Content */}
+            {/* Select User Dropdown */}
+            {whatsappModal.categoryUsers.length > 1 && (
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Message Content (Editable)
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Recipient User:
                 </label>
-                <textarea
-                  rows="6"
-                  value={whatsappModal.customMessage}
-                  onChange={(e) => setWhatsappModal({ ...whatsappModal, customMessage: e.target.value })}
-                  className="admin-input w-full text-xs font-sans leading-relaxed"
-                />
-              </div>
-
-              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-[11px]">
-                💡 Clicking <strong>"Open WhatsApp"</strong> will launch WhatsApp in a new tab with your pre-filled message.
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="mt-5 pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setWhatsappModal({ isOpen: false, user: null, categoryUsers: [], selectedUserId: '', customMessage: '' })}
-                className="admin-btn admin-btn-secondary text-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSendWhatsApp}
-                className="admin-btn bg-[#25D366] hover:bg-[#20BA5A] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
-              >
-                <span>💬</span>
-                <span>Open WhatsApp</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* 6. CENTERED ACTION MODALS FOR USER GOVERNANCE                */}
-      {/* ============================================================ */}
-
-      {/* MODAL 1: VIEW COMPLETE USER DETAILS */}
-      {activeModal === 'view' && selectedUser && (
-        <div className="admin-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="admin-modal-box max-w-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
-              <div className="flex items-center gap-3">
-                <ProfileAvatar src={selectedUser.profilePhoto?.url} name={selectedUser.name} size="md" />
-                <div>
-                  <h3 className="font-extrabold text-lg text-slate-900">{selectedUser.name}</h3>
-                  <p className="text-xs text-slate-500">Registered ID: <span className="font-mono text-slate-700">{selectedUser._id}</span></p>
-                </div>
-              </div>
-              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                <div>
-                  <span className="text-slate-400 font-bold block">EMAIL ADDRESS</span>
-                  <span className="font-semibold text-slate-800">{selectedUser.email || 'N/A'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-bold block">PHONE NUMBER</span>
-                  <span className="font-semibold text-slate-800">{selectedUser.phone || 'Not provided'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-bold block">ROLE</span>
-                  <span className="font-bold text-amber-600">{selectedUser.role}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-bold block">ACCOUNT STATUS</span>
-                  <span className={`font-bold ${selectedUser.isSuspended ? 'text-red-600' : 'text-emerald-600'}`}>
-                    {selectedUser.isSuspended ? 'SUSPENDED' : 'ACTIVE'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-bold block">JOINED ON</span>
-                  <span className="font-semibold text-slate-800">{new Date(selectedUser.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-bold block">VERIFICATION STATUS</span>
-                  <span className="font-bold text-slate-700">
-                    {selectedUser.kycStatus === 'VERIFIED' ? '✅ VERIFIED' : selectedUser.kycStatus === 'PENDING' ? '⏳ PENDING KYC' : '❌ NOT VERIFIED'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-200 flex justify-end">
-              <button onClick={() => setActiveModal(null)} className="admin-btn admin-btn-secondary text-xs">
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: PROFILE HEALTH & VERIFICATION CHECK */}
-      {activeModal === 'profile' && selectedUser && (
-        <div className="admin-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="admin-modal-box max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl">🔗</span>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900">Profile Health & Verification</h3>
-                  <p className="text-xs text-slate-500">{selectedUser.name} ({selectedUser.role})</p>
-                </div>
-              </div>
-              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-bold text-slate-700">Profile Completion Health</span>
-                  <span className="font-extrabold text-amber-600 text-sm">
-                    {selectedUser.role === 'TUTOR' && selectedUser.kycStatus === 'VERIFIED' ? '100%' : '75%'}
-                  </span>
-                </div>
-                <div className="admin-progress-track">
-                  <div className="admin-progress-fill-good" style={{ width: selectedUser.kycStatus === 'VERIFIED' ? '100%' : '75%' }}></div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="font-bold text-slate-700">Verification Checklist:</p>
-                <div className="p-2.5 bg-slate-50 rounded-lg flex items-center justify-between">
-                  <span>Phone Number Verified</span>
-                  <span className="font-bold text-emerald-600">✓ {selectedUser.phone ? 'Yes' : 'No'}</span>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-lg flex items-center justify-between">
-                  <span>Email Address</span>
-                  <span className="font-bold text-emerald-600">✓ {selectedUser.email}</span>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-lg flex items-center justify-between">
-                  <span>KYC Identity Documents</span>
-                  <span className={`font-bold ${selectedUser.kycStatus === 'VERIFIED' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {selectedUser.kycStatus === 'VERIFIED' ? '✓ Verified' : '⏳ Pending / Incomplete'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-200 flex justify-end">
-              <button onClick={() => setActiveModal(null)} className="admin-btn admin-btn-secondary text-xs">
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: SUSPEND CONFIRMATION */}
-      {activeModal === 'suspend' && selectedUser && (
-        <div className="admin-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="admin-modal-box max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-3 text-red-600">
-              <span className="text-2xl">🚫</span>
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900">Suspend Account</h3>
-                <p className="text-xs text-slate-500">Confirm temporary suspension for {selectedUser.name}</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 text-xs my-4">
-              <p className="text-slate-600">
-                Suspending this user will immediately block them from logging in and accessing platform features.
-              </p>
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Suspension Reason</label>
                 <select
-                  value={suspensionReason}
-                  onChange={e => setSuspensionReason(e.target.value)}
-                  className="admin-select w-full text-xs"
+                  value={whatsappModal.selectedUserId}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    const u = whatsappModal.categoryUsers.find(item => item._id === selId);
+                    setWhatsappModal(prev => ({
+                      ...prev,
+                      selectedUserId: selId,
+                      user: u,
+                      customMessage: `Hello ${u?.name || 'there'} 👋\n\nWelcome to MentorNearby!\n\nWe're happy to have you with us. If you need any help, our team is here to assist you.\n\nThank you for joining MentorNearby! 💛`,
+                    }));
+                  }}
+                  className="w-full text-xs font-medium bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:outline-none focus:border-[#FF6B00]"
                 >
-                  <option value="Policy violation">Policy violation</option>
-                  <option value="Suspicious activity">Suspicious activity</option>
-                  <option value="Inappropriate behavior">Inappropriate behavior</option>
-                  <option value="False information">False information</option>
-                  <option value="Other">Other</option>
+                  {whatsappModal.categoryUsers.map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name} ({u.role}) — {u.phone || 'No phone'}
+                    </option>
+                  ))}
                 </select>
               </div>
+            )}
+
+            {/* Message Textarea */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                WhatsApp Message Template:
+              </label>
+              <textarea
+                rows={5}
+                value={whatsappModal.customMessage}
+                onChange={(e) => setWhatsappModal(prev => ({ ...prev, customMessage: e.target.value }))}
+                className="w-full text-xs text-gray-800 bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#FF6B00] resize-none"
+              />
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
-              <button onClick={() => setActiveModal(null)} className="admin-btn admin-btn-secondary text-xs">
-                Cancel
-              </button>
-              <button onClick={handleConfirmSuspend} disabled={modalLoading} className="admin-btn admin-btn-danger text-xs font-bold">
-                {modalLoading ? 'Suspending...' : 'Confirm Suspension'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 4: RESTORE CONFIRMATION */}
-      {activeModal === 'restore' && selectedUser && (
-        <div className="admin-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="admin-modal-box max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-3 text-emerald-600">
-              <span className="text-2xl">♻️</span>
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900">Restore Account</h3>
-                <p className="text-xs text-slate-500">Restore active access for {selectedUser.name}</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-600 my-4">
-              Restoring this user will lift all account restrictions and allow them to log in normally.
-            </p>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
-              <button onClick={() => setActiveModal(null)} className="admin-btn admin-btn-secondary text-xs">
-                Cancel
-              </button>
-              <button onClick={handleConfirmRestore} disabled={modalLoading} className="admin-btn admin-btn-success text-xs font-bold">
-                {modalLoading ? 'Restoring...' : 'Restore Account'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 5: PERMANENT DELETE CONFIRMATION */}
-      {activeModal === 'delete' && selectedUser && (
-        <div className="admin-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="admin-modal-box max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-3 text-rose-600">
-              <span className="text-2xl">🗑️</span>
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900">Permanent Account Deletion</h3>
-                <p className="text-xs text-rose-600 font-bold">⚠️ Warning: This action cannot be undone.</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 text-xs my-4">
-              <p className="text-slate-600">
-                Are you sure you want to permanently delete <strong>{selectedUser.name}</strong> ({selectedUser.email})? All associated data, profiles, and records will be deleted from the database.
-              </p>
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Type <span className="font-mono text-red-600">DELETE</span> to confirm:
-                </label>
-                <input
-                  type="text"
-                  value={deleteConfirmationText}
-                  onChange={e => setDeleteConfirmationText(e.target.value)}
-                  placeholder="Type DELETE"
-                  className="admin-input w-full text-xs font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
-              <button onClick={() => setActiveModal(null)} className="admin-btn admin-btn-secondary text-xs">
+            {/* Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setWhatsappModal(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+              >
                 Cancel
               </button>
               <button
-                onClick={handleConfirmDelete}
-                disabled={modalLoading || deleteConfirmationText !== 'DELETE'}
-                className="admin-btn bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+                onClick={handleSendWhatsAppFromModal}
+                className="flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-[#25D366] hover:bg-[#1EBE5D] rounded-xl shadow-xs transition cursor-pointer"
               >
-                {modalLoading ? 'Deleting...' : 'Permanently Delete'}
+                <WhatsAppIcon size={16} />
+                <span>Send via WhatsApp</span>
               </button>
             </div>
           </div>

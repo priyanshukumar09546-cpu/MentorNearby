@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -93,6 +93,20 @@ const RouteLoadingFallback = () => (
 );
 
 const App = () => {
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (user) {
+        const role = (user.role || '').toString().toLowerCase().trim();
+        if (window.location.pathname === '/tutor/dashboard' && (role === 'student' || role === 'parent')) {
+          window.location.replace('/student/dashboard');
+        } else if (window.location.pathname === '/student/dashboard' && role === 'tutor') {
+          window.location.replace('/tutor/dashboard');
+        }
+      }
+    } catch (_) {}
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>

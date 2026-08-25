@@ -40,16 +40,16 @@ export const AuthProvider = ({ children }) => {
       const payload = res.data?.user || res.data?.data?.user || res.data?.data;
       if (payload && (payload._id || payload.id || payload.email)) {
         const normalizedRole = (payload.role || 'student').toString().trim().toLowerCase();
-        const fixedUser = { ...payload, role: normalizedRole };
+        const cleanUser = { ...payload, role: normalizedRole };
         if (res.data?.data?.tutorProfile) {
-          fixedUser.tutorProfile = res.data.data.tutorProfile;
+          cleanUser.tutorProfile = res.data.data.tutorProfile;
         }
-        setUser(fixedUser);
+        setUser(cleanUser);
         try {
-          localStorage.setItem('user', JSON.stringify(fixedUser));
+          localStorage.setItem('user', JSON.stringify(cleanUser));
           localStorage.setItem('role', normalizedRole);
         } catch (_) {}
-        return fixedUser;
+        return cleanUser;
       } else {
         return null;
       }
@@ -58,10 +58,7 @@ export const AuthProvider = ({ children }) => {
       if (error.response?.status === 401) {
         setUser(null);
         try {
-          localStorage.removeItem('token');
-          localStorage.removeItem('mn_token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('role');
+          localStorage.clear();
         } catch (_) {}
       }
       return null;
@@ -75,11 +72,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (emailOrData, maybePassword) => {
-    let email, password, role;
+    localStorage.clear(); // CLEAR OLD STALE TOKENS/ROLES FIRST
+
+    let email, password, roleReq;
     if (typeof emailOrData === 'object' && emailOrData !== null) {
       email = emailOrData.email;
       password = emailOrData.password;
-      role = emailOrData.role;
+      roleReq = emailOrData.role;
     } else {
       email = emailOrData;
       password = maybePassword;
@@ -87,134 +86,132 @@ export const AuthProvider = ({ children }) => {
 
     try {
       setIsLoading(true);
-      const res = await apiLogin({ email, password, role });
+      const res = await apiLogin({ email, password, role: roleReq });
+      const user = res.data?.user || res.data?.data?.user;
       const token = res.data?.token || res.data?.data?.token;
-      const userPayload = res.data?.user || res.data?.data?.user;
 
-      if (token) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('mn_token', token);
+      if (!user) {
+        throw new Error(res.data?.message || 'Login failed - no user returned');
       }
-      if (userPayload) {
-        const normalizedRole = (userPayload.role || 'student').toString().trim().toLowerCase();
-        const fixedUser = { ...userPayload, role: normalizedRole };
-        setUser(fixedUser);
-        localStorage.setItem('user', JSON.stringify(fixedUser));
-        localStorage.setItem('role', normalizedRole);
-        if (token) {
-          localStorage.setItem('token', token);
-        }
 
-        if (normalizedRole === 'student' || normalizedRole === 'parent') {
-          window.location.href = '/student/dashboard';
-        } else if (normalizedRole === 'tutor') {
-          window.location.href = '/tutor/dashboard';
-        } else if (normalizedRole === 'admin') {
-          window.location.href = '/admin/dashboard';
-        } else {
-          window.location.href = '/student/dashboard';
-        }
+      const role = (user.role || 'student').toString().toLowerCase().trim();
+      const cleanUser = { ...user, role: role };
 
-        return { ...res, user: fixedUser, token };
+      localStorage.setItem('token', token || '');
+      localStorage.setItem('mn_token', token || '');
+      localStorage.setItem('user', JSON.stringify(cleanUser));
+      localStorage.setItem('role', role);
+
+      console.log("LOGIN SUCCESS ROLE:", role);
+
+      setUser(cleanUser);
+
+      if (role === 'student' || role === 'parent') {
+        window.location.replace('/student/dashboard');
+      } else if (role === 'tutor') {
+        window.location.replace('/tutor/dashboard');
+      } else if (role === 'admin') {
+        window.location.replace('/admin/dashboard');
+      } else {
+        window.location.replace('/student/dashboard');
       }
-      return res;
+
+      return { ...res, user: cleanUser, token };
     } finally {
       setIsLoading(false);
     }
   };
 
   const register = async (data) => {
+    localStorage.clear(); // CLEAR OLD STALE TOKENS/ROLES FIRST
+
     try {
       setIsLoading(true);
       const res = await apiRegister(data);
+      const user = res.data?.user || res.data?.data?.user;
       const token = res.data?.token || res.data?.data?.token;
-      const userPayload = res.data?.user || res.data?.data?.user;
 
-      if (token) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('mn_token', token);
+      if (!user) {
+        throw new Error(res.data?.message || 'Registration failed - no user returned');
       }
-      if (userPayload) {
-        const normalizedRole = (userPayload.role || data.role || 'student').toString().trim().toLowerCase();
-        const fixedUser = { ...userPayload, role: normalizedRole };
-        setUser(fixedUser);
-        localStorage.setItem('user', JSON.stringify(fixedUser));
-        localStorage.setItem('role', normalizedRole);
-        if (token) {
-          localStorage.setItem('token', token);
-        }
 
-        if (normalizedRole === 'student' || normalizedRole === 'parent') {
-          window.location.href = '/student/dashboard';
-        } else if (normalizedRole === 'tutor') {
-          window.location.href = '/tutor/dashboard';
-        } else if (normalizedRole === 'admin') {
-          window.location.href = '/admin/dashboard';
-        } else {
-          window.location.href = '/student/dashboard';
-        }
+      const role = (user.role || data.role || 'student').toString().toLowerCase().trim();
+      const cleanUser = { ...user, role: role };
 
-        return { ...res, user: fixedUser, token };
+      localStorage.setItem('token', token || '');
+      localStorage.setItem('mn_token', token || '');
+      localStorage.setItem('user', JSON.stringify(cleanUser));
+      localStorage.setItem('role', role);
+
+      console.log("REGISTER SUCCESS ROLE:", role);
+
+      setUser(cleanUser);
+
+      if (role === 'student' || role === 'parent') {
+        window.location.replace('/student/dashboard');
+      } else if (role === 'tutor') {
+        window.location.replace('/tutor/dashboard');
+      } else if (role === 'admin') {
+        window.location.replace('/admin/dashboard');
+      } else {
+        window.location.replace('/student/dashboard');
       }
-      return res;
+
+      return { ...res, user: cleanUser, token };
     } finally {
       setIsLoading(false);
     }
   };
 
   const googleLogin = async (data) => {
+    localStorage.clear(); // CLEAR OLD STALE TOKENS/ROLES FIRST
+
     try {
       setIsLoading(true);
       const res = await apiGoogleAuth(data);
+      const user = res.data?.user || res.data?.data?.user;
       const token = res.data?.token || res.data?.data?.token;
-      const userPayload = res.data?.user || res.data?.data?.user;
 
-      if (token) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('mn_token', token);
+      if (!user) {
+        throw new Error(res.data?.message || 'Google login failed - no user returned');
       }
-      if (userPayload) {
-        const normalizedRole = (userPayload.role || 'student').toString().trim().toLowerCase();
-        const fixedUser = { ...userPayload, role: normalizedRole };
-        setUser(fixedUser);
-        localStorage.setItem('user', JSON.stringify(fixedUser));
-        localStorage.setItem('role', normalizedRole);
-        if (token) {
-          localStorage.setItem('token', token);
-        }
 
-        if (normalizedRole === 'student' || normalizedRole === 'parent') {
-          window.location.href = '/student/dashboard';
-        } else if (normalizedRole === 'tutor') {
-          window.location.href = '/tutor/dashboard';
-        } else if (normalizedRole === 'admin') {
-          window.location.href = '/admin/dashboard';
-        } else {
-          window.location.href = '/student/dashboard';
-        }
+      const role = (user.role || 'student').toString().toLowerCase().trim();
+      const cleanUser = { ...user, role: role };
 
-        return { ...res, user: fixedUser, token };
+      localStorage.setItem('token', token || '');
+      localStorage.setItem('mn_token', token || '');
+      localStorage.setItem('user', JSON.stringify(cleanUser));
+      localStorage.setItem('role', role);
+
+      console.log("GOOGLE LOGIN SUCCESS ROLE:", role);
+
+      setUser(cleanUser);
+
+      if (role === 'student' || role === 'parent') {
+        window.location.replace('/student/dashboard');
+      } else if (role === 'tutor') {
+        window.location.replace('/tutor/dashboard');
+      } else if (role === 'admin') {
+        window.location.replace('/admin/dashboard');
+      } else {
+        window.location.replace('/student/dashboard');
       }
-      return res;
+
+      return { ...res, user: cleanUser, token };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = async () => {
+  const logout = () => {
     try {
-      await apiLogout();
+      apiLogout().catch(() => {});
     } catch (_) {}
-    finally {
-      setUser(null);
-      setIsLoading(false);
-      try {
-        localStorage.removeItem('token');
-        localStorage.removeItem('mn_token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('role');
-      } catch (_) {}
-    }
+    localStorage.clear();
+    setUser(null);
+    setIsLoading(false);
+    window.location.replace('/login');
   };
 
   return (

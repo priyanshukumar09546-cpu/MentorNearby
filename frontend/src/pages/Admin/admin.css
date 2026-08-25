@@ -103,11 +103,11 @@ body,
   left: 0 !important;
   top: 0 !important;
   bottom: 0 !important;
-  width: 260px !important;
+  width: 280px !important;
   height: 100vh !important;
-  background: linear-gradient(180deg, #FCFBF8 0%, #F5F3ED 100%) !important;
+  background: #FFFFFF !important;
   color: #172033 !important;
-  border-right: 1px solid #E7E2D8 !important;
+  border-right: 1px solid #E2E8F0 !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
@@ -344,10 +344,10 @@ body,
 
 /* Main Workspace Offset */
 .admin-main-wrapper {
-  margin-left: 260px !important;
+  margin-left: 280px !important;
   min-height: 100vh !important;
-  width: calc(100% - 260px) !important;
-  max-width: calc(100% - 260px) !important;
+  width: calc(100% - 280px) !important;
+  max-width: calc(100% - 280px) !important;
   display: flex !important;
   flex-direction: column !important;
   box-sizing: border-box !important;

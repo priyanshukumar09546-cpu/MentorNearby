@@ -1,6 +1,6 @@
 // ============================================================
 // components/admin/AdminLayout.jsx
-// Enterprise Admin Layout with Integrated Authentication Guard
+// MentorNearby Modern Clean Admin Layout — Responsive & Fixed 280px Sidebar
 // ============================================================
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -14,7 +14,6 @@ const AdminLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const searchInputRef = useRef(null);
@@ -45,11 +44,11 @@ const AdminLayout = ({ children }) => {
         { path: '/admin/users', label: 'Users Directory', icon: '👥' },
         { path: '/admin/students', label: 'Students Marketplace', icon: '👨‍🎓' },
         { path: '/admin/tutors', label: 'Tutors Marketplace', icon: '👨‍🏫' },
+        { path: '/admin/requests', label: 'Tutor Requests', icon: '📋' },
         { path: '/admin/courses', label: 'Courses & PYQs', icon: '🎓' },
         { path: '/admin/study-resources', label: 'Study Resources & Store', icon: '📖' },
         { path: '/admin/content', label: 'NCERT & Free Books', icon: '📚' },
         { path: '/admin/footer-content', label: 'Footer & CMS', icon: '📄' },
-        { path: '/admin/requests', label: 'Tutor Requests', icon: '📋' },
       ],
     },
     {
@@ -74,15 +73,13 @@ const AdminLayout = ({ children }) => {
       ],
     },
     {
-      group: 'SYSTEM',
+      group: 'ADMIN',
       items: [
         { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
         { path: '/admin/audit-logs', label: 'Audit Logs', icon: '📜' },
       ],
     },
   ];
-
-  const allNavItems = navGroups.flatMap(g => g.items);
 
   // Keyboard shortcut Ctrl + / listener
   useEffect(() => {
@@ -110,139 +107,160 @@ const AdminLayout = ({ children }) => {
   // Prevent flash of admin dashboard while checking auth
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#F7F5F0' }}>
+      <div className="flex justify-center items-center min-h-screen bg-[#F8FAFC]">
         <div className="spinner" style={{ width: '40px', height: '40px', borderColor: '#FED7AA', borderTopColor: '#FF6B00' }}></div>
       </div>
     );
   }
 
   // If not authenticated as ADMIN, render nothing while redirecting
-  if (!isAuthenticated || userRole !== 'ADMIN') {
+  if (!isAuthenticated && localRole !== 'ADMIN' && userRole !== 'ADMIN') {
     return null;
   }
 
-  const currentPage = allNavItems.find((item) => item.path === location.pathname) || {
-    label: 'Control Center',
-    icon: '👑',
-  };
-
   return (
-    <div className="admin-app-root admin-shell-container">
+    <div className="flex min-h-screen bg-[#f8fafc] text-gray-900 font-sans antialiased relative">
       
-      {/* Admin Sidebar Navigation */}
-      <aside className={`admin-sidebar ${collapsed ? 'admin-sidebar-collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
-        
-        {/* Sidebar Brand Header */}
-        <div className="p-5 border-b border-[#E7E2D8] bg-[#FCFBF8] flex-shrink-0">
+      {/* Mobile Drawer Overlay Backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 md:hidden backdrop-blur-xs transition-opacity"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ============================================================ */}
+      {/* SIDEBAR - Fixed 280px                                         */}
+      {/* ============================================================ */}
+      <aside
+        className={`w-[280px] fixed left-0 top-0 h-screen bg-white border-r border-gray-200 flex flex-col z-40 overflow-y-auto transition-transform duration-300 ease-in-out ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="p-5 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white">
           <Link to="/admin/dashboard" className="flex items-center gap-3 no-underline">
             <img
               src="/logo.png"
-              alt="MentorNearby Logo"
-              className="w-10 h-10 object-contain rounded-xl flex-shrink-0"
+              alt="MentorNearby"
+              className="h-10 max-h-10 w-auto object-contain flex-shrink-0"
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
             />
-            {!collapsed && (
-              <div className="flex flex-col">
-                <span className="text-base font-extrabold text-[#0F172A] tracking-tight leading-tight">
-                  Mentor<span className="text-[#FF6B00]">Nearby</span>
-                </span>
-                <span className="text-[9px] font-bold tracking-widest text-[#85857D] uppercase mt-0.5">
-                  ADMIN CONTROL CENTER
-                </span>
-              </div>
-            )}
+            <div className="flex flex-col">
+              <span className="text-base font-extrabold text-gray-900 tracking-tight leading-tight">
+                Mentor<span className="text-[#FF6B00]">Nearby</span>
+              </span>
+              <span className="text-[9px] font-bold tracking-widest text-gray-400 uppercase">
+                ADMIN CONTROL CENTER
+              </span>
+            </div>
           </Link>
+
+          {/* Mobile Close Icon */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="md:hidden text-gray-500 hover:text-gray-900 p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer"
+            aria-label="Close sidebar"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Navigation Item Groups (Independent Scroll) */}
-        <nav className="admin-sidebar-nav custom-scrollbar flex-1 overflow-y-auto">
+        {/* Sidebar Nav Items */}
+        <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
           {navGroups.map((grp) => (
-            <div key={grp.group} className="admin-nav-group">
-              {!collapsed && (
-                <div className="admin-nav-heading">{grp.group}</div>
-              )}
-              {grp.items.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMobileOpen(false)}
-                    className={`admin-nav-item ${isActive ? 'active' : ''}`}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <span className="admin-nav-icon">{item.icon}</span>
-                    {!collapsed && <span className="admin-nav-label">{item.label}</span>}
-                  </Link>
-                );
-              })}
+            <div key={grp.group}>
+              <p className="text-[11px] font-bold text-gray-400 tracking-widest mb-2.5 px-3 uppercase">
+                {grp.group}
+              </p>
+              <div className="space-y-1">
+                {grp.items.map((item) => {
+                  const isActive =
+                    location.pathname === item.path ||
+                    (item.path === '/admin/dashboard' && (location.pathname === '/admin' || location.pathname === '/admin/'));
+
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMobileOpen(false)}
+                      className={`px-3 py-2 rounded-lg flex items-center gap-3 text-sm font-medium transition no-underline ${
+                        isActive
+                          ? 'bg-[#fef9c3] text-amber-950 font-semibold border-l-4 border-amber-500 shadow-xs'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <span className="text-base flex-shrink-0">{item.icon}</span>
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </nav>
 
         {/* Sidebar User Footer */}
-        <div className="p-3 border-t border-[#E7E2D8] bg-[#FCFBF8] flex-shrink-0">
-          <div 
+        <div className="p-3 border-t border-gray-200 bg-gray-50/70 flex-shrink-0">
+          <div
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center justify-between p-2 rounded-xl hover:bg-[#F5F3ED] transition cursor-pointer"
+            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-white font-black flex items-center justify-center text-xs shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-white font-black flex items-center justify-center text-xs shadow-xs">
                 {user?.name ? user.name[0].toUpperCase() : 'A'}
               </div>
-              {!collapsed && (
-                <div className="text-left">
-                  <p className="text-xs font-black text-[#0F172A] uppercase leading-none">ADMIN</p>
-                  <p className="text-[10px] text-[#85857D] font-medium mt-0.5">Super Admin</p>
-                </div>
-              )}
+              <div className="text-left">
+                <p className="text-xs font-black text-gray-900 uppercase leading-none">ADMIN</p>
+                <p className="text-[10px] text-gray-500 font-medium mt-0.5">Super Admin</p>
+              </div>
             </div>
-            {!collapsed && <span className="text-slate-400 text-xs">›</span>}
+            <span className="text-gray-400 text-xs">›</span>
           </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="admin-main-wrapper">
+      {/* ============================================================ */}
+      {/* MAIN CONTENT WRAPPER - Offset 280px                           */}
+      {/* ============================================================ */}
+      <div className="flex-1 ml-0 md:ml-[280px] min-h-screen flex flex-col min-w-0 bg-[#f8fafc] overflow-x-hidden">
         
         {/* Top Navbar */}
-        <header className="bg-white border-b border-[#E7E2D8] px-6 py-3 flex items-center justify-between sticky top-0 z-30 flex-shrink-0">
-          <div className="flex items-center gap-4 flex-1">
+        <header className="bg-white border-b border-gray-200 px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 flex-shrink-0">
+          <div className="flex items-center gap-3 md:gap-4 flex-1">
+            {/* Hamburger Button for Mobile Drawer */}
             <button
-              onClick={() => {
-                if (window.innerWidth <= 768) {
-                  setMobileOpen(!mobileOpen);
-                } else {
-                  setCollapsed(!collapsed);
-                }
-              }}
-              className="text-slate-600 hover:text-slate-900 text-lg p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
-              title="Toggle Sidebar"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden text-gray-600 hover:text-gray-900 text-xl p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer"
+              title="Open Navigation"
+              aria-label="Open Navigation"
             >
               ☰
             </button>
 
             {/* Global Search Bar */}
-            <form onSubmit={handleSearchSubmit} className="relative w-full max-w-md">
-              <span className="absolute left-3.5 top-2.5 text-slate-400 text-xs">🔍</span>
+            <form onSubmit={handleSearchSubmit} className="relative w-full max-w-md hidden sm:block">
+              <span className="absolute left-3.5 top-2.5 text-gray-400 text-xs">🔍</span>
               <input
                 ref={searchInputRef}
                 type="text"
                 placeholder="Search users, tutors, courses..."
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition"
+                className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition"
               />
             </form>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Notifications Shortcut with Badge */}
+          {/* Right Header Badges & Profile */}
+          <div className="flex items-center gap-3 md:gap-4">
+            {/* Notifications Link */}
             <Link
               to="/admin/notifications"
-              className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
+              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition no-underline"
               title="Notifications"
             >
               <span className="text-base">🔔</span>
@@ -251,45 +269,45 @@ const AdminLayout = ({ children }) => {
               </span>
             </Link>
 
-            {/* User Profile Pill */}
+            {/* User Profile Pill & Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2.5 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-slate-50 border border-transparent hover:border-slate-200 transition cursor-pointer"
+                className="flex items-center gap-2.5 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-gray-50 border border-transparent hover:border-gray-200 transition cursor-pointer"
               >
-                <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-white font-black flex items-center justify-center text-xs shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-white font-black flex items-center justify-center text-xs shadow-xs">
                   {user?.name ? user.name[0].toUpperCase() : 'A'}
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-xs font-black text-[#0F172A] leading-none">Admin Super</p>
-                  <p className="text-[10px] text-[#85857D] font-medium mt-0.5">Super Admin</p>
+                  <p className="text-xs font-black text-gray-900 leading-none">Admin Super</p>
+                  <p className="text-[10px] text-gray-500 font-medium mt-0.5">Super Admin</p>
                 </div>
-                <span className="text-[10px] text-slate-400 ml-0.5">▼</span>
+                <span className="text-[10px] text-gray-400 ml-0.5">▼</span>
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E6E2D9] rounded-2xl shadow-xl p-2 z-50 animate-fadeIn">
-                  <div className="px-3 py-2 border-b border-[#F3F1EB] mb-1">
-                    <p className="text-xs font-bold text-[#1C1C1A]">{user?.name || 'Administrator'}</p>
-                    <p className="text-[10px] text-[#85857D] truncate">{user?.email || 'admin@mentornearby.com'}</p>
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50 animate-fadeIn">
+                  <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                    <p className="text-xs font-bold text-gray-900 truncate">{user?.name || 'Administrator'}</p>
+                    <p className="text-[10px] text-gray-500 truncate">{user?.email || 'admin@tutornearby.in'}</p>
                   </div>
                   <Link
                     to="/admin/settings"
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#575752] hover:bg-[#FAF9F6] hover:text-[#1C1C1A]"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900 no-underline"
                   >
                     ⚙️ Settings
                   </Link>
                   <Link
                     to="/admin/audit-logs"
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#575752] hover:bg-[#FAF9F6] hover:text-[#1C1C1A]"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900 no-underline"
                   >
                     📜 Audit Logs
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 font-bold mt-1 text-left cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 font-bold mt-1 text-left cursor-pointer border-none bg-transparent"
                   >
                     🚪 Logout Session
                   </button>
@@ -300,10 +318,9 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Main Content Body */}
-        <main className="admin-page-content">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden">
           {children}
         </main>
-
       </div>
 
     </div>

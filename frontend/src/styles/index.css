@@ -159,7 +159,8 @@ span,
 a,
 label {
   overflow-wrap: break-word;
-  word-break: break-word;
+  word-break: normal;
+  white-space: normal;
 }
 
 /* Universal Tag, Pill, & Chip Wrapping */

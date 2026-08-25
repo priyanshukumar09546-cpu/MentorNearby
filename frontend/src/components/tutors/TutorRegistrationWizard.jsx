@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { uploadPhoto, uploadDocument } from '../../api/upload';
+import { uploadPhoto, uploadDocument, uploadTutorId } from '../../api/upload';
+import PhotoCropModal from '../common/PhotoCropModal';
 import '../../pages/Auth/BecomeTutorPage.css';
 
 const POPULAR_SUBJECTS_LIST = [
@@ -25,6 +26,10 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
   const [step, setStep] = useState(1);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Profile Photo Cropper State
+  const [rawPhotoSrc, setRawPhotoSrc] = useState(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
 
   // Form State — 8 Steps Exact
   const [formData, setFormData] = useState({
@@ -70,6 +75,7 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
     identityProofType: 'Aadhaar Card',
     identityProofFile: null,
     identityProofFilename: '',
+    identityProofVerified: false,
     
     addressProofType: 'Aadhaar Card',
     addressProofFile: null,
@@ -86,54 +92,91 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingKycField, setUploadingKycField] = useState(null);
 
-  // Handle Photo Upload
-  const handlePhotoUpload = async (e) => {
+  // 1. Trigger Photo Selection and Open Interactive Cropper Modal
+  const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg('Profile photo must be less than 5MB.');
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg('Profile photo must be less than 10MB.');
+      e.target.value = '';
       return;
     }
+    setErrorMsg('');
+    const reader = new FileReader();
+    reader.onload = () => {
+      setRawPhotoSrc(reader.result);
+      setIsCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  // 2. Handle Cropped Image from PhotoCropModal (Canvas 400x400 output)
+  const handleCropComplete = async (croppedData) => {
     setUploadingPhoto(true);
     setErrorMsg('');
     try {
-      const res = await uploadPhoto(file);
-      const url = res.data?.data?.url || res.data?.url || URL.createObjectURL(file);
+      const res = await uploadPhoto(croppedData.file);
+      const url = res.data?.data?.url || res.data?.url || croppedData.url;
       setFormData(prev => ({ ...prev, profilePhotoUrl: url }));
-    } catch (_) {
-      const localUrl = URL.createObjectURL(file);
-      setFormData(prev => ({ ...prev, profilePhotoUrl: localUrl }));
+    } catch (err) {
+      console.warn('Direct upload failed, using local cropped url:', err);
+      setFormData(prev => ({ ...prev, profilePhotoUrl: croppedData.url }));
     } finally {
       setUploadingPhoto(false);
+      setIsCropModalOpen(false);
+      setRawPhotoSrc(null);
     }
   };
 
-  // Handle Document Upload
+  // 3. Handle Document Upload with OCR & Fake ID Detection
   const handleDocumentUpload = async (field, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // File size filter (50KB to 5MB)
+    if (file.size < 50 * 1024) {
+      setErrorMsg('File size bohot chhota hai (kam se kam 50KB hona chahiye). Saaf aur clear photo upload karein.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('File size 5MB se zyada hai. Kripya 5MB se kam ki photo upload karein.');
+      e.target.value = '';
+      return;
+    }
+
     setUploadingKycField(field);
     setErrorMsg('');
+
+    const docType = field === 'identity'
+      ? formData.identityProofType
+      : (field === 'address' ? formData.addressProofType : formData.qualificationProofType);
+
     try {
-      const res = await uploadDocument(file);
+      const res = await uploadDocument(file, docType);
       const url = res.data?.data?.url || res.data?.url || '';
       if (field === 'identity') {
-        setFormData(prev => ({ ...prev, identityProofFile: url || file, identityProofFilename: file.name }));
+        setFormData(prev => ({
+          ...prev,
+          identityProofFile: url || file,
+          identityProofFilename: file.name,
+          identityProofVerified: true
+        }));
       } else if (field === 'address') {
         setFormData(prev => ({ ...prev, addressProofFile: url || file, addressProofFilename: file.name }));
       } else if (field === 'qualification') {
         setFormData(prev => ({ ...prev, qualificationProofFile: url || file, qualificationProofFilename: file.name }));
       }
-    } catch (_) {
+    } catch (err) {
+      const backendMsg = err.response?.data?.message || err.response?.data?.error || 'Document verify karne me error aaya. Kripya saaf photo upload karein.';
+      setErrorMsg(backendMsg);
       if (field === 'identity') {
-        setFormData(prev => ({ ...prev, identityProofFile: file, identityProofFilename: file.name }));
-      } else if (field === 'address') {
-        setFormData(prev => ({ ...prev, addressProofFile: file, addressProofFilename: file.name }));
-      } else if (field === 'qualification') {
-        setFormData(prev => ({ ...prev, qualificationProofFile: file, qualificationProofFilename: file.name }));
+        setFormData(prev => ({ ...prev, identityProofFile: null, identityProofFilename: '', identityProofVerified: false }));
       }
     } finally {
       setUploadingKycField(null);
+      e.target.value = '';
     }
   };
 
@@ -372,20 +415,61 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
           {/* ============================================================ */}
           {step === 1 && (
             <div className="mn-step-body">
-              <div className="mn-step-intro-row">
-                <p className="mn-step-intro-text">Let's start with your basic account details.</p>
-                <div className="mn-avatar-upload-preview">
-                  {formData.profilePhotoUrl ? (
-                    <img src={formData.profilePhotoUrl} alt="Avatar" className="mn-avatar-img-preview" />
+              <div className="mn-step-intro-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                <div>
+                  <p className="mn-step-intro-text" style={{ margin: 0 }}>
+                    Let's start with your basic account details.
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#D97706', marginTop: '4px', fontWeight: '600' }}>
+                    💡 Face ko beech me rakhein, clear background
+                  </p>
+                </div>
+                <div className="mn-avatar-upload-preview" style={{ flexShrink: 0, position: 'relative', width: '84px', height: '84px', borderRadius: '50%', border: '2.5px solid #2563EB', overflow: 'hidden', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(37, 99, 235, 0.15)' }}>
+                  {uploadingPhoto ? (
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', textAlign: 'center' }}>
+                      ⏳ Saving...
+                    </div>
+                  ) : formData.profilePhotoUrl ? (
+                    <img
+                      src={formData.profilePhotoUrl}
+                      alt="Avatar"
+                      className="mn-avatar-img-preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
                   ) : (
-                    <span className="mn-avatar-placeholder-icon">👤</span>
+                    <span className="mn-avatar-placeholder-icon" style={{ fontSize: '36px' }}>👤</span>
                   )}
-                  <label className="mn-avatar-camera-btn" title="Upload Photo">
+                  <label
+                    className="mn-avatar-camera-btn"
+                    title="Upload & Adjust Photo"
+                    style={{
+                      position: 'absolute',
+                      bottom: '2px',
+                      right: '2px',
+                      background: '#2563EB',
+                      color: '#FFF',
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                    }}
+                  >
                     📷
-                    <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/jpg"
+                      onChange={handlePhotoSelect}
+                      style={{ display: 'none' }}
+                    />
                   </label>
                 </div>
               </div>
+
 
               <div className="mn-form-group">
                 <label className="mn-form-lbl">Full Name <span className="mn-req">*</span></label>
@@ -840,12 +924,22 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
           {/* ============================================================ */}
           {step === 7 && (
             <div className="mn-step-body">
-              <p className="mn-step-intro-text">Upload verification documents for your trusted tutor badge.</p>
+              <p className="mn-step-intro-text">
+                Upload verification documents for your trusted tutor badge.
+              </p>
 
-              {/* Identity Proof */}
+              {/* Identity Proof with OCR Fraud Protection */}
               <div className="mn-form-group">
-                <label className="mn-form-lbl">Identity Proof <span className="mn-req">*</span></label>
-                <div className="mn-kyc-upload-row">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label className="mn-form-lbl" style={{ margin: 0 }}>
+                    Identity Proof (Aadhaar / PAN) <span className="mn-req">*</span>
+                  </label>
+                  <span style={{ fontSize: '11px', color: '#10B981', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    🛡️ Anti-Fake ID Protected
+                  </span>
+                </div>
+
+                <div className="mn-kyc-upload-row" style={{ marginTop: '6px' }}>
                   <select
                     className="mn-form-select mn-kyc-type-select"
                     value={formData.identityProofType}
@@ -857,15 +951,43 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
                     <option value="Voter ID">Voter ID</option>
                   </select>
 
-                  <label className="mn-kyc-upload-btn">
-                    <span>📤 Upload Document</span>
-                    <input type="file" accept="image/*,application/pdf" onChange={(e) => handleDocumentUpload('identity', e)} style={{ display: 'none' }} />
+                  <label className="mn-kyc-upload-btn" style={{ cursor: uploadingKycField ? 'not-allowed' : 'pointer' }}>
+                    <span>{uploadingKycField === 'identity' ? '⏳ Verifying ID...' : '📤 Upload Document'}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/jpg,application/pdf"
+                      disabled={!!uploadingKycField}
+                      onChange={(e) => handleDocumentUpload('identity', e)}
+                      style={{ display: 'none' }}
+                    />
                   </label>
                 </div>
+
+                {uploadingKycField === 'identity' && (
+                  <div style={{ padding: '8px 12px', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '8px', color: '#B45309', fontSize: '12px', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🔍</span>
+                    <span>Document authenticity check chal raha hai (OCR Scanning)...</span>
+                  </div>
+                )}
+
                 {formData.identityProofFilename && (
-                  <div className="mn-kyc-file-badge">
-                    <span>📄 {formData.identityProofFilename}</span>
-                    <span className="mn-file-check">✓</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: '10px', marginTop: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '18px' }}>📄</span>
+                      <div>
+                        <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#166534' }}>
+                          {formData.identityProofFilename}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#15803D', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>🔒 Stored in /secure-ids</span>
+                          <span>•</span>
+                          <span style={{ background: '#DCFCE7', padding: '1px 5px', borderRadius: '4px' }}>
+                            PENDING MANUAL REVIEW
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ color: '#16A34A', fontWeight: '800', fontSize: '13px' }}>✓ Verified</span>
                   </div>
                 )}
               </div>
@@ -885,9 +1007,15 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
                     <option value="Rent Agreement">Rent Agreement</option>
                   </select>
 
-                  <label className="mn-kyc-upload-btn">
-                    <span>📤 Upload Document</span>
-                    <input type="file" accept="image/*,application/pdf" onChange={(e) => handleDocumentUpload('address', e)} style={{ display: 'none' }} />
+                  <label className="mn-kyc-upload-btn" style={{ cursor: uploadingKycField ? 'not-allowed' : 'pointer' }}>
+                    <span>{uploadingKycField === 'address' ? '⏳ Uploading...' : '📤 Upload Document'}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/jpg,application/pdf"
+                      disabled={!!uploadingKycField}
+                      onChange={(e) => handleDocumentUpload('address', e)}
+                      style={{ display: 'none' }}
+                    />
                   </label>
                 </div>
                 {formData.addressProofFilename && (
@@ -912,9 +1040,15 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
                     <option value="College ID">College ID</option>
                   </select>
 
-                  <label className="mn-kyc-upload-btn">
-                    <span>📤 Upload Document</span>
-                    <input type="file" accept="image/*,application/pdf" onChange={(e) => handleDocumentUpload('qualification', e)} style={{ display: 'none' }} />
+                  <label className="mn-kyc-upload-btn" style={{ cursor: uploadingKycField ? 'not-allowed' : 'pointer' }}>
+                    <span>{uploadingKycField === 'qualification' ? '⏳ Uploading...' : '📤 Upload Document'}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/jpg,application/pdf"
+                      disabled={!!uploadingKycField}
+                      onChange={(e) => handleDocumentUpload('qualification', e)}
+                      style={{ display: 'none' }}
+                    />
                   </label>
                 </div>
                 {formData.qualificationProofFilename && (
@@ -926,7 +1060,7 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
               </div>
 
               <p className="mn-kyc-security-note">
-                🔒 Note: All documents are securely stored and encrypted for identity verification only.
+                🔒 Note: All documents are stored in private encrypted storage (/secure-ids). Documents are only used for 100% manual review and are NEVER made public.
               </p>
 
               <div className="mn-step-btn-row">
@@ -939,6 +1073,7 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
               </div>
             </div>
           )}
+
 
           {/* ============================================================ */}
           {/* STEP 8: REVIEW & SUBMIT                                      */}
@@ -1094,9 +1229,21 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
           </div>
         </div>
 
+        {/* Profile Photo Interactive Cropper Modal */}
+        <PhotoCropModal
+          isOpen={isCropModalOpen}
+          imageSrc={rawPhotoSrc}
+          onClose={() => {
+            setIsCropModalOpen(false);
+            setRawPhotoSrc(null);
+          }}
+          onCropComplete={handleCropComplete}
+        />
+
       </div>
     </div>
   );
 };
 
 export default TutorRegistrationWizard;
+

@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { calculateTutorCompletion } from '../../utils/profileCompletion';
 import client from '../../api/client';
+import PhotoCropModal from '../../components/common/PhotoCropModal';
 import './EditTutorProfile.css';
 
 const EditTutorProfilePage = () => {
@@ -23,8 +24,13 @@ const EditTutorProfilePage = () => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [availabilityExpanded, setAvailabilityExpanded] = useState(false);
 
+  // Photo Crop Modal State
+  const [rawCropSrc, setRawCropSrc] = useState(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
+
   // Active Edit Modal ('about' | 'experience' | 'subjects' | 'classes' | 'languages' | 'modes' | 'availability' | null)
   const [activeModal, setActiveModal] = useState(null);
+
 
   // Form States
   const [aboutForm, setAboutForm] = useState({
@@ -136,15 +142,25 @@ const EditTutorProfilePage = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const handlePhotoUpload = async (e) => {
+  const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) return showToast('Please upload a valid image', 'error');
-    if (file.size > 5 * 1024 * 1024) return showToast('Image size must be less than 5MB', 'error');
+    if (file.size > 10 * 1024 * 1024) return showToast('Image size must be less than 10MB', 'error');
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setRawCropSrc(reader.result);
+      setIsCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCropComplete = async (croppedData) => {
     setUploadingPhoto(true);
     const formData = new FormData();
-    formData.append('photo', file);
+    formData.append('photo', croppedData.file);
 
     try {
       const uploadRes = await client.post('/upload/photo', formData, {
@@ -157,14 +173,16 @@ const EditTutorProfilePage = () => {
       await updateTutorProfile({ profilePhoto: { url: photoUrl, publicId } });
       await fetchProfile();
       await refreshUser();
-      showToast('Profile photo updated successfully!', 'success');
+      showToast('Profile photo updated & saved!', 'success');
     } catch (error) {
       showToast('Failed to upload photo', 'error');
     } finally {
       setUploadingPhoto(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setIsCropOpen(false);
+      setRawCropSrc(null);
     }
   };
+
 
   const handleVideoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -1657,8 +1675,20 @@ const EditTutorProfilePage = () => {
         </div>
       )}
 
+      {/* Interactive Profile Photo Cropper Modal */}
+      <PhotoCropModal
+        isOpen={isCropOpen}
+        imageSrc={rawCropSrc}
+        onClose={() => {
+          setIsCropOpen(false);
+          setRawCropSrc(null);
+        }}
+        onCropComplete={handleCropComplete}
+      />
+
     </div>
   );
 };
+
 
 export default EditTutorProfilePage;

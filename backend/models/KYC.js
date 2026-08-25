@@ -11,9 +11,28 @@ const KYCSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: 'TutorProfile'
   },
+  kycMode: {
+    type: String,
+    enum: ['DIGILOCKER', 'MANUAL'],
+    default: 'MANUAL'
+  },
+  digilockerVerified: {
+    type: Boolean,
+    default: false
+  },
+  digilockerData: {
+    name: String,
+    last4: String,
+    verifiedAt: Date,
+    source: {
+      type: String,
+      default: 'DIGILOCKER_UIDAI'
+    }
+  },
+  selfieUrl: String,
   status: {
     type: String,
-    enum: ['PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'RESUBMISSION_REQUIRED'],
+    enum: ['NOT_SUBMITTED', 'PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'RESUBMISSION_REQUIRED', 'PENDING_MANUAL_REVIEW'],
     default: 'PENDING'
   },
   submittedAt: {
@@ -57,5 +76,6 @@ const KYCSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
 
 module.exports = mongoose.model('KYC', KYCSchema);

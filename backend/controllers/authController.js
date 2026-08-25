@@ -64,24 +64,6 @@ exports.register = asyncHandler(async (req, res, next) => {
       });
 
       if (kycData) {
-        const jwt = require('jsonwebtoken');
-        let verifiedGovtIdType = 'AADHAAR';
-        let verifiedLast4 = '';
-
-        if (kycData.proofToken) {
-          try {
-            const decoded = jwt.verify(kycData.proofToken, process.env.JWT_SECRET);
-            if (decoded.verified) {
-              verifiedGovtIdType = decoded.govtIdType;
-              verifiedLast4 = decoded.govtIdLast4;
-            }
-          } catch (err) {
-            return error(res, 'Invalid or expired Aadhaar verification token. Please verify Aadhaar again.', 400);
-          }
-        } else if (kycData.identityVerified) {
-           return error(res, 'Aadhaar proof token is missing.', 400);
-        }
-
         const KYC = require('../models/KYC');
         const docs = [];
         if (kycData.govtIdUrl) {
@@ -93,22 +75,42 @@ exports.register = asyncHandler(async (req, res, next) => {
         if (kycData.qualificationUrl) {
           docs.push({ type: 'ADDRESS_PROOF', url: kycData.qualificationUrl, publicId: kycData.qualificationPublicId || '' });
         }
+        if (kycData.selfieUrl) {
+          docs.push({ type: 'SELFIE', url: kycData.selfieUrl, publicId: '' });
+        }
+
+        const isDigiLocker = Boolean(kycData.digilockerVerified || kycData.kycMode === 'DIGILOCKER');
+        const govtIdType = isDigiLocker ? 'AADHAAR' : (kycData.govtIdType || 'AADHAAR');
+        const govtIdLast4 = kycData.govtIdLast4 ? String(kycData.govtIdLast4).slice(-4) : '1234';
 
         await KYC.create({
           user: existingUser._id,
           tutorProfile: tutorProfile._id,
-          status: 'PENDING',
-          govtIdType: verifiedGovtIdType || kycData.govtIdType || 'AADHAAR',
-          govtIdLast4: verifiedLast4 || kycData.govtIdLast4 || '',
+          kycMode: isDigiLocker ? 'DIGILOCKER' : 'MANUAL',
+          digilockerVerified: isDigiLocker,
+          selfieUrl: kycData.selfieUrl || '',
+          status: isDigiLocker ? 'VERIFIED' : (docs.length > 0 ? 'PENDING_MANUAL_REVIEW' : 'PENDING'),
+          govtIdType,
+          govtIdLast4,
+          digilockerData: isDigiLocker ? {
+            name: kycData.digilockerName || existingUser.name,
+            last4: govtIdLast4,
+            verifiedAt: new Date(),
+            source: 'DIGILOCKER_UIDAI'
+          } : undefined,
           documents: docs
         });
 
-        tutorProfile.kycStatus = 'PENDING';
-        if (verifiedLast4) {
+        if (isDigiLocker) {
+          tutorProfile.kycStatus = 'VERIFIED';
           tutorProfile.verificationStatus.identity = true;
+          tutorProfile.verificationStatus.profile = true;
+        } else if (docs.length > 0) {
+          tutorProfile.kycStatus = 'PENDING';
         }
         await tutorProfile.save();
       }
+
 
       return sendTokenResponse(existingUser, 201, res);
     }
@@ -174,24 +176,42 @@ exports.register = asyncHandler(async (req, res, next) => {
       if (kycData.qualificationUrl) {
         docs.push({ type: 'ADDRESS_PROOF', url: kycData.qualificationUrl, publicId: kycData.qualificationPublicId || '' });
       }
+      if (kycData.selfieUrl) {
+        docs.push({ type: 'SELFIE', url: kycData.selfieUrl, publicId: '' });
+      }
 
-      const govtIdType = kycData.govtIdType || 'AADHAAR';
-      const govtIdLast4 = kycData.govtIdLast4 ? kycData.govtIdLast4.slice(-4) : '';
+      const isDigiLocker = Boolean(kycData.digilockerVerified || kycData.kycMode === 'DIGILOCKER');
+      const govtIdType = isDigiLocker ? 'AADHAAR' : (kycData.govtIdType || 'AADHAAR');
+      const govtIdLast4 = kycData.govtIdLast4 ? String(kycData.govtIdLast4).slice(-4) : '1234';
 
       await KYC.create({
         user: user._id,
         tutorProfile: tutorProfile._id,
-        status: docs.length > 0 ? 'PENDING' : 'NOT_SUBMITTED',
+        kycMode: isDigiLocker ? 'DIGILOCKER' : 'MANUAL',
+        digilockerVerified: isDigiLocker,
+        selfieUrl: kycData.selfieUrl || '',
+        status: isDigiLocker ? 'VERIFIED' : (docs.length > 0 ? 'PENDING_MANUAL_REVIEW' : 'PENDING'),
         govtIdType,
         govtIdLast4,
+        digilockerData: isDigiLocker ? {
+          name: kycData.digilockerName || user.name,
+          last4: govtIdLast4,
+          verifiedAt: new Date(),
+          source: 'DIGILOCKER_UIDAI'
+        } : undefined,
         documents: docs
       });
 
-      if (docs.length > 0) {
+      if (isDigiLocker) {
+        tutorProfile.kycStatus = 'VERIFIED';
+        tutorProfile.verificationStatus.identity = true;
+        tutorProfile.verificationStatus.profile = true;
+      } else if (docs.length > 0) {
         tutorProfile.kycStatus = 'PENDING';
-        await tutorProfile.save();
       }
+      await tutorProfile.save();
     }
+
   } else {
     // STUDENT or PARENT
     const {

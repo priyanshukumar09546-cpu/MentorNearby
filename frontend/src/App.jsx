@@ -160,6 +160,7 @@ const App = () => {
                             
                             {/* 🧑‍🏫 Tutor Protected Routes */}
                             <Route path="/tutor/dashboard" element={<ProtectedRoute roles={['TUTOR']}><TutorDashboardPage /></ProtectedRoute>} />
+                            <Route path="/tutor/dashboard/*" element={<ProtectedRoute roles={['TUTOR']}><TutorDashboardPage /></ProtectedRoute>} />
                             <Route path="/mentor/dashboard" element={<ProtectedRoute roles={['TUTOR']}><TutorDashboardPage /></ProtectedRoute>} />
                             <Route path="/tutor/requests" element={<ProtectedRoute roles={['TUTOR']}><TutorRequestsPage /></ProtectedRoute>} />
                             <Route path="/tutor/profile" element={<ProtectedRoute roles={['TUTOR']}><EditTutorProfilePage /></ProtectedRoute>} />
@@ -234,7 +235,10 @@ const App = () => {
 
                             {/* Student Dashboard */}
                             <Route path="/dashboard" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/dashboard/*" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
                             <Route path="/student/dashboard" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/student/dashboard/*" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/student/profile" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><ProfilePage /></ProtectedRoute>} />
                             <Route path="/purchases" element={<ProtectedRoute><StudentPurchasesPage /></ProtectedRoute>} />
                             <Route path="/saved-tutors" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><SavedTutorsPage /></ProtectedRoute>} />
                             <Route path="/post-requirement" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><PostRequirementPage /></ProtectedRoute>} />

@@ -20,7 +20,6 @@ export const AuthProvider = ({ children }) => {
   });
 
   const [isLoading, setIsLoading] = useState(() => {
-    // If we already restored a user from localStorage, not in hard loading state
     const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
     return !!token;
   });
@@ -77,27 +76,47 @@ export const AuthProvider = ({ children }) => {
     refreshUser();
   }, []);
 
-  const login = async (data) => {
+  const login = async (emailOrData, maybePassword) => {
+    let email, password, role;
+    if (typeof emailOrData === 'object' && emailOrData !== null) {
+      email = emailOrData.email;
+      password = emailOrData.password;
+      role = emailOrData.role;
+    } else {
+      email = emailOrData;
+      password = maybePassword;
+    }
+
     try {
-      const res = await apiLogin(data);
+      setIsLoading(true);
+      const res = await apiLogin({ email, password, role });
       const token = res.data?.token || res.data?.data?.token;
       const userPayload = res.data?.user || res.data?.data?.user;
+
       if (token) {
-        try {
-          localStorage.setItem('token', token);
-          localStorage.setItem('mn_token', token);
-        } catch (_) {}
+        localStorage.setItem('token', token);
+        localStorage.setItem('mn_token', token);
       }
       if (userPayload) {
-        try {
-          localStorage.setItem('user', JSON.stringify(userPayload));
-          if (userPayload.role) {
-            localStorage.setItem('role', userPayload.role.toString().toLowerCase());
-          }
-        } catch (_) {}
+        const rawRole = (userPayload.role || 'STUDENT').toString().trim().toLowerCase();
+        const userObj = { ...userPayload, role: rawRole.toUpperCase() };
+        setUser(userObj);
+        localStorage.setItem('user', JSON.stringify(userObj));
+        localStorage.setItem('role', rawRole);
+
+        if (rawRole === 'student' || rawRole === 'parent') {
+          window.location.href = '/student/dashboard';
+        } else if (rawRole === 'tutor') {
+          window.location.href = '/tutor/dashboard';
+        } else if (rawRole === 'admin') {
+          window.location.href = '/admin/dashboard';
+        } else {
+          window.location.href = '/student/dashboard';
+        }
+
+        return { ...res, user: userObj, token };
       }
-      const refreshedUser = await refreshUser();
-      return { ...res, user: refreshedUser || userPayload };
+      return res;
     } finally {
       setIsLoading(false);
     }
@@ -105,25 +124,35 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (data) => {
     try {
+      setIsLoading(true);
       const res = await apiRegister(data);
       const token = res.data?.token || res.data?.data?.token;
       const userPayload = res.data?.user || res.data?.data?.user;
+
       if (token) {
-        try {
-          localStorage.setItem('token', token);
-          localStorage.setItem('mn_token', token);
-        } catch (_) {}
+        localStorage.setItem('token', token);
+        localStorage.setItem('mn_token', token);
       }
       if (userPayload) {
-        try {
-          localStorage.setItem('user', JSON.stringify(userPayload));
-          if (userPayload.role) {
-            localStorage.setItem('role', userPayload.role.toString().toLowerCase());
-          }
-        } catch (_) {}
+        const rawRole = (userPayload.role || data.role || 'STUDENT').toString().trim().toLowerCase();
+        const userObj = { ...userPayload, role: rawRole.toUpperCase() };
+        setUser(userObj);
+        localStorage.setItem('user', JSON.stringify(userObj));
+        localStorage.setItem('role', rawRole);
+
+        if (rawRole === 'student' || rawRole === 'parent') {
+          window.location.href = '/student/dashboard';
+        } else if (rawRole === 'tutor') {
+          window.location.href = '/tutor/dashboard';
+        } else if (rawRole === 'admin') {
+          window.location.href = '/admin/dashboard';
+        } else {
+          window.location.href = '/student/dashboard';
+        }
+
+        return { ...res, user: userObj, token };
       }
-      const refreshedUser = await refreshUser();
-      return { ...res, user: refreshedUser || userPayload };
+      return res;
     } finally {
       setIsLoading(false);
     }
@@ -131,25 +160,35 @@ export const AuthProvider = ({ children }) => {
 
   const googleLogin = async (data) => {
     try {
+      setIsLoading(true);
       const res = await apiGoogleAuth(data);
       const token = res.data?.token || res.data?.data?.token;
       const userPayload = res.data?.user || res.data?.data?.user;
+
       if (token) {
-        try {
-          localStorage.setItem('token', token);
-          localStorage.setItem('mn_token', token);
-        } catch (_) {}
+        localStorage.setItem('token', token);
+        localStorage.setItem('mn_token', token);
       }
       if (userPayload) {
-        try {
-          localStorage.setItem('user', JSON.stringify(userPayload));
-          if (userPayload.role) {
-            localStorage.setItem('role', userPayload.role.toString().toLowerCase());
-          }
-        } catch (_) {}
+        const rawRole = (userPayload.role || 'STUDENT').toString().trim().toLowerCase();
+        const userObj = { ...userPayload, role: rawRole.toUpperCase() };
+        setUser(userObj);
+        localStorage.setItem('user', JSON.stringify(userObj));
+        localStorage.setItem('role', rawRole);
+
+        if (rawRole === 'student' || rawRole === 'parent') {
+          window.location.href = '/student/dashboard';
+        } else if (rawRole === 'tutor') {
+          window.location.href = '/tutor/dashboard';
+        } else if (rawRole === 'admin') {
+          window.location.href = '/admin/dashboard';
+        } else {
+          window.location.href = '/student/dashboard';
+        }
+
+        return { ...res, user: userObj, token };
       }
-      const refreshedUser = await refreshUser();
-      return { ...res, user: refreshedUser || userPayload };
+      return res;
     } finally {
       setIsLoading(false);
     }

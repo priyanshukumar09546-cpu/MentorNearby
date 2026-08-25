@@ -129,7 +129,7 @@ footer,
 main,
 article,
 nav,
-aside {
+aside:not(.admin-sidebar) {
   width: 100%;
   max-width: 100vw;
   box-sizing: border-box;

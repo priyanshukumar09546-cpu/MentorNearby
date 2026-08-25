@@ -1,6 +1,7 @@
 // ============================================================
 // components/admin/AdminLayout.jsx
-// MentorNearby Modern Clean Admin Layout — Responsive & Fixed 280px Sidebar
+// MentorNearby Enterprise Admin Control Center Layout
+// Fixed 260px Sidebar, Exact Logo Bounds (h-8 max-w-[140px]), No Main Contamination
 // ============================================================
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -131,30 +132,32 @@ const AdminLayout = ({ children }) => {
       )}
 
       {/* ============================================================ */}
-      {/* SIDEBAR - Fixed 280px                                         */}
+      {/* SIDEBAR - Fixed 260px                                         */}
       {/* ============================================================ */}
       <aside
-        className={`w-[280px] fixed left-0 top-0 h-screen bg-white border-r border-gray-200 flex flex-col z-40 overflow-y-auto transition-transform duration-300 ease-in-out ${
+        className={`admin-sidebar w-[260px] min-w-[260px] max-w-[260px] fixed left-0 top-0 h-screen bg-white border-r border-gray-200 flex flex-col z-40 overflow-y-auto transition-transform duration-300 ease-in-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
+        style={{ width: '260px', minWidth: '260px', maxWidth: '260px' }}
       >
-        {/* Brand Header */}
-        <div className="p-5 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white">
-          <Link to="/admin/dashboard" className="flex items-center gap-3 no-underline">
+        {/* Logo Wrapper (h-[70px] px-6 border-b) */}
+        <div className="h-[70px] px-6 flex items-center justify-between border-b border-gray-200 bg-white flex-shrink-0">
+          <Link to="/admin/dashboard" className="flex items-center gap-2.5 no-underline">
             <img
               src="/logo.png"
               alt="MentorNearby"
-              className="h-10 max-h-10 w-auto object-contain flex-shrink-0"
+              className="h-8 w-auto max-w-[140px] object-contain flex-shrink-0"
+              style={{ height: '32px', maxHeight: '32px', maxWidth: '140px', width: 'auto', objectFit: 'contain' }}
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
             />
             <div className="flex flex-col">
-              <span className="text-base font-extrabold text-gray-900 tracking-tight leading-tight">
+              <span className="text-sm font-black text-gray-900 tracking-tight leading-none">
                 Mentor<span className="text-[#FF6B00]">Nearby</span>
               </span>
-              <span className="text-[9px] font-bold tracking-widest text-gray-400 uppercase">
-                ADMIN CONTROL CENTER
+              <span className="text-[8px] font-bold tracking-widest text-gray-400 uppercase mt-0.5">
+                ADMIN
               </span>
             </div>
           </Link>
@@ -170,10 +173,10 @@ const AdminLayout = ({ children }) => {
         </div>
 
         {/* Sidebar Nav Items */}
-        <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-5 overflow-y-auto">
           {navGroups.map((grp) => (
             <div key={grp.group}>
-              <p className="text-[11px] font-bold text-gray-400 tracking-widest mb-2.5 px-3 uppercase">
+              <p className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 px-3 uppercase">
                 {grp.group}
               </p>
               <div className="space-y-1">
@@ -187,13 +190,13 @@ const AdminLayout = ({ children }) => {
                       key={item.path}
                       to={item.path}
                       onClick={() => setMobileOpen(false)}
-                      className={`px-3 py-2 rounded-lg flex items-center gap-3 text-sm font-medium transition no-underline ${
+                      className={`px-3 py-2 rounded-lg flex items-center gap-2.5 text-xs font-medium transition no-underline ${
                         isActive
-                          ? 'bg-[#fef9c3] text-amber-950 font-semibold border-l-4 border-amber-500 shadow-xs'
+                          ? 'bg-[#fef9c3] text-amber-950 font-bold border-l-4 border-amber-500 shadow-xs'
                           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                       }`}
                     >
-                      <span className="text-base flex-shrink-0">{item.icon}</span>
+                      <span className="text-sm flex-shrink-0">{item.icon}</span>
                       <span className="truncate">{item.label}</span>
                     </Link>
                   );
@@ -224,9 +227,12 @@ const AdminLayout = ({ children }) => {
       </aside>
 
       {/* ============================================================ */}
-      {/* MAIN CONTENT WRAPPER - Offset 280px                           */}
+      {/* MAIN CONTENT WRAPPER - Offset 260px                           */}
       {/* ============================================================ */}
-      <div className="flex-1 ml-0 md:ml-[280px] min-h-screen flex flex-col min-w-0 bg-[#f8fafc] overflow-x-hidden">
+      <div 
+        className="admin-main-wrapper flex-1 ml-0 md:ml-[260px] min-h-screen flex flex-col min-w-0 bg-[#f8fafc] overflow-x-hidden"
+        style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth > 768 ? '260px' : '0' }}
+      >
         
         {/* Top Navbar */}
         <header className="bg-white border-b border-gray-200 px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 flex-shrink-0">
@@ -318,7 +324,7 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Main Content Body */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden">
+        <main className="flex-1 bg-[#f8fafc] p-4 md:p-6 overflow-auto min-w-0">
           {children}
         </main>
       </div>

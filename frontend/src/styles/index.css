@@ -124,14 +124,7 @@ body {
 }
 
 section,
-header,
-footer,
-main,
-article,
-nav,
-aside:not(.admin-sidebar) {
-  width: 100%;
-  max-width: 100vw;
+article {
   box-sizing: border-box;
 }
 

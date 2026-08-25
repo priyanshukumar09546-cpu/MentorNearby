@@ -51,11 +51,8 @@
 }
 
 /* ============================================================ */
-/* GLOBAL RESET & OVERALL ADMIN BACKGROUND                     */
+/* ADMIN SCOPED CONTAINER STYLES                                */
 /* ============================================================ */
-html,
-body,
-#root,
 .admin-app-root,
 .admin-shell-container {
   min-height: 100vh !important;
@@ -76,14 +73,6 @@ body,
 .admin-app-root *::before, 
 .admin-app-root *::after {
   box-sizing: border-box !important;
-}
-
-/* Fix Root Container Override */
-#root {
-  width: 100% !important;
-  max-width: 100% !important;
-  border-inline: none !important;
-  text-align: left !important;
 }
 
 /* ============================================================ */

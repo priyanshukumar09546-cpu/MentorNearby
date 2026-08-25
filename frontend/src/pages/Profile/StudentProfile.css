@@ -13,20 +13,22 @@
 
 /* ── Sidebar ── */
 .sp-sidebar {
-  width: 260px;
-  background: #FFFFFF;
-  border-right: 1px solid #E2E8F0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 24px 16px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  overflow-y: auto;
-  z-index: 40;
+  width: 260px !important;
+  min-width: 260px !important;
+  max-width: 260px !important;
+  background: #FFFFFF !important;
+  border-right: 1px solid #E2E8F0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  padding: 24px 16px !important;
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  overflow-y: auto !important;
+  z-index: 40 !important;
 }
 
 .sp-sidebar-top {

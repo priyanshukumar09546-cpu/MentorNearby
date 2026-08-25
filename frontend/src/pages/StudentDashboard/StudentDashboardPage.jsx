@@ -461,11 +461,11 @@ const StudentDashboardPage = () => {
               <p className="sd-hero-subtitle text-gray-600 dark:text-gray-300">
                 Find the right mentor and continue your learning journey.
               </p>
-              <div className="sd-hero-actions">
-                <Link to="/search" className="sd-hero-btn-primary">
+              <div className="sd-hero-actions flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <Link to="/search" className="sd-hero-btn-primary w-full sm:w-auto justify-center whitespace-nowrap">
                   <span>👤</span> Find a Tutor
                 </Link>
-                <Link to="/courses" className="sd-hero-btn-secondary dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <Link to="/courses" className="sd-hero-btn-secondary w-full sm:w-auto justify-center whitespace-nowrap dark:bg-gray-700 dark:text-white dark:border-gray-600">
                   <span>📖</span> Explore Courses
                 </Link>
               </div>

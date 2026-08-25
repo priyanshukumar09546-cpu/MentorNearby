@@ -793,3 +793,31 @@ input:-webkit-autofill:active {
   transform: translateY(0);
   transition: opacity 200ms, transform 200ms;
 }
+
+/* ============================================================
+   UNIVERSAL SELECT & OPTION DARK THEME SUPPORT
+   ============================================================ */
+:root[data-theme="dark"] select,
+.dark select,
+.theme-dark select,
+[data-theme="dark"] select {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+  border-color: #374151 !important;
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] select option,
+.dark select option,
+.theme-dark select option,
+[data-theme="dark"] select option {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+:root[data-theme="light"] select option,
+.light select option,
+select option {
+  background-color: #ffffff;
+  color: #111827;
+}

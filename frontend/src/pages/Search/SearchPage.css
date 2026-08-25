@@ -1227,3 +1227,218 @@
   justify-content: center;
   border: 1px solid var(--color-gold-border, #F0D28C);
 }
+
+/* ============================================================
+   DARK THEME SYSTEM FOR FIND TUTORS / SEARCH PAGE
+   ============================================================ */
+:root[data-theme="dark"] .mn-find-page-root,
+.dark .mn-find-page-root,
+.theme-dark .mn-find-page-root,
+[data-theme="dark"] .mn-find-page-root {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .mn-find-top-trust-card,
+.dark .mn-find-top-trust-card,
+.theme-dark .mn-find-top-trust-card,
+[data-theme="dark"] .mn-find-top-trust-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-top-trust-title,
+.dark .mn-top-trust-title,
+.theme-dark .mn-top-trust-title,
+[data-theme="dark"] .mn-top-trust-title {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .mn-find-search-input-wrap,
+.dark .mn-find-search-input-wrap,
+.theme-dark .mn-find-search-input-wrap,
+[data-theme="dark"] .mn-find-search-input-wrap {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-find-search-input,
+.dark .mn-find-search-input,
+.theme-dark .mn-find-search-input,
+[data-theme="dark"] .mn-find-search-input {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .mn-find-filters-toggle-btn,
+.dark .mn-find-filters-toggle-btn,
+.theme-dark .mn-find-filters-toggle-btn,
+[data-theme="dark"] .mn-find-filters-toggle-btn {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .mn-find-sort-wrap,
+.dark .mn-find-sort-wrap,
+.theme-dark .mn-find-sort-wrap,
+[data-theme="dark"] .mn-find-sort-wrap {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-find-sort-select,
+.dark .mn-find-sort-select,
+.theme-dark .mn-find-sort-select,
+[data-theme="dark"] .mn-find-sort-select {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] .mn-find-sort-select option,
+.dark .mn-find-sort-select option,
+.theme-dark .mn-find-sort-select option,
+[data-theme="dark"] .mn-find-sort-select option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .mn-find-filter-sidebar,
+.dark .mn-find-filter-sidebar,
+.theme-dark .mn-find-filter-sidebar,
+[data-theme="dark"] .mn-find-filter-sidebar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-filter-heading,
+.dark .mn-filter-heading,
+.theme-dark .mn-filter-heading,
+[data-theme="dark"] .mn-filter-heading,
+:root[data-theme="dark"] .mn-filter-lbl,
+.dark .mn-filter-lbl,
+.theme-dark .mn-filter-lbl,
+[data-theme="dark"] .mn-filter-lbl {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .mn-select-box-wrap,
+.dark .mn-select-box-wrap,
+.theme-dark .mn-select-box-wrap,
+[data-theme="dark"] .mn-select-box-wrap {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-filter-select,
+.dark .mn-filter-select,
+.theme-dark .mn-filter-select,
+[data-theme="dark"] .mn-filter-select {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] .mn-filter-select option,
+.dark .mn-filter-select option,
+.theme-dark .mn-filter-select option,
+[data-theme="dark"] .mn-filter-select option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .mn-select-chevron,
+.dark .mn-select-chevron,
+.theme-dark .mn-select-chevron,
+[data-theme="dark"] .mn-select-chevron,
+:root[data-theme="dark"] .mn-sort-chevron,
+.dark .mn-sort-chevron,
+.theme-dark .mn-sort-chevron,
+[data-theme="dark"] .mn-sort-chevron {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="dark"] .mn-filter-check-lbl,
+.dark .mn-filter-check-lbl,
+.theme-dark .mn-filter-check-lbl,
+[data-theme="dark"] .mn-filter-check-lbl {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .mn-find-tutor-card,
+.dark .mn-find-tutor-card,
+.theme-dark .mn-find-tutor-card,
+[data-theme="dark"] .mn-find-tutor-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-find-top-tutors-sidebar,
+.dark .mn-find-top-tutors-sidebar,
+.theme-dark .mn-find-top-tutors-sidebar,
+[data-theme="dark"] .mn-find-top-tutors-sidebar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-top-tutor-row-card,
+.dark .mn-top-tutor-row-card,
+.theme-dark .mn-top-tutor-row-card,
+[data-theme="dark"] .mn-top-tutor-row-card {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-top-tutors-heading,
+.dark .mn-top-tutors-heading,
+.theme-dark .mn-top-tutors-heading,
+[data-theme="dark"] .mn-top-tutors-heading,
+:root[data-theme="dark"] .mn-top-tutor-name,
+.dark .mn-top-tutor-name,
+.theme-dark .mn-top-tutor-name,
+[data-theme="dark"] .mn-top-tutor-name {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .mn-find-loading-box,
+.dark .mn-find-loading-box,
+.theme-dark .mn-find-loading-box,
+[data-theme="dark"] .mn-find-loading-box,
+:root[data-theme="dark"] .mn-find-empty-box,
+.dark .mn-find-empty-box,
+.theme-dark .mn-find-empty-box,
+[data-theme="dark"] .mn-find-empty-box,
+:root[data-theme="dark"] .mn-find-error-card,
+.dark .mn-find-error-card,
+.theme-dark .mn-find-error-card,
+[data-theme="dark"] .mn-find-error-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-find-empty-title,
+.dark .mn-find-empty-title,
+.theme-dark .mn-find-empty-title,
+[data-theme="dark"] .mn-find-empty-title,
+:root[data-theme="dark"] .mn-find-loading-text,
+.dark .mn-find-loading-text,
+.theme-dark .mn-find-loading-text,
+[data-theme="dark"] .mn-find-loading-text,
+:root[data-theme="dark"] .mn-find-error-title,
+.dark .mn-find-error-title,
+.theme-dark .mn-find-error-title,
+[data-theme="dark"] .mn-find-error-title {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .mn-find-empty-sub,
+.dark .mn-find-empty-sub,
+.theme-dark .mn-find-empty-sub,
+[data-theme="dark"] .mn-find-empty-sub,
+:root[data-theme="dark"] .mn-find-error-sub,
+.dark .mn-find-error-sub,
+.theme-dark .mn-find-error-sub,
+[data-theme="dark"] .mn-find-error-sub {
+  color: #94a3b8 !important;
+}
+

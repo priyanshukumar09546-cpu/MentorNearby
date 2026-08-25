@@ -225,15 +225,15 @@ const SearchPage = () => {
           <div className="mn-find-sort-wrap">
             <span className="mn-sort-label">Sort by:</span>
             <select
-              className="mn-find-sort-select"
+              className="mn-find-sort-select bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               value={sort}
               onChange={(e) => handleSortChange(e.target.value)}
             >
-              <option value="relevance">Recommended</option>
-              <option value="rating">Highest Rated</option>
-              <option value="fees_asc">Lowest Fee</option>
-              <option value="fees_desc">Highest Fee</option>
-              <option value="experience">Most Experienced</option>
+              <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="relevance">Recommended</option>
+              <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="rating">Highest Rated</option>
+              <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="fees_asc">Lowest Fee</option>
+              <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="fees_desc">Highest Fee</option>
+              <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="experience">Most Experienced</option>
             </select>
             <span className="mn-sort-chevron">▾</span>
           </div>
@@ -265,21 +265,21 @@ const SearchPage = () => {
                 <label className="mn-filter-lbl">Subject</label>
                 <div className="mn-select-box-wrap">
                   <select
-                    className="mn-filter-select"
+                    className="mn-filter-select bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                   >
-                    <option value="">All Subjects</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Physics">Physics</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Biology">Biology</option>
-                    <option value="English">English</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Accountancy">Accountancy</option>
-                    <option value="Economics">Economics</option>
-                    <option value="Hindi">Hindi</option>
-                    <option value="Social Science">Social Science</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">All Subjects</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Mathematics">Mathematics</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Physics">Physics</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Chemistry">Chemistry</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Biology">Biology</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="English">English</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Computer Science">Computer Science</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Accountancy">Accountancy</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Economics">Economics</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Hindi">Hindi</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Social Science">Social Science</option>
                   </select>
                   <span className="mn-select-chevron">▾</span>
                 </div>
@@ -290,17 +290,17 @@ const SearchPage = () => {
                 <label className="mn-filter-lbl">Class / Grade</label>
                 <div className="mn-select-box-wrap">
                   <select
-                    className="mn-filter-select"
+                    className="mn-filter-select bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                     value={classGrade}
                     onChange={(e) => setClassGrade(e.target.value)}
                   >
-                    <option value="">All Classes</option>
-                    <option value="Class 1">Class 1 - 5</option>
-                    <option value="Class 6">Class 6 - 8</option>
-                    <option value="Class 9">Class 9 - 10</option>
-                    <option value="Class 11">Class 11 - 12</option>
-                    <option value="College">College / Degree</option>
-                    <option value="Competitive">Competitive Exams</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">All Classes</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Class 1">Class 1 - 5</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Class 6">Class 6 - 8</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Class 9">Class 9 - 10</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Class 11">Class 11 - 12</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="College">College / Degree</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Competitive">Competitive Exams</option>
                   </select>
                   <span className="mn-select-chevron">▾</span>
                 </div>
@@ -311,19 +311,19 @@ const SearchPage = () => {
                 <label className="mn-filter-lbl">Location</label>
                 <div className="mn-select-box-wrap">
                   <select
-                    className="mn-filter-select"
+                    className="mn-filter-select bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                   >
-                    <option value="">All Locations</option>
-                    <option value="Delhi">Delhi NCR</option>
-                    <option value="Ghaziabad">Ghaziabad</option>
-                    <option value="Noida">Noida</option>
-                    <option value="Lucknow">Lucknow</option>
-                    <option value="Kanpur">Kanpur</option>
-                    <option value="Bhopal">Bhopal</option>
-                    <option value="Jaipur">Jaipur</option>
-                    <option value="Hyderabad">Hyderabad</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">All Locations</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Delhi">Delhi NCR</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Ghaziabad">Ghaziabad</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Noida">Noida</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Lucknow">Lucknow</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Kanpur">Kanpur</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Bhopal">Bhopal</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Jaipur">Jaipur</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Hyderabad">Hyderabad</option>
                   </select>
                   <span className="mn-select-chevron">▾</span>
                 </div>
@@ -334,14 +334,14 @@ const SearchPage = () => {
                 <label className="mn-filter-lbl">Teaching Mode</label>
                 <div className="mn-select-box-wrap">
                   <select
-                    className="mn-filter-select"
+                    className="mn-filter-select bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                     value={teachingMode}
                     onChange={(e) => setTeachingMode(e.target.value)}
                   >
-                    <option value="">All Modes</option>
-                    <option value="ONLINE">Online</option>
-                    <option value="OFFLINE">Offline / Home</option>
-                    <option value="HYBRID">Online &amp; Offline</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">All Modes</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="ONLINE">Online</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="OFFLINE">Offline / Home</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="HYBRID">Online &amp; Offline</option>
                   </select>
                   <span className="mn-select-chevron">▾</span>
                 </div>
@@ -352,15 +352,15 @@ const SearchPage = () => {
                 <label className="mn-filter-lbl">Experience</label>
                 <div className="mn-select-box-wrap">
                   <select
-                    className="mn-filter-select"
+                    className="mn-filter-select bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                     value={experience}
                     onChange={(e) => setExperience(e.target.value)}
                   >
-                    <option value="">All Experience</option>
-                    <option value="1">1+ Years</option>
-                    <option value="3">3+ Years</option>
-                    <option value="5">5+ Years</option>
-                    <option value="8">8+ Years</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">All Experience</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="1">1+ Years</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="3">3+ Years</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="5">5+ Years</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="8">8+ Years</option>
                   </select>
                   <span className="mn-select-chevron">▾</span>
                 </div>
@@ -371,14 +371,14 @@ const SearchPage = () => {
                 <label className="mn-filter-lbl">Price Range</label>
                 <div className="mn-select-box-wrap">
                   <select
-                    className="mn-filter-select"
+                    className="mn-filter-select bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                     value={priceRange}
                     onChange={(e) => setPriceRange(e.target.value)}
                   >
-                    <option value="">All Price</option>
-                    <option value="300">Under ₹300/hr</option>
-                    <option value="500">Under ₹500/hr</option>
-                    <option value="800">Under ₹800/hr</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">All Price</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="300">Under ₹300/hr</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="500">Under ₹500/hr</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="800">Under ₹800/hr</option>
                   </select>
                   <span className="mn-select-chevron">▾</span>
                 </div>

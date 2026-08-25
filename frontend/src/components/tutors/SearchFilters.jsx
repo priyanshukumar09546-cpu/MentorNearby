@@ -105,15 +105,15 @@ const SearchFilters = ({ initialFilters = {}, onSearch, onReset, loading }) => {
         <div className="search-filter-group">
           <label className="search-filter-label">Board</label>
           <select
-            className="search-filter-select"
+            className="search-filter-select bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
             value={filterState.board}
             onChange={(e) => handleChange('board', e.target.value)}
           >
-            <option value="">Any Board</option>
-            <option value="CBSE">CBSE</option>
-            <option value="ICSE">ICSE</option>
-            <option value="State">State Board</option>
-            <option value="IB">IB / IGCSE</option>
+            <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">Any Board</option>
+            <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="CBSE">CBSE</option>
+            <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="ICSE">ICSE</option>
+            <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="State">State Board</option>
+            <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="IB">IB / IGCSE</option>
           </select>
         </div>
 
@@ -121,14 +121,14 @@ const SearchFilters = ({ initialFilters = {}, onSearch, onReset, loading }) => {
         <div className="search-filter-group">
           <label className="search-filter-label">Medium</label>
           <select
-            className="search-filter-select"
+            className="search-filter-select bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
             value={filterState.medium}
             onChange={(e) => handleChange('medium', e.target.value)}
           >
-            <option value="">Any Medium</option>
-            <option value="English">English</option>
-            <option value="Hindi">Hindi</option>
-            <option value="Both">Both</option>
+            <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">Any Medium</option>
+            <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="English">English</option>
+            <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Hindi">Hindi</option>
+            <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="Both">Both</option>
           </select>
         </div>
 

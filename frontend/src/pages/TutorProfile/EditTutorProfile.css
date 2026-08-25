@@ -189,11 +189,13 @@
 
 /* ── Main Container ── */
 .tpm-main-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background-color: #F8FAFC;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  background-color: #F8FAFC !important;
+  box-sizing: border-box !important;
 }
 
 /* ── Topbar ── */

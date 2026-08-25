@@ -43,7 +43,7 @@ export const getRoleDashboard = (role) => {
   const norm = normalizeRole(role);
   if (norm === 'ADMIN') return '/admin/dashboard';
   if (norm === 'TUTOR') return '/tutor/dashboard';
-  if (norm === 'STUDENT' || norm === 'PARENT') return '/dashboard';
+  if (norm === 'STUDENT' || norm === 'PARENT') return '/student/dashboard';
   return '/login';
 };
 

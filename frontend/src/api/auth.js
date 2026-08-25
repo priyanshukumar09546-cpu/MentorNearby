@@ -32,3 +32,19 @@ export const sendAadhaarOtp = (aadhaarNumber, consent) =>
 
 export const verifyAadhaarOtp = (clientId, otp, aadhaarNumber) =>
   client.post('/auth/aadhaar/verify-otp', { clientId, otp, aadhaarNumber });
+
+// Health Check APIs
+export const checkHealth = () =>
+  fetch('https://mentornearby-2.onrender.com/health').then((r) => r.json());
+
+export const isBackendAlive = async () => {
+  try {
+    const res = await fetch('https://mentornearby-2.onrender.com/health', {
+      method: 'GET',
+      cache: 'no-cache',
+    });
+    return res.ok;
+  } catch (_) {
+    return false;
+  }
+};

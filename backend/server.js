@@ -197,16 +197,19 @@ app.use('/api/auth/aadhaar/verify-otp', authLimiter);
 // ============================================================
 // HEALTH CHECK
 // ============================================================
-app.get('/health', (req, res) => {
+const healthCheckHandler = (req, res) => {
   const isDbConnected = mongoose.connection.readyState === 1;
   res.status(isDbConnected ? 200 : 503).json({
     success: isDbConnected,
-    message: isDbConnected ? 'TutorNearby API is healthy' : 'Database connection unavailable',
+    message: isDbConnected ? 'MentorNearby API is healthy' : 'Database connection unavailable',
     dbState: isDbConnected ? 'CONNECTED' : 'DISCONNECTED',
     environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
   });
-});
+};
+
+app.get('/health', healthCheckHandler);
+app.get('/api/health', healthCheckHandler);
 
 // ============================================================
 // API ROUTES

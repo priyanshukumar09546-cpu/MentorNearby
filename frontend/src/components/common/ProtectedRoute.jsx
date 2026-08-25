@@ -9,19 +9,19 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * Normalizes user role string to uppercase standard ('STUDENT' | 'PARENT' | 'TUTOR' | 'ADMIN')
+ * Normalizes user role string to lowercase standard ('student' | 'parent' | 'tutor' | 'admin')
  */
 export const normalizeRole = (role) => {
   if (!role) return '';
-  const r = role.toString().trim().toUpperCase();
-  if (r === 'STUDENT' || r === 'PARENT') return r;
-  if (r === 'TUTOR' || r === 'TEACHER' || r === 'EDUCATOR') return 'TUTOR';
-  if (r === 'ADMIN' || r === 'SUPERADMIN' || r === 'SUPER_ADMIN') return 'ADMIN';
+  const r = role.toString().trim().toLowerCase();
+  if (r === 'student' || r === 'parent') return 'student';
+  if (r === 'tutor' || r === 'teacher' || r === 'educator') return 'tutor';
+  if (r === 'admin' || r === 'superadmin' || r === 'super_admin') return 'admin';
   return r;
 };
 
 /**
- * Safely extracts normalized role from any user payload structure
+ * Safely extracts normalized lowercase role from any user payload structure
  */
 export const extractUserRole = (userObj) => {
   if (!userObj) return '';
@@ -41,9 +41,9 @@ export const extractUserRole = (userObj) => {
  */
 export const getRoleDashboard = (role) => {
   const norm = normalizeRole(role);
-  if (norm === 'ADMIN') return '/admin/dashboard';
-  if (norm === 'TUTOR') return '/tutor/dashboard';
-  if (norm === 'STUDENT' || norm === 'PARENT') return '/student/dashboard';
+  if (norm === 'admin') return '/admin/dashboard';
+  if (norm === 'tutor') return '/tutor/dashboard';
+  if (norm === 'student' || norm === 'parent') return '/student/dashboard';
   return '/login';
 };
 
@@ -62,26 +62,26 @@ const ProtectedRoute = ({ children, roles }) => {
     );
   }
 
-  const localRole = (localStorage.getItem('role') || localStorage.getItem('mn_role') || '').toUpperCase();
+  const localRole = (localStorage.getItem('role') || localStorage.getItem('mn_role') || '').toLowerCase();
   const localToken = localStorage.getItem('mn_token') || localStorage.getItem('token');
 
   // If not authenticated or no user object in state
-  if (!isAuthenticated && !user && !(isAdminPath && localRole === 'ADMIN' && localToken)) {
+  if (!isAuthenticated && !user && !(isAdminPath && localRole === 'admin' && localToken)) {
     if (isAdminPath) {
       return <Navigate to="/admin" state={{ from: location }} replace />;
     }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Extract normalized role
-  const userRole = extractUserRole(user) || (localRole === 'ADMIN' ? 'ADMIN' : '');
+  // Extract normalized lowercase role
+  const userRole = extractUserRole(user) || (localRole === 'admin' ? 'admin' : normalizeRole(localRole));
 
-  // If specific roles are required (e.g. ['ADMIN'])
+  // If specific roles are required (e.g. ['student'], ['tutor'], ['admin'])
   if (roles && Array.isArray(roles) && roles.length > 0) {
     const normalizedAllowedRoles = roles.map(r => normalizeRole(r));
     
     if (!normalizedAllowedRoles.includes(userRole)) {
-      // If user is trying to access /admin/* but does not have ADMIN role
+      // If user is trying to access /admin/* but does not have admin role
       if (isAdminPath) {
         return <Navigate to="/admin" state={{ from: location }} replace />;
       }

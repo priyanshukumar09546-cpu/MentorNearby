@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
       if (savedUser && token) {
         const parsed = JSON.parse(savedUser);
         if (parsed.role) {
-          parsed.role = parsed.role.toString().trim().toUpperCase();
+          parsed.role = parsed.role.toString().trim().toLowerCase();
         }
         return parsed;
       }
@@ -39,19 +39,17 @@ export const AuthProvider = ({ children }) => {
 
       const payload = res.data?.user || res.data?.data?.user || res.data?.data;
       if (payload && (payload._id || payload.id || payload.email)) {
-        const userObj = { ...payload };
+        const normalizedRole = (payload.role || 'student').toString().trim().toLowerCase();
+        const fixedUser = { ...payload, role: normalizedRole };
         if (res.data?.data?.tutorProfile) {
-          userObj.tutorProfile = res.data.data.tutorProfile;
+          fixedUser.tutorProfile = res.data.data.tutorProfile;
         }
-        if (userObj.role) {
-          userObj.role = userObj.role.toString().trim().toUpperCase();
-        }
-        setUser(userObj);
+        setUser(fixedUser);
         try {
-          localStorage.setItem('user', JSON.stringify(userObj));
-          localStorage.setItem('role', userObj.role.toLowerCase());
+          localStorage.setItem('user', JSON.stringify(fixedUser));
+          localStorage.setItem('role', normalizedRole);
         } catch (_) {}
-        return userObj;
+        return fixedUser;
       } else {
         return null;
       }
@@ -98,23 +96,26 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('mn_token', token);
       }
       if (userPayload) {
-        const rawRole = (userPayload.role || 'STUDENT').toString().trim().toLowerCase();
-        const userObj = { ...userPayload, role: rawRole.toUpperCase() };
-        setUser(userObj);
-        localStorage.setItem('user', JSON.stringify(userObj));
-        localStorage.setItem('role', rawRole);
+        const normalizedRole = (userPayload.role || 'student').toString().trim().toLowerCase();
+        const fixedUser = { ...userPayload, role: normalizedRole };
+        setUser(fixedUser);
+        localStorage.setItem('user', JSON.stringify(fixedUser));
+        localStorage.setItem('role', normalizedRole);
+        if (token) {
+          localStorage.setItem('token', token);
+        }
 
-        if (rawRole === 'student' || rawRole === 'parent') {
+        if (normalizedRole === 'student' || normalizedRole === 'parent') {
           window.location.href = '/student/dashboard';
-        } else if (rawRole === 'tutor') {
+        } else if (normalizedRole === 'tutor') {
           window.location.href = '/tutor/dashboard';
-        } else if (rawRole === 'admin') {
+        } else if (normalizedRole === 'admin') {
           window.location.href = '/admin/dashboard';
         } else {
           window.location.href = '/student/dashboard';
         }
 
-        return { ...res, user: userObj, token };
+        return { ...res, user: fixedUser, token };
       }
       return res;
     } finally {
@@ -134,23 +135,26 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('mn_token', token);
       }
       if (userPayload) {
-        const rawRole = (userPayload.role || data.role || 'STUDENT').toString().trim().toLowerCase();
-        const userObj = { ...userPayload, role: rawRole.toUpperCase() };
-        setUser(userObj);
-        localStorage.setItem('user', JSON.stringify(userObj));
-        localStorage.setItem('role', rawRole);
+        const normalizedRole = (userPayload.role || data.role || 'student').toString().trim().toLowerCase();
+        const fixedUser = { ...userPayload, role: normalizedRole };
+        setUser(fixedUser);
+        localStorage.setItem('user', JSON.stringify(fixedUser));
+        localStorage.setItem('role', normalizedRole);
+        if (token) {
+          localStorage.setItem('token', token);
+        }
 
-        if (rawRole === 'student' || rawRole === 'parent') {
+        if (normalizedRole === 'student' || normalizedRole === 'parent') {
           window.location.href = '/student/dashboard';
-        } else if (rawRole === 'tutor') {
+        } else if (normalizedRole === 'tutor') {
           window.location.href = '/tutor/dashboard';
-        } else if (rawRole === 'admin') {
+        } else if (normalizedRole === 'admin') {
           window.location.href = '/admin/dashboard';
         } else {
           window.location.href = '/student/dashboard';
         }
 
-        return { ...res, user: userObj, token };
+        return { ...res, user: fixedUser, token };
       }
       return res;
     } finally {
@@ -170,23 +174,26 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('mn_token', token);
       }
       if (userPayload) {
-        const rawRole = (userPayload.role || 'STUDENT').toString().trim().toLowerCase();
-        const userObj = { ...userPayload, role: rawRole.toUpperCase() };
-        setUser(userObj);
-        localStorage.setItem('user', JSON.stringify(userObj));
-        localStorage.setItem('role', rawRole);
+        const normalizedRole = (userPayload.role || 'student').toString().trim().toLowerCase();
+        const fixedUser = { ...userPayload, role: normalizedRole };
+        setUser(fixedUser);
+        localStorage.setItem('user', JSON.stringify(fixedUser));
+        localStorage.setItem('role', normalizedRole);
+        if (token) {
+          localStorage.setItem('token', token);
+        }
 
-        if (rawRole === 'student' || rawRole === 'parent') {
+        if (normalizedRole === 'student' || normalizedRole === 'parent') {
           window.location.href = '/student/dashboard';
-        } else if (rawRole === 'tutor') {
+        } else if (normalizedRole === 'tutor') {
           window.location.href = '/tutor/dashboard';
-        } else if (rawRole === 'admin') {
+        } else if (normalizedRole === 'admin') {
           window.location.href = '/admin/dashboard';
         } else {
           window.location.href = '/student/dashboard';
         }
 
-        return { ...res, user: userObj, token };
+        return { ...res, user: fixedUser, token };
       }
       return res;
     } finally {

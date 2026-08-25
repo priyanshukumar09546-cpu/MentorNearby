@@ -109,7 +109,7 @@ const App = () => {
                   <Route
                     path="/admin/*"
                     element={
-                      <ProtectedRoute roles={['ADMIN']}>
+                      <ProtectedRoute roles={['admin']}>
                         <AdminLayout>
                           <Routes>
                             <Route index element={<AdminDashboardPage />} />
@@ -159,13 +159,13 @@ const App = () => {
                             <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
                             
                             {/* 🧑‍🏫 Tutor Protected Routes */}
-                            <Route path="/tutor/dashboard" element={<ProtectedRoute roles={['TUTOR']}><TutorDashboardPage /></ProtectedRoute>} />
-                            <Route path="/tutor/dashboard/*" element={<ProtectedRoute roles={['TUTOR']}><TutorDashboardPage /></ProtectedRoute>} />
-                            <Route path="/mentor/dashboard" element={<ProtectedRoute roles={['TUTOR']}><TutorDashboardPage /></ProtectedRoute>} />
-                            <Route path="/tutor/requests" element={<ProtectedRoute roles={['TUTOR']}><TutorRequestsPage /></ProtectedRoute>} />
-                            <Route path="/tutor/profile" element={<ProtectedRoute roles={['TUTOR']}><EditTutorProfilePage /></ProtectedRoute>} />
-                            <Route path="/tutor/profile/edit" element={<ProtectedRoute roles={['TUTOR']}><EditTutorProfilePage /></ProtectedRoute>} />
-                            <Route path="/tutor/kyc" element={<ProtectedRoute roles={['TUTOR']}><KYCPage /></ProtectedRoute>} />
+                            <Route path="/tutor/dashboard" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />
+                            <Route path="/tutor/dashboard/*" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />
+                            <Route path="/mentor/dashboard" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />
+                            <Route path="/tutor/requests" element={<ProtectedRoute roles={['tutor']}><TutorRequestsPage /></ProtectedRoute>} />
+                            <Route path="/tutor/profile" element={<ProtectedRoute roles={['tutor']}><EditTutorProfilePage /></ProtectedRoute>} />
+                            <Route path="/tutor/profile/edit" element={<ProtectedRoute roles={['tutor']}><EditTutorProfilePage /></ProtectedRoute>} />
+                            <Route path="/tutor/kyc" element={<ProtectedRoute roles={['tutor']}><KYCPage /></ProtectedRoute>} />
                             <Route path="/tutor/:id" element={<TutorProfilePage />} />
 
                             {/* 🔍 Tutor & Student Search Routes */}
@@ -234,15 +234,15 @@ const App = () => {
                             <Route path="/contact-us" element={<ContactPage />} />
 
                             {/* Student Dashboard */}
-                            <Route path="/dashboard" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
-                            <Route path="/dashboard/*" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
-                            <Route path="/student/dashboard" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
-                            <Route path="/student/dashboard/*" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentDashboardPage /></ProtectedRoute>} />
-                            <Route path="/student/profile" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><ProfilePage /></ProtectedRoute>} />
+                            <Route path="/dashboard" element={<ProtectedRoute roles={['student', 'parent']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/dashboard/*" element={<ProtectedRoute roles={['student', 'parent']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/student/dashboard" element={<ProtectedRoute roles={['student', 'parent']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/student/dashboard/*" element={<ProtectedRoute roles={['student', 'parent']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/student/profile" element={<ProtectedRoute roles={['student', 'parent']}><ProfilePage /></ProtectedRoute>} />
                             <Route path="/purchases" element={<ProtectedRoute><StudentPurchasesPage /></ProtectedRoute>} />
-                            <Route path="/saved-tutors" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><SavedTutorsPage /></ProtectedRoute>} />
-                            <Route path="/post-requirement" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><PostRequirementPage /></ProtectedRoute>} />
-                            <Route path="/student/requirements" element={<ProtectedRoute roles={['STUDENT', 'PARENT']}><StudentRequirementsPage /></ProtectedRoute>} />
+                            <Route path="/saved-tutors" element={<ProtectedRoute roles={['student', 'parent']}><SavedTutorsPage /></ProtectedRoute>} />
+                            <Route path="/post-requirement" element={<ProtectedRoute roles={['student', 'parent']}><PostRequirementPage /></ProtectedRoute>} />
+                            <Route path="/student/requirements" element={<ProtectedRoute roles={['student', 'parent']}><StudentRequirementsPage /></ProtectedRoute>} />
 
                             {/* User Channels */}
                             <Route path="/messages" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />

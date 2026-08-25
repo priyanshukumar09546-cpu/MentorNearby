@@ -920,3 +920,401 @@
     flex-direction: column;
   }
 }
+
+/* ============================================================
+   DARK THEME OVERRIDES FOR COURSES MARKETPLACE
+   ============================================================ */
+:root[data-theme="dark"],
+.dark,
+.theme-dark,
+[data-theme="dark"] {
+  --color-courses-border: #334155;
+  --color-courses-bg: #0F172A;
+  --color-courses-text-primary: #F8FAFC;
+  --color-courses-text-secondary: #CBD5E1;
+  --color-courses-text-muted: #94A3B8;
+}
+
+:root[data-theme="dark"] .mn-courses-page,
+.dark .mn-courses-page,
+.theme-dark .mn-courses-page,
+[data-theme="dark"] .mn-courses-page {
+  background-color: #0F172A !important;
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-hero-card,
+.dark .mn-courses-hero-card,
+.theme-dark .mn-courses-hero-card,
+[data-theme="dark"] .mn-courses-hero-card {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-hero-title,
+.dark .mn-courses-hero-title,
+.theme-dark .mn-courses-hero-title,
+[data-theme="dark"] .mn-courses-hero-title {
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-hero-sub,
+.dark .mn-courses-hero-sub,
+.theme-dark .mn-courses-hero-sub,
+[data-theme="dark"] .mn-courses-hero-sub {
+  color: #94A3B8 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-category-btn,
+.dark .mn-courses-category-btn,
+.theme-dark .mn-courses-category-btn,
+[data-theme="dark"] .mn-courses-category-btn {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+  color: #CBD5E1 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-category-btn:hover,
+.dark .mn-courses-category-btn:hover,
+.theme-dark .mn-courses-category-btn:hover,
+[data-theme="dark"] .mn-courses-category-btn:hover {
+  background: #334155 !important;
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-category-btn.active,
+.dark .mn-courses-category-btn.active,
+.theme-dark .mn-courses-category-btn.active,
+[data-theme="dark"] .mn-courses-category-btn.active {
+  background: #D97706 !important;
+  border-color: #D97706 !important;
+  color: #FFFFFF !important;
+}
+
+:root[data-theme="dark"] .mn-courses-sidebar-card,
+.dark .mn-courses-sidebar-card,
+.theme-dark .mn-courses-sidebar-card,
+[data-theme="dark"] .mn-courses-sidebar-card {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-filter-title,
+.dark .mn-courses-filter-title,
+.theme-dark .mn-courses-filter-title,
+[data-theme="dark"] .mn-courses-filter-title {
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-filter-label,
+.dark .mn-courses-filter-label,
+.theme-dark .mn-courses-filter-label,
+[data-theme="dark"] .mn-courses-filter-label {
+  color: #CBD5E1 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-class-pill,
+.dark .mn-courses-class-pill,
+.theme-dark .mn-courses-class-pill,
+[data-theme="dark"] .mn-courses-class-pill {
+  background: #0F172A !important;
+  border-color: #334155 !important;
+  color: #CBD5E1 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-class-pill:hover,
+.dark .mn-courses-class-pill:hover,
+.theme-dark .mn-courses-class-pill:hover,
+[data-theme="dark"] .mn-courses-class-pill:hover {
+  background: #334155 !important;
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-class-pill.active,
+.dark .mn-courses-class-pill.active,
+.theme-dark .mn-courses-class-pill.active,
+[data-theme="dark"] .mn-courses-class-pill.active {
+  background: #D97706 !important;
+  border-color: #D97706 !important;
+  color: #FFFFFF !important;
+}
+
+:root[data-theme="dark"] .mn-courses-select,
+.dark .mn-courses-select,
+.theme-dark .mn-courses-select,
+[data-theme="dark"] .mn-courses-select {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+  color: #F8FAFC !important;
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] .mn-courses-select option,
+.dark .mn-courses-select option,
+.theme-dark .mn-courses-select option,
+[data-theme="dark"] .mn-courses-select option {
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-search-bar,
+.dark .mn-courses-search-bar,
+.theme-dark .mn-courses-search-bar,
+[data-theme="dark"] .mn-courses-search-bar {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-search-input,
+.dark .mn-courses-search-input,
+.theme-dark .mn-courses-search-input,
+[data-theme="dark"] .mn-courses-search-input {
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-sort-dropdown-wrap,
+.dark .mn-courses-sort-dropdown-wrap,
+.theme-dark .mn-courses-sort-dropdown-wrap,
+[data-theme="dark"] .mn-courses-sort-dropdown-wrap {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-sort-select,
+.dark .mn-courses-sort-select,
+.theme-dark .mn-courses-sort-select,
+[data-theme="dark"] .mn-courses-sort-select {
+  background: #1E293B !important;
+  color: #F8FAFC !important;
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] .mn-courses-sort-select option,
+.dark .mn-courses-sort-select option,
+.theme-dark .mn-courses-sort-select option,
+[data-theme="dark"] .mn-courses-sort-select option {
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-grid-title,
+.dark .mn-courses-grid-title,
+.theme-dark .mn-courses-grid-title,
+[data-theme="dark"] .mn-courses-grid-title {
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-grid-subtitle,
+.dark .mn-courses-grid-subtitle,
+.theme-dark .mn-courses-grid-subtitle,
+[data-theme="dark"] .mn-courses-grid-subtitle {
+  color: #94A3B8 !important;
+}
+
+:root[data-theme="dark"] .mn-course-card,
+.dark .mn-course-card,
+.theme-dark .mn-course-card,
+[data-theme="dark"] .mn-course-card {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-course-title,
+.dark .mn-course-title,
+.theme-dark .mn-course-title,
+[data-theme="dark"] .mn-course-title {
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-course-meta-row,
+.dark .mn-course-meta-row,
+.theme-dark .mn-course-meta-row,
+[data-theme="dark"] .mn-course-meta-row {
+  color: #94A3B8 !important;
+}
+
+:root[data-theme="dark"] .mn-course-author,
+.dark .mn-course-author,
+.theme-dark .mn-course-author,
+[data-theme="dark"] .mn-course-author {
+  color: #64748B !important;
+}
+
+:root[data-theme="dark"] .mn-course-start-btn,
+.dark .mn-course-start-btn,
+.theme-dark .mn-course-start-btn,
+[data-theme="dark"] .mn-course-start-btn {
+  background: transparent !important;
+  border-color: #D97706 !important;
+  color: #F59E0B !important;
+}
+
+:root[data-theme="dark"] .mn-course-start-btn:hover,
+.dark .mn-course-start-btn:hover,
+.theme-dark .mn-course-start-btn:hover,
+[data-theme="dark"] .mn-course-start-btn:hover {
+  background: #D97706 !important;
+  color: #FFFFFF !important;
+}
+
+:root[data-theme="dark"] .mn-courses-page-btn,
+.dark .mn-courses-page-btn,
+.theme-dark .mn-courses-page-btn,
+[data-theme="dark"] .mn-courses-page-btn {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+  color: #CBD5E1 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-page-btn:hover,
+.dark .mn-courses-page-btn:hover,
+.theme-dark .mn-courses-page-btn:hover,
+[data-theme="dark"] .mn-courses-page-btn:hover {
+  border-color: #D97706 !important;
+  color: #F59E0B !important;
+}
+
+:root[data-theme="dark"] .mn-courses-page-btn.active,
+.dark .mn-courses-page-btn.active,
+.theme-dark .mn-courses-page-btn.active,
+[data-theme="dark"] .mn-courses-page-btn.active {
+  background: #D97706 !important;
+  border-color: #D97706 !important;
+  color: #FFFFFF !important;
+}
+
+:root[data-theme="dark"] .mn-courses-why-card,
+.dark .mn-courses-why-card,
+.theme-dark .mn-courses-why-card,
+[data-theme="dark"] .mn-courses-why-card,
+:root[data-theme="dark"] .mn-courses-delivery-card,
+.dark .mn-courses-delivery-card,
+.theme-dark .mn-courses-delivery-card,
+[data-theme="dark"] .mn-courses-delivery-card {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-why-title,
+.dark .mn-courses-why-title,
+.theme-dark .mn-courses-why-title,
+[data-theme="dark"] .mn-courses-why-title,
+:root[data-theme="dark"] .mn-courses-delivery-title,
+.dark .mn-courses-delivery-title,
+.theme-dark .mn-courses-delivery-title,
+[data-theme="dark"] .mn-courses-delivery-title,
+:root[data-theme="dark"] .mn-courses-why-h4,
+.dark .mn-courses-why-h4,
+.theme-dark .mn-courses-why-h4,
+[data-theme="dark"] .mn-courses-why-h4 {
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-why-desc,
+.dark .mn-courses-why-desc,
+.theme-dark .mn-courses-why-desc,
+[data-theme="dark"] .mn-courses-why-desc,
+:root[data-theme="dark"] .mn-courses-delivery-sub,
+.dark .mn-courses-delivery-sub,
+.theme-dark .mn-courses-delivery-sub,
+[data-theme="dark"] .mn-courses-delivery-sub {
+  color: #94A3B8 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-bottom-trust-strip,
+.dark .mn-courses-bottom-trust-strip,
+.theme-dark .mn-courses-bottom-trust-strip,
+[data-theme="dark"] .mn-courses-bottom-trust-strip {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-trust-icon-box,
+.dark .mn-courses-trust-icon-box,
+.theme-dark .mn-courses-trust-icon-box,
+[data-theme="dark"] .mn-courses-trust-icon-box {
+  background: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-trust-title,
+.dark .mn-courses-trust-title,
+.theme-dark .mn-courses-trust-title,
+[data-theme="dark"] .mn-courses-trust-title {
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-courses-trust-desc,
+.dark .mn-courses-trust-desc,
+.theme-dark .mn-courses-trust-desc,
+[data-theme="dark"] .mn-courses-trust-desc {
+  color: #94A3B8 !important;
+}
+
+:root[data-theme="dark"] .mn-courses-info-banner,
+.dark .mn-courses-info-banner,
+.theme-dark .mn-courses-info-banner,
+[data-theme="dark"] .mn-courses-info-banner {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+  color: #93C5FD !important;
+}
+
+:root[data-theme="dark"] .mn-courses-info-banner strong,
+.dark .mn-courses-info-banner strong,
+.theme-dark .mn-courses-info-banner strong,
+[data-theme="dark"] .mn-courses-info-banner strong {
+  color: #60A5FA !important;
+}
+
+/* Course Detail Page Dark Theme Support */
+:root[data-theme="dark"] .mn-cd-header-card,
+.dark .mn-cd-header-card,
+[data-theme="dark"] .mn-cd-header-card,
+:root[data-theme="dark"] .mn-cd-main-card,
+.dark .mn-cd-main-card,
+[data-theme="dark"] .mn-cd-main-card,
+:root[data-theme="dark"] .mn-cd-pricing-box,
+.dark .mn-cd-pricing-box,
+[data-theme="dark"] .mn-cd-pricing-box,
+:root[data-theme="dark"] .mn-cd-sidebar-card,
+.dark .mn-cd-sidebar-card,
+[data-theme="dark"] .mn-cd-sidebar-card {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-cd-tabs-wrap,
+.dark .mn-cd-tabs-wrap,
+[data-theme="dark"] .mn-cd-tabs-wrap {
+  background: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-cd-tab-btn,
+.dark .mn-cd-tab-btn,
+[data-theme="dark"] .mn-cd-tab-btn {
+  color: #94A3B8 !important;
+}
+
+:root[data-theme="dark"] .mn-cd-tab-btn.active,
+.dark .mn-cd-tab-btn.active,
+[data-theme="dark"] .mn-cd-tab-btn.active {
+  background: #1E293B !important;
+  color: #F8FAFC !important;
+}
+
+:root[data-theme="dark"] .mn-cd-item-row,
+.dark .mn-cd-item-row,
+[data-theme="dark"] .mn-cd-item-row {
+  background: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .mn-cd-item-title,
+.dark .mn-cd-item-title,
+[data-theme="dark"] .mn-cd-item-title {
+  color: #F8FAFC !important;
+}
+

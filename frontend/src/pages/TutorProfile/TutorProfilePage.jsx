@@ -107,9 +107,14 @@ const TutorProfilePage = () => {
 
   // Pricing
   const feeAmount = tutor?.fees?.amount;
-  const feeFreq = tutor?.fees?.frequency || 'Hour';
-  const hourlyFeeStr = feeAmount ? `₹${feeAmount} / ${feeFreq.toLowerCase()}` : 'Fee not specified';
-  const monthlyEstimated = feeAmount && feeFreq === 'Hour' ? `₹${feeAmount * 10} - ₹${feeAmount * 14} / month` : (feeAmount ? `₹${feeAmount} / ${feeFreq.toLowerCase()}` : 'Negotiable');
+  const rawFreq = tutor?.fees?.frequency || 'month';
+  const cleanFreq = rawFreq.toLowerCase().replace('per_', '').replace('ly', '');
+  const isHourly = cleanFreq === 'hour';
+  const isMonthly = cleanFreq === 'month';
+  const hourlyFeeStr = feeAmount ? `₹${feeAmount} / ${cleanFreq}` : 'Fee not specified';
+  const monthlyEstimated = feeAmount && isHourly
+    ? `₹${feeAmount * 10} - ₹${feeAmount * 14} / month`
+    : (feeAmount ? `₹${feeAmount} / ${cleanFreq}` : 'Negotiable');
 
   // Location & Coordinates
   const tutorLat = tutor?.location?.coordinates?.coordinates?.[1];

@@ -60,16 +60,39 @@ const TutorProfileSchema = new mongoose.Schema({
     description: String
   },
   fees: {
-    amount: Number,
+    amount: {
+      type: Number,
+      default: 500
+    },
     frequency: {
       type: String,
-      enum: ['Hour', 'Week', 'Month', 'Session']
+      enum: [
+        'PER_HOUR', 'PER_DAY', 'PER_WEEK', 'PER_MONTH', 'PER_SESSION',
+        'HOURLY', 'MONTHLY', 'DAILY', 'WEEKLY',
+        'Hour', 'Day', 'Week', 'Month', 'Session',
+        'hour', 'day', 'week', 'month', 'session',
+        'HOUR', 'DAY', 'WEEK', 'MONTH', 'SESSION'
+      ],
+      default: 'PER_MONTH',
+      set: function(val) {
+        if (!val) return 'PER_MONTH';
+        const str = String(val).trim().toUpperCase();
+        if (str === 'HOUR' || str === 'HOURLY' || str === 'PER_HOUR') return 'PER_HOUR';
+        if (str === 'MONTH' || str === 'MONTHLY' || str === 'PER_MONTH') return 'PER_MONTH';
+        if (str === 'DAY' || str === 'DAILY' || str === 'PER_DAY') return 'PER_DAY';
+        if (str === 'WEEK' || str === 'WEEKLY' || str === 'PER_WEEK') return 'PER_WEEK';
+        if (str === 'SESSION' || str === 'PER_SESSION') return 'PER_SESSION';
+        return str;
+      }
     },
     currency: {
       type: String,
       default: 'INR'
     },
-    negotiable: Boolean
+    negotiable: {
+      type: Boolean,
+      default: true
+    }
   },
   availability: {
     monday: { available: Boolean, slots: [String] },

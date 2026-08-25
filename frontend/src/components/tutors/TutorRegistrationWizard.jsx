@@ -716,6 +716,8 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
                   >
                     <option value="PER_HOUR">/ Hour</option>
                     <option value="PER_MONTH">/ Month</option>
+                    <option value="PER_DAY">/ Day</option>
+                    <option value="PER_WEEK">/ Week</option>
                     <option value="PER_SESSION">/ Session</option>
                   </select>
                 </div>
@@ -987,7 +989,18 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
                 <div className="mn-review-item">
                   <span className="mn-review-item-icon">💰</span>
                   <span className="mn-review-item-label">Tuition Fee</span>
-                  <span className="mn-review-item-val">₹{formData.hourlyFee} {formData.feeFrequency === 'PER_MONTH' ? '/ month' : '/ hour'}</span>
+                  <span className="mn-review-item-val">
+                    ₹{formData.hourlyFee}{' '}
+                    {formData.feeFrequency === 'PER_MONTH' || formData.feeFrequency === 'Month'
+                      ? '/ month'
+                      : formData.feeFrequency === 'PER_DAY' || formData.feeFrequency === 'Day'
+                      ? '/ day'
+                      : formData.feeFrequency === 'PER_WEEK' || formData.feeFrequency === 'Week'
+                      ? '/ week'
+                      : formData.feeFrequency === 'PER_SESSION' || formData.feeFrequency === 'Session'
+                      ? '/ session'
+                      : '/ hour'}
+                  </span>
                 </div>
 
                 <div className="mn-review-item">

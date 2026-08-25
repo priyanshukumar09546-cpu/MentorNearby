@@ -32,7 +32,17 @@ const tuitionRequirementSchema = new mongoose.Schema({
   },
   budget: {
     amount: { type: Number, default: 5000 },
-    frequency: { type: String, enum: ['Hour', 'Month', 'Session', 'HOUR', 'MONTH', 'SESSION'], default: 'Month' }
+    frequency: { 
+      type: String, 
+      enum: [
+        'PER_HOUR', 'PER_DAY', 'PER_WEEK', 'PER_MONTH', 'PER_SESSION',
+        'HOURLY', 'MONTHLY', 'DAILY', 'WEEKLY',
+        'Hour', 'Day', 'Week', 'Month', 'Session',
+        'hour', 'day', 'week', 'month', 'session',
+        'HOUR', 'DAY', 'WEEK', 'MONTH', 'SESSION'
+      ], 
+      default: 'PER_MONTH' 
+    }
   },
   status: {
     type: String,

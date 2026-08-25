@@ -10,8 +10,9 @@ const TutorCard = ({ tutor, userCoordinates, onUnlock }) => {
   const isVerified = tutor.kycStatus === 'VERIFIED';
 
   const feeAmount = tutor.fees?.amount || 0;
-  const feeFreq = tutor.fees?.frequency || 'Month';
-  const feeDisplay = `₹${feeAmount} / ${feeFreq.toLowerCase()}`;
+  const rawFreq = tutor.fees?.frequency || 'month';
+  const cleanFreq = rawFreq.toLowerCase().replace('per_', '').replace('ly', '');
+  const feeDisplay = `₹${feeAmount} / ${cleanFreq || 'month'}`;
 
   // Haversine distance calculation
   const tutorLat = tutor.location?.coordinates?.coordinates?.[1];

@@ -49,14 +49,37 @@ const app = express();
 // Trust proxy for reverse proxy platforms like Render/Vercel (fixes ERR_UNEXPECTED_X_FORWARDED_FOR)
 app.set('trust proxy', 1);
 
-// Direct Global CORS & Preflight handler
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
+// ============================================================
+// CORS CONFIGURATION (Explicit Allowed Origins for Credentials)
+// ============================================================
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:3000",
+  "https://mentor-nearby-frontend.vercel.app",
+  "https://mentor-nearby.vercel.app",
+  "https://mentornearby.vercel.app",
+  "https://mentornearby.com",
+  "https://www.mentornearby.com",
+  "https://admin.mentornearby.com",
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // ============================================================
 // SECURITY MIDDLEWARE
@@ -76,51 +99,10 @@ app.use(helmet({
       imgSrc: ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com', 'https://*.cloudinary.com', 'https://mentornearby.com', 'https://ncert.nic.in', 'https://*.ncert.nic.in'],
       mediaSrc: ["'self'", 'https://res.cloudinary.com', 'https://*.cloudinary.com'],
       frameSrc: ["'self'", 'http://localhost:5173', 'http://localhost:5174', process.env.FRONTEND_URL || 'http://localhost:5173', 'https://mentornearby.com', 'https://api.razorpay.com', 'https://checkout.razorpay.com', 'https://*.cloudinary.com', 'https://ncert.nic.in', 'https://*.ncert.nic.in', 'blob:', 'data:'],
-      connectSrc: ["'self'", 'http://localhost:5173', 'http://localhost:5174', process.env.FRONTEND_URL || 'http://localhost:5173', 'https://mentornearby.com', 'https://www.mentornearby.com', 'https://admin.mentornearby.com', 'https://api.razorpay.com', 'https://checkout.razorpay.com', 'https://*.cloudinary.com', 'https://ncert.nic.in', 'https://*.ncert.nic.in'],
+      connectSrc: ["'self'", 'http://localhost:5173', 'http://localhost:5174', 'https://mentor-nearby-frontend.vercel.app', 'https://*.vercel.app', process.env.FRONTEND_URL || 'http://localhost:5173', 'https://mentornearby.com', 'https://www.mentornearby.com', 'https://admin.mentornearby.com', 'https://api.razorpay.com', 'https://checkout.razorpay.com', 'https://*.cloudinary.com', 'https://ncert.nic.in', 'https://*.ncert.nic.in'],
     },
   },
 }));
-
-// CORS — Allowed origins
-const allowedOrigins = [
-  'https://mentor-nearby-frontend.vercel.app',
-  'https://mentor-nearby.vercel.app',
-  'https://mentornearby.vercel.app',
-  'https://mentornearby.com',
-  'https://www.mentornearby.com',
-  'https://admin.mentornearby.com',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-
-app.use(cors({
-  origin: function (origin, callback) {
-    const allowed = [
-      'https://mentor-nearby-frontend.vercel.app',
-      'https://mentor-nearby.vercel.app',
-      'https://mentornearby.vercel.app',
-      'https://mentornearby.com',
-      'https://www.mentornearby.com',
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:3000',
-      process.env.FRONTEND_URL
-    ].filter(Boolean);
-    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) {
-      callback(null, true);
-    } else {
-      callback(null, true); // Allow all for debugging and seamless cross-origin requests
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-}));
-
-// Handle OPTIONS preflight requests globally
-app.options('*', cors());
 
 // Ensure Database connection for every incoming request (Serverless & Container support)
 app.use(async (req, res, next) => {

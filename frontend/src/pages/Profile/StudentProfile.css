@@ -1254,3 +1254,131 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ============================================================
+   DARK THEME SYSTEM FOR STUDENT PROFILE
+   ============================================================ */
+:root[data-theme="dark"] .sp-layout,
+.dark .sp-layout,
+.theme-dark .sp-layout {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .sp-sidebar,
+.dark .sp-sidebar,
+.theme-dark .sp-sidebar {
+  background: #1e293b !important;
+  border-right-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .sp-brand-name,
+.dark .sp-brand-name,
+.theme-dark .sp-brand-name {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .sp-nav-item,
+.dark .sp-nav-item,
+.theme-dark .sp-nav-item {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="dark"] .sp-nav-item:hover,
+.dark .sp-nav-item:hover,
+.theme-dark .sp-nav-item:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .sp-nav-item.active,
+.dark .sp-nav-item.active,
+.theme-dark .sp-nav-item.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .sp-main-container,
+.dark .sp-main-container,
+.theme-dark .sp-main-container {
+  background: #0f172a !important;
+}
+
+:root[data-theme="dark"] .sp-topbar,
+.dark .sp-topbar,
+.theme-dark .sp-topbar {
+  background: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .sp-card,
+.dark .sp-card,
+.theme-dark .sp-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .sp-card-title,
+.dark .sp-card-title,
+.theme-dark .sp-card-title {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .sp-name,
+.dark .sp-name,
+.theme-dark .sp-name {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .sp-meta-item,
+.dark .sp-meta-item,
+.theme-dark .sp-meta-item {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="dark"] .sp-kpi-card,
+.dark .sp-kpi-card,
+.theme-dark .sp-kpi-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .sp-kpi-value,
+.dark .sp-kpi-value,
+.theme-dark .sp-kpi-value {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .sp-kpi-label,
+.dark .sp-kpi-label,
+.theme-dark .sp-kpi-label {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="dark"] .sp-modal-content,
+.dark .sp-modal-content,
+.theme-dark .sp-modal-content {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .sp-modal-title,
+.dark .sp-modal-title,
+.theme-dark .sp-modal-title {
+  color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .sp-form-label,
+.dark .sp-form-label,
+.theme-dark .sp-form-label {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .sp-form-input,
+.dark .sp-form-input,
+.theme-dark .sp-form-input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+

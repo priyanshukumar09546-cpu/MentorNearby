@@ -189,12 +189,12 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-4 md:p-8 transition-colors">
+      <div className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row">
         
         {/* Navigation Sidebar */}
-        <div className="w-full md:w-64 bg-gray-50 border-r border-gray-200 p-4 space-y-1">
-          <h2 className="font-bold text-gray-900 px-3 py-2 text-lg">Settings</h2>
+        <div className="w-full md:w-64 bg-gray-50 dark:bg-gray-800/80 border-r border-gray-200 dark:border-gray-700 p-4 space-y-1">
+          <h2 className="font-bold text-gray-900 dark:text-white px-3 py-2 text-lg">Settings</h2>
           {[
             { id: 'account', label: '👤 Account', desc: 'Personal details & photo' },
             { id: 'preferences', label: user?.role === 'TUTOR' ? '👨‍🏫 Professional' : '🎓 Learning Preferences', desc: 'Subjects & requirements' },
@@ -209,17 +209,17 @@ const SettingsPage = () => {
               className={`w-full text-left px-3 py-2.5 rounded-xl font-medium transition text-sm ${
                 activeTab === tab.id
                   ? 'bg-blue-600 text-white font-semibold shadow-sm'
-                  : 'text-gray-700 hover:bg-gray-200'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               <div>{tab.label}</div>
-              <div className={`text-xs ${activeTab === tab.id ? 'text-blue-100' : 'text-gray-400'}`}>{tab.desc}</div>
+              <div className={`text-xs ${activeTab === tab.id ? 'text-blue-100' : 'text-gray-400 dark:text-gray-400'}`}>{tab.desc}</div>
             </button>
           ))}
         </div>
 
         {/* Tab Content Panel */}
-        <div className="flex-1 p-6 md:p-8">
+        <div className="flex-1 p-6 md:p-8 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
           
           {/* TAB 1: ACCOUNT */}
           {activeTab === 'account' && (

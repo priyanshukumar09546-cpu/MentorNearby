@@ -217,8 +217,8 @@ const AdminLayout = ({ children }) => {
                 {user?.name ? user.name[0].toUpperCase() : 'A'}
               </div>
               <div className="text-left">
-                <p className="text-xs font-black text-gray-900 uppercase leading-none">ADMIN</p>
-                <p className="text-[10px] text-gray-500 font-medium mt-0.5">Super Admin</p>
+                <p className="text-xs font-black text-gray-900 leading-none truncate max-w-[120px]">{user?.name || 'Admin'}</p>
+                <p className="text-[10px] text-gray-500 font-medium mt-0.5 capitalize">{user?.role || 'Super Admin'}</p>
               </div>
             </div>
             <span className="text-gray-400 text-xs">›</span>
@@ -256,7 +256,7 @@ const AdminLayout = ({ children }) => {
                 placeholder="Search users, tutors, courses..."
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition"
+                className="w-full bg-[#FAF8F5] border border-[#F0EAD6] rounded-xl pl-9 pr-4 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition"
               />
             </form>
           </div>
@@ -266,27 +266,24 @@ const AdminLayout = ({ children }) => {
             {/* Notifications Link */}
             <Link
               to="/admin/notifications"
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition no-underline"
+              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-amber-50 rounded-xl transition no-underline"
               title="Notifications"
             >
               <span className="text-base">🔔</span>
-              <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
-                12
-              </span>
             </Link>
 
             {/* User Profile Pill & Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2.5 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-gray-50 border border-transparent hover:border-gray-200 transition cursor-pointer"
+                className="flex items-center gap-2.5 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-amber-50/60 border border-transparent hover:border-[#F0EAD6] transition cursor-pointer"
               >
                 <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-white font-black flex items-center justify-center text-xs shadow-xs">
                   {user?.name ? user.name[0].toUpperCase() : 'A'}
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-xs font-black text-gray-900 leading-none">Admin Super</p>
-                  <p className="text-[10px] text-gray-500 font-medium mt-0.5">Super Admin</p>
+                  <p className="text-xs font-black text-gray-900 leading-none truncate max-w-[120px]">{user?.name || 'Admin'}</p>
+                  <p className="text-[10px] text-gray-500 font-medium mt-0.5 capitalize">{user?.role || 'Super Admin'}</p>
                 </div>
                 <span className="text-[10px] text-gray-400 ml-0.5">▼</span>
               </button>

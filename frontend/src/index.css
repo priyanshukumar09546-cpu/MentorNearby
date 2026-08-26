@@ -1,13 +1,58 @@
 @import './styles/theme.css';
 
 html.dark body {
-  background-color: #000000 !important;
+  background-color: #070709 !important;
   color: #ffffff !important;
 }
 
 html.light body {
   background-color: #f9fafb !important;
   color: #000000 !important;
+}
+
+/* Astrotalk-Style Column Light Glow Effect */
+html.dark .astro-glow {
+  position: relative;
+  overflow: hidden;
+  background: rgba(20, 20, 20, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+html.dark .astro-glow::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.04) 22%, transparent 60%);
+  animation: rotateGlow 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html.dark .astro-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+html.dark .astro-glow:hover {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.18) !important;
+}
+
+@keyframes rotateGlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 :root {

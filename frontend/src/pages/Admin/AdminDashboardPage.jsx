@@ -407,7 +407,7 @@ export default function AdminDashboard() {
           <div
             key={idx}
             onClick={() => navigate(card.path)}
-            className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex items-center justify-between"
+            className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex items-center justify-between"
           >
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-zinc-400">{card.title}</p>
@@ -424,7 +424,7 @@ export default function AdminDashboard() {
         {/* ── LEFT COLUMN (8 COLS) ── */}
         <div className="lg:col-span-8 space-y-5">
           {/* Card 1: Platform Overview */}
-          <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-6 shadow-xs">
+          <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-6 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div>
                 <h2 className="text-sm font-bold text-gray-900 dark:text-white">Platform Overview</h2>
@@ -450,7 +450,7 @@ export default function AdminDashboard() {
               <div
                 key={idx}
                 onClick={() => navigate(card.path)}
-                className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-4 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex items-center justify-between"
+                className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-4 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex items-center justify-between"
               >
                 <div>
                   <p className="text-[11px] font-semibold text-gray-500 dark:text-zinc-400 leading-tight">{card.title}</p>
@@ -465,7 +465,7 @@ export default function AdminDashboard() {
           {/* Bottom Sub-grid: Top Performing Tutors (6) + User Growth (6) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Top Performing Tutors */}
-            <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white">Top Performing Tutors</h3>
                 <Link to="/admin/tutors" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 no-underline">
@@ -501,7 +501,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* User Growth */}
-            <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white">User Growth</h3>
                 <div className="border border-gray-200 dark:border-zinc-800 rounded-xl px-2.5 py-1 text-xs text-gray-600 dark:text-zinc-300 font-medium flex items-center gap-1 bg-gray-50 dark:bg-zinc-900">
@@ -526,7 +526,7 @@ export default function AdminDashboard() {
         {/* ── RIGHT COLUMN (4 COLS) ── */}
         <div className="lg:col-span-4 space-y-5">
           {/* Card 1: Revenue Overview */}
-          <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs">
+          <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-gray-900 dark:text-white">Revenue Overview</h3>
               <div className="border border-gray-200 dark:border-zinc-800 rounded-xl px-2.5 py-1 text-xs text-gray-600 dark:text-zinc-300 font-medium flex items-center gap-1 bg-gray-50 dark:bg-zinc-900">
@@ -548,7 +548,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Card 2: Recent Tutor Requests */}
-          <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs">
+          <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-gray-900 dark:text-white">Recent Tutor Requests</h3>
               <Link to="/admin/requests" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 no-underline">

@@ -8,6 +8,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import CookieConsent from './components/common/CookieConsent';
+import StarField from './components/StarField';
 
 // Primary Core Routes (Eagerly loaded for instant first paint)
 import HomePage from './pages/Home/HomePage';
@@ -115,6 +116,7 @@ const App = () => {
         <ToastProvider>
           <NotificationProvider>
             <BrowserRouter>
+              <StarField />
               <Suspense fallback={<RouteLoadingFallback />}>
                 <Routes>
                   {/* Public Admin Entry & Login */}

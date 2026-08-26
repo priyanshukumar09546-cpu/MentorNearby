@@ -32,14 +32,17 @@ const ProfileAvatar = ({
 
   return (
     <div className={`relative inline-block ${sizeClasses[size] || sizeClasses.md} ${className}`}>
-      <div className="w-full h-full rounded-full overflow-hidden border-2 border-white shadow-md bg-slate-100 flex items-center justify-center aspect-square">
+      <div
+        className="w-full h-full rounded-full overflow-hidden border-2 border-white shadow-md bg-slate-100 flex items-center justify-center aspect-square"
+        style={{ borderRadius: '50%', overflow: 'hidden' }}
+      >
         {src && !imageError ? (
           <img
             src={src}
             alt={name}
             onError={() => setImageError(true)}
             className="w-full h-full object-cover object-center rounded-full"
-            style={{ aspectRatio: '1/1' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', aspectRatio: '1/1' }}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-slate-800 to-blue-900 text-white font-bold flex items-center justify-center text-lg md:text-xl rounded-full">

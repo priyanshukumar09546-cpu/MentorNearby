@@ -34,7 +34,12 @@ const TutorCard = ({ tutor, userCoordinates, onUnlock }) => {
         {/* Tutor Photo */}
         <div className="mn-tutor-avatar-frame">
           {photoUrl ? (
-            <img src={photoUrl} alt={name} className="mn-tutor-avatar-img" />
+            <img
+              src={photoUrl}
+              alt={name}
+              className="mn-tutor-avatar-img w-full h-full object-cover object-center"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+            />
           ) : (
             <span className="mn-tutor-avatar-fallback">
               {name.charAt(0).toUpperCase()}

@@ -406,7 +406,23 @@ const Navbar = () => {
               </Link>
             </>
           ) : (
-            <div className="nav-user-menu-wrap">
+            <div className="nav-user-menu-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Link to={getDashboardPath()} style={{ textDecoration: 'none' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #E2E8F0', background: '#1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {user?.avatar || user?.profilePhoto?.url ? (
+                    <img
+                      src={user?.avatar || user?.profilePhoto?.url}
+                      alt={user?.name || 'User'}
+                      className="w-full h-full object-cover object-center"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+                    />
+                  ) : (
+                    <span style={{ color: '#FFFFFF', fontWeight: '700', fontSize: '15px' }}>
+                      {(user?.name || 'U').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              </Link>
               <Link to={getDashboardPath()} className="navbar-btn-signin">
                 Dashboard
               </Link>

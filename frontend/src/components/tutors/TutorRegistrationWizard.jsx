@@ -48,6 +48,9 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
   const [selfieUrl, setSelfieUrl] = useState('');
   const [selfieUploading, setSelfieUploading] = useState(false);
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // Form State — 8 Steps Exact
   const [formData, setFormData] = useState({
     // Step 1: Basic Information
@@ -55,6 +58,7 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
     email: '',
     phone: '',
     password: '',
+    confirmPassword: '',
     profilePhotoUrl: '',
     
     // Step 2: Personal Details
@@ -362,6 +366,7 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
       if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) return 'Please enter a valid email address.';
       if (!formData.phone.trim() || formData.phone.replace(/\D/g, '').length < 10) return 'Please enter a valid 10-digit mobile number.';
       if (!formData.password || formData.password.length < 6) return 'Please set a secure password (min 6 characters).';
+      if (formData.password !== formData.confirmPassword) return 'Passwords do not match.';
     }
     if (step === 2) {
       if (!formData.headline.trim()) return 'Please enter a professional headline (e.g. Maths Teacher with 5+ Years Experience).';
@@ -577,9 +582,9 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
                   ) : formData.profilePhotoUrl ? (
                     <img
                       src={formData.profilePhotoUrl}
-                      alt="Avatar"
-                      className="mn-avatar-img-preview"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      alt="Avatar Preview"
+                      className="mn-avatar-img-preview w-full h-full object-cover object-center"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', borderRadius: '50%' }}
                     />
                   ) : (
                     <span className="mn-avatar-placeholder-icon" style={{ fontSize: '36px' }}>👤</span>
@@ -655,13 +660,44 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
 
               <div className="mn-form-group">
                 <label className="mn-form-lbl">Password <span className="mn-req">*</span></label>
-                <input
-                  type="password"
-                  className="mn-form-input"
-                  placeholder="Set your account password (min 6 chars)"
-                  value={formData.password}
-                  onChange={(e) => setFormData(p => ({ ...p, password: e.target.value }))}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className="mn-form-input"
+                    placeholder="Set your account password (min 6 chars)"
+                    value={formData.password}
+                    onChange={(e) => setFormData(p => ({ ...p, password: e.target.value }))}
+                  />
+                  <button
+                    type="button"
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? '🙈' : '👁️'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mn-form-group">
+                <label className="mn-form-lbl">Confirm Password <span className="mn-req">*</span></label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    className="mn-form-input"
+                    placeholder="Re-enter your account password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
+                  />
+                  <button
+                    type="button"
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? '🙈' : '👁️'}
+                  </button>
+                </div>
               </div>
 
               <div className="mn-step-btn-row">

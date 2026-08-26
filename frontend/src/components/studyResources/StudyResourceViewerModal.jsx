@@ -309,8 +309,6 @@ const StudyResourceViewerModalInner = ({
       const backendBase =
         import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim()
           ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
-          : typeof window !== 'undefined'
-          ? window.location.origin
           : 'https://mentornearby-2.onrender.com';
       return `${backendBase}${url}`;
     }
@@ -343,7 +341,9 @@ const StudyResourceViewerModalInner = ({
         const targetUrl = streamFileUrl.startsWith('http')
           ? streamFileUrl
           : getFullDocUrl(streamFileUrl);
-        const response = await fetch(targetUrl, { credentials: 'include' });
+
+        // Fetch without credentials to prevent CORS wildcard errors across domains
+        const response = await fetch(targetUrl);
 
         if (!response.ok) {
           throw new Error(`Failed to load document (${response.status})`);
@@ -358,8 +358,9 @@ const StudyResourceViewerModalInner = ({
         }
       } catch (err) {
         console.warn('[PDF Reader] Fetch as blob failed, using direct stream URL:', err);
+        const resolvedUrl = getFullDocUrl(streamFileUrl);
         if (isMounted) {
-          setPdfBlobUrl(streamFileUrl);
+          setPdfBlobUrl(resolvedUrl);
         }
       }
     };
@@ -423,8 +424,10 @@ const StudyResourceViewerModalInner = ({
 
     const isMobile = window.innerWidth < 768;
     const clientWidth = container.clientWidth || window.innerWidth;
-    const availableWidth = isMobile ? clientWidth - 24 : Math.min(clientWidth - 48, 880);
-    const targetWidth = Math.max(Math.round(availableWidth * (zoomLevel / 100)), 280);
+    const padding = isMobile ? 12 : 48;
+    const maxDesktopWidth = 880;
+    const availableWidth = Math.max(260, Math.min(clientWidth - padding, maxDesktopWidth));
+    const targetWidth = Math.max(260, Math.round(availableWidth * (zoomLevel / 100)));
 
     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
       try {
@@ -822,27 +825,19 @@ const StudyResourceViewerModalInner = ({
                       className="max-w-full h-auto block bg-white rounded-md shadow-2xl"
                     />
 
-                    {/* Dynamic Moving Watermark Overlay per Page */}
+                    {/* Subtle, Non-Intrusive Watermark (Single diagonal per page, opacity ~0.08) */}
                     <div
-                      className="absolute inset-0 pointer-events-none overflow-hidden grid grid-cols-2 sm:grid-cols-3 gap-6 p-4 opacity-30 z-10"
-                      style={{
-                        transform: `translate(${watermarkDrift.x}px, ${watermarkDrift.y}px)`,
-                        transition: 'transform 0.5s ease',
-                      }}
+                      className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-10"
+                      style={{ opacity: 0.08 }}
                     >
-                      {Array.from({ length: 6 }).map((_, wIdx) => (
-                        <div
-                          key={wIdx}
-                          className="rotate-[-22deg] text-center select-none text-slate-800"
-                        >
-                          <div className="text-[10px] sm:text-xs font-black tracking-wider text-slate-900/30">
-                            MENTORNEARBY
-                          </div>
-                          <div className="text-[8px] sm:text-[9px] font-bold text-slate-900/20">
-                            {userIdentifier} • {sessionCode}
-                          </div>
+                      <div className="rotate-[-30deg] text-center select-none">
+                        <div className="text-xl sm:text-3xl font-black tracking-widest text-slate-900 uppercase">
+                          MENTORNEARBY
                         </div>
-                      ))}
+                        <div className="text-[10px] sm:text-xs font-bold text-slate-800 mt-1">
+                          {userIdentifier} • {sessionCode}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );

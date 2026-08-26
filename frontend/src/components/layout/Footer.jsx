@@ -188,7 +188,7 @@ const DEFAULT_CONFIG = {
       id: 'linkedin',
       platform: 'LinkedIn',
       handle: '/mentornearby',
-      url: 'http://linkedin.com/company/mentornearby',
+      url: 'https://www.linkedin.com/company/mentornearby',
       icon: 'linkedin',
       enabled: true,
     },

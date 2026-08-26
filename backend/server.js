@@ -49,6 +49,14 @@ const app = express();
 // Trust proxy for reverse proxy platforms like Render/Vercel (fixes ERR_UNEXPECTED_X_FORWARDED_FOR)
 app.set('trust proxy', 1);
 
+// Force HTTPS redirect in production
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] && req.headers['x-forwarded-proto'] !== 'https') {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+
 // ============================================================
 // CORS CONFIGURATION (Explicit Allowed Origins for Credentials)
 // ============================================================

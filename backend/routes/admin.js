@@ -55,6 +55,7 @@ router.use(protect, authorize('ADMIN'));
 // Dashboard & Analytics
 router.get('/dashboard', getDashboardStats);
 router.get('/stats', getDashboardStats);
+router.get('/dashboard-stats', getDashboardStats);
 router.get('/users/recent', getRecentUsers);
 router.get('/recent-users', getRecentUsers);
 router.get('/activities', getRecentActivities);

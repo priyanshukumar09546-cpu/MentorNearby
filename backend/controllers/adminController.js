@@ -1316,7 +1316,7 @@ exports.approveTutor = asyncHandler(async (req, res, next) => {
   if (tutorProfile) {
     tutorProfile.isApproved = true;
     tutorProfile.kycStatus = 'VERIFIED';
-    tutorProfile.verificationStatus = 'APPROVED';
+    tutorProfile.verificationStatus = 'approved';
     tutorProfile.profileStatus = 'approved';
     tutorProfile.profileVisibility = true;
     tutorProfile.isVerified = true;
@@ -1326,7 +1326,7 @@ exports.approveTutor = asyncHandler(async (req, res, next) => {
       user: userId,
       isApproved: true,
       kycStatus: 'VERIFIED',
-      verificationStatus: 'APPROVED',
+      verificationStatus: 'approved',
       profileStatus: 'approved',
       profileVisibility: true,
       isVerified: true

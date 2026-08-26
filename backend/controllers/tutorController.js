@@ -210,6 +210,7 @@ exports.getTutorStats = asyncHandler(async (req, res, next) => {
 exports.getFeaturedTutors = asyncHandler(async (req, res, next) => {
   let tutors = await TutorProfile.find({
     $or: [
+      { isApproved: true },
       { kycStatus: 'VERIFIED' },
       { verificationStatus: { $in: ['APPROVED', 'VERIFIED', 'verified', 'approved'] } },
       { profileVisibility: true }

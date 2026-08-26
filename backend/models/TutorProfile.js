@@ -127,12 +127,24 @@ const TutorProfileSchema = new mongoose.Schema({
     onlineOnly: { type: Boolean, default: false }
   },
   verificationStatus: {
-    phone: { type: Boolean, default: false },
-    email: { type: Boolean, default: false },
-    collegeId: { type: Boolean, default: false },
-    identity: { type: Boolean, default: false },
-    profile: { type: Boolean, default: false },
-    background: { type: Boolean, default: false }
+    type: String,
+    default: 'pending',
+    set: function(val) {
+      if (typeof val === 'object' && val !== null) return 'pending';
+      return String(val).toLowerCase();
+    }
+  },
+  isApproved: {
+    type: Boolean,
+    default: false
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  profileStatus: {
+    type: String,
+    default: 'pending'
   },
   kycStatus: {
     type: String,

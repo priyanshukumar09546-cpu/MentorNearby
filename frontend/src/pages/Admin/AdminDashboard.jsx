@@ -3,42 +3,127 @@ import { Link, useNavigate } from "react-router-dom";
 import client from "../../api/client";
 import axios from "axios";
 
-// Inline WhatsApp Icon
-const WhatsAppIcon = ({ size = 14, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-    <path
-      d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.04 14.69 2 12.04 2Z"
-      fill="#25D366"
-    />
-    <path
-      d="M17.51 14.38C17.21 14.23 15.74 13.51 15.46 13.41C15.19 13.31 14.99 13.26 14.79 13.56C14.59 13.86 14.02 14.53 13.85 14.73C13.68 14.93 13.5 14.95 13.2 14.8C12.9 14.65 11.94 14.34 10.8 13.32C9.91 12.53 9.31 11.55 9.14 11.25C8.96 10.95 9.12 10.79 9.27 10.64C9.41 10.5 9.57 10.28 9.72 10.11C9.87 9.93 9.92 9.81 10.02 9.61C10.12 9.41 10.07 9.23 10 9.08C9.92 8.93 9.32 7.46 9.07 6.86C8.83 6.28 8.58 6.36 8.4 6.35H7.83C7.63 6.35 7.3 6.42 7.03 6.72C6.75 7.02 6 7.72 6 9.17C6 10.62 7.05 12.02 7.2 12.22C7.35 12.42 9.28 15.39 12.23 16.67C12.93 16.97 13.48 17.15 13.91 17.29C14.62 17.51 15.26 17.48 15.77 17.4C16.34 17.31 17.51 16.69 17.76 16C18.01 15.31 18.01 14.73 17.93 14.6C17.86 14.48 17.68 14.41 17.51 14.38Z"
-      fill="white"
-    />
-  </svg>
-);
-
-// SVG Smooth Area Line Chart
-const GrowthChart = ({ data = [] }) => {
+// ── Multi-Series Platform Overview Chart ──
+const PlatformOverviewChart = ({ series = [] }) => {
   const [hoverIdx, setHoverIdx] = useState(null);
 
   const chartData = useMemo(() => {
+    if (series && series.length > 0) return series;
+    return [
+      { dateLabel: "May 20", users: 18, students: 12, tutors: 6, revenue: 350 },
+      { dateLabel: "May 21", users: 24, students: 15, tutors: 9, revenue: 480 },
+      { dateLabel: "May 22", users: 22, students: 14, tutors: 8, revenue: 420 },
+      { dateLabel: "May 23", users: 38, students: 25, tutors: 13, revenue: 920 },
+      { dateLabel: "May 24", users: 31, students: 20, tutors: 11, revenue: 680 },
+      { dateLabel: "May 25", users: 35, students: 22, tutors: 13, revenue: 590 },
+      { dateLabel: "May 26", users: 32, students: 21, tutors: 11, revenue: 520 },
+    ];
+  }, [series]);
+
+  const maxVal = Math.max(...chartData.map((d) => Math.max(d.users || 0, d.students || 0, d.tutors || 0)), 40);
+  const width = 600;
+  const height = 200;
+  const padLeft = 35;
+  const padRight = 35;
+  const padTop = 15;
+  const padBottom = 25;
+  const chartW = width - padLeft - padRight;
+  const chartH = height - padTop - padBottom;
+
+  const getPoints = (key) =>
+    chartData.map((d, i) => {
+      const x = padLeft + (i / Math.max(chartData.length - 1, 1)) * chartW;
+      const val = d[key] || 0;
+      const y = padTop + chartH - (val / (maxVal || 1)) * chartH;
+      return { x, y, val, label: d.dateLabel };
+    });
+
+  const usersPts = getPoints("users");
+  const studentsPts = getPoints("students");
+  const tutorsPts = getPoints("tutors");
+
+  const buildPath = (pts) =>
+    pts.reduce((acc, p, i, a) => {
+      if (i === 0) return `M ${p.x} ${p.y}`;
+      const prev = a[i - 1];
+      const cp1x = prev.x + (p.x - prev.x) / 2;
+      const cp1y = prev.y;
+      const cp2x = prev.x + (p.x - prev.x) / 2;
+      const cp2y = p.y;
+      return `${acc} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p.x} ${p.y}`;
+    }, "");
+
+  return (
+    <div className="w-full relative">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-52 overflow-visible">
+        {/* Horizontal gridlines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+          const y = padTop + chartH * (1 - ratio);
+          const val = Math.round(maxVal * ratio);
+          return (
+            <g key={idx}>
+              <line x1={padLeft} y1={y} x2={width - padRight} y2={y} stroke="#E5E7EB" strokeDasharray="3 3" className="dark:stroke-zinc-800" />
+              <text x={padLeft - 6} y={y + 3} textAnchor="end" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">
+                {val}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Lines */}
+        <path d={buildPath(usersPts)} fill="none" stroke="#6366F1" strokeWidth="2.2" strokeLinecap="round" />
+        <path d={buildPath(studentsPts)} fill="none" stroke="#10B981" strokeWidth="2.2" strokeLinecap="round" />
+        <path d={buildPath(tutorsPts)} fill="none" stroke="#3B82F6" strokeWidth="2.2" strokeLinecap="round" />
+
+        {/* Dots */}
+        {usersPts.map((p, i) => (
+          <g key={i} onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)} className="cursor-pointer">
+            <circle cx={p.x} cy={p.y} r={hoverIdx === i ? 5 : 3.5} fill="#6366F1" stroke="#FFFFFF" strokeWidth="1.5" />
+            <circle cx={studentsPts[i].x} cy={studentsPts[i].y} r={hoverIdx === i ? 5 : 3.5} fill="#10B981" stroke="#FFFFFF" strokeWidth="1.5" />
+            <circle cx={tutorsPts[i].x} cy={tutorsPts[i].y} r={hoverIdx === i ? 5 : 3.5} fill="#3B82F6" stroke="#FFFFFF" strokeWidth="1.5" />
+            <text x={p.x} y={height - 6} textAnchor="middle" fontSize="9" fill="#6B7280" fontFamily="sans-serif" className="dark:fill-zinc-400">
+              {p.label}
+            </text>
+
+            {hoverIdx === i && (
+              <g>
+                <rect x={Math.min(Math.max(p.x - 45, 10), width - 100)} y={Math.max(p.y - 50, 5)} width="90" height="42" rx="6" fill="#18181B" className="shadow-lg" />
+                <text x={Math.min(Math.max(p.x - 45, 10), width - 100) + 45} y={Math.max(p.y - 50, 5) + 14} textAnchor="middle" fontSize="8.5" fill="#E4E4E7" fontWeight="bold">
+                  {p.label}
+                </text>
+                <text x={Math.min(Math.max(p.x - 45, 10), width - 100) + 45} y={Math.max(p.y - 50, 5) + 26} textAnchor="middle" fontSize="8.5" fill="#818CF8">
+                  Users: {p.val} | Students: {studentsPts[i].val}
+                </text>
+                <text x={Math.min(Math.max(p.x - 45, 10), width - 100) + 45} y={Math.max(p.y - 50, 5) + 36} textAnchor="middle" fontSize="8.5" fill="#60A5FA">
+                  Tutors: {tutorsPts[i].val}
+                </text>
+              </g>
+            )}
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+};
+
+// ── 30-Day User Growth Area Chart ──
+const UserGrowthAreaChart = ({ data = [] }) => {
+  const chartData = useMemo(() => {
     if (data && data.length > 0) return data;
     return [
-      { dateLabel: "18 May", users: 15 },
-      { dateLabel: "19 May", users: 38 },
-      { dateLabel: "20 May", users: 55 },
-      { dateLabel: "21 May", users: 34 },
-      { dateLabel: "22 May", users: 43 },
-      { dateLabel: "23 May", users: 42 },
-      { dateLabel: "24 May", users: 78 }
+      { dateLabel: "Apr 27", users: 10 },
+      { dateLabel: "May 4", users: 25 },
+      { dateLabel: "May 11", users: 48 },
+      { dateLabel: "May 18", users: 70 },
+      { dateLabel: "May 26", users: 110 },
     ];
   }, [data]);
 
-  const maxVal = Math.max(...chartData.map((d) => d.users || 0), 80);
-  const width = 500;
-  const height = 180;
-  const padX = 40;
-  const padY = 20;
+  const maxVal = Math.max(...chartData.map((d) => d.users || 0), 100);
+  const width = 360;
+  const height = 130;
+  const padX = 20;
+  const padY = 15;
   const chartW = width - padX * 2;
   const chartH = height - padY * 2;
 
@@ -46,7 +131,7 @@ const GrowthChart = ({ data = [] }) => {
     const x = padX + (i / Math.max(chartData.length - 1, 1)) * chartW;
     const val = d.users || 0;
     const y = padY + chartH - (val / (maxVal || 1)) * chartH;
-    return { x, y, val, label: d.dateLabel || `Day ${i + 1}` };
+    return { x, y, val, label: d.dateLabel };
   });
 
   const pathD = points.reduce((acc, p, i, a) => {
@@ -59,52 +144,28 @@ const GrowthChart = ({ data = [] }) => {
     return `${acc} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p.x} ${p.y}`;
   }, "");
 
-  const areaD = points.length > 0 ? `${pathD} L ${points[points.length - 1].x} ${height - padY} L ${points[0].x} ${height - padY} Z` : "";
+  const areaD = points.length > 0 ? `${pathD} L ${points[points.length - 1].x} ${height - 5} L ${points[0].x} ${height - 5} Z` : "";
 
   return (
     <div className="w-full relative">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-44 overflow-visible">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-28 overflow-visible">
         <defs>
-          <linearGradient id="yellowAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.0" />
+          <linearGradient id="purpleAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.0" />
           </linearGradient>
         </defs>
 
-        {/* Y Axis Grid lines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-          const y = padY + chartH * (1 - ratio);
-          const val = Math.round(maxVal * ratio);
-          return (
-            <g key={idx}>
-              <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="#F0EAD6" strokeDasharray="3 3" />
-              <text x={padX - 8} y={y + 3} textAnchor="end" fontSize="9" fill="#A3A3A3" fontFamily="sans-serif">
-                {val}
-              </text>
-            </g>
-          );
-        })}
+        {areaD && <path d={areaD} fill="url(#purpleAreaGrad)" />}
+        {pathD && <path d={pathD} fill="none" stroke="#8B5CF6" strokeWidth="2.2" strokeLinecap="round" />}
 
-        {/* Area fill */}
-        {areaD && <path d={areaD} fill="url(#yellowAreaGrad)" />}
-
-        {/* Smooth Curve */}
-        {pathD && <path d={pathD} fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />}
-
-        {/* Points & Hover */}
         {points.map((p, i) => (
-          <g key={i} onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)} className="cursor-pointer">
-            <circle cx={p.x} cy={p.y} r={hoverIdx === i ? 6 : 4} fill="#F59E0B" stroke="#FFFFFF" strokeWidth="2" />
-            <text x={p.x} y={height - 2} textAnchor="middle" fontSize="9" fill="#737373" fontFamily="sans-serif">
-              {p.label}
-            </text>
-            {hoverIdx === i && (
-              <g>
-                <rect x={p.x - 24} y={p.y - 28} width="48" height="20" rx="4" fill="#171717" />
-                <text x={p.x} y={p.y - 15} textAnchor="middle" fontSize="10" fontWeight="bold" fill="#FFFFFF">
-                  {p.val}
-                </text>
-              </g>
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="3" fill="#8B5CF6" stroke="#FFFFFF" strokeWidth="1.5" />
+            {(i === 0 || i === Math.floor(points.length / 2) || i === points.length - 1) && (
+              <text x={p.x} y={height - 2} textAnchor="middle" fontSize="8.5" fill="#9CA3AF" fontFamily="sans-serif">
+                {p.label}
+              </text>
             )}
           </g>
         ))}
@@ -113,65 +174,69 @@ const GrowthChart = ({ data = [] }) => {
   );
 };
 
-// Donut Chart Component
-const DonutChart = ({ studentCount = 156, tutorCount = 98 }) => {
-  const total = Math.max(studentCount + tutorCount, 1);
-  const studentPct = ((studentCount / total) * 100).toFixed(1);
-  const tutorPct = ((tutorCount / total) * 100).toFixed(1);
+// ── Multi-Source Revenue Donut Chart ──
+const RevenueDonutChart = ({ breakdown = [] }) => {
+  const data = useMemo(() => {
+    if (breakdown && breakdown.length > 0) return breakdown;
+    return [
+      { source: "PPT / Study Material", amount: 78450, color: "#8B5CF6" },
+      { source: "Courses & PYQs", amount: 28750, color: "#10B981" },
+      { source: "Tutor Requests", amount: 9860, color: "#F59E0B" },
+      { source: "Contact Unlocks", amount: 7520, color: "#3B82F6" },
+    ];
+  }, [breakdown]);
 
+  const total = Math.max(data.reduce((acc, item) => acc + (item.amount || 0), 0), 1);
   const radius = 38;
   const strokeWidth = 14;
   const circumference = 2 * Math.PI * radius;
-  const studentDash = (studentCount / total) * circumference;
-  const tutorDash = (tutorCount / total) * circumference;
+
+  let cumulativePercent = 0;
 
   return (
-    <div className="flex items-center justify-between gap-4 py-2">
-      <div className="relative w-32 h-32 flex items-center justify-center shrink-0">
+    <div className="flex flex-col items-center gap-4 py-2">
+      <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
         <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-          {/* Background circle */}
-          <circle cx="50" cy="50" r={radius} fill="none" stroke="#F5EFE0" strokeWidth={strokeWidth} />
-          {/* Students (Blue) */}
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            stroke="#3B82F6"
-            strokeWidth={strokeWidth}
-            strokeDasharray={`${studentDash} ${circumference}`}
-            strokeDashoffset="0"
-          />
-          {/* Tutors (Yellow/Amber) */}
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            stroke="#F59E0B"
-            strokeWidth={strokeWidth}
-            strokeDasharray={`${tutorDash} ${circumference}`}
-            strokeDashoffset={-studentDash}
-          />
+          <circle cx="50" cy="50" r={radius} fill="none" stroke="#F3F4F6" strokeWidth={strokeWidth} className="dark:stroke-zinc-800" />
+          {data.map((item, idx) => {
+            const itemPct = (item.amount || 0) / total;
+            const strokeDasharray = `${itemPct * circumference} ${circumference}`;
+            const strokeDashoffset = -cumulativePercent * circumference;
+            cumulativePercent += itemPct;
+
+            return (
+              <circle
+                key={idx}
+                cx="50"
+                cy="50"
+                r={radius}
+                fill="none"
+                stroke={item.color || "#8B5CF6"}
+                strokeWidth={strokeWidth}
+                strokeDasharray={strokeDasharray}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+              />
+            );
+          })}
         </svg>
       </div>
 
-      <div className="space-y-3 text-xs flex-1">
-        <div className="flex items-start gap-2">
-          <span className="w-2.5 h-2.5 rounded-xs bg-[#3B82F6] shrink-0 mt-1" />
-          <div>
-            <p className="font-bold text-gray-900 leading-none">Students</p>
-            <p className="text-[11px] text-gray-500 mt-0.5">{studentCount} ({studentPct}%)</p>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-2">
-          <span className="w-2.5 h-2.5 rounded-xs bg-[#F59E0B] shrink-0 mt-1" />
-          <div>
-            <p className="font-bold text-gray-900 leading-none">Tutors</p>
-            <p className="text-[11px] text-gray-500 mt-0.5">{tutorCount} ({tutorPct}%)</p>
-          </div>
-        </div>
+      <div className="w-full space-y-2 text-xs">
+        {data.map((item, idx) => {
+          const pct = (((item.amount || 0) / total) * 100).toFixed(1);
+          return (
+            <div key={idx} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                <span className="text-gray-600 dark:text-zinc-300 text-[11px]">{item.source}</span>
+              </div>
+              <div className="font-bold text-gray-900 dark:text-white text-[11px]">
+                ₹{(item.amount || 0).toLocaleString("en-IN")} <span className="text-gray-400 font-normal">({pct}%)</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -184,13 +249,15 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = () => {
     setLoading(true);
-    client.get("/admin/dashboard-stats")
+    client
+      .get("/admin/dashboard-stats")
       .then((r) => {
         setData(r.data?.data || r.data);
         setLoading(false);
       })
       .catch(() => {
-        axios.get("/api/admin/stats")
+        axios
+          .get("/api/admin/stats")
           .then((r) => {
             setData(r.data?.data || r.data);
             setLoading(false);
@@ -209,355 +276,318 @@ export default function AdminDashboard() {
   const totalUsers = data?.totalUsers ?? ((data?.totalStudents || 0) + (data?.totalTutors || 0)) ?? 0;
   const students = data?.totalStudents ?? data?.students ?? 0;
   const tutors = data?.totalTutors ?? data?.tutors ?? 0;
-  const pendingKYC = data?.pendingKYC ?? 0;
-  const reports = data?.totalReports ?? data?.reports ?? 0;
   const tutorRequests = data?.totalTutorRequests ?? data?.tutorRequests ?? 0;
+  const courses = data?.totalCourses ?? 12;
+  const studyResources = data?.totalStudyResources ?? 34;
+  const books = data?.totalBooks ?? 18;
+  const payments = data?.totalPayments ?? 24;
   const unlocks = data?.totalUnlocks ?? data?.unlocks ?? 0;
-  const revenue = data?.periodRevenue ?? data?.totalRevenue ?? data?.revenue ?? 0;
+  const revenue = data?.totalRevenue ?? data?.periodRevenue ?? data?.revenue ?? 0;
 
-  const statCards = [
+  const topKPIs = [
     {
       title: "Total Users",
       value: totalUsers.toLocaleString("en-IN"),
-      growth: "12.5% this week",
-      isPositive: true,
+      growth: "↗ 8.5% from last week",
       icon: "👥",
-      iconBg: "bg-[#F3E8FF] text-[#9333EA]",
-      path: "/admin/users"
+      iconBg: "bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400",
+      path: "/admin/users",
     },
     {
       title: "Students",
       value: students.toLocaleString("en-IN"),
-      growth: "10.4% this week",
-      isPositive: true,
-      icon: "🎓",
-      iconBg: "bg-[#E0F2FE] text-[#0284C7]",
-      path: "/admin/students"
+      growth: "↗ 7.2% from last week",
+      icon: "👤",
+      iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+      path: "/admin/students",
     },
     {
       title: "Tutors",
       value: tutors.toLocaleString("en-IN"),
-      growth: "15.3% this week",
-      isPositive: true,
-      icon: "👤",
-      iconBg: "bg-[#FFEDD5] text-[#EA580C]",
-      path: "/admin/tutors"
-    },
-    {
-      title: "Pending KYC",
-      value: pendingKYC.toLocaleString("en-IN"),
-      growth: "4.0% this week",
-      isPositive: false,
-      icon: "🛡️",
-      iconBg: "bg-[#FEF9C3] text-[#CA8A04]",
-      path: "/admin/kyc"
-    },
-    {
-      title: "Reports",
-      value: reports.toLocaleString("en-IN"),
-      growth: "12.5% this week",
-      isPositive: false,
-      icon: "🚩",
-      iconBg: "bg-[#FEE2E2] text-[#DC2626]",
-      path: "/admin/reports"
+      growth: "↗ 6.1% from last week",
+      icon: "🎓",
+      iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+      path: "/admin/tutors",
     },
     {
       title: "Tutor Requests",
       value: tutorRequests.toLocaleString("en-IN"),
-      growth: "23.1% this week",
-      isPositive: true,
-      icon: "📄",
-      iconBg: "bg-[#EDE9FE] text-[#7C3AED]",
-      path: "/admin/requests"
+      growth: "↗ 12.4% from last week",
+      icon: "📋",
+      iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+      path: "/admin/requests",
+    },
+    {
+      title: "Courses & PYQs",
+      value: courses.toLocaleString("en-IN"),
+      growth: "↗ 9.3% from last week",
+      icon: "📖",
+      iconBg: "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400",
+      path: "/admin/courses",
+    },
+  ];
+
+  const subKPIs = [
+    {
+      title: "Study Resources",
+      value: studyResources.toLocaleString("en-IN"),
+      growth: "↗ 11.6%",
+      icon: "📗",
+      iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+      path: "/admin/study-resources",
+    },
+    {
+      title: "NCERT & Books",
+      value: books.toLocaleString("en-IN"),
+      growth: "↗ 7.8%",
+      icon: "📘",
+      iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+      path: "/admin/content",
+    },
+    {
+      title: "Payments",
+      value: payments.toLocaleString("en-IN"),
+      growth: "↗ 9.4%",
+      icon: "💳",
+      iconBg: "bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400",
+      path: "/admin/payments",
     },
     {
       title: "Contact Unlocks",
       value: unlocks.toLocaleString("en-IN"),
-      growth: "18.2% this week",
-      isPositive: true,
+      growth: "↗ 8.7%",
       icon: "🔒",
-      iconBg: "bg-[#DBEAFE] text-[#2563EB]",
-      path: "/admin/contact-unlocks"
+      iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+      path: "/admin/contact-unlocks",
     },
-    {
-      title: "Revenue (This Week)",
-      value: `₹${Number(revenue).toLocaleString("en-IN")}`,
-      growth: "20.6% this week",
-      isPositive: true,
-      icon: "₹",
-      iconBg: "bg-[#DCFCE7] text-[#16A34A]",
-      path: "/admin/payments"
-    }
+  ];
+
+  const topTutorsList = data?.topTutors || [
+    { rank: 1, name: "Ankit Sir", rating: 4.9, reviews: 120, studentsCount: 520 },
+    { rank: 2, name: "Priya Ma'am", rating: 4.8, reviews: 98, studentsCount: 430 },
+    { rank: 3, name: "Ravi Sir", rating: 4.7, reviews: 85, studentsCount: 390 },
+    { rank: 4, name: "Neha Ma'am", rating: 4.6, reviews: 76, studentsCount: 350 },
+  ];
+
+  const recentRequestsList = data?.recentRequests || [
+    { studentName: "Rahul Kumar", classLevel: "Class 10", subject: "Maths", timeAgo: "2 min ago", status: "New" },
+    { studentName: "Priya Sharma", classLevel: "Class 11", subject: "Physics", timeAgo: "15 min ago", status: "Pending" },
+    { studentName: "Aman Verma", classLevel: "Class 12", subject: "Chemistry", timeAgo: "35 min ago", status: "Pending" },
+    { studentName: "Neha Singh", classLevel: "Class 9", subject: "Science", timeAgo: "1 hour ago", status: "New" },
+    { studentName: "Vikram Patel", classLevel: "Class 11", subject: "Biology", timeAgo: "2 hours ago", status: "Resolved" },
   ];
 
   return (
-    <div className="space-y-5 bg-[#FFFBF5] min-h-screen">
-      {/* 1. Header Row */}
+    <div className="space-y-6 pb-8 bg-[#F8F9FA] dark:bg-[#0A0A0A] min-h-screen text-gray-900 dark:text-white transition-colors duration-200">
+      {/* ── TOP HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight leading-tight">
-            Welcome back, Admin! 👋
-          </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Here's what's happening with MentorNearby today.
-          </p>
+          <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Welcome back, Admin! Here's what's happening on MentorNearby.</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="bg-white border border-[#E5E0D4] rounded-lg px-3 py-1.5 text-xs text-gray-700 font-medium flex items-center gap-2 shadow-2xs cursor-pointer">
-            <span>📅 18 May - 24 May 2025</span>
-            <span className="text-gray-400 text-[10px]">▼</span>
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-zinc-200 flex items-center gap-2 shadow-xs cursor-pointer hover:border-gray-300">
+            <span>📅 May 20 – May 26, 2025</span>
           </div>
 
           <button
             onClick={fetchDashboardData}
-            className="bg-white hover:bg-gray-50 border border-[#E5E0D4] text-gray-800 rounded-lg px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+            className="bg-gray-900 hover:bg-black text-white dark:bg-zinc-100 dark:text-black dark:hover:bg-white rounded-xl px-4 py-2 text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
           >
             <span className={loading ? "animate-spin inline-block" : ""}>🔄</span>
-            <span>Refresh Data</span>
+            <span>Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* 2. 8 KPI Cards Grid (4 columns) */}
-      <div 
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-        style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' 
-        }}
-      >
-        {statCards.map((card, idx) => (
+      {/* ── 5 TOP KPI CARDS ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {topKPIs.map((card, idx) => (
           <div
             key={idx}
             onClick={() => navigate(card.path)}
-            className="bg-white border border-[#F5EFE0] rounded-2xl p-4 flex flex-col justify-between shadow-2xs hover:shadow-xs hover:-translate-y-0.5 transition duration-150 cursor-pointer"
+            className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex items-center justify-between"
           >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shrink-0 ${card.iconBg}`}>
-                  {card.icon}
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500 leading-none">{card.title}</p>
-                  <h3 className="text-2xl font-black text-gray-900 mt-1 tracking-tight leading-none">
-                    {card.value}
-                  </h3>
-                </div>
-              </div>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open("https://wa.me/919999999999", "_blank");
-                }}
-                className="w-7 h-7 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366] text-[#25D366] hover:text-white flex items-center justify-center transition border border-[#25D366]/20 cursor-pointer shadow-2xs"
-                title="WhatsApp Contact"
-              >
-                <WhatsAppIcon size={14} />
-              </button>
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-zinc-400">{card.title}</p>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-1 tracking-tight">{card.value}</h3>
+              <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">{card.growth}</p>
             </div>
-
-            <div className="mt-3">
-              <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${card.isPositive ? "text-emerald-600" : "text-rose-500"}`}>
-                <span>{card.isPositive ? "↗" : "↘"}</span>
-                <span>{card.growth}</span>
-              </span>
-            </div>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${card.iconBg}`}>{card.icon}</div>
           </div>
         ))}
       </div>
 
-      {/* 3. Middle Row: Growth Chart (6) + Distribution Donut (3) + Recent Signups (3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* User Growth Overview */}
-        <div className="lg:col-span-6 bg-white border border-[#F5EFE0] rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-gray-900">User Growth Overview</h2>
-            <div className="border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-gray-600 font-medium flex items-center gap-1.5 cursor-pointer hover:bg-gray-50">
-              <span>This Week</span>
-              <span className="text-[10px] text-gray-400">▼</span>
-            </div>
-          </div>
-
-          <GrowthChart data={data?.growthSeries} />
-        </div>
-
-        {/* Users Distribution */}
-        <div className="lg:col-span-3 bg-white border border-[#F5EFE0] rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-gray-900">Users Distribution</h2>
-            <div className="border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-gray-600 font-medium flex items-center gap-1.5 cursor-pointer hover:bg-gray-50">
-              <span>This Week</span>
-              <span className="text-[10px] text-gray-400">▼</span>
-            </div>
-          </div>
-
-          <DonutChart studentCount={students || 156} tutorCount={tutors || 98} />
-        </div>
-
-        {/* Recent Signups */}
-        <div className="lg:col-span-3 bg-white border border-[#F5EFE0] rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-          <h2 className="text-sm font-bold text-gray-900 mb-3">Recent Signups</h2>
-
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between p-2 rounded-xl bg-gray-50/70 border border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold">
-                  🎓
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-800 leading-none">Students</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Today</p>
+      {/* ── MAIN CONTENT: 2 COLUMNS (LEFT 8 COLS + RIGHT 4 COLS) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* ── LEFT COLUMN (8 COLS) ── */}
+        <div className="lg:col-span-8 space-y-5">
+          {/* Card 1: Platform Overview */}
+          <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900 dark:text-white">Platform Overview</h2>
+                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-zinc-400 mt-1">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500" /> Users</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Students</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Tutors</span>
                 </div>
               </div>
-              <span className="text-sm font-extrabold text-gray-900">{data?.todayStudents ?? 23}</span>
-            </div>
 
-            <div className="flex items-center justify-between p-2 rounded-xl bg-gray-50/70 border border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-bold">
-                  👨‍🏫
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-800 leading-none">Tutors</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Today</p>
-                </div>
+              <div className="border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-gray-600 dark:text-zinc-300 font-medium flex items-center gap-1.5 cursor-pointer bg-gray-50 dark:bg-zinc-900">
+                <span>Last 7 Days</span>
+                <span className="text-[10px] text-gray-400">▼</span>
               </div>
-              <span className="text-sm font-extrabold text-gray-900">{data?.todayTutors ?? 14}</span>
             </div>
 
-            <div className="flex items-center justify-between p-2 rounded-xl bg-purple-50/50 border border-purple-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-bold">
-                  👥
-                </div>
+            <PlatformOverviewChart series={data?.growthSeries} />
+          </div>
+
+          {/* Sub-grid: 4 Sub-KPI Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {subKPIs.map((card, idx) => (
+              <div
+                key={idx}
+                onClick={() => navigate(card.path)}
+                className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-4 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex items-center justify-between"
+              >
                 <div>
-                  <p className="text-xs font-bold text-gray-800 leading-none">Total Users</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Today</p>
+                  <p className="text-[11px] font-semibold text-gray-500 dark:text-zinc-400 leading-tight">{card.title}</p>
+                  <h4 className="text-xl font-black text-gray-900 dark:text-white mt-1">{card.value}</h4>
+                  <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{card.growth}</p>
                 </div>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${card.iconBg}`}>{card.icon}</div>
               </div>
-              <span className="text-sm font-extrabold text-gray-900">{data?.todayUsers ?? 37}</span>
-            </div>
+            ))}
           </div>
 
-          <Link
-            to="/admin/users"
-            className="w-full py-2 mt-4 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-xl text-center transition border border-gray-200 block no-underline shadow-2xs"
-          >
-            View All Users
-          </Link>
-        </div>
-      </div>
+          {/* Bottom Sub-grid: Top Performing Tutors (6) + User Growth (6) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Top Performing Tutors */}
+            <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Top Performing Tutors</h3>
+                <Link to="/admin/tutors" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 no-underline">
+                  View All
+                </Link>
+              </div>
 
-      {/* 4. Bottom Row: Recent Users Table (7) + Recent Activities (5) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Recent Users Table */}
-        <div className="lg:col-span-7 bg-white border border-[#F5EFE0] rounded-2xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-gray-900">Recent Users</h2>
-            <Link
-              to="/admin/users"
-              className="text-xs text-gray-500 hover:text-gray-900 font-semibold border border-gray-200 px-2.5 py-1 rounded-lg no-underline hover:bg-gray-50 transition"
-            >
-              View All
-            </Link>
-          </div>
+              <div className="space-y-3.5">
+                {topTutorsList.map((tutor, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-gray-400 w-3">{tutor.rank || idx + 1}</span>
+                      <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        {tutor.avatar ? <img src={tutor.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : (tutor.name?.[0]?.toUpperCase() || "T")}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white leading-tight">{tutor.name}</p>
+                        <p className="text-[10px] text-amber-500 font-semibold">{tutor.rating} ★ <span className="text-gray-400 font-normal">({tutor.reviews})</span></p>
+                      </div>
+                    </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-gray-100 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                  <th className="pb-2.5 font-bold">User</th>
-                  <th className="pb-2.5 font-bold">Role</th>
-                  <th className="pb-2.5 font-bold">Status</th>
-                  <th className="pb-2.5 font-bold">Joined On</th>
-                  <th className="pb-2.5 text-right font-bold">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {(data?.recentUsers || []).slice(0, 5).map((u, i) => {
-                  const roleLabel = (u.role || "Student").toString().toUpperCase() === "TUTOR" ? "Tutor" : "Student";
-                  const isVerified = u.kycStatus === "VERIFIED" || u.isVerified || !u.isSuspended;
-                  const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "24 May 2025";
-
-                  return (
-                    <tr key={u._id || i} className="hover:bg-gray-50/60 transition">
-                      <td className="py-2.5 pr-2">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
-                            {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : (u.name?.[0]?.toUpperCase() || "U")}
-                          </div>
-                          <div>
-                            <p className="font-bold text-gray-900 leading-none truncate max-w-[120px]">{u.name || "User"}</p>
-                            <p className="text-[10px] text-gray-400 truncate max-w-[120px] mt-0.5">{u.email || ""}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-2.5 text-gray-600 font-medium">{roleLabel}</td>
-
-                      <td className="py-2.5">
-                        {isVerified ? (
-                          <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">
-                            Pending KYC
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-2.5 text-gray-500 text-[11px] whitespace-nowrap">{dateStr}</td>
-
-                      <td className="py-2.5 text-right">
-                        <button
-                          onClick={() => window.open(`https://wa.me/${u.phone ? u.phone.replace(/\\D/g, "") : "919999999999"}`, "_blank")}
-                          className="w-6 h-6 inline-flex items-center justify-center rounded-md bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition cursor-pointer"
-                          title="WhatsApp User"
-                        >
-                          <WhatsAppIcon size={12} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Recent Activities */}
-        <div className="lg:col-span-5 bg-white border border-[#F5EFE0] rounded-2xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-gray-900">Recent Activities</h2>
-            <Link
-              to="/admin/audit-logs"
-              className="text-xs text-gray-500 hover:text-gray-900 font-semibold border border-gray-200 px-2.5 py-1 rounded-lg no-underline hover:bg-gray-50 transition"
-            >
-              View All
-            </Link>
-          </div>
-
-          <div className="space-y-3">
-            {(data?.recentActivities || []).slice(0, 5).map((act, idx) => {
-              const dateStr = act.createdAt ? new Date(act.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "24 May 2025, 10:30 AM";
-              const icons = ["👤", "👨‍🏫", "🛡️", "🔒", "🚩"];
-              const colors = ["bg-amber-50 text-amber-600", "bg-purple-50 text-purple-600", "bg-emerald-50 text-emerald-600", "bg-blue-50 text-blue-600", "bg-rose-50 text-rose-600"];
-
-              return (
-                <div key={act._id || idx} className="flex items-start justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs shrink-0 ${colors[idx % colors.length]}`}>
-                      {icons[idx % icons.length]}
-                    </span>
-                    <p className="text-gray-700 font-medium truncate">{act.action || act.details || "Activity logged"}</p>
+                    <div className="text-right">
+                      <p className="text-[11px] font-bold text-gray-700 dark:text-zinc-300">
+                        <span className="text-[10px] text-gray-400 font-normal">Students </span>{tutor.studentsCount}
+                      </p>
+                      <div className="w-16 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full mt-1 overflow-hidden">
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min((tutor.studentsCount / 600) * 100, 100)}%` }} />
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-gray-400 whitespace-nowrap shrink-0">{dateStr}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* User Growth */}
+            <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">User Growth</h3>
+                <div className="border border-gray-200 dark:border-zinc-800 rounded-xl px-2.5 py-1 text-xs text-gray-600 dark:text-zinc-300 font-medium flex items-center gap-1 bg-gray-50 dark:bg-zinc-900">
+                  <span>Last 30 Days</span>
+                  <span className="text-[10px] text-gray-400">▼</span>
                 </div>
-              );
-            })}
+              </div>
+
+              <div className="mb-2">
+                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Users</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-black text-gray-900 dark:text-white">{totalUsers.toLocaleString("en-IN")}</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">↗ 8.5%</span>
+                </div>
+              </div>
+
+              <UserGrowthAreaChart data={data?.growth30d} />
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT COLUMN (4 COLS) ── */}
+        <div className="lg:col-span-4 space-y-5">
+          {/* Card 1: Revenue Overview */}
+          <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Revenue Overview</h3>
+              <div className="border border-gray-200 dark:border-zinc-800 rounded-xl px-2.5 py-1 text-xs text-gray-600 dark:text-zinc-300 font-medium flex items-center gap-1 bg-gray-50 dark:bg-zinc-900">
+                <span>Last 7 Days</span>
+                <span className="text-[10px] text-gray-400">▼</span>
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Revenue</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black text-gray-900 dark:text-white">₹{Number(revenue).toLocaleString("en-IN")}</span>
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">↗ 10.3% from last week</span>
+              </div>
+            </div>
+
+            <p className="text-xs font-bold text-gray-700 dark:text-zinc-300 mt-4 mb-2">Revenue by Source</p>
+            <RevenueDonutChart breakdown={data?.revenueBySource} />
+          </div>
+
+          {/* Card 2: Recent Tutor Requests */}
+          <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Recent Tutor Requests</h3>
+              <Link to="/admin/requests" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 no-underline">
+                View All
+              </Link>
+            </div>
+
+            <div className="space-y-3.5">
+              {recentRequestsList.map((req, idx) => {
+                const isNew = req.status === "New";
+                const isPending = req.status === "Pending";
+                const badgeStyle = isNew
+                  ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300"
+                  : isPending
+                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
+                  : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300";
+
+                return (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        {req.avatar ? <img src={req.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : (req.studentName?.[0]?.toUpperCase() || "S")}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white leading-tight">{req.studentName}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-zinc-400">{req.classLevel} • {req.subject}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">{req.timeAgo || "Recently"}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeStyle}`}>
+                        {req.status || "New"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

@@ -59,7 +59,8 @@ exports.uploadKycDocument = asyncHandler(async (req, res) => {
     return error(res, 'Document upload failed. Please try again.', 500);
   }
 
-  const govtIdType = req.body.govtIdType || req.body.identityProofType || req.body.documentType || 'Aadhaar Card';
+  const rawIdType = req.body.govtIdType || req.body.identityProofType || req.body.documentType || 'AADHAAR';
+  const govtIdType = String(rawIdType).toUpperCase().includes('PAN') ? 'PAN' : 'AADHAAR';
 
   return success(res, 'Document private storage me save ho gaya. Admin 24h me manual check karega.', {
     url: result.secure_url,

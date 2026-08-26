@@ -469,8 +469,7 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
         kycData: {
           kycMode: formData.digilockerVerified ? 'DIGILOCKER' : 'MANUAL',
           digilockerVerified: Boolean(formData.digilockerVerified),
-          digilockerName: formData.digilockerData?.name || formData.name,
-          govtIdType: formData.digilockerVerified ? 'AADHAAR' : (formData.identityProofType || 'AADHAAR'),
+          govtIdType: (formData.digilockerVerified ? 'AADHAAR' : String(formData.identityProofType || formData.govtIdType || 'AADHAAR').toUpperCase().includes('PAN') ? 'PAN' : 'AADHAAR'),
           govtIdLast4: formData.digilockerData?.last4 || (formData.identityProofFilename ? '1234' : ''),
           govtIdUrl: typeof formData.identityProofFile === 'string' ? formData.identityProofFile : '',
           addressUrl: typeof formData.addressProofFile === 'string' ? formData.addressProofFile : '',

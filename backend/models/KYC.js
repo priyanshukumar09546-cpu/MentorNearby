@@ -72,7 +72,18 @@ const KYCSchema = new mongoose.Schema({
   },
   govtIdType: {
     type: String,
-    enum: ['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENSE', 'VOTER_ID']
+    enum: ['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENSE', 'VOTER_ID', 'Aadhaar Card', 'PAN Card', 'Passport', 'Driving License', 'Voter ID', 'Aadhaar', 'Pan'],
+    set: function(val) {
+      if (!val) return 'AADHAAR';
+      const s = String(val).trim().toUpperCase();
+      if (s.includes('AADHAAR') || s.includes('ADHAAR')) return 'AADHAAR';
+      if (s.includes('PAN')) return 'PAN';
+      if (s.includes('VOTER')) return 'VOTER_ID';
+      if (s.includes('DRIVING') || s.includes('LICENSE')) return 'DRIVING_LICENSE';
+      if (s.includes('PASSPORT')) return 'PASSPORT';
+      return 'AADHAAR';
+    },
+    default: 'AADHAAR'
   },
   govtIdLast4: {
     type: String,

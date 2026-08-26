@@ -190,7 +190,7 @@ const SettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-4 md:p-8 transition-colors">
-      <div className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row">
+      <div className="max-w-4xl mx-auto px-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row">
         
         {/* Navigation Sidebar */}
         <div className="w-full md:w-64 bg-gray-50 dark:bg-gray-800/80 border-r border-gray-200 dark:border-gray-700 p-4 space-y-1">
@@ -224,23 +224,28 @@ const SettingsPage = () => {
           {/* TAB 1: ACCOUNT */}
           {activeTab === 'account' && (
             <form onSubmit={handleSaveAccount} className="space-y-6">
-              <h3 className="text-xl font-bold text-gray-900 border-b pb-3">Account Details</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3">Account Details</h3>
 
               {/* Photo Upload */}
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-2xl overflow-hidden border">
-                  {accountForm.avatar ? (
-                    <img src={accountForm.avatar} alt="" className="w-full h-full object-cover" />
+              <div className="flex items-center gap-6">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden shrink-0 border-2 border-gray-200 dark:border-gray-700 bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-3xl shadow-md">
+                  {accountForm.avatar || user?.avatar ? (
+                    <img
+                      src={accountForm.avatar || user?.avatar}
+                      alt="Profile Picture"
+                      className="w-full h-full object-cover object-center"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+                    />
                   ) : (
-                    accountForm.name?.charAt(0) || 'U'
+                    (accountForm.name || user?.name || 'U').charAt(0).toUpperCase()
                   )}
                 </div>
                 <div>
-                  <label className="btn btn-outline btn-sm cursor-pointer">
+                  <label className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg cursor-pointer transition inline-block shadow-sm">
                     Upload New Photo
                     <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                   </label>
-                  <p className="text-xs text-gray-500 mt-1">JPG, PNG up to 5MB. Uploads safely to Cloudinary.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">JPG, PNG up to 5MB. Uploads safely to Cloudinary.</p>
                 </div>
               </div>
 

@@ -4,9 +4,27 @@
 // 100% FREE • Direct Official Portal Links • Chapter-Wise Access
 // ============================================================
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
 
 const BookChapterDrawerModal = ({ isOpen, onClose, book }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen || !book) return null;
 
   const chapters = book.chapters || [];
@@ -354,6 +372,8 @@ const BookChapterDrawerModal = ({ isOpen, onClose, book }) => {
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default BookChapterDrawerModal;

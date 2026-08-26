@@ -4,6 +4,7 @@
 // ============================================================
 
 import React from 'react';
+import ReactDOM from 'react-dom';
 
 const PRINTING_PARTNERS = [
   {
@@ -51,20 +52,45 @@ const PRINTING_PARTNERS = [
 ];
 
 const PrintModal = ({ isOpen, onClose, resourceTitle }) => {
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div
       style={{
         position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        height: '100dvh',
+        backgroundColor: 'rgba(15, 23, 42, 0.75)',
         backdropFilter: 'blur(4px)',
-        zIndex: 9999,
+        WebkitBackdropFilter: 'blur(4px)',
+        zIndex: 999999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px',
+        padding: '16px',
+        margin: 0,
       }}
       onClick={onClose}
     >
@@ -74,9 +100,13 @@ const PrintModal = ({ isOpen, onClose, resourceTitle }) => {
           borderRadius: '20px',
           maxWidth: '520px',
           width: '100%',
+          maxHeight: '90vh',
+          maxHeight: '90dvh',
+          overflowY: 'auto',
           boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
-          overflow: 'hidden',
           border: '1px solid #E2E8F0',
+          position: 'relative',
+          margin: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -284,6 +314,8 @@ const PrintModal = ({ isOpen, onClose, resourceTitle }) => {
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default PrintModal;

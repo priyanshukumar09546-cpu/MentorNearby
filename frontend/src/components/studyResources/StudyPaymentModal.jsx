@@ -80,16 +80,18 @@ const StudyPaymentModal = ({
   const effectiveClass = String(classLevel || bundle?.classLevel || resource?.classLevel || '9');
   const isSenior = ['11', '12'].includes(effectiveClass) || bundle?.classes?.includes('11') || bundle?.classes?.includes('12');
   const effectiveSubject = subject || bundle?.subject || resource?.subject || 'Science';
-  const isFormula = bundle?.comboType === 'FORMULA_COMBO' || bundle?.type === 'FORMULA' || resource?.resourceType === 'FORMULA_SHEET';
+  const isPpt = Boolean(resource?.resourceType === 'PPT' || resource?.type === 'PPT' || resource?.isPpt);
+  const isFormula = !isPpt && Boolean(bundle?.comboType === 'FORMULA_COMBO' || bundle?.type === 'FORMULA' || resource?.resourceType === 'FORMULA_SHEET');
 
   // Strict Single Class + Single Subject Pricing Matrix
-  // CLASS 9 & 10:
-  // Formula Sheet: Individual = ₹7, Combo = ₹50
-  // Notes: Individual = ₹12, Combo = ₹100
-  // CLASS 11 & 12:
-  // Formula Sheet: Individual = ₹8, Combo = ₹60
-  // Notes: Individual = ₹14, Combo = ₹120
-  const individualPrice = isFormula ? (isSenior ? 8 : 7) : (isSenior ? 14 : 12);
+  // Course PPT: Individual = ₹19
+  // Formula Sheet: Individual = ₹7 (9/10), ₹8 (11/12)
+  // Notes: Individual = ₹12 (9/10), ₹14 (11/12)
+  const individualPrice = isPpt
+    ? 19
+    : isFormula
+      ? (isSenior ? 8 : 7)
+      : Number(resource?.downloadPrice || resource?.salePrice || (isSenior ? 14 : 12));
   const singleComboPrice = isFormula ? (isSenior ? 60 : 50) : (isSenior ? 120 : 100);
 
   const comboPrice = bundle?.price || singleComboPrice;

@@ -81,6 +81,7 @@ const findStudyResourceByIdOrSlug = async (id) => {
       classLevel,
       subject,
       chapterNumber,
+      resourceType, // STRICT RESOURCE TYPE MATCHING (FORMULA_SHEET vs IMPORTANT_QUESTIONS_ANSWERS)
       published: true,
       $or: [
         { fileUrl: { $regex: 'res.cloudinary.com' } },

@@ -590,11 +590,25 @@ const StudyResourceViewerModalInner = ({
     }
   };
 
-  const isFormula = Boolean(
-    resource?.resourceType === 'FORMULA_SHEET' ||
-    resource?.type === 'FORMULA' ||
-    resource?.isFormula ||
-    resource?.comboType === 'FORMULA_COMBO'
+  const isPpt = Boolean(
+    resource?.resourceType === 'PPT' ||
+    resource?.type === 'PPT' ||
+    resource?.isPpt ||
+    propResource?.resourceType === 'PPT' ||
+    propResource?.type === 'PPT' ||
+    propResource?.isPpt
+  );
+
+  const isFormula = !isPpt && Boolean(
+    (resource?.resourceType === 'FORMULA_SHEET' ||
+     resource?.type === 'FORMULA_SHEET' ||
+     resource?.type === 'FORMULA' ||
+     resource?.isFormula ||
+     resource?.comboType === 'FORMULA_COMBO') &&
+    resource?.resourceType !== 'NOTES' &&
+    resource?.resourceType !== 'IMPORTANT_QUESTIONS_ANSWERS' &&
+    propResource?.resourceType !== 'NOTES' &&
+    propResource?.resourceType !== 'IMPORTANT_QUESTIONS_ANSWERS'
   );
 
   const isUnlocked = Boolean(
@@ -604,11 +618,19 @@ const StudyResourceViewerModalInner = ({
     propResource?.isUnlocked
   );
 
-  const isSenior = ['11', '12'].includes(String(resource?.classLevel));
+  const isSenior = ['11', '12'].includes(String(resource?.classLevel || propResource?.classLevel));
   const isCombo = Boolean(propIsCombo || resource?.isCombo || resource?.comboType);
-  const expectedSinglePrice = isFormula ? (isSenior ? 8 : 7) : (isSenior ? 14 : 12);
-  const expectedComboPrice = isFormula ? (isSenior ? 60 : 50) : (isSenior ? 120 : 100);
-  const downloadPrice = isCombo ? expectedComboPrice : expectedSinglePrice;
+
+  let downloadPrice = 19;
+  if (isPpt) {
+    downloadPrice = 19;
+  } else if (isCombo) {
+    downloadPrice = isFormula ? (isSenior ? 60 : 50) : (isSenior ? 120 : 100);
+  } else if (isFormula) {
+    downloadPrice = isSenior ? 8 : 7;
+  } else {
+    downloadPrice = Number(resource?.downloadPrice || propResource?.downloadPrice || (isSenior ? 14 : 12));
+  }
 
   const handleDownload = async () => {
     if (!streamFileUrl) return;
@@ -834,12 +856,12 @@ const StudyResourceViewerModalInner = ({
                   textTransform: 'uppercase',
                   padding: '2px 8px',
                   borderRadius: '4px',
-                  backgroundColor: isFormula ? '#3B0764' : '#064E3B',
-                  color: isFormula ? '#F3E8FF' : '#D1FAE5',
-                  border: isFormula ? '1px solid #6B21A8' : '1px solid #047857',
+                  backgroundColor: isPpt ? '#831843' : isFormula ? '#3B0764' : '#064E3B',
+                  color: isPpt ? '#FCE7F3' : isFormula ? '#F3E8FF' : '#D1FAE5',
+                  border: isPpt ? '1px solid #9D174D' : isFormula ? '1px solid #6B21A8' : '1px solid #047857',
                 }}
               >
-                {isFormula ? '📐 Formula Sheet' : '📚 Notes PDF'}
+                {isPpt ? '📊 Course PPT' : isFormula ? '📐 Formula Sheet' : '📚 Notes PDF'}
               </span>
             </div>
 

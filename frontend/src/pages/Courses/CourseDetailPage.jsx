@@ -98,18 +98,20 @@ const CourseDetailPage = () => {
     const formattedResource = {
       _id: paper._id,
       id: paper._id,
-      title: paper.title || `${paper.year} Solution PPT`,
+      title: paper.title || `${paper.year} Board Paper Solution PPT`,
       classLevel: course?.classLevel || '10',
       subject: course?.subject || 'Science',
       chapter: `Year ${paper.year}`,
-      chapterTitle: paper.title,
-      resourceType: 'IMPORTANT_QUESTIONS_ANSWERS',
-      fileUrl: paper.ppt?.url || `/api/study-resources/stream/${paper._id}`,
+      chapterTitle: paper.title || `${paper.year} Solution PPT`,
+      resourceType: 'PPT',
+      type: 'PPT',
+      isPpt: true,
+      fileUrl: paper.ppt?.url || `/api/courses/paper/stream/${paper._id}`,
       fileReference: {
-        filename: paper.ppt?.filename || `CBSE_${paper.year}_Solution_Notes.pdf`,
+        filename: paper.ppt?.filename || `CBSE_${paper.year}_Solution_PPT.pdf`,
         fileSize: 524288,
       },
-      downloadPrice: paper.downloadPrice || 19,
+      downloadPrice: 19,
       isDownloadUnlocked: Boolean(paper.isPptUnlocked),
     };
 

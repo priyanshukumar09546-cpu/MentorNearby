@@ -384,7 +384,21 @@ const NotesAndPdfsPage = () => {
 
     // 2. Resource Type Filter (Notes / Formula Sheets / Both)
     if (selectedTypes.length === 1) {
-      list = list.filter((r) => selectedTypes.includes(r.resourceType));
+      if (selectedTypes.includes('NOTES')) {
+        list = list.filter(
+          (r) =>
+            r.resourceType === 'NOTES' ||
+            r.resourceType === 'IMPORTANT_QUESTIONS_ANSWERS' ||
+            r.type === 'NOTES'
+        );
+      } else if (selectedTypes.includes('FORMULA_SHEET')) {
+        list = list.filter(
+          (r) =>
+            r.resourceType === 'FORMULA_SHEET' ||
+            r.type === 'FORMULA_SHEET' ||
+            r.type === 'FORMULA'
+        );
+      }
     }
 
     // 3. Subject Filter

@@ -304,7 +304,10 @@ const StudyResourceViewerModalInner = ({
     return () => clearInterval(driftInterval);
   }, [isOpen]);
 
-  // 3. Resolve target PDF URL and Fetch as Same-Origin Blob
+  const [isImageDoc, setIsImageDoc] = useState(false);
+  const [docImageSrc, setDocImageSrc] = useState(null);
+
+  // 3. Resolve target PDF/Image URL and Fetch as Same-Origin Blob
   const rawFileUrl =
     (resource?.fileReference?.url?.includes('res.cloudinary.com')
       ? resource.fileReference.url
@@ -330,7 +333,7 @@ const StudyResourceViewerModalInner = ({
     getFullDocUrl(rawFileUrl) ||
     `/api/study-resources/stream/${resource?._id || resourceId || 'c9-sci-ch1-notes'}`;
 
-  // Fetch PDF Blob
+  // Fetch Blob (PDF or High-Res Image Scan)
   useEffect(() => {
     if (!isOpen) {
       if (pdfBlobUrl) {
@@ -338,6 +341,8 @@ const StudyResourceViewerModalInner = ({
         setPdfBlobUrl(null);
       }
       setPdfDoc(null);
+      setIsImageDoc(false);
+      setDocImageSrc(null);
       return;
     }
 
@@ -348,30 +353,66 @@ const StudyResourceViewerModalInner = ({
       try {
         setLoading(true);
         setErrorMsg(null);
+        setIsImageDoc(false);
+        setDocImageSrc(null);
 
         const targetUrl = streamFileUrl.startsWith('http')
           ? streamFileUrl
           : getFullDocUrl(streamFileUrl);
 
-        // Fetch without credentials to prevent CORS wildcard errors across domains
-        const response = await fetch(targetUrl);
+        const lowerUrl = targetUrl.toLowerCase();
+        if (lowerUrl.includes('.jpg') || lowerUrl.includes('.jpeg') || lowerUrl.includes('.png') || lowerUrl.includes('.webp')) {
+          if (isMounted) {
+            setIsImageDoc(true);
+            setDocImageSrc(targetUrl);
+            setNumPages(1);
+            setLoading(false);
+          }
+          return;
+        }
 
+        const response = await fetch(targetUrl);
         if (!response.ok) {
           throw new Error(`Failed to load document (${response.status})`);
         }
 
+        const contentType = response.headers.get('content-type') || '';
         const blob = await response.blob();
+
+        if (contentType.includes('image/') || blob.type.startsWith('image/')) {
+          localBlobUrl = URL.createObjectURL(blob);
+          if (isMounted) {
+            setIsImageDoc(true);
+            setDocImageSrc(localBlobUrl);
+            setNumPages(1);
+            setLoading(false);
+          }
+          return;
+        }
+
         const pdfBlob = new Blob([blob], { type: 'application/pdf' });
         localBlobUrl = URL.createObjectURL(pdfBlob);
 
         if (isMounted) {
+          setIsImageDoc(false);
           setPdfBlobUrl(localBlobUrl);
         }
       } catch (err) {
-        console.warn('[PDF Reader] Fetch as blob failed, using direct stream URL:', err);
+        console.warn('[Reader] Fetch blob failed, using fallback direct URL:', err);
         const resolvedUrl = getFullDocUrl(streamFileUrl);
-        if (isMounted) {
-          setPdfBlobUrl(resolvedUrl);
+        const lowerRes = resolvedUrl.toLowerCase();
+        if (lowerRes.includes('.jpg') || lowerRes.includes('.jpeg') || lowerRes.includes('.png') || lowerRes.includes('.webp')) {
+          if (isMounted) {
+            setIsImageDoc(true);
+            setDocImageSrc(resolvedUrl);
+            setNumPages(1);
+            setLoading(false);
+          }
+        } else {
+          if (isMounted) {
+            setIsImageDoc(false);
+            setPdfBlobUrl(resolvedUrl);
+          }
         }
       }
     };
@@ -844,8 +885,40 @@ const StudyResourceViewerModalInner = ({
             </div>
           )}
 
+          {/* Original Image Document View (for high-res formula sheets & notes scans) */}
+          {!loading && !errorMsg && isImageDoc && docImageSrc && (
+            <div className="relative w-full max-w-full flex flex-col items-center py-2 my-0">
+              <div className="relative max-w-full flex flex-col items-center my-0">
+                <img
+                  src={docImageSrc}
+                  alt={resource?.title || 'Study Resource Document'}
+                  className="max-w-full h-auto block bg-white rounded-md shadow-2xl transition-all duration-200"
+                  style={{
+                    width: `${Math.min(zoomLevel, 180)}%`,
+                    maxWidth: zoomLevel <= 100 ? '100%' : 'none',
+                    objectFit: 'contain'
+                  }}
+                />
+                {/* Subtle Single Watermark */}
+                <div
+                  className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-10"
+                  style={{ opacity: 0.08 }}
+                >
+                  <div className="rotate-[-30deg] text-center select-none">
+                    <div className="text-xl sm:text-3xl font-black tracking-widest text-slate-900 uppercase">
+                      MENTORNEARBY
+                    </div>
+                    <div className="text-[10px] sm:text-xs font-bold text-slate-800 mt-1">
+                      {userIdentifier} • {sessionCode}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Canvas Pages List (Crisp, High-DPI, 100% Mobile Responsive) */}
-          {!loading && !errorMsg && !useFallbackIframe && pdfDoc && (
+          {!loading && !errorMsg && !isImageDoc && !useFallbackIframe && pdfDoc && (
             <div
               ref={canvasContainerRef}
               className="relative w-full max-w-full flex flex-col items-center gap-4 py-2 my-0"
@@ -886,7 +959,7 @@ const StudyResourceViewerModalInner = ({
           )}
 
           {/* Fallback Object & Iframe for browsers where PDF.js script couldn't run */}
-          {!loading && !errorMsg && (useFallbackIframe || !pdfDoc) && (
+          {!loading && !errorMsg && !isImageDoc && (useFallbackIframe || !pdfDoc) && (
             <div className="relative w-full h-full min-h-[400px] flex-1 flex justify-center bg-slate-900 rounded-lg overflow-hidden">
               <object
                 data={`${pdfBlobUrl || streamFileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}

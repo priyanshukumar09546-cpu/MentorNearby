@@ -73,7 +73,25 @@ const findStudyResourceByIdOrSlug = async (id) => {
   const chapterNumber = chMatch ? parseInt(chMatch[1], 10) : 1;
 
   const isFormula = lower.includes('formula') || lower.includes('sheet');
-  const resourceType = isFormula ? 'FORMULA_SHEET' : 'NOTES';
+  const resourceType = isFormula ? 'FORMULA_SHEET' : 'IMPORTANT_QUESTIONS_ANSWERS';
+
+  // Search MongoDB Atlas for original uploaded Cloudinary file matching this chapter
+  try {
+    const existingDbRecord = await StudyResource.findOne({
+      classLevel,
+      subject,
+      chapterNumber,
+      published: true,
+      $or: [
+        { fileUrl: { $regex: 'res.cloudinary.com' } },
+        { 'fileReference.url': { $regex: 'res.cloudinary.com' } },
+        { fileUrl: { $regex: '^/uploads/' } }
+      ]
+    }).lean();
+    if (existingDbRecord) {
+      return existingDbRecord;
+    }
+  } catch (_) {}
 
   const chapterContent = studyContentEngine.getChapterStudyContent({
     classLevel,

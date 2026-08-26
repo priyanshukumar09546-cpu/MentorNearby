@@ -577,7 +577,7 @@ const StudyResourceViewerModalInner = ({
       className="sr-modal-overlay sr-protected-reader-overlay fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-0 sm:p-4 w-screen h-screen overflow-hidden"
       onClick={onClose}
     >
-      {/* Print Restriction CSS */}
+      {/* Print Restriction & Mobile Responsive Viewer CSS */}
       <style>{`
         @media print {
           body * { display: none !important; }
@@ -586,6 +586,22 @@ const StudyResourceViewerModalInner = ({
         @keyframes slideDown {
           from { transform: translate(-50%, -20px); opacity: 0; }
           to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        @media (max-width: 768px) {
+          .sr-protected-reader-overlay {
+            padding: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            position: fixed !important;
+            inset: 0 !important;
+          }
+          .sr-protected-reader-modal {
+            width: 100vw !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            border-radius: 0 !important;
+            border: none !important;
+          }
         }
       `}</style>
 
@@ -834,14 +850,20 @@ const StudyResourceViewerModalInner = ({
             </div>
           )}
 
-          {/* Fallback Iframe for browsers where PDF.js script couldn't run */}
+          {/* Fallback Object & Iframe for browsers where PDF.js script couldn't run */}
           {!loading && !errorMsg && (useFallbackIframe || !pdfDoc) && (
             <div className="relative w-full h-full min-h-[400px] flex-1 flex justify-center bg-slate-900 rounded-lg overflow-hidden">
-              <iframe
-                src={`${pdfBlobUrl || streamFileUrl}#view=FitH&toolbar=0&navpanes=0`}
-                title={resource?.title || 'Study Resource PDF'}
-                className="w-full h-full border-none block"
-              />
+              <object
+                data={`${pdfBlobUrl || streamFileUrl}#view=FitH&toolbar=0&navpanes=0`}
+                type="application/pdf"
+                className="w-full h-full border-none block min-h-[450px]"
+              >
+                <iframe
+                  src={`${pdfBlobUrl || streamFileUrl}#view=FitH&toolbar=0&navpanes=0`}
+                  title={resource?.title || 'Study Resource PDF'}
+                  className="w-full h-full border-none block min-h-[450px]"
+                />
+              </object>
             </div>
           )}
         </div>

@@ -79,37 +79,37 @@ const TutorRequestsPage = () => {
               </div>
             ) : (
               requirements.map((req) => (
-                <div key={req._id} className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition">
+                <div key={req._id || req.id} className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-semibold text-lg text-blue-900">{req.title}</h3>
+                    <h3 className="font-semibold text-lg text-blue-900">{req.title || 'Tuition Requirement'}</h3>
                     <span className="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800">
-                      {req.teachingMode}
+                      {req.teachingMode || 'Online'}
                     </span>
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm text-gray-600">
                     <div>
                       <span className="block text-gray-400 text-xs uppercase tracking-wider">Class</span>
-                      <span className="font-medium text-gray-800">{req.studentClass}</span>
+                      <span className="font-medium text-gray-800">{req.studentClass || req.classLevel || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="block text-gray-400 text-xs uppercase tracking-wider">Subjects</span>
-                      <span className="font-medium text-gray-800">{req.subjects.join(', ')}</span>
+                      <span className="font-medium text-gray-800">{Array.isArray(req.subjects) ? req.subjects.join(', ') : (req.subject || 'All Subjects')}</span>
                     </div>
                     <div>
                       <span className="block text-gray-400 text-xs uppercase tracking-wider">Location</span>
-                      <span className="font-medium text-gray-800">{req.teachingMode === 'Online' ? 'Online' : `${req.area}, ${req.city}`}</span>
+                      <span className="font-medium text-gray-800">{req.teachingMode === 'Online' ? 'Online' : `${req.area || ''} ${req.city || ''}`.trim() || 'Nearby'}</span>
                     </div>
                     <div>
                       <span className="block text-gray-400 text-xs uppercase tracking-wider">Budget</span>
-                      <span className="font-medium text-gray-800">₹{req.budget}/mo</span>
+                      <span className="font-medium text-gray-800">₹{req.budget || req.hourlyFee || 500}/mo</span>
                     </div>
                   </div>
                   
                   <div className="border-t pt-4 mt-2 flex justify-between items-center">
-                    <span className="text-xs text-gray-500">Posted on {new Date(req.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs text-gray-500">Posted on {new Date(req.createdAt || Date.now()).toLocaleDateString()}</span>
                     <button 
-                      onClick={() => handleApply(req._id)}
+                      onClick={() => handleApply(req._id || req.id)}
                       className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded text-sm font-medium transition"
                     >
                       Apply Now
@@ -127,9 +127,9 @@ const TutorRequestsPage = () => {
               </div>
             ) : (
               applications.map((app) => (
-                <div key={app._id} className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-1">{app.requirement?.title}</h3>
-                  <p className="text-sm text-gray-600 mb-3">Applied on {new Date(app.createdAt).toLocaleDateString()}</p>
+                <div key={app._id || app.id} className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                  <h3 className="font-semibold text-lg text-gray-900 mb-1">{app.requirement?.title || 'Application'}</h3>
+                  <p className="text-sm text-gray-600 mb-3">Applied on {new Date(app.createdAt || Date.now()).toLocaleDateString()}</p>
                   <span className={`px-2 py-1 rounded text-xs font-semibold ${
                     app.status === 'Accepted' ? 'bg-green-100 text-green-800' : 
                     app.status === 'Rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'

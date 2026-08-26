@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const { success } = require('./apiResponse');
 
 const generateToken = (userId, role = 'STUDENT') => {
   return jwt.sign({ id: userId, role }, process.env.JWT_SECRET, {
@@ -11,34 +10,30 @@ const setTokenCookie = (user, res) => {
   const normalizedRole = (user.role || '').toString().trim().toUpperCase();
   const token = generateToken(user._id, normalizedRole);
 
-  const isProd = process.env.NODE_ENV === 'production';
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() + (process.env.JWT_COOKIE_EXPIRES_IN || 30) * 24 * 60 * 60 * 1000
-    ),
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  const expiresDate = new Date(Date.now() + sevenDays);
+
+  // Exact settings required for cross-domain cookies (mentornearby.com -> onrender.com)
+  const tokenCookieOptions = {
+    expires: expiresDate,
+    maxAge: sevenDays,
     httpOnly: true,
+    secure: true,
+    sameSite: 'none',
     path: '/',
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
   };
 
   const roleCookieOptions = {
-    expires: new Date(
-      Date.now() + (process.env.JWT_COOKIE_EXPIRES_IN || 30) * 24 * 60 * 60 * 1000
-    ),
-    httpOnly: false, // Accessible to frontend JS for fast navigation role reading
+    expires: expiresDate,
+    maxAge: sevenDays,
+    httpOnly: false,
+    secure: true,
+    sameSite: 'none',
     path: '/',
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
   };
 
-  if (process.env.COOKIE_DOMAIN && isProd) {
-    cookieOptions.domain = process.env.COOKIE_DOMAIN;
-    roleCookieOptions.domain = process.env.COOKIE_DOMAIN;
-  }
-
-  res.cookie('token', token, cookieOptions);
-  res.cookie('jwt', token, cookieOptions);
+  res.cookie('token', token, tokenCookieOptions);
+  res.cookie('jwt', token, tokenCookieOptions);
   res.cookie('role', normalizedRole, roleCookieOptions);
   return token;
 };

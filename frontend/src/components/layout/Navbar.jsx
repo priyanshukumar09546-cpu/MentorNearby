@@ -5,6 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import NotificationDropdown from '../notifications/NotificationDropdown';
@@ -46,7 +47,12 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  const userRole = (user?.role || user?.user?.role || '').toString().trim().toUpperCase();
+  const userRole = (
+    user?.role ||
+    user?.user?.role ||
+    Cookies.get('role') ||
+    ''
+  ).toString().trim().toUpperCase();
 
   const getDashboardPath = () => {
     if (userRole === 'ADMIN') return '/admin';

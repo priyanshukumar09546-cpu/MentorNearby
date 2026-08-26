@@ -1,49 +1,34 @@
+// ============================================================
+// api/client.js
+// MentorNearby Axios HTTP Client
+// Enforces withCredentials: true for cross-domain httpOnly cookies
+// ============================================================
+
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from './config';
 
 const client = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL || 'https://mentornearby-2.onrender.com/api',
   withCredentials: true,
 });
 
 axios.defaults.withCredentials = true;
 
-// Request interceptor: attach Bearer token if present in Cookies or LocalStorage
+// Request interceptor: ensure credentials mode enabled on all requests
 client.interceptors.request.use((config) => {
-  try {
-    const token =
-      Cookies.get('token') ||
-      Cookies.get('jwt') ||
-      localStorage.getItem('token') ||
-      localStorage.getItem('mn_token');
-    if (token && !config.headers.Authorization) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  } catch (_) {}
+  config.withCredentials = true;
   return config;
 });
 
-// Response interceptor: capture token and role on auth responses & handle 401
+// Response interceptor: capture role cookie if present and handle 401 unauthenticated
 client.interceptors.response.use(
   (response) => {
-    // Automatically preserve token and user in Cookies & LocalStorage
-    const token = response.data?.token || response.data?.data?.token;
     const user = response.data?.user || response.data?.data?.user;
-    if (token) {
+    if (user && user.role) {
       try {
-        localStorage.setItem('token', token);
-        localStorage.setItem('mn_token', token);
-      } catch (_) {}
-    }
-    if (user) {
-      try {
-        localStorage.setItem('user', JSON.stringify(user));
-        if (user.role) {
-          const normRole = user.role.toString().toUpperCase();
-          localStorage.setItem('role', normRole);
-          Cookies.set('role', normRole, { expires: 7, path: '/' });
-        }
+        const normRole = user.role.toString().toUpperCase();
+        Cookies.set('role', normRole, { expires: 7, path: '/', secure: true, sameSite: 'none' });
       } catch (_) {}
     }
     return response;
@@ -53,15 +38,13 @@ client.interceptors.response.use(
     const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
 
     if (error.response?.status === 401 && !isAuthCheck) {
-      try {
-        localStorage.removeItem('token');
-        localStorage.removeItem('mn_token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('role');
-      } catch (_) {}
       if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
         window.location.href = '/admin/login';
-      } else if (pathname.startsWith('/dashboard') || pathname.startsWith('/tutor/dashboard') || pathname.startsWith('/settings')) {
+      } else if (
+        pathname.startsWith('/dashboard') ||
+        pathname.startsWith('/tutor/dashboard') ||
+        pathname.startsWith('/settings')
+      ) {
         window.location.href = '/login';
       }
     }
@@ -70,4 +53,3 @@ client.interceptors.response.use(
 );
 
 export default client;
-

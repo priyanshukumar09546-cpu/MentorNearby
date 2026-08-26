@@ -1,77 +1,53 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+// ============================================================
+// context/AuthContext.jsx
+// MentorNearby — 100% httpOnly Cookie Auth Context
+// Pure cookie-driven authentication via /api/auth/me
+// ============================================================
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import Cookies from 'js-cookie';
 import { getMe, login as apiLogin, register as apiRegister, logout as apiLogout, googleAuth as apiGoogleAuth } from '../api/auth';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      const savedUser = localStorage.getItem('user');
-      const token = Cookies.get('token') || Cookies.get('jwt') || localStorage.getItem('token') || localStorage.getItem('mn_token');
-      if (savedUser) {
-        const parsed = JSON.parse(savedUser);
-        if (parsed.role) {
-          parsed.role = parsed.role.toString().trim().toLowerCase();
-        }
-        return parsed;
-      }
-    } catch (_) {}
-    return null;
-  });
-
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUser = async () => {
+  // Pure /api/auth/me session verifier using withCredentials cookies
+  const refreshUser = useCallback(async () => {
     try {
-      console.log('[AuthContext] Verifying session with /api/auth/me...');
+      console.log('[AuthContext] Verifying httpOnly cookie session with /api/auth/me...');
       const res = await getMe();
-      console.log('[AuthContext] /api/auth/me response:', res.status, res.data);
-
       const payload = res.data?.user || res.data?.data?.user || res.data?.data;
+
       if (payload && (payload._id || payload.id || payload.email)) {
-        const normalizedRole = (payload.role || 'student').toString().trim().toLowerCase();
+        const normalizedRole = (payload.role || 'STUDENT').toString().trim().toLowerCase();
         const cleanUser = { ...payload, role: normalizedRole };
         if (res.data?.data?.tutorProfile) {
           cleanUser.tutorProfile = res.data.data.tutorProfile;
         }
         setUser(cleanUser);
-        try {
-          localStorage.setItem('user', JSON.stringify(cleanUser));
-          localStorage.setItem('role', normalizedRole);
-          Cookies.set('role', normalizedRole.toUpperCase(), { expires: 7, path: '/' });
-        } catch (_) {}
+        Cookies.set('role', normalizedRole.toUpperCase(), { expires: 7, path: '/', secure: true, sameSite: 'none' });
         return cleanUser;
       } else {
+        setUser(null);
         return null;
       }
     } catch (error) {
-      console.warn('[AuthContext] Session verification note:', error.response?.status, error.response?.data || error.message);
-      if (error.response?.status === 401) {
-        setUser(null);
-        try {
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
-          localStorage.removeItem('mn_token');
-          localStorage.removeItem('role');
-          Cookies.remove('token');
-          Cookies.remove('jwt');
-          Cookies.remove('role');
-        } catch (_) {}
-      }
+      console.warn('[AuthContext] Cookie verification status:', error.response?.status);
+      setUser(null);
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     refreshUser();
-  }, []);
+  }, [refreshUser]);
 
   const login = async (emailOrData, maybePassword) => {
-    localStorage.clear(); // CLEAR OLD STALE TOKENS/ROLES FIRST
-
     let email, password, roleReq;
     if (typeof emailOrData === 'object' && emailOrData !== null) {
       email = emailOrData.email;
@@ -85,28 +61,19 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoading(true);
       const res = await apiLogin({ email, password, role: roleReq });
-      const user = res.data?.user || res.data?.data?.user;
-      const token = res.data?.token || res.data?.data?.token;
+      const returnedUser = res.data?.user || res.data?.data?.user;
 
-      if (!user) {
+      if (!returnedUser) {
         throw new Error(res.data?.message || 'Login failed - no user returned');
       }
 
-      const role = (user.role || 'student').toString().toLowerCase().trim();
-      const cleanUser = { ...user, role: role };
-
-      localStorage.setItem('token', token || '');
-      localStorage.setItem('mn_token', token || '');
-      localStorage.setItem('user', JSON.stringify(cleanUser));
-      localStorage.setItem('role', role);
-
-      console.log("LOGIN SUCCESS ROLE:", role);
-
+      const role = (returnedUser.role || 'student').toString().toLowerCase().trim();
+      const cleanUser = { ...returnedUser, role };
       setUser(cleanUser);
+      Cookies.set('role', role.toUpperCase(), { expires: 7, path: '/', secure: true, sameSite: 'none' });
 
-      if (role === 'student' || role === 'parent') {
-        window.location.replace('/student/dashboard');
-      } else if (role === 'tutor') {
+      // Role-based navigation
+      if (role === 'tutor') {
         window.location.replace('/tutor/dashboard');
       } else if (role === 'admin') {
         window.location.replace('/admin/dashboard');
@@ -114,40 +81,28 @@ export const AuthProvider = ({ children }) => {
         window.location.replace('/student/dashboard');
       }
 
-      return { ...res, user: cleanUser, token };
+      return { ...res, user: cleanUser };
     } finally {
       setIsLoading(false);
     }
   };
 
   const register = async (data) => {
-    localStorage.clear(); // CLEAR OLD STALE TOKENS/ROLES FIRST
-
     try {
       setIsLoading(true);
       const res = await apiRegister(data);
-      const user = res.data?.user || res.data?.data?.user;
-      const token = res.data?.token || res.data?.data?.token;
+      const returnedUser = res.data?.user || res.data?.data?.user;
 
-      if (!user) {
+      if (!returnedUser) {
         throw new Error(res.data?.message || 'Registration failed - no user returned');
       }
 
-      const role = (user.role || data.role || 'student').toString().toLowerCase().trim();
-      const cleanUser = { ...user, role: role };
-
-      localStorage.setItem('token', token || '');
-      localStorage.setItem('mn_token', token || '');
-      localStorage.setItem('user', JSON.stringify(cleanUser));
-      localStorage.setItem('role', role);
-
-      console.log("REGISTER SUCCESS ROLE:", role);
-
+      const role = (returnedUser.role || data.role || 'student').toString().toLowerCase().trim();
+      const cleanUser = { ...returnedUser, role };
       setUser(cleanUser);
+      Cookies.set('role', role.toUpperCase(), { expires: 7, path: '/', secure: true, sameSite: 'none' });
 
-      if (role === 'student' || role === 'parent') {
-        window.location.replace('/student/dashboard');
-      } else if (role === 'tutor') {
+      if (role === 'tutor') {
         window.location.replace('/tutor/dashboard');
       } else if (role === 'admin') {
         window.location.replace('/admin/dashboard');
@@ -155,40 +110,28 @@ export const AuthProvider = ({ children }) => {
         window.location.replace('/student/dashboard');
       }
 
-      return { ...res, user: cleanUser, token };
+      return { ...res, user: cleanUser };
     } finally {
       setIsLoading(false);
     }
   };
 
   const googleLogin = async (data) => {
-    localStorage.clear(); // CLEAR OLD STALE TOKENS/ROLES FIRST
-
     try {
       setIsLoading(true);
       const res = await apiGoogleAuth(data);
-      const user = res.data?.user || res.data?.data?.user;
-      const token = res.data?.token || res.data?.data?.token;
+      const returnedUser = res.data?.user || res.data?.data?.user;
 
-      if (!user) {
+      if (!returnedUser) {
         throw new Error(res.data?.message || 'Google login failed - no user returned');
       }
 
-      const role = (user.role || 'student').toString().toLowerCase().trim();
-      const cleanUser = { ...user, role: role };
-
-      localStorage.setItem('token', token || '');
-      localStorage.setItem('mn_token', token || '');
-      localStorage.setItem('user', JSON.stringify(cleanUser));
-      localStorage.setItem('role', role);
-
-      console.log("GOOGLE LOGIN SUCCESS ROLE:", role);
-
+      const role = (returnedUser.role || 'student').toString().toLowerCase().trim();
+      const cleanUser = { ...returnedUser, role };
       setUser(cleanUser);
+      Cookies.set('role', role.toUpperCase(), { expires: 7, path: '/', secure: true, sameSite: 'none' });
 
-      if (role === 'student' || role === 'parent') {
-        window.location.replace('/student/dashboard');
-      } else if (role === 'tutor') {
+      if (role === 'tutor') {
         window.location.replace('/tutor/dashboard');
       } else if (role === 'admin') {
         window.location.replace('/admin/dashboard');
@@ -196,24 +139,20 @@ export const AuthProvider = ({ children }) => {
         window.location.replace('/student/dashboard');
       }
 
-      return { ...res, user: cleanUser, token };
+      return { ...res, user: cleanUser };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     try {
-      apiLogout().catch(() => {});
+      await apiLogout();
     } catch (_) {}
     try {
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      localStorage.removeItem('mn_token');
-      localStorage.removeItem('role');
-      Cookies.remove('token');
-      Cookies.remove('jwt');
-      Cookies.remove('role');
+      Cookies.remove('token', { path: '/' });
+      Cookies.remove('jwt', { path: '/' });
+      Cookies.remove('role', { path: '/' });
     } catch (_) {}
     setUser(null);
     setIsLoading(false);
@@ -221,7 +160,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, register, googleLogin, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
+        register,
+        googleLogin,
+        logout,
+        refreshUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

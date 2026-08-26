@@ -306,18 +306,13 @@ exports.login = asyncHandler(async (req, res, next) => {
 });
 
 exports.logout = asyncHandler(async (req, res, next) => {
-  const isProd = process.env.NODE_ENV === 'production';
   const clearOptions = {
     expires: new Date(0),
     maxAge: 0,
     path: '/',
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
+    secure: true,
+    sameSite: 'none',
   };
-
-  if (process.env.COOKIE_DOMAIN && isProd) {
-    clearOptions.domain = process.env.COOKIE_DOMAIN;
-  }
 
   res.cookie('token', '', { ...clearOptions, httpOnly: true });
   res.cookie('jwt', '', { ...clearOptions, httpOnly: true });

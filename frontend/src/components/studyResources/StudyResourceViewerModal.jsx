@@ -273,11 +273,22 @@ const StudyResourceViewerModalInner = ({
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', handleKeyDown);
 
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+
     return () => {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
+
+  // Scroll reset to top of Page 1 whenever document changes or loads
+  useEffect(() => {
+    if (isOpen && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [isOpen, pdfDoc, pdfBlobUrl]);
 
   // 2. Periodic Moving Watermark Drift (Changes subtly every 4 seconds)
   useEffect(() => {
@@ -572,13 +583,26 @@ const StudyResourceViewerModalInner = ({
       setDownloading(false);
     }
   };
-
   const userIdentifier = maskIdentifier(user?.email || user?.name || 'student@mentornearby.in');
 
   const modalContent = (
     <div
-      className="sr-modal-overlay sr-protected-reader-overlay fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-0 sm:p-4 w-screen h-screen overflow-hidden"
+      className="sr-modal-overlay sr-protected-reader-overlay fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-0 sm:p-4 w-screen h-screen overflow-hidden"
       onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        height: '100dvh',
+        zIndex: 999999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
       {/* Print Restriction & Mobile Responsive Viewer CSS */}
       <style>{`
@@ -590,28 +614,41 @@ const StudyResourceViewerModalInner = ({
           from { transform: translate(-50%, -20px); opacity: 0; }
           to { transform: translate(-50%, 0); opacity: 1; }
         }
+        .sr-protected-reader-overlay {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          z-index: 999999 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
         @media (max-width: 768px) {
-          .sr-protected-reader-overlay {
-            padding: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            position: fixed !important;
-            inset: 0 !important;
-          }
           .sr-protected-reader-modal {
             width: 100vw !important;
             height: 100vh !important;
+            height: 100dvh !important;
             max-height: 100vh !important;
+            max-height: 100dvh !important;
             border-radius: 0 !important;
             border: none !important;
+            margin: 0 !important;
           }
         }
       `}</style>
 
       <div
         ref={viewerContainerRef}
-        className="sr-modal-content sr-protected-reader-modal w-full sm:w-[96vw] max-w-[1240px] h-full sm:h-[94vh] bg-slate-900 sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl border-0 sm:border border-slate-700 relative select-none"
+        className="sr-modal-content sr-protected-reader-modal w-full sm:w-[96vw] max-w-[1240px] h-full sm:h-[94vh] max-h-[100vh] sm:max-h-[94vh] bg-slate-900 sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl border-0 sm:border border-slate-700 relative select-none"
         onClick={(e) => e.stopPropagation()}
+        style={{ margin: 'auto' }}
       >
         {/* Security Notification Banner Toast */}
         {protectionToast && (
@@ -714,7 +751,7 @@ const StudyResourceViewerModalInner = ({
               </button>
               <span
                 onClick={handleZoomReset}
-                className="text-sky-400 font-bold text-[11px] sm:text-xs min-w-[42px] text-center cursor-pointer select-none"
+                className="text-slate-200 text-[11px] sm:text-xs font-semibold px-2 cursor-pointer hover:text-sky-400 min-w-[42px] text-center select-none"
                 title="Reset Zoom (100%)"
               >
                 {zoomLevel}%
@@ -730,26 +767,28 @@ const StudyResourceViewerModalInner = ({
               </button>
             </div>
 
-            {/* Right: Fullscreen & Download Button */}
+            {/* Right: Actions (Fullscreen & Download) */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className="hidden sm:flex items-center gap-1.5 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-lg px-2.5 py-1 text-xs font-semibold"
+                className="bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium flex items-center gap-1.5 transition-colors"
                 title="Toggle Fullscreen"
               >
-                <span>{isFullscreen ? '🗗' : '⛶'}</span>
-                <span>{isFullscreen ? 'Exit' : 'Full Screen'}</span>
+                <span>{isFullscreen ? '↘' : '⛶'}</span>
+                <span className="hidden md:inline">{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
               </button>
 
+              {/* Download Button: Free if unlocked, or opens Payment modal */}
               {isUnlocked ? (
                 <button
                   type="button"
                   onClick={handleDownload}
                   disabled={downloading}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shadow-md"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-md disabled:opacity-50"
+                  title="Download PDF File"
                 >
-                  <span>⬇️</span>
+                  <span>{downloading ? '⏳' : '📥'}</span>
                   <span>{downloading ? 'Downloading...' : 'Download PDF'}</span>
                 </button>
               ) : (
@@ -760,7 +799,7 @@ const StudyResourceViewerModalInner = ({
                       handleOpenPayment(resource);
                     }
                   }}
-                  className="bg-amber-600 hover:bg-amber-500 text-white rounded-lg px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shadow-md"
+                  className="bg-amber-600 hover:bg-amber-500 text-white rounded-lg px-3 py-1 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shadow-md"
                 >
                   <span>🔒</span>
                   <span>Download • ₹{downloadPrice}</span>
@@ -778,8 +817,8 @@ const StudyResourceViewerModalInner = ({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 w-full max-w-full bg-slate-950 overflow-y-auto overflow-x-auto relative flex flex-col items-center p-2 sm:p-4"
-          style={{ WebkitOverflowScrolling: 'touch' }}
+          className="flex-1 w-full max-w-full bg-slate-950 overflow-y-auto overflow-x-hidden relative flex flex-col items-center p-2 sm:p-4"
+          style={{ WebkitOverflowScrolling: 'touch', minHeight: 0 }}
         >
           {/* Loading Indicator */}
           {loading && (
@@ -809,20 +848,21 @@ const StudyResourceViewerModalInner = ({
           {!loading && !errorMsg && !useFallbackIframe && pdfDoc && (
             <div
               ref={canvasContainerRef}
-              className="relative w-full flex flex-col items-center gap-4 py-2"
+              className="relative w-full max-w-full flex flex-col items-center gap-4 py-2 my-0"
             >
               {Array.from({ length: numPages }).map((_, index) => {
                 const pageNum = index + 1;
                 return (
                   <div
                     key={pageNum}
-                    className="relative max-w-full flex flex-col items-center"
+                    className="relative max-w-full flex flex-col items-center my-0"
                   >
                     <canvas
                       ref={(el) => {
                         canvasRefs.current[pageNum] = el;
                       }}
                       className="max-w-full h-auto block bg-white rounded-md shadow-2xl"
+                      style={{ maxWidth: '100%' }}
                     />
 
                     {/* Subtle, Non-Intrusive Watermark (Single diagonal per page, opacity ~0.08) */}
@@ -849,12 +889,12 @@ const StudyResourceViewerModalInner = ({
           {!loading && !errorMsg && (useFallbackIframe || !pdfDoc) && (
             <div className="relative w-full h-full min-h-[400px] flex-1 flex justify-center bg-slate-900 rounded-lg overflow-hidden">
               <object
-                data={`${pdfBlobUrl || streamFileUrl}#view=FitH&toolbar=0&navpanes=0`}
+                data={`${pdfBlobUrl || streamFileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
                 type="application/pdf"
                 className="w-full h-full border-none block min-h-[450px]"
               >
                 <iframe
-                  src={`${pdfBlobUrl || streamFileUrl}#view=FitH&toolbar=0&navpanes=0`}
+                  src={`${pdfBlobUrl || streamFileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
                   title={resource?.title || 'Study Resource PDF'}
                   className="w-full h-full border-none block min-h-[450px]"
                 />

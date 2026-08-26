@@ -271,11 +271,35 @@ const StudyPaymentModal = ({
       <div
         className="sr-payment-modal-box"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '92%',
+          maxWidth: 480,
+          maxHeight: '88vh',
+          maxHeight: '88dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 16,
+          overflow: 'hidden',
+          backgroundColor: 'var(--modal-bg, #FFFFFF)',
+          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.5)',
+          position: 'relative',
+          border: '1px solid var(--modal-border, #E2E8F0)',
+        }}
       >
-        {/* Header */}
-        <div className="sr-payment-modal-header">
-          <h3 className="sr-payment-modal-title">
-            {isDirectCombo ? 'Buy Combo Pack' : 'Download this PDF'}
+        {/* 1. Fixed Top Header */}
+        <div
+          className="sr-payment-modal-header"
+          style={{
+            flexShrink: 0,
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border-color, #E2E8F0)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <h3 className="sr-payment-modal-title" style={{ margin: 0 }}>
+            {isDirectCombo ? 'Buy Combo Pack' : 'Download PPT / Study Material'}
           </h3>
           <button
             type="button"
@@ -286,166 +310,182 @@ const StudyPaymentModal = ({
           </button>
         </div>
 
-        {/* ------------------------------------------------------------ */}
-        {/* A. DIRECT COMBO PACK PURCHASE UI                             */}
-        {/* ------------------------------------------------------------ */}
-        {isDirectCombo ? (
-          <div>
-            <div className="sr-payment-combo-summary">
-              <div className={`sr-payment-combo-icon-box ${isFormula ? 'formula' : 'notes'}`}>
-                {isFormula ? '📐' : '📚'}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="sr-payment-combo-name">
-                  {comboName}
-                </div>
-                <div className="sr-payment-combo-inc">
-                  {comboIncludedText}
-                </div>
-              </div>
-            </div>
-
-            {/* Value vs Price Breakdown */}
-            <div className="sr-payment-breakdown-box">
-              <div className="sr-payment-row">
-                <span>Original Total Value:</span>
-                <span className="sr-payment-strike">₹{comboOriginalVal}</span>
-              </div>
-              <div className="sr-payment-row green">
-                <span>Bundle Discount:</span>
-                <span>- ₹{comboOriginalVal - comboPrice}</span>
-              </div>
-              <div className="sr-payment-divider" />
-              <div className="sr-payment-row total">
-                <span>Amount to Pay:</span>
-                <span className="sr-payment-price">₹{comboPrice}</span>
-              </div>
-            </div>
-
-            <div className="sr-payment-trust-badge">
-              <span>🛡️</span>
-              <span>Secure Payment • Unlocks all {isFormula ? 'Formula Sheets' : 'Notes'} in this combo</span>
-            </div>
-          </div>
-        ) : (
-          /* ---------------------------------------------------------- */
-          /* B. INDIVIDUAL CARD DOWNLOAD FLOW WITH COMBO OPTION         */
-          /* (EXACT MATCH OF REFERENCE SCREENSHOT media_1787434630244)  */
-          /* ---------------------------------------------------------- */
-          <div>
-            <div className="sr-payment-res-banner">
-              <div className={`sr-payment-res-icon ${isFormula ? 'formula' : 'notes'}`}>
-                📄
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="sr-payment-res-title" title={itemTitle}>
-                  {itemTitle}
-                </div>
-                <div className="sr-payment-res-meta">
-                  {isFormula ? 'Formula Sheet' : 'Notes'} • {effectiveSubject} • Class {effectiveClass}
-                </div>
-              </div>
-            </div>
-
-            {/* Free Online Reading Banner */}
-            <div className="sr-payment-free-read">
-              <span>✓</span>
-              <span>Reading Online is FREE</span>
-            </div>
-
-            {/* Option Selection Area */}
-            <div className="sr-payment-opts-header">
-              <span>Choose an Option</span>
-              <span className="sr-payment-shield">
-                🛡️ Secure Payment
-              </span>
-            </div>
-
-            <div className="sr-payment-options-list">
-              {/* Option 1: Individual Download */}
-              <label
-                className={`sr-payment-opt-item ${selectedOption === 'INDIVIDUAL' ? 'active' : ''}`}
-                onClick={() => setSelectedOption('INDIVIDUAL')}
-              >
-                <div className="sr-payment-opt-left">
-                  <input
-                    type="radio"
-                    name="downloadOption"
-                    checked={selectedOption === 'INDIVIDUAL'}
-                    onChange={() => setSelectedOption('INDIVIDUAL')}
-                  />
-                  <div>
-                    <div className="sr-payment-opt-title">Individual Download</div>
-                    <div className="sr-payment-opt-sub">Download this specific PDF</div>
-                  </div>
-                </div>
-                <div className="sr-payment-opt-price">
-                  ₹{individualPrice}
-                </div>
-              </label>
-
-              {/* Option 2: Single-Class Single-Subject Combo */}
-              <label
-                className={`sr-payment-opt-item ${selectedOption === 'COMBO' ? 'active' : ''}`}
-                onClick={() => setSelectedOption('COMBO')}
-              >
-                <div className="sr-payment-opt-left">
-                  <input
-                    type="radio"
-                    name="downloadOption"
-                    checked={selectedOption === 'COMBO'}
-                    onChange={() => setSelectedOption('COMBO')}
-                  />
-                  <div>
-                    <div className="sr-payment-opt-title">{singleComboName}</div>
-                    <div className="sr-payment-opt-sub">{singleComboSub}</div>
-                  </div>
-                </div>
-                <div className="sr-payment-opt-price">
-                  ₹{singleComboPrice}
-                </div>
-              </label>
-            </div>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {errorMsg && (
-          <div className="sr-payment-error-box">
-            ⚠️ {errorMsg}
-          </div>
-        )}
-
-        {/* Payment Success Banner */}
-        {paymentSuccess && (
-          <div className="sr-payment-success-box">
-            <div>✓ Payment Successful</div>
-            <div className="sr-payment-success-sub">
-              {isDirectCombo || selectedOption === 'COMBO'
-                ? '✓ All Resources in Combo Unlocked!'
-                : '✓ Download Starting Automatically...'}
-            </div>
-          </div>
-        )}
-
-        {/* CTA Button */}
-        <button
-          type="button"
-          className="sr-payment-cta-btn"
-          onClick={handleCheckout}
-          disabled={loading || paymentSuccess}
+        {/* 2. Scrollable Middle Body Content */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '16px 20px',
+            WebkitOverflowScrolling: 'touch',
+          }}
         >
-          {loading
-            ? 'Processing Order...'
-            : paymentSuccess
-              ? '✓ Unlocked!'
-              : isDirectCombo
-                ? `Pay ₹${comboPrice} & Unlock Combo`
-                : `Pay ₹${activePrice} & Download`}
-        </button>
+          {/* A. DIRECT COMBO PACK PURCHASE UI */}
+          {isDirectCombo ? (
+            <div>
+              <div className="sr-payment-combo-summary">
+                <div className={`sr-payment-combo-icon-box ${isFormula ? 'formula' : 'notes'}`}>
+                  {isFormula ? '📐' : '📚'}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div className="sr-payment-combo-name">
+                    {comboName}
+                  </div>
+                  <div className="sr-payment-combo-inc">
+                    {comboIncludedText}
+                  </div>
+                </div>
+              </div>
 
-        <div className="sr-payment-footer-note">
-          🛡️ Payments are secure and encrypted
+              {/* Value vs Price Breakdown */}
+              <div className="sr-payment-breakdown-box">
+                <div className="sr-payment-row">
+                  <span>Original Total Value:</span>
+                  <span className="sr-payment-strike">₹{comboOriginalVal}</span>
+                </div>
+                <div className="sr-payment-row green">
+                  <span>Bundle Discount:</span>
+                  <span>- ₹{comboOriginalVal - comboPrice}</span>
+                </div>
+                <div className="sr-payment-divider" />
+                <div className="sr-payment-row total">
+                  <span>Amount to Pay:</span>
+                  <span className="sr-payment-price">₹{comboPrice}</span>
+                </div>
+              </div>
+
+              <div className="sr-payment-trust-badge">
+                <span>🛡️</span>
+                <span>Secure Payment • Unlocks all {isFormula ? 'Formula Sheets' : 'Notes'} in this combo</span>
+              </div>
+            </div>
+          ) : (
+            /* B. INDIVIDUAL CARD DOWNLOAD FLOW WITH COMBO OPTION */
+            <div>
+              <div className="sr-payment-res-banner">
+                <div className={`sr-payment-res-icon ${isFormula ? 'formula' : 'notes'}`}>
+                  📄
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div className="sr-payment-res-title" title={itemTitle}>
+                    {itemTitle}
+                  </div>
+                  <div className="sr-payment-res-meta">
+                    {isFormula ? 'Formula Sheet' : 'Notes / PPT'} • {effectiveSubject} • Class {effectiveClass}
+                  </div>
+                </div>
+              </div>
+
+              {/* Free Online Reading Banner */}
+              <div className="sr-payment-free-read">
+                <span>✓</span>
+                <span>Reading Online is FREE</span>
+              </div>
+
+              {/* Option Selection Area */}
+              <div className="sr-payment-opts-header">
+                <span>Choose an Option</span>
+                <span className="sr-payment-shield">
+                  🛡️ Secure Payment
+                </span>
+              </div>
+
+              <div className="sr-payment-options-list">
+                {/* Option 1: Individual Download */}
+                <label
+                  className={`sr-payment-opt-item ${selectedOption === 'INDIVIDUAL' ? 'active' : ''}`}
+                  onClick={() => setSelectedOption('INDIVIDUAL')}
+                >
+                  <div className="sr-payment-opt-left">
+                    <input
+                      type="radio"
+                      name="downloadOption"
+                      checked={selectedOption === 'INDIVIDUAL'}
+                      onChange={() => setSelectedOption('INDIVIDUAL')}
+                    />
+                    <div>
+                      <div className="sr-payment-opt-title">Individual Download</div>
+                      <div className="sr-payment-opt-sub">Download this specific PDF / PPT</div>
+                    </div>
+                  </div>
+                  <div className="sr-payment-opt-price">
+                    ₹{individualPrice}
+                  </div>
+                </label>
+
+                {/* Option 2: Single-Class Single-Subject Combo */}
+                <label
+                  className={`sr-payment-opt-item ${selectedOption === 'COMBO' ? 'active' : ''}`}
+                  onClick={() => setSelectedOption('COMBO')}
+                >
+                  <div className="sr-payment-opt-left">
+                    <input
+                      type="radio"
+                      name="downloadOption"
+                      checked={selectedOption === 'COMBO'}
+                      onChange={() => setSelectedOption('COMBO')}
+                    />
+                    <div>
+                      <div className="sr-payment-opt-title">{singleComboName}</div>
+                      <div className="sr-payment-opt-sub">{singleComboSub}</div>
+                    </div>
+                  </div>
+                  <div className="sr-payment-opt-price">
+                    ₹{singleComboPrice}
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {errorMsg && (
+            <div className="sr-payment-error-box">
+              ⚠️ {errorMsg}
+            </div>
+          )}
+
+          {/* Payment Success Banner */}
+          {paymentSuccess && (
+            <div className="sr-payment-success-box">
+              <div>✓ Payment Successful</div>
+              <div className="sr-payment-success-sub">
+                {isDirectCombo || selectedOption === 'COMBO'
+                  ? '✓ All Resources in Combo Unlocked!'
+                  : '✓ Download Starting Automatically...'}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Sticky Bottom Footer (PAY BUTTON ALWAYS VISIBLE!) */}
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '14px 20px calc(14px + env(safe-area-inset-bottom, 0px)) 20px',
+            borderTop: '1px solid var(--border-color, #E2E8F0)',
+            backgroundColor: 'var(--modal-bg, #FFFFFF)',
+            zIndex: 10,
+          }}
+        >
+          <button
+            type="button"
+            className="sr-payment-cta-btn"
+            onClick={handleCheckout}
+            disabled={loading || paymentSuccess}
+            style={{ width: '100%', margin: 0 }}
+          >
+            {loading
+              ? 'Processing Order...'
+              : paymentSuccess
+                ? '✓ Unlocked!'
+                : isDirectCombo
+                  ? `Pay ₹${comboPrice} & Unlock Combo`
+                  : `Pay ₹${activePrice} & Download`}
+          </button>
+
+          <div className="sr-payment-footer-note" style={{ marginTop: 8 }}>
+            🛡️ Payments are secure and encrypted
+          </div>
         </div>
       </div>
     </div>

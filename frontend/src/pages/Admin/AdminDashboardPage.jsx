@@ -433,35 +433,27 @@ const AdminDashboardPage = () => {
       {/* ============================================================ */}
       {/* 1. TOP HEADER & FILTER CONTROLS                              */}
       {/* ============================================================ */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xs">
+      <div className="bg-white border border-[#F0EAD6] rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xs">
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-gray-900 tracking-tight leading-snug">
             Welcome back, {user?.name || 'Admin'}! 👋
           </h1>
-          <p className="text-xs md:text-sm text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-500 mt-0.5">
             Here's what's happening with MentorNearby today.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          {/* Date Range Selector */}
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2 focus:outline-none focus:border-[#FF6B00] cursor-pointer hover:bg-gray-100 transition"
-          >
-            <option value="today">📅 Today</option>
-            <option value="7d">📅 18 May – 24 May 2025 (This Week)</option>
-            <option value="30d">📅 Last 30 Days</option>
-            <option value="90d">📅 Last 90 Days</option>
-            <option value="all">📅 All Time</option>
-          </select>
+        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          {/* Blue Date Range Pill */}
+          <span className="bg-blue-600 text-white rounded-full px-3.5 py-1.5 text-xs font-semibold shadow-2xs whitespace-nowrap">
+            📅 18 May – 24 May 2025 (This Week)
+          </span>
 
-          {/* Refresh Button */}
+          {/* Black Refresh Button */}
           <button
             onClick={() => fetchAllDashboardData(true)}
             disabled={refreshing}
-            className="flex items-center gap-1.5 text-xs font-bold text-gray-700 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 px-3.5 py-2 rounded-xl transition shadow-2xs cursor-pointer disabled:opacity-60"
+            className="bg-black hover:bg-gray-800 text-white rounded-full px-4 py-1.5 text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-60 flex items-center gap-1.5 whitespace-nowrap"
           >
             <span className={refreshing ? 'animate-spin inline-block' : ''}>🔄</span>
             <span>Refresh Data</span>
@@ -472,278 +464,254 @@ const AdminDashboardPage = () => {
       {/* ============================================================ */}
       {/* 2. 8 KPI STAT CARDS GRID (4 cols x 2 rows)                   */}
       {/* ============================================================ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
         
-        {/* Total Users */}
+        {/* Card 1: Total Users */}
         <div 
           onClick={() => navigate('/admin/users')}
-          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+          className="bg-white border border-[#F0EAD6] rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
-                👥
-              </div>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Users</span>
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#FEF3C7] text-lg font-bold">
+              👥
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenWhatsAppModal(null, 'all');
-              }}
-              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
-              title="WhatsApp Quick Contact"
-            >
-              <WhatsAppIcon size={18} />
-            </button>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-              {stats?.totalUsers || 0}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                ↗ {trends.users != null ? `${Math.abs(trends.users).toFixed(1)}%` : '12.5%'} this week
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenWhatsAppModal(null, 'all');
+                }}
+                className="w-7 h-7 bg-[#25D366] hover:bg-green-600 rounded-lg flex items-center justify-center text-white text-xs shadow-2xs transition cursor-pointer"
+                title="WhatsApp Quick Contact"
+              >
+                <WhatsAppIcon size={14} />
+              </button>
             </div>
-            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <span>↗</span>
-              <span>{trends.users != null ? `${Math.abs(trends.users).toFixed(1)}%` : '12.5%'} this week</span>
-            </p>
           </div>
+          <h3 className="text-2xl font-bold mt-4 text-black tracking-tight">
+            {(stats?.totalUsers || 0).toLocaleString('en-IN')}
+          </h3>
+          <p className="text-xs font-medium text-gray-500 mt-0.5">Total Users</p>
         </div>
 
-        {/* Students */}
+        {/* Card 2: Students */}
         <div 
           onClick={() => navigate('/admin/students')}
-          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+          className="bg-white border border-[#F0EAD6] rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
-                👨‍🎓
-              </div>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Students</span>
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600 text-lg font-bold">
+              👨‍🎓
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenWhatsAppModal(null, 'students');
-              }}
-              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
-              title="WhatsApp Students"
-            >
-              <WhatsAppIcon size={18} />
-            </button>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-              {stats?.totalStudents || 0}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                ↗ {trends.students != null ? `${Math.abs(trends.students).toFixed(1)}%` : '10.4%'} this week
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenWhatsAppModal(null, 'students');
+                }}
+                className="w-7 h-7 bg-[#25D366] hover:bg-green-600 rounded-lg flex items-center justify-center text-white text-xs shadow-2xs transition cursor-pointer"
+                title="WhatsApp Students"
+              >
+                <WhatsAppIcon size={14} />
+              </button>
             </div>
-            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <span>↗</span>
-              <span>{trends.students != null ? `${Math.abs(trends.students).toFixed(1)}%` : '10.4%'} this week</span>
-            </p>
           </div>
+          <h3 className="text-2xl font-bold mt-4 text-black tracking-tight">
+            {(stats?.totalStudents || 0).toLocaleString('en-IN')}
+          </h3>
+          <p className="text-xs font-medium text-gray-500 mt-0.5">Students</p>
         </div>
 
-        {/* Tutors */}
+        {/* Card 3: Tutors */}
         <div 
           onClick={() => navigate('/admin/tutors')}
-          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+          className="bg-white border border-[#F0EAD6] rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
-                👨‍🏫
-              </div>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tutors</span>
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-50 text-amber-600 text-lg font-bold">
+              👨‍🏫
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenWhatsAppModal(null, 'tutors');
-              }}
-              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
-              title="WhatsApp Tutors"
-            >
-              <WhatsAppIcon size={18} />
-            </button>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-              {stats?.totalTutors || 0}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                ↗ {trends.tutors != null ? `${Math.abs(trends.tutors).toFixed(1)}%` : '15.3%'} this week
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenWhatsAppModal(null, 'tutors');
+                }}
+                className="w-7 h-7 bg-[#25D366] hover:bg-green-600 rounded-lg flex items-center justify-center text-white text-xs shadow-2xs transition cursor-pointer"
+                title="WhatsApp Tutors"
+              >
+                <WhatsAppIcon size={14} />
+              </button>
             </div>
-            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <span>↗</span>
-              <span>{trends.tutors != null ? `${Math.abs(trends.tutors).toFixed(1)}%` : '15.3%'} this week</span>
-            </p>
           </div>
+          <h3 className="text-2xl font-bold mt-4 text-black tracking-tight">
+            {(stats?.totalTutors || 0).toLocaleString('en-IN')}
+          </h3>
+          <p className="text-xs font-medium text-gray-500 mt-0.5">Tutors</p>
         </div>
 
-        {/* Pending KYC */}
+        {/* Card 4: Pending KYC */}
         <div 
           onClick={() => navigate('/admin/kyc')}
-          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+          className="bg-white border border-[#F0EAD6] rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
-                🛡️
-              </div>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending KYC</span>
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-yellow-50 text-yellow-600 text-lg font-bold">
+              🛡️
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenWhatsAppModal(null, 'kyc');
-              }}
-              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
-              title="WhatsApp KYC Applicants"
-            >
-              <WhatsAppIcon size={18} />
-            </button>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-              {stats?.pendingKYC || 0}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold bg-red-50 text-red-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                ↘ {trends.pendingKYC != null ? `${Math.abs(trends.pendingKYC).toFixed(1)}%` : '4.0%'} this week
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenWhatsAppModal(null, 'kyc');
+                }}
+                className="w-7 h-7 bg-[#25D366] hover:bg-green-600 rounded-lg flex items-center justify-center text-white text-xs shadow-2xs transition cursor-pointer"
+                title="WhatsApp Pending Applicants"
+              >
+                <WhatsAppIcon size={14} />
+              </button>
             </div>
-            <p className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
-              <span>↘</span>
-              <span>{trends.pendingKYC != null ? `${Math.abs(trends.pendingKYC).toFixed(1)}%` : '4.0%'} this week</span>
-            </p>
           </div>
+          <h3 className="text-2xl font-bold mt-4 text-black tracking-tight">
+            {(stats?.pendingKYC || 0).toLocaleString('en-IN')}
+          </h3>
+          <p className="text-xs font-medium text-gray-500 mt-0.5">Pending KYC</p>
         </div>
 
-        {/* Reports */}
+        {/* Card 5: Reports */}
         <div 
           onClick={() => navigate('/admin/reports')}
-          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+          className="bg-white border border-[#F0EAD6] rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg">
-                🚩
-              </div>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Reports</span>
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600 text-lg font-bold">
+              🚩
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenWhatsAppModal(null, 'all');
-              }}
-              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
-              title="Contact"
-            >
-              <WhatsAppIcon size={18} />
-            </button>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-              {stats?.totalReports || 0}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold bg-red-50 text-red-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                ↘ {trends.reports != null ? `${Math.abs(trends.reports).toFixed(1)}%` : '12.5%'} this week
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenWhatsAppModal(null, 'all');
+                }}
+                className="w-7 h-7 bg-[#25D366] hover:bg-green-600 rounded-lg flex items-center justify-center text-white text-xs shadow-2xs transition cursor-pointer"
+                title="WhatsApp Support"
+              >
+                <WhatsAppIcon size={14} />
+              </button>
             </div>
-            <p className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
-              <span>↘</span>
-              <span>{trends.reports != null ? `${Math.abs(trends.reports).toFixed(1)}%` : '12.5%'} this week</span>
-            </p>
           </div>
+          <h3 className="text-2xl font-bold mt-4 text-black tracking-tight">
+            {(stats?.totalReports || 0).toLocaleString('en-IN')}
+          </h3>
+          <p className="text-xs font-medium text-gray-500 mt-0.5">Reports</p>
         </div>
 
-        {/* Tutor Requests */}
+        {/* Card 6: Tutor Requests */}
         <div 
           onClick={() => navigate('/admin/requests')}
-          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+          className="bg-white border border-[#F0EAD6] rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
-                📋
-              </div>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tutor Requests</span>
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 text-purple-600 text-lg font-bold">
+              📄
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenWhatsAppModal(null, 'students');
-              }}
-              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
-              title="Contact Requester"
-            >
-              <WhatsAppIcon size={18} />
-            </button>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-              {stats?.totalTutorRequests || stats?.totalRequirements || 0}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                ↗ {trends.tutorRequests != null ? `${Math.abs(trends.tutorRequests).toFixed(1)}%` : '23.1%'} this week
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenWhatsAppModal(null, 'students');
+                }}
+                className="w-7 h-7 bg-[#25D366] hover:bg-green-600 rounded-lg flex items-center justify-center text-white text-xs shadow-2xs transition cursor-pointer"
+                title="WhatsApp Requester"
+              >
+                <WhatsAppIcon size={14} />
+              </button>
             </div>
-            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <span>↗</span>
-              <span>{trends.tutorRequests != null ? `${Math.abs(trends.tutorRequests).toFixed(1)}%` : '23.1%'} this week</span>
-            </p>
           </div>
+          <h3 className="text-2xl font-bold mt-4 text-black tracking-tight">
+            {(stats?.totalTutorRequests || stats?.totalRequirements || 0).toLocaleString('en-IN')}
+          </h3>
+          <p className="text-xs font-medium text-gray-500 mt-0.5">Tutor Requests</p>
         </div>
 
-        {/* Contact Unlocks */}
+        {/* Card 7: Contact Unlocks */}
         <div 
           onClick={() => navigate('/admin/contact-unlocks')}
-          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+          className="bg-white border border-[#F0EAD6] rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
-                🔒
-              </div>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Contact Unlocks</span>
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600 text-lg font-bold">
+              🔒
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenWhatsAppModal(null, 'all');
-              }}
-              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
-              title="Contact Unlocked Pair"
-            >
-              <WhatsAppIcon size={18} />
-            </button>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-              {stats?.totalUnlocks || 0}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                ↗ {trends.contactUnlocks != null ? `${Math.abs(trends.contactUnlocks).toFixed(1)}%` : '18.2%'} this week
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenWhatsAppModal(null, 'all');
+                }}
+                className="w-7 h-7 bg-[#25D366] hover:bg-green-600 rounded-lg flex items-center justify-center text-white text-xs shadow-2xs transition cursor-pointer"
+                title="WhatsApp Unlocked Contact"
+              >
+                <WhatsAppIcon size={14} />
+              </button>
             </div>
-            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <span>↗</span>
-              <span>{trends.contactUnlocks != null ? `${Math.abs(trends.contactUnlocks).toFixed(1)}%` : '18.2%'} this week</span>
-            </p>
           </div>
+          <h3 className="text-2xl font-bold mt-4 text-black tracking-tight">
+            {(stats?.totalUnlocks || 0).toLocaleString('en-IN')}
+          </h3>
+          <p className="text-xs font-medium text-gray-500 mt-0.5">Contact Unlocks</p>
         </div>
 
-        {/* Revenue (This Week) */}
+        {/* Card 8: Revenue */}
         <div 
           onClick={() => navigate('/admin/payments')}
-          className="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition group cursor-pointer"
+          className="bg-white border border-[#F0EAD6] rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold">
-                ₹
-              </div>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Revenue ({dateRange === '7d' ? 'This Week' : dateRange})</span>
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-50 text-emerald-600 text-lg font-bold">
+              ₹
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenWhatsAppModal(null, 'all');
-              }}
-              className="p-1.5 rounded-lg hover:bg-green-50 transition text-green-600 cursor-pointer"
-              title="Contact Customer"
-            >
-              <WhatsAppIcon size={18} />
-            </button>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-              ₹{(stats?.periodRevenue || stats?.totalRevenue || 0).toLocaleString('en-IN')}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold bg-green-50 text-green-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                ↗ {trends.revenue != null ? `${Math.abs(trends.revenue).toFixed(1)}%` : '20.6%'} this week
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenWhatsAppModal(null, 'all');
+                }}
+                className="w-7 h-7 bg-[#25D366] hover:bg-green-600 rounded-lg flex items-center justify-center text-white text-xs shadow-2xs transition cursor-pointer"
+                title="WhatsApp Customer"
+              >
+                <WhatsAppIcon size={14} />
+              </button>
             </div>
-            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <span>↗</span>
-              <span>{trends.revenue != null ? `${Math.abs(trends.revenue).toFixed(1)}%` : '20.6%'} this week</span>
-            </p>
           </div>
+          <h3 className="text-2xl font-bold mt-4 text-black tracking-tight">
+            ₹{(stats?.periodRevenue || stats?.totalRevenue || 0).toLocaleString('en-IN')}
+          </h3>
+          <p className="text-xs font-medium text-gray-500 mt-0.5">Revenue (This Week)</p>
         </div>
 
       </div>

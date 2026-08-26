@@ -230,12 +230,12 @@ const AdminLayout = ({ children }) => {
       {/* MAIN CONTENT WRAPPER - Offset 260px                           */}
       {/* ============================================================ */}
       <div 
-        className="admin-main-wrapper flex-1 ml-0 md:ml-[260px] min-h-screen flex flex-col min-w-0 bg-[#FFFBF5] overflow-x-hidden"
+        className="admin-main-wrapper flex-1 ml-0 md:ml-[260px] min-h-screen flex flex-col min-w-0 bg-[#FDFBF7] overflow-x-hidden"
         style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth > 768 ? '260px' : '0' }}
       >
         
         {/* Top Navbar */}
-        <header className="bg-[#FFFBF5] border-b border-[#F0EAD6] px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 flex-shrink-0">
+        <header className="bg-[#FDFBF7] border-b border-[#F0EAD6] px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 flex-shrink-0">
           <div className="flex items-center gap-3 md:gap-4 flex-1">
             {/* Hamburger Button for Mobile Drawer */}
             <button
@@ -321,7 +321,7 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Main Content Body */}
-        <main className="flex-1 bg-[#FFFBF5] p-4 md:p-6 overflow-auto min-w-0">
+        <main className="flex-1 bg-[#FDFBF7] p-4 md:p-6 overflow-auto min-w-0">
           {children}
         </main>
       </div>

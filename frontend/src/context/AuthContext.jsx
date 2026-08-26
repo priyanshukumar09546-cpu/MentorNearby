@@ -12,12 +12,13 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // Pure /api/auth/me session verifier using withCredentials cookies
-  const refreshUser = useCallback(async () => {
+  const checkAuth = useCallback(async () => {
+    setLoading(true);
     try {
-      console.log('[AuthContext] Verifying httpOnly cookie session with /api/auth/me...');
+      console.log('[AuthContext] checkAuth verifying session via /api/auth/me...');
       const res = await getMe();
       const payload = res.data?.user || res.data?.data?.user || res.data?.data;
 
@@ -35,17 +36,17 @@ export const AuthProvider = ({ children }) => {
         return null;
       }
     } catch (error) {
-      console.warn('[AuthContext] Cookie verification status:', error.response?.status);
+      console.warn('[AuthContext] checkAuth status:', error.response?.status);
       setUser(null);
       return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+    checkAuth();
+  }, [checkAuth]);
 
   const login = async (emailOrData, maybePassword) => {
     let email, password, roleReq;
@@ -59,7 +60,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      setIsLoading(true);
+      setLoading(true);
       const res = await apiLogin({ email, password, role: roleReq });
       const returnedUser = res.data?.user || res.data?.data?.user;
 
@@ -72,24 +73,15 @@ export const AuthProvider = ({ children }) => {
       setUser(cleanUser);
       Cookies.set('role', role.toUpperCase(), { expires: 7, path: '/', secure: true, sameSite: 'none' });
 
-      // Role-based navigation
-      if (role === 'tutor') {
-        window.location.replace('/tutor/dashboard');
-      } else if (role === 'admin') {
-        window.location.replace('/admin/dashboard');
-      } else {
-        window.location.replace('/student/dashboard');
-      }
-
-      return { ...res, user: cleanUser };
+      return { ...res, user: cleanUser, role };
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const register = async (data) => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const res = await apiRegister(data);
       const returnedUser = res.data?.user || res.data?.data?.user;
 
@@ -102,23 +94,15 @@ export const AuthProvider = ({ children }) => {
       setUser(cleanUser);
       Cookies.set('role', role.toUpperCase(), { expires: 7, path: '/', secure: true, sameSite: 'none' });
 
-      if (role === 'tutor') {
-        window.location.replace('/tutor/dashboard');
-      } else if (role === 'admin') {
-        window.location.replace('/admin/dashboard');
-      } else {
-        window.location.replace('/student/dashboard');
-      }
-
-      return { ...res, user: cleanUser };
+      return { ...res, user: cleanUser, role };
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const googleLogin = async (data) => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const res = await apiGoogleAuth(data);
       const returnedUser = res.data?.user || res.data?.data?.user;
 
@@ -131,17 +115,9 @@ export const AuthProvider = ({ children }) => {
       setUser(cleanUser);
       Cookies.set('role', role.toUpperCase(), { expires: 7, path: '/', secure: true, sameSite: 'none' });
 
-      if (role === 'tutor') {
-        window.location.replace('/tutor/dashboard');
-      } else if (role === 'admin') {
-        window.location.replace('/admin/dashboard');
-      } else {
-        window.location.replace('/student/dashboard');
-      }
-
-      return { ...res, user: cleanUser };
+      return { ...res, user: cleanUser, role };
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -155,7 +131,7 @@ export const AuthProvider = ({ children }) => {
       Cookies.remove('role', { path: '/' });
     } catch (_) {}
     setUser(null);
-    setIsLoading(false);
+    setLoading(false);
     window.location.replace('/login');
   };
 
@@ -163,13 +139,15 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
-        isLoading,
+        loading,
+        isLoading: loading,
         isAuthenticated: !!user,
+        checkAuth,
+        refreshUser: checkAuth,
         login,
         register,
         googleLogin,
         logout,
-        refreshUser,
       }}
     >
       {children}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { extractUserRole, getRoleDashboard } from '../../components/common/ProtectedRoute';
 import { getGoogleAuthUrl } from '../../api/auth';
 import StudentRegistration from './StudentRegistration';
 import TutorRegistrationWizard from '../../components/tutors/TutorRegistrationWizard';
@@ -67,7 +68,7 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { register } = useAuth();
+  const { register, checkAuth } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -131,14 +132,17 @@ const RegisterPage = () => {
     setErrorMsg('');
 
     try {
-      await register({
+      const res = await register({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         password,
         role: 'STUDENT'
       });
-      navigate('/student/dashboard', { replace: true });
+      const verifiedUser = await checkAuth();
+      const role = extractUserRole(verifiedUser || res?.user);
+      const targetDashboard = getRoleDashboard(role || 'student');
+      navigate(targetDashboard, { replace: true });
     } catch (err) {
       const fieldErrors = err?.response?.data?.errors;
       let msg = err?.response?.data?.message;

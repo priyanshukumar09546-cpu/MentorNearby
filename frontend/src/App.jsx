@@ -177,6 +177,7 @@ const App = () => {
                             
                             {/* 🧑‍🏫 Tutor Protected Routes */}
                             <Route path="/tutor/dashboard" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />
+                            <Route path="/tutor-dashboard" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />
                             <Route path="/tutor/dashboard/*" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />
                             <Route path="/mentor/dashboard" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />
                             <Route path="/tutor/requests" element={<ProtectedRoute roles={['tutor']}><TutorRequestsPage /></ProtectedRoute>} />
@@ -256,6 +257,7 @@ const App = () => {
 
                             {/* Student Dashboard */}
                             <Route path="/dashboard" element={<ProtectedRoute roles={['student', 'parent']}><StudentDashboardPage /></ProtectedRoute>} />
+                            <Route path="/student-dashboard" element={<ProtectedRoute roles={['student', 'parent']}><StudentDashboardPage /></ProtectedRoute>} />
                             <Route path="/dashboard/*" element={<ProtectedRoute roles={['student', 'parent']}><StudentDashboardPage /></ProtectedRoute>} />
                             <Route path="/student/dashboard" element={<ProtectedRoute roles={['student', 'parent']}><StudentDashboardPage /></ProtectedRoute>} />
                             <Route path="/student/dashboard/*" element={<ProtectedRoute roles={['student', 'parent']}><StudentDashboardPage /></ProtectedRoute>} />

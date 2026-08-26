@@ -47,7 +47,7 @@ const LoginPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { user, isAuthenticated, login } = useAuth();
+  const { user, isAuthenticated, login, checkAuth } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,14 +61,6 @@ const LoginPage = () => {
       setSelectedRole('TUTOR');
     }
   }, []);
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      const role = extractUserRole(user);
-      const targetDashboard = getRoleDashboard(role);
-      navigate(targetDashboard, { replace: true });
-    }
-  }, [isAuthenticated, user, navigate]);
 
   /* ── Email/Password Login ── */
   const handleSubmit = async (e) => {
@@ -90,15 +82,11 @@ const LoginPage = () => {
 
     setLoading(true);
     setErrorMsg('');
-    console.log('[AUTH DEBUG] selectedRole =', selectedRole);
     try {
       const res = await login({ email: email.trim().toLowerCase(), password, role: selectedRole });
-      const userObj = res?.user || res?.data?.data?.user || res?.data?.user;
-      const role = extractUserRole(userObj);
-      console.log('[AUTH ROLE AFTER LOGIN]', role);
+      const verifiedUser = await checkAuth();
+      const role = extractUserRole(verifiedUser || res?.user);
       const targetDashboard = getRoleDashboard(role);
-      console.log('[AUTH DEBUG] getRoleDashboard(role) =', targetDashboard);
-      console.log('[AUTH DEBUG] navigating to =', targetDashboard);
       navigate(targetDashboard, { replace: true });
     } catch (err) {
       setErrorMsg(err?.response?.data?.message || 'Invalid email or password. Please try again.');

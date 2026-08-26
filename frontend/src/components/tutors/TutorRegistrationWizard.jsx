@@ -23,7 +23,7 @@ const DAYS_LIST = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
 
 const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, checkAuth } = useAuth();
 
   const [step, setStep] = useState(1);
   const [errorMsg, setErrorMsg] = useState('');
@@ -480,6 +480,7 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
       };
 
       await register(payload);
+      await checkAuth();
       navigate('/tutor/dashboard', { replace: true });
 
     } catch (err) {

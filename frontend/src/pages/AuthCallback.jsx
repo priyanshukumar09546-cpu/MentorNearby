@@ -1,54 +1,41 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { extractUserRole, getRoleDashboard } from '../components/common/ProtectedRoute';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const { checkAuth } = useAuth();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    const role = params.get('role');
-
-    if (token) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('mn_token', token);
-      if (role) {
-        localStorage.setItem('role', role);
+    const processCallback = async () => {
+      try {
+        const verifiedUser = await checkAuth();
+        const role = extractUserRole(verifiedUser);
+        const targetDashboard = getRoleDashboard(role);
+        navigate(targetDashboard, { replace: true });
+      } catch (_) {
+        navigate('/login', { replace: true });
       }
-
-      const normalizedRole = (role || '').toLowerCase();
-      if (normalizedRole === 'mentor' || normalizedRole === 'tutor') {
-        navigate('/mentor/dashboard');
-      } else if (normalizedRole === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/student/dashboard');
-      }
-    } else {
-      navigate('/login');
-    }
-  }, [navigate]);
+    };
+    processCallback();
+  }, [checkAuth, navigate]);
 
   return (
-    <div style={{
-      minHeight: '80vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'var(--color-bg, #FAF8F5)',
-      color: 'var(--color-text-primary, #18181B)',
-      fontFamily: 'Inter, sans-serif'
-    }}>
-      <div style={{
-        fontSize: '28px',
-        marginBottom: '12px'
-      }}>
-        🔄
-      </div>
-      <div style={{ fontSize: '18px', fontWeight: 700 }}>
-        Logging you in...
-      </div>
+    <div
+      style={{
+        minHeight: '80vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#F8FAFC',
+        color: '#0F172A',
+        fontFamily: 'Inter, sans-serif',
+      }}
+    >
+      <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔄</div>
+      <div style={{ fontSize: '18px', fontWeight: 700 }}>Authenticating session...</div>
     </div>
   );
 };

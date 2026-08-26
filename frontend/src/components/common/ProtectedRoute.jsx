@@ -1,7 +1,7 @@
 // ============================================================
 // components/common/ProtectedRoute.jsx
-// Production-Ready Route Protection & Role Verification Guard
-// Redirects Unauthenticated Users to /admin or /login
+// Production-Ready Route Guard & Role Verification
+// Pure Cookie-Based Authentication
 // ============================================================
 
 import React from 'react';
@@ -9,7 +9,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * Normalizes user role string to lowercase standard ('student' | 'parent' | 'tutor' | 'admin')
+ * Normalizes user role string to standard lowercase ('student' | 'tutor' | 'admin')
  */
 export const normalizeRole = (role) => {
   if (!role) return '';
@@ -21,7 +21,7 @@ export const normalizeRole = (role) => {
 };
 
 /**
- * Safely extracts normalized lowercase role from any user payload structure
+ * Safely extracts normalized lowercase role from user object
  */
 export const extractUserRole = (userObj) => {
   if (!userObj) return '';
@@ -48,44 +48,38 @@ export const getRoleDashboard = (role) => {
 };
 
 const ProtectedRoute = ({ children, roles }) => {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, loading, isLoading, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  const isAdminPath = location.pathname.startsWith('/admin');
+  const isChecking = loading !== undefined ? loading : isLoading;
 
-  // While checking session on initial load, show clean loader — do NOT flash dashboard
-  if (isLoading) {
+  // 1. While session verification is in progress, show clean loader — DO NOT REDIRECT
+  if (isChecking) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#F8FAFC' }}>
-        <div className="spinner" style={{ width: '40px', height: '40px', borderColor: '#FED7AA', borderTopColor: '#FF6B00' }}></div>
+        <div style={{ width: '40px', height: '40px', border: '4px solid #E2E8F0', borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
       </div>
     );
   }
 
-  const localRole = (localStorage.getItem('role') || localStorage.getItem('mn_role') || '').toLowerCase();
-  const localToken = localStorage.getItem('mn_token') || localStorage.getItem('token');
+  const isAdminPath = location.pathname.startsWith('/admin');
 
-  // If not authenticated or no user object in state
-  if (!isAuthenticated && !user && !(isAdminPath && localRole === 'admin' && localToken)) {
+  // 2. If unauthenticated, redirect to login page
+  if (!isAuthenticated || !user) {
     if (isAdminPath) {
-      return <Navigate to="/admin" state={{ from: location }} replace />;
+      return <Navigate to="/admin/login" state={{ from: location }} replace />;
     }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Extract normalized lowercase role
-  const userRole = extractUserRole(user) || (localRole === 'admin' ? 'admin' : normalizeRole(localRole));
-
-  // If specific roles are required (e.g. ['student'], ['tutor'], ['admin'])
+  // 3. Role mismatch check -> redirect to user's assigned dashboard
+  const userRole = extractUserRole(user);
   if (roles && Array.isArray(roles) && roles.length > 0) {
     const normalizedAllowedRoles = roles.map(r => normalizeRole(r));
-    
     if (!normalizedAllowedRoles.includes(userRole)) {
-      // If user is trying to access /admin/* but does not have admin role
-      if (isAdminPath) {
-        return <Navigate to="/admin" state={{ from: location }} replace />;
+      if (isAdminPath && userRole !== 'admin') {
+        return <Navigate to="/admin/login" state={{ from: location }} replace />;
       }
-      // Redirect student/tutor to their respective dashboard
       const targetDashboard = getRoleDashboard(userRole);
       return <Navigate to={targetDashboard} replace />;
     }

@@ -179,6 +179,9 @@ const App = () => {
                             <Route path="/tutor/dashboard/*" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />
                             <Route path="/mentor/dashboard" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />
                             <Route path="/tutor/requests" element={<ProtectedRoute roles={['tutor']}><TutorRequestsPage /></ProtectedRoute>} />
+                            <Route path="/student-requests" element={<ProtectedRoute roles={['tutor']}><TutorRequestsPage /></ProtectedRoute>} />
+                            <Route path="/tutor/student-requests" element={<ProtectedRoute roles={['tutor']}><TutorRequestsPage /></ProtectedRoute>} />
+                            <Route path="/dashboard/requests" element={<ProtectedRoute roles={['tutor']}><TutorRequestsPage /></ProtectedRoute>} />
                             <Route path="/tutor/profile" element={<ProtectedRoute roles={['tutor']}><EditTutorProfilePage /></ProtectedRoute>} />
                             <Route path="/tutor/profile/edit" element={<ProtectedRoute roles={['tutor']}><EditTutorProfilePage /></ProtectedRoute>} />
                             <Route path="/tutor/kyc" element={<ProtectedRoute roles={['tutor']}><KYCPage /></ProtectedRoute>} />

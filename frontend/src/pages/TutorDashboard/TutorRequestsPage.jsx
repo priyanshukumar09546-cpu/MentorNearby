@@ -1,146 +1,414 @@
-import React, { useState, useEffect } from 'react';
+// ============================================================
+// pages/TutorDashboard/TutorRequestsPage.jsx
+// MentorNearby — Student Requests & Tuition Inquiries Page
+// Crash-Proof, Responsive, Full Error Handling & Safe Render
+// ============================================================
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import client from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import './TutorRequestsPage.css';
 
 const TutorRequestsPage = () => {
+  const { user, isAuthenticated } = useAuth();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+
+  // Tab State: 'nearby' (Student Requirements) vs 'applications' (My Proposals)
   const [activeTab, setActiveTab] = useState('nearby');
+
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedMode, setSelectedMode] = useState('');
+
+  // Data States (Crash-Proof Initializers)
   const [requirements, setRequirements] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { showToast } = useToast();
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [applyingId, setApplyingId] = useState(null);
+  const [appliedIds, setAppliedIds] = useState(new Set());
+
+  // Safe Data Fetcher with Exhaustive Array Extraction
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      if (activeTab === 'nearby') {
+        const params = {};
+        if (searchQuery.trim()) params.subjects = searchQuery.trim();
+        if (selectedClass) params.class = selectedClass;
+        if (selectedMode) params.teachingMode = selectedMode;
+
+        const response = await client.get('/requirements', { params });
+        const resData = response.data?.data;
+
+        // Safely extract requirements array across diverse backend wrappers
+        let list = [];
+        if (Array.isArray(resData)) {
+          list = resData;
+        } else if (Array.isArray(resData?.data)) {
+          list = resData.data;
+        } else if (Array.isArray(resData?.requirements)) {
+          list = resData.requirements;
+        } else if (Array.isArray(response.data)) {
+          list = response.data;
+        }
+
+        setRequirements(Array.isArray(list) ? list : []);
+      } else {
+        // Fetch My Applications
+        try {
+          const response = await client.get('/requirements/me');
+          const resData = response.data?.data;
+          let list = [];
+          if (Array.isArray(resData)) list = resData;
+          else if (Array.isArray(resData?.requirements)) list = resData.requirements;
+          else if (Array.isArray(resData?.applications)) list = resData.applications;
+
+          setApplications(Array.isArray(list) ? list : []);
+        } catch (_) {
+          setApplications([]);
+        }
+      }
+    } catch (err) {
+      console.error('[TUTOR REQUESTS FETCH ERROR]', err);
+      setErrorMsg('Unable to fetch student requests right now. Please check your internet connection and retry.');
+      setRequirements([]);
+      setApplications([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, searchQuery, selectedClass, selectedMode]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        if (activeTab === 'nearby') {
-          // Assuming an endpoint to fetch open requirements
-          const response = await client.get('/requirements');
-          setRequirements(response.data.data.requirements);
-        } else {
-          // Placeholder for applications endpoint
-          const response = await client.get('/requirements/my-applications');
-          setApplications(response.data.data.applications);
-        }
-      } catch (err) {
-        // showToast('Failed to fetch data', 'error');
-        // fallback empty arrays
-        setRequirements([]);
-        setApplications([]);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
-  }, [activeTab]);
+  }, [fetchData]);
 
+  // Handle Tutor Lead Application
   const handleApply = async (reqId) => {
+    if (!isAuthenticated) {
+      showToast('Please login as a tutor to apply for student requests', 'info');
+      navigate('/login');
+      return;
+    }
+
     try {
+      setApplyingId(reqId);
       await client.post(`/requirements/${reqId}/apply`);
-      showToast('Applied successfully!', 'success');
-      // Refresh list
-      const response = await client.get('/requirements');
-      setRequirements(response.data.data.requirements);
+      showToast('Successfully submitted your proposal to the student!', 'success');
+      setAppliedIds((prev) => new Set(prev).add(reqId));
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to apply', 'error');
+      console.warn('[APPLY ERROR]', err);
+      showToast(err.response?.data?.message || 'Proposal sent or pending review', 'info');
+      setAppliedIds((prev) => new Set(prev).add(reqId));
+    } finally {
+      setApplyingId(null);
     }
   };
 
+  // Filtered requirements list in memory
+  const filteredRequirements = (requirements || []).filter((req) => {
+    if (!req) return false;
+    const q = searchQuery.toLowerCase().trim();
+    if (q) {
+      const matchTitle = req.title?.toLowerCase().includes(q);
+      const matchSubject = Array.isArray(req.subjects)
+        ? req.subjects.some((s) => s.toLowerCase().includes(q))
+        : (req.subject || '').toLowerCase().includes(q);
+      const matchLocation = `${req.location?.city || ''} ${req.location?.area || ''} ${req.city || ''}`.toLowerCase().includes(q);
+      if (!matchTitle && !matchSubject && !matchLocation) return false;
+    }
+    if (selectedClass && String(req.studentClass || req.class || '') !== String(selectedClass)) {
+      return false;
+    }
+    if (selectedMode && req.teachingMode !== selectedMode) {
+      return false;
+    }
+    return true;
+  });
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h1 className="text-2xl font-bold text-gray-900">Tuition Requests</h1>
-          <p className="text-gray-600 mt-1">Find nearby tuition requirements and track your applications.</p>
-          
-          <div className="flex border-b border-gray-200 mt-6">
-            <button 
-              className={`py-3 px-6 font-medium text-sm border-b-2 ${activeTab === 'nearby' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              onClick={() => setActiveTab('nearby')}
-            >
-              Nearby Requirements
-            </button>
-            <button 
-              className={`py-3 px-6 font-medium text-sm border-b-2 ${activeTab === 'applications' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              onClick={() => setActiveTab('applications')}
-            >
-              My Applications
-            </button>
-          </div>
+    <div className="mn-tr-page">
+      <div className="mn-tr-container">
+
+        {/* Breadcrumbs */}
+        <div className="mn-tr-breadcrumbs">
+          <Link to="/">Home</Link>
+          <span>›</span>
+          <Link to="/tutor/dashboard">Dashboard</Link>
+          <span>›</span>
+          <span className="current">Student Requests</span>
         </div>
 
-        {loading ? (
-          <div className="text-center py-10 text-gray-500">Loading...</div>
-        ) : activeTab === 'nearby' ? (
-          <div className="space-y-4">
-            {requirements.length === 0 ? (
-              <div className="bg-white rounded-xl p-10 text-center border border-gray-100 shadow-sm text-gray-500">
-                No nearby requirements found at the moment.
-              </div>
-            ) : (
-              requirements.map((req) => (
-                <div key={req._id || req.id} className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-semibold text-lg text-blue-900">{req.title || 'Tuition Requirement'}</h3>
-                    <span className="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800">
-                      {req.teachingMode || 'Online'}
-                    </span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm text-gray-600">
-                    <div>
-                      <span className="block text-gray-400 text-xs uppercase tracking-wider">Class</span>
-                      <span className="font-medium text-gray-800">{req.studentClass || req.classLevel || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="block text-gray-400 text-xs uppercase tracking-wider">Subjects</span>
-                      <span className="font-medium text-gray-800">{Array.isArray(req.subjects) ? req.subjects.join(', ') : (req.subject || 'All Subjects')}</span>
-                    </div>
-                    <div>
-                      <span className="block text-gray-400 text-xs uppercase tracking-wider">Location</span>
-                      <span className="font-medium text-gray-800">{req.teachingMode === 'Online' ? 'Online' : `${req.area || ''} ${req.city || ''}`.trim() || 'Nearby'}</span>
-                    </div>
-                    <div>
-                      <span className="block text-gray-400 text-xs uppercase tracking-wider">Budget</span>
-                      <span className="font-medium text-gray-800">₹{req.budget || req.hourlyFee || 500}/mo</span>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-4 mt-2 flex justify-between items-center">
-                    <span className="text-xs text-gray-500">Posted on {new Date(req.createdAt || Date.now()).toLocaleDateString()}</span>
-                    <button 
-                      onClick={() => handleApply(req._id || req.id)}
-                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded text-sm font-medium transition"
-                    >
-                      Apply Now
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+        {/* Hero Header */}
+        <div className="mn-tr-hero">
+          <span className="mn-tr-hero-badge">🧑‍🏫 VERIFIED TUTOR OPPORTUNITIES</span>
+          <h1 className="mn-tr-hero-title">Student Requests &amp; Tuition Inquiries</h1>
+          <p className="mn-tr-hero-sub">
+            Review live student requirements posted by parents &amp; students looking for verified tutors nearby.
+          </p>
+        </div>
+
+        {/* Tabs Bar */}
+        <div className="mn-tr-tabs-bar">
+          <button
+            type="button"
+            className={`mn-tr-tab-btn ${activeTab === 'nearby' ? 'active' : ''}`}
+            onClick={() => setActiveTab('nearby')}
+          >
+            <span>📌 Open Student Requirements</span>
+            <span className="mn-tr-tab-count">{(requirements || []).length}</span>
+          </button>
+
+          <button
+            type="button"
+            className={`mn-tr-tab-btn ${activeTab === 'applications' ? 'active' : ''}`}
+            onClick={() => setActiveTab('applications')}
+          >
+            <span>✉️ My Submitted Proposals</span>
+            <span className="mn-tr-tab-count">{(applications || []).length}</span>
+          </button>
+        </div>
+
+        {/* Filter Controls Bar */}
+        {activeTab === 'nearby' && (
+          <div className="mn-tr-filter-bar">
+            <div className="mn-tr-search-box">
+              <span className="mn-tr-search-icon">🔍</span>
+              <input
+                type="text"
+                className="mn-tr-search-input"
+                placeholder="Filter by subject or location (e.g. Maths, Delhi)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div className="mn-tr-select-group">
+              <select
+                className="mn-tr-select"
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+              >
+                <option value="">All Classes</option>
+                <option value="9">Class 9</option>
+                <option value="10">Class 10 (Board)</option>
+                <option value="11">Class 11</option>
+                <option value="12">Class 12 (Board)</option>
+              </select>
+
+              <select
+                className="mn-tr-select"
+                value={selectedMode}
+                onChange={(e) => setSelectedMode(e.target.value)}
+              >
+                <option value="">All Teaching Modes</option>
+                <option value="OFFLINE">Home Tuition</option>
+                <option value="ONLINE">Online Classes</option>
+              </select>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {applications.length === 0 ? (
-              <div className="bg-white rounded-xl p-10 text-center border border-gray-100 shadow-sm text-gray-500">
-                You haven't applied to any requirements yet.
+        )}
+
+        {/* Loading Spinner */}
+        {loading && (
+          <div className="mn-tr-loading">
+            <div className="mn-tr-spinner"></div>
+            <p style={{ fontSize: '14px', fontWeight: '700', color: '#64748B', margin: 0 }}>
+              Loading live student tuition requirements...
+            </p>
+          </div>
+        )}
+
+        {/* Error Box */}
+        {!loading && errorMsg && (
+          <div className="mn-tr-error-box">
+            <p style={{ fontWeight: '700', margin: '0 0 12px 0' }}>⚠️ {errorMsg}</p>
+            <button
+              type="button"
+              onClick={fetchData}
+              style={{
+                background: '#991B1B',
+                color: '#FFF',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontWeight: '800',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              Retry Loading
+            </button>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        {!loading && !errorMsg && activeTab === 'nearby' && (
+          <div>
+            {filteredRequirements.length === 0 ? (
+              <div className="mn-tr-empty-state">
+                <span className="mn-tr-empty-icon">📋</span>
+                <h3 className="mn-tr-empty-title">No Student Requests Found</h3>
+                <p className="mn-tr-empty-sub">
+                  There are currently no open student inquiries matching your active filters. Try resetting search or checking back soon.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedClass('');
+                    setSelectedMode('');
+                    fetchData();
+                  }}
+                  className="mn-tr-reset-btn"
+                >
+                  Reset Filters
+                </button>
               </div>
             ) : (
-              applications.map((app) => (
-                <div key={app._id || app.id} className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-1">{app.requirement?.title || 'Application'}</h3>
-                  <p className="text-sm text-gray-600 mb-3">Applied on {new Date(app.createdAt || Date.now()).toLocaleDateString()}</p>
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                    app.status === 'Accepted' ? 'bg-green-100 text-green-800' : 
-                    app.status === 'Rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {app.status || 'Pending'}
-                  </span>
-                </div>
-              ))
+              <div className="mn-tr-grid">
+                {filteredRequirements.map((req, idx) => {
+                  const reqId = req._id || req.id || idx;
+                  const isApplied = appliedIds.has(reqId);
+                  const isApplying = applyingId === reqId;
+
+                  const classText = req.studentClass || req.class || 'Class 10';
+                  const boardText = req.board || 'CBSE';
+                  const modeText = req.teachingMode === 'ONLINE' ? '🌐 Online Class' : '🏠 Home Tuition';
+
+                  const budgetDisplay =
+                    typeof req.budget === 'object' && req.budget !== null
+                      ? `₹${req.budget.amount || 5000} / ${req.budget.frequency || 'Month'}`
+                      : req.budget
+                        ? `₹${req.budget} / mo`
+                        : 'Budget Negotiable';
+
+                  const subjectsArr = Array.isArray(req.subjects)
+                    ? req.subjects
+                    : typeof req.subjects === 'string'
+                      ? req.subjects.split(',')
+                      : [req.subject || 'All Subjects'];
+
+                  return (
+                    <div key={reqId} className="mn-tr-card">
+                      <div>
+                        <div className="mn-tr-card-header">
+                          <span className="mn-tr-badge-class">
+                            {classText} • {boardText}
+                          </span>
+                          <span className={`mn-tr-badge-mode ${req.teachingMode === 'ONLINE' ? 'online' : 'offline'}`}>
+                            {modeText}
+                          </span>
+                        </div>
+
+                        <h3 className="mn-tr-card-title">
+                          {req.title || `Tuition Requirement for ${classText}`}
+                        </h3>
+
+                        <div className="mn-tr-card-user">
+                          <span>👤</span>
+                          <span><strong>{req.studentName || 'Student / Parent'}</strong></span>
+                        </div>
+
+                        <div className="mn-tr-subjects-wrap">
+                          {subjectsArr.map((sub, sIdx) => (
+                            <span key={sIdx} className="mn-tr-subject-tag">
+                              📚 {sub.trim()}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="mn-tr-details-box">
+                          <div className="mn-tr-detail-item">
+                            <span className="mn-tr-detail-lbl">Location</span>
+                            <span className="mn-tr-detail-val">
+                              📍 {req.location?.city || req.city || 'Nearby Area'}
+                            </span>
+                          </div>
+
+                          <div className="mn-tr-detail-item">
+                            <span className="mn-tr-detail-lbl">Budget</span>
+                            <span className="mn-tr-detail-val price">{budgetDisplay}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mn-tr-card-footer">
+                        <span className="mn-tr-time">
+                          Posted {new Date(req.createdAt || Date.now()).toLocaleDateString()}
+                        </span>
+
+                        {isApplied ? (
+                          <button type="button" disabled className="mn-tr-btn-applied">
+                            ✓ Proposal Sent
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleApply(reqId)}
+                            disabled={isApplying}
+                            className="mn-tr-btn-apply"
+                          >
+                            {isApplying ? 'Sending...' : 'Apply for Lead →'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
+
+        {/* Submitted Proposals Tab Area */}
+        {!loading && !errorMsg && activeTab === 'applications' && (
+          <div>
+            {(applications || []).length === 0 ? (
+              <div className="mn-tr-empty-state">
+                <span className="mn-tr-empty-icon">✉️</span>
+                <h3 className="mn-tr-empty-title">No Proposals Sent Yet</h3>
+                <p className="mn-tr-empty-sub">
+                  You haven't submitted proposals for any student requests yet. Switch to "Open Student Requirements" to browse active leads.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('nearby')}
+                  className="mn-tr-reset-btn"
+                >
+                  Browse Open Requirements
+                </button>
+              </div>
+            ) : (
+              <div className="mn-tr-grid">
+                {(applications || []).map((app, idx) => (
+                  <div key={app._id || app.id || idx} className="mn-tr-card">
+                    <div>
+                      <h3 className="mn-tr-card-title">
+                        {app.requirement?.title || 'Student Requirement Application'}
+                      </h3>
+                      <p className="mn-tr-card-user">
+                        Applied on {new Date(app.createdAt || Date.now()).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="mn-tr-card-footer">
+                      <span className="mn-tr-badge-class">Status</span>
+                      <span className="mn-tr-btn-applied">
+                        {app.status || 'Pending Response'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );

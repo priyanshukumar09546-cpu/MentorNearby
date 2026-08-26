@@ -120,7 +120,7 @@ const AdminLayout = ({ children }) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] text-gray-900 font-sans antialiased relative">
+    <div className="flex min-h-screen bg-[#FFFBF5] text-gray-900 font-sans antialiased relative">
       
       {/* Mobile Drawer Overlay Backdrop */}
       {mobileOpen && (
@@ -135,13 +135,13 @@ const AdminLayout = ({ children }) => {
       {/* SIDEBAR - Fixed 260px                                         */}
       {/* ============================================================ */}
       <aside
-        className={`admin-sidebar w-[260px] min-w-[260px] max-w-[260px] fixed left-0 top-0 h-screen bg-white border-r border-gray-200 flex flex-col z-40 overflow-y-auto transition-transform duration-300 ease-in-out ${
+        className={`admin-sidebar w-[260px] min-w-[260px] max-w-[260px] fixed left-0 top-0 h-screen bg-[#FFFBF5] border-r border-[#F0EAD6] flex flex-col z-40 overflow-y-auto transition-transform duration-300 ease-in-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ width: '260px', minWidth: '260px', maxWidth: '260px' }}
       >
-        {/* Logo Wrapper (h-[70px] px-6 border-b) */}
-        <div className="h-[70px] px-6 flex items-center justify-between border-b border-gray-200 bg-white flex-shrink-0">
+        {/* Logo Wrapper */}
+        <div className="h-[70px] px-6 flex items-center justify-between border-b border-[#F0EAD6] bg-[#FFFBF5] flex-shrink-0">
           <Link to="/admin/dashboard" className="flex items-center gap-2.5 no-underline">
             <img
               src="/logo.png"
@@ -157,7 +157,7 @@ const AdminLayout = ({ children }) => {
                 Mentor<span className="text-[#FF6B00]">Nearby</span>
               </span>
               <span className="text-[8px] font-bold tracking-widest text-gray-400 uppercase mt-0.5">
-                ADMIN
+                ADMIN CONTROL CENTER
               </span>
             </div>
           </Link>
@@ -165,7 +165,7 @@ const AdminLayout = ({ children }) => {
           {/* Mobile Close Icon */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="md:hidden text-gray-500 hover:text-gray-900 p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer"
+            className="md:hidden text-gray-500 hover:text-gray-900 p-1.5 rounded-lg hover:bg-amber-100/50 cursor-pointer"
             aria-label="Close sidebar"
           >
             ✕
@@ -192,8 +192,8 @@ const AdminLayout = ({ children }) => {
                       onClick={() => setMobileOpen(false)}
                       className={`px-3 py-2 rounded-lg flex items-center gap-2.5 text-xs font-medium transition no-underline ${
                         isActive
-                          ? 'bg-[#fef9c3] text-amber-950 font-bold border-l-4 border-amber-500 shadow-xs'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-[#FEF3C7] text-amber-950 font-bold border-l-4 border-amber-500 shadow-xs'
+                          : 'text-gray-600 hover:bg-[#F7F2E6] hover:text-gray-900'
                       }`}
                     >
                       <span className="text-sm flex-shrink-0">{item.icon}</span>
@@ -207,10 +207,10 @@ const AdminLayout = ({ children }) => {
         </nav>
 
         {/* Sidebar User Footer */}
-        <div className="p-3 border-t border-gray-200 bg-gray-50/70 flex-shrink-0">
+        <div className="p-3 border-t border-[#F0EAD6] bg-[#FAF5EB] flex-shrink-0">
           <div
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
+            className="flex items-center justify-between p-2 rounded-xl hover:bg-[#F3EDE0] transition cursor-pointer"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-white font-black flex items-center justify-center text-xs shadow-xs">
@@ -230,12 +230,12 @@ const AdminLayout = ({ children }) => {
       {/* MAIN CONTENT WRAPPER - Offset 260px                           */}
       {/* ============================================================ */}
       <div 
-        className="admin-main-wrapper flex-1 ml-0 md:ml-[260px] min-h-screen flex flex-col min-w-0 bg-[#f8fafc] overflow-x-hidden"
+        className="admin-main-wrapper flex-1 ml-0 md:ml-[260px] min-h-screen flex flex-col min-w-0 bg-[#FFFBF5] overflow-x-hidden"
         style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth > 768 ? '260px' : '0' }}
       >
         
         {/* Top Navbar */}
-        <header className="bg-white border-b border-gray-200 px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 flex-shrink-0">
+        <header className="bg-[#FFFBF5] border-b border-[#F0EAD6] px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 flex-shrink-0">
           <div className="flex items-center gap-3 md:gap-4 flex-1">
             {/* Hamburger Button for Mobile Drawer */}
             <button
@@ -324,7 +324,7 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Main Content Body */}
-        <main className="flex-1 bg-[#f8fafc] p-4 md:p-6 overflow-auto min-w-0">
+        <main className="flex-1 bg-[#FFFBF5] p-4 md:p-6 overflow-auto min-w-0">
           {children}
         </main>
       </div>

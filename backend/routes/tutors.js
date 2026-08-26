@@ -17,10 +17,10 @@ const {
 } = require('../controllers/tutorController');
 const { protect, authorize } = require('../middleware/auth');
 const { uploadPhoto, uploadVideo, uploadDocument } = require('../middleware/upload');
-const { uploadKycDocument } = require('../controllers/uploadController');
+const { uploadKycDocument, uploadTutorId } = require('../controllers/uploadController');
 
-// Tutor ID Upload with Fraud Detection
-router.post('/upload-id', uploadDocument, uploadKycDocument);
+// Tutor ID Upload (Fast Verhoeff + Private Storage)
+router.post('/upload-id', uploadDocument, uploadTutorId);
 
 // Protected routes (tutor own profile)
 router.get('/stats', protect, authorize('TUTOR'), getTutorStats);

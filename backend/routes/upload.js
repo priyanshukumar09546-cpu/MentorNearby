@@ -9,7 +9,7 @@ router.post('/photo', uploadPhoto, uploadController.uploadProfilePhoto);
 // Route for uploading private KYC / Govt ID documents with fraud detection
 router.post('/document', uploadDocument, uploadController.uploadKycDocument);
 router.post('/kyc-document', uploadDocument, uploadController.uploadKycDocument);
-router.post('/upload-id', uploadDocument, uploadController.uploadKycDocument);
+router.post('/upload-id', uploadDocument, uploadController.uploadTutorId);
 
 module.exports = router;
 

@@ -92,9 +92,12 @@ router.delete('/tutors/:id', deleteTutorPermanently);
 
 // KYC Verification Center
 router.get('/kyc', adminGetKycList);
+router.get('/kyc-pending', adminGetKycList);
 router.get('/kyc/:id', adminGetKycDetail);
 router.put('/kyc/:id', adminUpdateKycStatus);
 router.post('/kyc/:id', adminUpdateKycStatus);
+router.put('/kyc-pending/:id', adminUpdateKycStatus);
+router.post('/kyc-pending/:id', adminUpdateKycStatus);
 
 // Reports & Safety
 router.get('/reports', getReports);

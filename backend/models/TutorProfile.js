@@ -136,8 +136,19 @@ const TutorProfileSchema = new mongoose.Schema({
   },
   kycStatus: {
     type: String,
-    enum: ['NOT_SUBMITTED', 'PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'RESUBMISSION_REQUIRED'],
+    enum: ['NOT_SUBMITTED', 'PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'RESUBMISSION_REQUIRED', 'PENDING_ADMIN_REVIEW', 'APPROVED_BY_ADMIN'],
     default: 'NOT_SUBMITTED'
+  },
+  aadhaarLast4: {
+    type: String,
+    maxlength: 4
+  },
+  aadhaarVerhoeffPass: {
+    type: Boolean,
+    default: false
+  },
+  idPhotoPath: {
+    type: String
   },
   profileVisibility: {
     type: Boolean,

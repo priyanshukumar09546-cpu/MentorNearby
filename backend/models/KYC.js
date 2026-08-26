@@ -32,9 +32,14 @@ const KYCSchema = new mongoose.Schema({
   selfieUrl: String,
   status: {
     type: String,
-    enum: ['NOT_SUBMITTED', 'PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'RESUBMISSION_REQUIRED', 'PENDING_MANUAL_REVIEW'],
+    enum: ['NOT_SUBMITTED', 'PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'RESUBMISSION_REQUIRED', 'PENDING_MANUAL_REVIEW', 'PENDING_ADMIN_REVIEW', 'APPROVED_BY_ADMIN'],
     default: 'PENDING'
   },
+  aadhaarVerhoeffPass: {
+    type: Boolean,
+    default: false
+  },
+  idPhotoPath: String,
   submittedAt: {
     type: Date,
     default: Date.now

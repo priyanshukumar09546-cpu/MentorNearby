@@ -512,11 +512,63 @@ const StudyResourceViewerModalInner = ({
   const handleTouchEnd = () => {
     touchStartDistRef.current = null;
   };
+
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 15, 200));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 15, 60));
+  const handleZoomReset = () => setZoomLevel(100);
+
+  const toggleFullscreen = () => {
+    if (!viewerContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      viewerContainerRef.current.requestFullscreen?.().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
+  const isFormula = Boolean(
+    resource?.resourceType === 'FORMULA_SHEET' ||
+    resource?.type === 'FORMULA' ||
+    resource?.isFormula ||
+    resource?.comboType === 'FORMULA_COMBO'
+  );
+
+  const isUnlocked = Boolean(
+    resource?.isUnlocked ||
+    resource?.unlocked ||
+    resource?.purchased ||
+    propResource?.isUnlocked
+  );
+
   const isSenior = ['11', '12'].includes(String(resource?.classLevel));
   const isCombo = Boolean(propIsCombo || resource?.isCombo || resource?.comboType);
   const expectedSinglePrice = isFormula ? (isSenior ? 8 : 7) : (isSenior ? 14 : 12);
   const expectedComboPrice = isFormula ? (isSenior ? 60 : 50) : (isSenior ? 120 : 100);
   const downloadPrice = isCombo ? expectedComboPrice : expectedSinglePrice;
+
+  const handleDownload = async () => {
+    if (!streamFileUrl) return;
+    setDownloading(true);
+    try {
+      const res = await fetch(streamFileUrl, { credentials: 'include' });
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = resource?.title ? `${resource.title}.pdf` : 'MentorNearby_StudyResource.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download error:', err);
+      if (streamFileUrl) window.open(streamFileUrl, '_blank');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const userIdentifier = maskIdentifier(user?.email || user?.name || 'student@mentornearby.in');
 

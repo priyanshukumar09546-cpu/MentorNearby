@@ -561,32 +561,36 @@ const AdminKYCPage = () => {
                     </div>
                   </div>
 
-                  {/* Middle Column: Document Status Indicators */}
-                  <div className="w-full lg:w-56 space-y-2 text-xs bg-[#FAF9F6] p-3.5 rounded-2xl border border-[#E6E2D9]">
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-[#85857D]">Document Upload Status</span>
+                  {/* Middle Column: Aadhaar & Document Status Indicators */}
+                  <div className="w-full lg:w-64 space-y-2 text-xs bg-[#FAF9F6] p-3.5 rounded-2xl border border-[#E6E2D9]">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-[#85857D]">Aadhaar & ID Document</span>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-[#575752]">Identity Doc:</span>
-                      {identityDoc ? (
-                        <button
-                          onClick={() => setPreviewDoc(identityDoc)}
-                          className="text-[#238B5A] hover:underline font-bold text-[11px]"
-                        >
-                          ✓ Uploaded ↗
-                        </button>
-                      ) : (
-                        <span className="text-[#C94B4B] font-bold text-[11px]">✕ Missing</span>
-                      )}
+                      <span className="text-[#575752]">Aadhaar Last 4:</span>
+                      <span className="font-mono font-bold text-[#1C1C1A]">•••• {record.aadhaarLast4 || record.govtIdLast4 || record.tutorProfile?.aadhaarLast4 || 'XXXX'}</span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-[#575752]">Qualification:</span>
-                      {qualDoc ? (
+                      <span className="text-[#575752]">Verhoeff Check:</span>
+                      {(record.aadhaarVerhoeffPass ?? record.tutorProfile?.aadhaarVerhoeffPass ?? true) ? (
+                        <span className="bg-[#EBF7EE] text-[#1D7446] border border-[#B3E5C4] text-[10px] font-bold px-2 py-0.5 rounded">
+                          ✓ Pass
+                        </span>
+                      ) : (
+                        <span className="bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] text-[10px] font-bold px-2 py-0.5 rounded">
+                          ⚠️ Warning / Check
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[#575752]">ID Photo:</span>
+                      {(record.idPhotoPath || identityDoc?.url || record.tutorProfile?.idPhotoPath) ? (
                         <button
-                          onClick={() => setPreviewDoc(qualDoc)}
-                          className="text-[#238B5A] hover:underline font-bold text-[11px]"
+                          onClick={() => setPreviewDoc({ url: record.idPhotoPath || identityDoc?.url || record.tutorProfile?.idPhotoPath, type: 'GOVT_ID' })}
+                          className="text-[#2563EB] hover:underline font-extrabold text-[11px] flex items-center gap-1"
                         >
-                          ✓ Uploaded ↗
+                          🖼️ Preview Photo ↗
                         </button>
                       ) : (
                         <span className="text-[#C94B4B] font-bold text-[11px]">✕ Missing</span>

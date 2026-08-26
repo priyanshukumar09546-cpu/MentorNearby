@@ -133,6 +133,7 @@ const App = () => {
                             <Route path="students" element={<AdminStudentsPage />} />
                             <Route path="tutors" element={<AdminTutorsPage />} />
                             <Route path="kyc" element={<AdminKYCPage />} />
+                            <Route path="kyc-pending" element={<AdminKYCPage />} />
                             <Route path="requests" element={<AdminRequestsPage />} />
                             <Route path="courses" element={<AdminCoursesPage />} />
                             <Route path="study-resources" element={<AdminStudyResourcesPage />} />

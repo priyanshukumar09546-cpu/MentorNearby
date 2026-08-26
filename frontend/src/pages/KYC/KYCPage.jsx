@@ -270,10 +270,10 @@ const KYCPage = () => {
               </p>
               <div className="pt-2 flex items-center gap-2">
                 <span className="bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-md">
-                  🛡️ Trusted Tutor Badge Active
+                  🛡️ Aadhaar Format Auto-Checked
                 </span>
-                <span className="bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs font-bold px-3 py-1 rounded-md">
-                  🏛️ Govt Approved
+                <span className="bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-xs font-bold px-3 py-1 rounded-md">
+                  🏛️ MentorNearby Verified
                 </span>
               </div>
             </div>
@@ -346,7 +346,7 @@ const KYCPage = () => {
                           DigiLocker Govt ID Verification
                         </h3>
                         <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">
-                          Govt of India Approved • Instant Verified Badge
+                          Format Checked (Auto) • Manual Review by MentorNearby Team
                         </p>
                       </div>
                     </div>

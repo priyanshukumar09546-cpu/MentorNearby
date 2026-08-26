@@ -83,13 +83,27 @@ const LoginPage = () => {
     setLoading(true);
     setErrorMsg('');
     try {
+      console.log('[LOGIN SUBMIT] Requesting authentication for:', email.trim().toLowerCase(), 'role:', selectedRole);
       const res = await login({ email: email.trim().toLowerCase(), password, role: selectedRole });
+      console.log('[LOGIN SUCCESS] Backend auth response:', res);
+      
       const verifiedUser = await checkAuth();
       const role = extractUserRole(verifiedUser || res?.user);
-      const targetDashboard = getRoleDashboard(role);
-      navigate(targetDashboard, { replace: true });
+      
+      let targetDashboard = '/student-dashboard';
+      if (role === 'tutor') {
+        targetDashboard = '/tutor-dashboard';
+      } else if (role === 'admin') {
+        targetDashboard = '/admin/dashboard';
+      }
+
+      console.log('[LOGIN REDIRECT] Redirecting via window.location.href to:', targetDashboard);
+      window.location.href = targetDashboard;
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || 'Invalid email or password. Please try again.');
+      console.error('[LOGIN ERROR CATCH BLOCK]:', err);
+      console.error('[LOGIN ERROR DETAILS]:', err?.response?.data || err?.message);
+      const backendMessage = err?.response?.data?.message || err?.message || 'Invalid email or password. Please try again.';
+      setErrorMsg(backendMessage);
     } finally {
       setLoading(false);
     }

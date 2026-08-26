@@ -61,21 +61,30 @@ app.use((req, res, next) => {
 // CORS CONFIGURATION (Explicit Allowed Origins for Credentials)
 // ============================================================
 const allowedOrigins = [
+  "https://mentornearby.netlify.app",
+  "https://mentornearby.com",
+  "https://www.mentornearby.com",
+  "https://admin.mentornearby.com",
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:3000",
   "https://mentor-nearby-frontend.vercel.app",
   "https://mentor-nearby.vercel.app",
   "https://mentornearby.vercel.app",
-  "https://mentornearby.com",
-  "https://www.mentornearby.com",
-  "https://admin.mentornearby.com",
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.netlify.app') ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.onrender.com') ||
+      origin.includes('mentornearby') ||
+      origin.includes('localhost')
+    ) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));

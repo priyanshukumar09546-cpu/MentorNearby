@@ -691,21 +691,18 @@ exports.googleCallback = asyncHandler(async (req, res, next) => {
 
   const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
   
-  res.cookie('jwt', token, {
-    httpOnly: true,
+  const cookieOptions = {
     secure: true,
     sameSite: 'none',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/'
+  };
 
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
+  res.cookie('token', token, { ...cookieOptions, httpOnly: true });
+  res.cookie('jwt', token, { ...cookieOptions, httpOnly: true });
+  res.cookie('role', (user.role || 'STUDENT').toString().toUpperCase(), { ...cookieOptions, httpOnly: false });
   
-  return res.redirect(`${frontendUrl}/auth/callback?token=${token}&role=${user.role}`);
+  return res.redirect(`${frontendUrl}/auth-success?token=${token}&role=${(user.role || 'STUDENT').toString().toUpperCase()}`);
 });
 
 // @desc    Send OTP for Identity / Mobile / Email Verification

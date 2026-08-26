@@ -10,12 +10,20 @@ const AuthCallback = () => {
   useEffect(() => {
     const processCallback = async () => {
       try {
+        console.log('[AUTH CALLBACK] Verifying session via checkAuth()...');
         const verifiedUser = await checkAuth();
         const role = extractUserRole(verifiedUser);
-        const targetDashboard = getRoleDashboard(role);
-        navigate(targetDashboard, { replace: true });
-      } catch (_) {
-        navigate('/login', { replace: true });
+        let targetDashboard = '/student-dashboard';
+        if (role === 'tutor') {
+          targetDashboard = '/tutor-dashboard';
+        } else if (role === 'admin') {
+          targetDashboard = '/admin/dashboard';
+        }
+        console.log('[AUTH CALLBACK SUCCESS] Redirecting to:', targetDashboard);
+        window.location.href = targetDashboard;
+      } catch (err) {
+        console.error('[AUTH CALLBACK ERROR]:', err);
+        navigate('/login?error=' + encodeURIComponent('Authentication failed. Please sign in again.'), { replace: true });
       }
     };
     processCallback();
@@ -34,8 +42,9 @@ const AuthCallback = () => {
         fontFamily: 'Inter, sans-serif',
       }}
     >
-      <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔄</div>
+      <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔄</div>
       <div style={{ fontSize: '18px', fontWeight: 700 }}>Authenticating session...</div>
+      <div style={{ fontSize: '13px', color: '#64748B', marginTop: '6px' }}>Please wait while we log you in.</div>
     </div>
   );
 };

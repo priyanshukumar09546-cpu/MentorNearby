@@ -168,6 +168,7 @@ const App = () => {
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterPage />} />
                             <Route path="/auth/callback" element={<AuthCallback />} />
+                            <Route path="/auth-success" element={<AuthCallback />} />
                             <Route path="/become-tutor" element={<BecomeTutorPage />} />
                             <Route path="/become-a-tutor" element={<BecomeTutorPage />} />
                             <Route path="/tutor/register" element={<BecomeTutorPage />} />

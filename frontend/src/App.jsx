@@ -34,6 +34,7 @@ const SavedTutorsPage = lazy(() => import('./pages/SavedTutors/SavedTutorsPage')
 const PostRequirementPage = lazy(() => import('./pages/StudentDashboard/PostRequirementPage'));
 const StudentRequirementsPage = lazy(() => import('./pages/StudentDashboard/StudentRequirementsPage'));
 const TutorRequestsPage = lazy(() => import('./pages/TutorDashboard/TutorRequestsPage'));
+const FindStudentsPage = lazy(() => import('./pages/FindStudents/FindStudentsPage'));
 const ChatPage = lazy(() => import('./pages/Chat/ChatPage'));
 const NotificationsPage = lazy(() => import('./pages/Notifications/NotificationsPage'));
 
@@ -187,7 +188,8 @@ const App = () => {
                             <Route path="/search" element={<SearchPage />} />
                             <Route path="/find-tutors" element={<SearchPage />} />
                             <Route path="/tutors" element={<SearchPage />} />
-                            <Route path="/requirements" element={<SearchPage />} />
+                            <Route path="/find-students" element={<FindStudentsPage />} />
+                            <Route path="/requirements" element={<FindStudentsPage />} />
 
                             {/* 🎓 Courses & PYQ Mastery Routes */}
                             <Route path="/courses" element={<CoursesPage />} />

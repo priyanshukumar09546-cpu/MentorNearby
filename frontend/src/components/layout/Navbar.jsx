@@ -102,44 +102,86 @@ const Navbar = () => {
 
         {/* Desktop Navigation Links */}
         <nav className="navbar-links desktop-only" aria-label="Main Navigation">
-          {/* Find Tutors with Dropdown */}
+          {/* Role-based Find Tutors / Find Students Link with Dropdown */}
           <div className="nav-item-dropdown-container">
-            <button
-              type="button"
-              className={`navbar-link-item ${isActive('/search') || isActive('/tutors') ? 'active' : ''}`}
-              onClick={() => toggleDropdown('findTutors')}
-              onMouseEnter={() => setActiveDropdown('findTutors')}
-            >
-              <span>Find Tutors</span>
-              <span className="nav-chevron">▾</span>
-            </button>
+            {userRole === 'TUTOR' ? (
+              <button
+                type="button"
+                className={`navbar-link-item ${isActive('/find-students') || isActive('/requirements') ? 'active' : ''}`}
+                onClick={() => toggleDropdown('findStudents')}
+                onMouseEnter={() => setActiveDropdown('findStudents')}
+              >
+                <span>Find Students</span>
+                <span className="nav-chevron">▾</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={`navbar-link-item ${isActive('/search') || isActive('/find-tutors') || isActive('/tutors') ? 'active' : ''}`}
+                onClick={() => toggleDropdown('findTutors')}
+                onMouseEnter={() => setActiveDropdown('findTutors')}
+              >
+                <span>Find Tutors</span>
+                <span className="nav-chevron">▾</span>
+              </button>
+            )}
+
+            {activeDropdown === 'findStudents' && (
+              <div
+                className="nav-dropdown-menu"
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
+                <Link to="/find-students" className="nav-dropdown-item">
+                  <span className="nav-dd-icon">🔍</span>
+                  <div>
+                    <div className="nav-dd-title">All Student Leads</div>
+                    <div className="nav-dd-sub">Search and filter active student tuition requests</div>
+                  </div>
+                </Link>
+                <Link to="/find-students?mode=OFFLINE" className="nav-dropdown-item">
+                  <span className="nav-dd-icon">🏠</span>
+                  <div>
+                    <div className="nav-dd-title">Home Tuition Requests</div>
+                    <div className="nav-dd-sub">Students looking for home tutors nearby</div>
+                  </div>
+                </Link>
+                <Link to="/find-students?mode=ONLINE" className="nav-dropdown-item">
+                  <span className="nav-dd-icon">🌐</span>
+                  <div>
+                    <div className="nav-dd-title">Online Student Classes</div>
+                    <div className="nav-dd-sub">Students looking for online mentors</div>
+                  </div>
+                </Link>
+              </div>
+            )}
+
             {activeDropdown === 'findTutors' && (
               <div
                 className="nav-dropdown-menu"
                 onMouseLeave={() => setActiveDropdown(null)}
               >
-                <Link to="/search" className="nav-dropdown-item">
+                <Link to="/find-tutors" className="nav-dropdown-item">
                   <span className="nav-dd-icon">🔍</span>
                   <div>
                     <div className="nav-dd-title">All Tutors</div>
                     <div className="nav-dd-sub">Search and filter verified tutors</div>
                   </div>
                 </Link>
-                <Link to="/search?filter=subject" className="nav-dropdown-item">
+                <Link to="/find-tutors?filter=subject" className="nav-dropdown-item">
                   <span className="nav-dd-icon">📚</span>
                   <div>
                     <div className="nav-dd-title">By Subject</div>
-                    <div className="nav-dd-sub">Maths, Science, Physics & more</div>
+                    <div className="nav-dd-sub">Maths, Science, Physics &amp; more</div>
                   </div>
                 </Link>
-                <Link to="/search?filter=location" className="nav-dropdown-item">
+                <Link to="/find-tutors?filter=location" className="nav-dropdown-item">
                   <span className="nav-dd-icon">📍</span>
                   <div>
                     <div className="nav-dd-title">By Location</div>
                     <div className="nav-dd-sub">Find home tutors near your area</div>
                   </div>
                 </Link>
-                <Link to="/search?verified=true" className="nav-dropdown-item">
+                <Link to="/find-tutors?verified=true" className="nav-dropdown-item">
                   <span className="nav-dd-icon">🛡️</span>
                   <div>
                     <div className="nav-dd-title">KYC Verified Only</div>
@@ -403,14 +445,25 @@ const Navbar = () => {
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="navbar-mobile-drawer">
-          <Link
-            to="/search"
-            onClick={() => setMobileMenuOpen(false)}
-            className={isActive('/search') ? 'active' : ''}
-          >
-            <span>🔍 Find Tutors</span>
-            <span>→</span>
-          </Link>
+          {userRole === 'TUTOR' ? (
+            <Link
+              to="/find-students"
+              onClick={() => setMobileMenuOpen(false)}
+              className={isActive('/find-students') || isActive('/requirements') ? 'active' : ''}
+            >
+              <span>🔍 Find Students</span>
+              <span>→</span>
+            </Link>
+          ) : (
+            <Link
+              to="/find-tutors"
+              onClick={() => setMobileMenuOpen(false)}
+              className={isActive('/find-tutors') || isActive('/search') ? 'active' : ''}
+            >
+              <span>🔍 Find Tutors</span>
+              <span>→</span>
+            </Link>
+          )}
 
           <Link
             to="/courses"

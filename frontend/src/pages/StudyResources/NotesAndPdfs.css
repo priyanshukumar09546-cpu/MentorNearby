@@ -1306,11 +1306,20 @@
 }
 
 /* ============================================================
-   GLOBAL DARK MODE OVERRIDES ([data-theme="dark"])
+   GLOBAL DARK MODE OVERRIDES ([data-theme="dark"], .dark, .theme-dark)
    ============================================================ */
-[data-theme="dark"] .mn-np-page {
-  background: #090D16;
-  color: #F1F5F9;
+:root[data-theme="dark"],
+[data-theme="dark"],
+.dark,
+.theme-dark {
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .mn-np-page,
+.dark .mn-np-page,
+.theme-dark .mn-np-page {
+  background: #090D16 !important;
+  color: #F1F5F9 !important;
 }
 
 [data-theme="dark"] .mn-np-graphic-wrap,
@@ -1327,10 +1336,40 @@
 [data-theme="dark"] .mn-np-page-pill,
 [data-theme="dark"] .mn-np-trending-card,
 [data-theme="dark"] .mn-np-delivery-card,
-[data-theme="dark"] .sr-payment-modal-box {
-  background: #131B2E;
-  border-color: #1E293B;
-  color: #F8FAFC;
+[data-theme="dark"] .sr-payment-modal-box,
+.dark .mn-np-graphic-wrap,
+.dark .mn-np-search-input,
+.dark .mn-np-filters-sidebar,
+.dark .mn-np-select,
+.dark .mn-np-view-class-btn,
+.dark .mn-np-sort-select,
+.dark .mn-np-class-tab,
+.dark .mn-np-combos-section,
+.dark .mn-np-card,
+.dark .mn-np-btn-view,
+.dark .mn-np-btn-download,
+.dark .mn-np-page-pill,
+.dark .mn-np-trending-card,
+.dark .mn-np-delivery-card,
+.dark .sr-payment-modal-box,
+.theme-dark .mn-np-graphic-wrap,
+.theme-dark .mn-np-search-input,
+.theme-dark .mn-np-filters-sidebar,
+.theme-dark .mn-np-select,
+.theme-dark .mn-np-view-class-btn,
+.theme-dark .mn-np-sort-select,
+.theme-dark .mn-np-class-tab,
+.theme-dark .mn-np-combos-section,
+.theme-dark .mn-np-card,
+.theme-dark .mn-np-btn-view,
+.theme-dark .mn-np-btn-download,
+.theme-dark .mn-np-page-pill,
+.theme-dark .mn-np-trending-card,
+.theme-dark .mn-np-delivery-card,
+.theme-dark .sr-payment-modal-box {
+  background: #131B2E !important;
+  border-color: #1E293B !important;
+  color: #F8FAFC !important;
 }
 
 [data-theme="dark"] .mn-np-hero-title,
@@ -1348,62 +1387,140 @@
 [data-theme="dark"] .sr-payment-modal-title,
 [data-theme="dark"] .sr-payment-opt-title,
 [data-theme="dark"] .sr-payment-opt-price,
-[data-theme="dark"] .sr-payment-res-title {
-  color: #F8FAFC;
+[data-theme="dark"] .sr-payment-res-title,
+.dark .mn-np-hero-title,
+.dark .mn-np-filter-title,
+.dark .mn-np-center-h2,
+.dark .mn-np-combos-title,
+.dark .mn-np-combo-name,
+.dark .mn-np-combo-price,
+.dark .mn-np-group-label,
+.dark .mn-np-card-title,
+.dark .mn-np-trending-title,
+.dark .mn-np-trend-name,
+.dark .mn-np-delivery-title,
+.dark .mn-np-trust-title,
+.dark .sr-payment-modal-title,
+.dark .sr-payment-opt-title,
+.dark .sr-payment-opt-price,
+.dark .sr-payment-res-title,
+.theme-dark .mn-np-hero-title,
+.theme-dark .mn-np-filter-title,
+.theme-dark .mn-np-center-h2,
+.theme-dark .mn-np-combos-title,
+.theme-dark .mn-np-combo-name,
+.theme-dark .mn-np-combo-price,
+.theme-dark .mn-np-group-label,
+.theme-dark .mn-np-card-title,
+.theme-dark .mn-np-trending-title,
+.theme-dark .mn-np-trend-name,
+.theme-dark .mn-np-delivery-title,
+.theme-dark .mn-np-trust-title,
+.theme-dark .sr-payment-modal-title,
+.theme-dark .sr-payment-opt-title,
+.theme-dark .sr-payment-opt-price,
+.theme-dark .sr-payment-res-title {
+  color: #F8FAFC !important;
 }
 
-[data-theme="dark"] .mn-np-type-pill {
-  background: #0F172A;
-  border-color: #1E293B;
-  color: #CBD5E1;
+[data-theme="dark"] .mn-np-card-desc,
+[data-theme="dark"] .mn-np-hero-subtitle,
+[data-theme="dark"] .sr-payment-opt-sub,
+[data-theme="dark"] .sr-payment-res-meta,
+[data-theme="dark"] .sr-payment-combo-inc,
+[data-theme="dark"] .sr-payment-opts-header,
+[data-theme="dark"] .sr-payment-footer-note,
+.dark .mn-np-card-desc,
+.dark .mn-np-hero-subtitle,
+.dark .sr-payment-opt-sub,
+.dark .sr-payment-res-meta,
+.dark .sr-payment-combo-inc,
+.dark .sr-payment-opts-header,
+.dark .sr-payment-footer-note,
+.theme-dark .mn-np-card-desc,
+.theme-dark .mn-np-hero-subtitle,
+.theme-dark .sr-payment-opt-sub,
+.theme-dark .sr-payment-res-meta,
+.theme-dark .sr-payment-combo-inc,
+.theme-dark .sr-payment-opts-header,
+.theme-dark .sr-payment-footer-note {
+  color: #CBD5E1 !important;
 }
 
-[data-theme="dark"] .mn-np-type-pill.active {
-  background: rgba(234, 88, 12, 0.15);
-  border-color: #EA580C;
-  color: #FB923C;
+[data-theme="dark"] .mn-np-type-pill,
+.dark .mn-np-type-pill,
+.theme-dark .mn-np-type-pill {
+  background: #0F172A !important;
+  border-color: #1E293B !important;
+  color: #CBD5E1 !important;
 }
 
-[data-theme="dark"] .mn-np-combo-card {
-  background: #0F172A;
-  border-color: #1E293B;
+[data-theme="dark"] .mn-np-type-pill.active,
+.dark .mn-np-type-pill.active,
+.theme-dark .mn-np-type-pill.active {
+  background: rgba(234, 88, 12, 0.15) !important;
+  border-color: #EA580C !important;
+  color: #FB923C !important;
 }
 
-[data-theme="dark"] .mn-np-combo-card.purple {
-  background: rgba(124, 58, 237, 0.1);
-  border-color: rgba(124, 58, 237, 0.3);
+[data-theme="dark"] .mn-np-combo-card,
+.dark .mn-np-combo-card,
+.theme-dark .mn-np-combo-card {
+  background: #0F172A !important;
+  border-color: #1E293B !important;
 }
 
-[data-theme="dark"] .mn-np-combo-card.green {
-  background: rgba(22, 163, 74, 0.1);
-  border-color: rgba(22, 163, 74, 0.3);
+[data-theme="dark"] .mn-np-combo-card.purple,
+.dark .mn-np-combo-card.purple,
+.theme-dark .mn-np-combo-card.purple {
+  background: rgba(124, 58, 237, 0.1) !important;
+  border-color: rgba(124, 58, 237, 0.3) !important;
 }
 
-[data-theme="dark"] .mn-np-combo-card.gold {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.3);
+[data-theme="dark"] .mn-np-combo-card.green,
+.dark .mn-np-combo-card.green,
+.theme-dark .mn-np-combo-card.green {
+  background: rgba(22, 163, 74, 0.1) !important;
+  border-color: rgba(22, 163, 74, 0.3) !important;
 }
 
-[data-theme="dark"] .sr-payment-opt-item {
-  background: #0F172A;
-  border-color: #1E293B;
+[data-theme="dark"] .mn-np-combo-card.gold,
+.dark .mn-np-combo-card.gold,
+.theme-dark .mn-np-combo-card.gold {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
 }
 
-[data-theme="dark"] .sr-payment-opt-item.active {
-  background: rgba(234, 88, 12, 0.15);
-  border-color: #EA580C;
+[data-theme="dark"] .sr-payment-opt-item,
+.dark .sr-payment-opt-item,
+.theme-dark .sr-payment-opt-item {
+  background: #0F172A !important;
+  border-color: #1E293B !important;
+}
+
+[data-theme="dark"] .sr-payment-opt-item.active,
+.dark .sr-payment-opt-item.active,
+.theme-dark .sr-payment-opt-item.active {
+  background: rgba(234, 88, 12, 0.15) !important;
+  border-color: #EA580C !important;
 }
 
 [data-theme="dark"] .sr-payment-res-banner,
-[data-theme="dark"] .sr-payment-breakdown-box {
-  background: #0F172A;
-  border-color: #1E293B;
+[data-theme="dark"] .sr-payment-breakdown-box,
+.dark .sr-payment-res-banner,
+.dark .sr-payment-breakdown-box,
+.theme-dark .sr-payment-res-banner,
+.theme-dark .sr-payment-breakdown-box {
+  background: #0F172A !important;
+  border-color: #1E293B !important;
 }
 
-[data-theme="dark"] .mn-np-bottom-notice {
-  background: rgba(30, 64, 175, 0.15);
-  border-color: rgba(59, 130, 246, 0.3);
-  color: #93C5FD;
+[data-theme="dark"] .mn-np-bottom-notice,
+.dark .mn-np-bottom-notice,
+.theme-dark .mn-np-bottom-notice {
+  background: rgba(30, 64, 175, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: #93C5FD !important;
 }
 
 /* ============================================================

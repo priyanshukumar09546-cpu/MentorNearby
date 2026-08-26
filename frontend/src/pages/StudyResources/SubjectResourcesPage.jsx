@@ -558,9 +558,9 @@ const SubjectResourcesPage = () => {
           <button
             onClick={() => handleOpenPrintModal(`Class ${classLevel} ${subject} Notes`)}
             style={{
-              background: '#F1F5F9',
-              color: '#334155',
-              border: '1px solid #CBD5E1',
+              background: 'var(--card-bg, #F1F5F9)',
+              color: 'var(--color-text-primary, #334155)',
+              border: '1px solid var(--border-color, #CBD5E1)',
               borderRadius: 10,
               padding: '8px 14px',
               fontSize: 12.5,
@@ -609,7 +609,7 @@ const SubjectResourcesPage = () => {
                     </div>
                   </div>
 
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary, #64748B)' }}>
                     {(ch.resources || []).length} Materials
                   </span>
                 </div>
@@ -668,7 +668,7 @@ const SubjectResourcesPage = () => {
                                 <span style={{ fontSize: 12, fontWeight: 800, color: '#059669' }}>
                                   📖 Free Online Reading
                                 </span>
-                                <span style={{ fontSize: 11, color: '#64748B' }}>
+                                <span style={{ fontSize: 11, color: 'var(--color-text-secondary, #64748B)' }}>
                                   Download PDF: ₹{salePrice}
                                 </span>
                               </div>
@@ -707,15 +707,15 @@ const SubjectResourcesPage = () => {
                                   type="button"
                                   onClick={() => handleOpenPrintModal(res.title)}
                                   style={{
-                                    background: '#F1F5F9',
-                                    borderColor: '#CBD5E1',
-                                    color: '#334155',
+                                    background: 'var(--card-bg, #F1F5F9)',
+                                    borderColor: 'var(--border-color, #CBD5E1)',
+                                    color: 'var(--color-text-primary, #334155)',
                                     padding: '7px 10px',
                                     borderRadius: 8,
                                     fontSize: 12,
                                     fontWeight: 700,
                                     cursor: 'pointer',
-                                    border: '1px solid #CBD5E1',
+                                    border: '1px solid var(--border-color, #CBD5E1)',
                                   }}
                                 >
                                   🖨️ Print

@@ -23,6 +23,10 @@ const EditTutorProfilePage = () => {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [availabilityExpanded, setAvailabilityExpanded] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [realStudentRequestsCount, setRealStudentRequestsCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   // Photo Crop Modal State
   const [rawCropSrc, setRawCropSrc] = useState(null);
@@ -129,6 +133,32 @@ const EditTutorProfilePage = () => {
 
   useEffect(() => {
     fetchProfile();
+
+    const fetchRealCounts = async () => {
+      try {
+        const [reqRes, notifRes, chatRes] = await Promise.allSettled([
+          client.get('/requirements'),
+          client.get('/notifications/unread-count'),
+          client.get('/chat/unread-count'),
+        ]);
+        if (reqRes.status === 'fulfilled') {
+          const list = reqRes.value.data?.data?.requirements || reqRes.value.data?.requirements || [];
+          setRealStudentRequestsCount(Array.isArray(list) ? list.length : 0);
+        }
+        if (notifRes.status === 'fulfilled') {
+          const count = notifRes.value.data?.data?.unreadCount || notifRes.value.data?.unreadCount || 0;
+          setUnreadNotificationsCount(count);
+        }
+        if (chatRes.status === 'fulfilled') {
+          const count = chatRes.value.data?.data?.unreadCount || chatRes.value.data?.unreadCount || 0;
+          setUnreadMessagesCount(count);
+        }
+      } catch (err) {
+        console.warn('Real badge counts fetch error:', err);
+      }
+    };
+
+    fetchRealCounts();
   }, []);
 
   // Close dropdown on outside click
@@ -314,11 +344,16 @@ const EditTutorProfilePage = () => {
 
   return (
     <div className="tpm-layout">
+      {/* Mobile Drawer Backdrop */}
+      {sidebarOpen && (
+        <div className="tpm-sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* ── LEFT SIDEBAR ── */}
-      <aside className="tpm-sidebar">
+      <aside className={`tpm-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="tpm-sidebar-top">
           {/* Brand Logo */}
-          <Link to="/tutor/dashboard" className="tpm-brand" aria-label="MentorNearby Dashboard">
+          <Link to="/tutor/dashboard" className="tpm-brand" aria-label="MentorNearby Dashboard" onClick={() => setSidebarOpen(false)}>
             <div className="tpm-brand-icon-wrapper">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22.18 12 22.18C15.87 22.18 19 19.94 19 17.18V13.18L12 17L5 13.18Z" fill="#2563EB" />
@@ -333,7 +368,7 @@ const EditTutorProfilePage = () => {
           {/* Navigation Links */}
           <ul className="tpm-nav-list">
             <li>
-              <Link to="/tutor/dashboard" className="tpm-nav-link">
+              <Link to="/tutor/dashboard" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-solid fa-house tpm-nav-icon"></i>
                   <span>Dashboard</span>
@@ -341,7 +376,7 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/tutor/profile/edit" className="tpm-nav-link active">
+              <Link to="/tutor/profile/edit" className="tpm-nav-link active" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-regular fa-user tpm-nav-icon"></i>
                   <span>My Profile</span>
@@ -349,16 +384,18 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/tutor/requests" className="tpm-nav-link">
+              <Link to="/tutor/requests" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-solid fa-user-graduate tpm-nav-icon"></i>
                   <span>Student Requests</span>
                 </div>
-                <span className="tpm-nav-badge">8</span>
+                {realStudentRequestsCount > 0 && (
+                  <span className="tpm-nav-badge">{realStudentRequestsCount}</span>
+                )}
               </Link>
             </li>
             <li>
-              <Link to="/search" className="tpm-nav-link">
+              <Link to="/search" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-solid fa-magnifying-glass tpm-nav-icon"></i>
                   <span>Find Students</span>
@@ -366,7 +403,7 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/tutor/dashboard" className="tpm-nav-link">
+              <Link to="/tutor/dashboard" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-regular fa-calendar-check tpm-nav-icon"></i>
                   <span>My Sessions</span>
@@ -374,7 +411,7 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/tutor/dashboard" className="tpm-nav-link">
+              <Link to="/tutor/dashboard" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-regular fa-clock tpm-nav-icon"></i>
                   <span>My Availability</span>
@@ -382,7 +419,7 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/tutor/dashboard" className="tpm-nav-link">
+              <Link to="/tutor/dashboard" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-solid fa-wallet tpm-nav-icon"></i>
                   <span>Earnings</span>
@@ -390,7 +427,7 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/tutor/dashboard" className="tpm-nav-link">
+              <Link to="/tutor/dashboard" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-regular fa-star tpm-nav-icon"></i>
                   <span>Reviews &amp; Ratings</span>
@@ -398,16 +435,18 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/messages" className="tpm-nav-link">
+              <Link to="/messages" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-regular fa-envelope tpm-nav-icon"></i>
                   <span>Messages</span>
                 </div>
-                <span className="tpm-nav-badge">5</span>
+                {unreadMessagesCount > 0 && (
+                  <span className="tpm-nav-badge">{unreadMessagesCount}</span>
+                )}
               </Link>
             </li>
             <li>
-              <Link to="/tutor/dashboard" className="tpm-nav-link">
+              <Link to="/tutor/dashboard" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-solid fa-chart-line tpm-nav-icon"></i>
                   <span>Profile Analytics</span>
@@ -415,7 +454,7 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/tutor/kyc" className="tpm-nav-link">
+              <Link to="/tutor/kyc" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-solid fa-shield-halved tpm-nav-icon"></i>
                   <span>KYC &amp; Verification</span>
@@ -423,7 +462,7 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/settings" className="tpm-nav-link">
+              <Link to="/settings" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-solid fa-gear tpm-nav-icon"></i>
                   <span>Settings</span>
@@ -431,7 +470,7 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/contact" className="tpm-nav-link">
+              <Link to="/contact" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-regular fa-circle-question tpm-nav-icon"></i>
                   <span>Help &amp; Support</span>
@@ -452,7 +491,7 @@ const EditTutorProfilePage = () => {
           <div className="tpm-ring-wrapper">
             <span>{completionPercentage}%</span>
           </div>
-          <button className="tpm-top-tutor-btn" onClick={() => setActiveModal('about')}>
+          <button className="tpm-top-tutor-btn" onClick={() => { setSidebarOpen(false); setActiveModal('about'); }}>
             Complete Profile
           </button>
         </div>
@@ -463,6 +502,15 @@ const EditTutorProfilePage = () => {
         
         {/* Topbar Navigation */}
         <header className="tpm-topbar">
+          <button
+            type="button"
+            className="tpm-hamburger-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle Navigation Menu"
+          >
+            <i className="fa-solid fa-bars"></i>
+          </button>
+
           <div className="tpm-search-box">
             <input
               type="text"
@@ -474,16 +522,20 @@ const EditTutorProfilePage = () => {
 
           <div className="tpm-topbar-right">
             {/* Notification button */}
-            <div className="tpm-topbar-action-btn" title="Notifications">
+            <div className="tpm-topbar-action-btn" title="Notifications" onClick={() => navigate('/notifications')}>
               <i className="fa-regular fa-bell"></i>
-              <span className="tpm-action-badge">3</span>
+              {unreadNotificationsCount > 0 && (
+                <span className="tpm-action-badge">{unreadNotificationsCount}</span>
+              )}
               <span className="tpm-action-label">Notifications</span>
             </div>
 
             {/* Messages button */}
             <div className="tpm-topbar-action-btn" title="Messages" onClick={() => navigate('/messages')}>
               <i className="fa-regular fa-comment-dots"></i>
-              <span className="tpm-action-badge">5</span>
+              {unreadMessagesCount > 0 && (
+                <span className="tpm-action-badge">{unreadMessagesCount}</span>
+              )}
               <span className="tpm-action-label">Messages</span>
             </div>
 

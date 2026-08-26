@@ -446,22 +446,27 @@ const NotesAndPdfsPage = () => {
 
   // Open In-Browser Viewer (100% Free Online Reading)
   const handleViewPdf = (res) => {
-    const isSenior = ['11', '12'].includes(String(res.classLevel));
-    const isFormula = res.resourceType === 'FORMULA_SHEET';
+    if (!res) return;
+    const targetId = res._id || res.id || 'c9-sci-ch1-notes';
+    const isSenior = ['11', '12'].includes(String(res.classLevel || '9'));
+    const isFormula = res.resourceType === 'FORMULA_SHEET' || res.type === 'FORMULA';
     const price = isFormula ? (isSenior ? 8 : 7) : (isSenior ? 14 : 12);
+    const targetUrl = res.fileUrl || res.fileReference?.url || `/api/study-resources/stream/${targetId}`;
+
     setViewerData({
       isOpen: true,
       resource: {
-        _id: res.id,
-        id: res.id,
-        title: res.title || `${res.chapter} – ${res.chapterTitle}`,
+        _id: targetId,
+        id: targetId,
+        title: res.title || (res.chapterTitle ? `${res.chapter || 'Chapter'} – ${res.chapterTitle}` : 'Study Resource PDF'),
         chapter: res.chapter,
-        chapterTitle: res.chapterTitle,
-        classLevel: res.classLevel,
-        subject: res.subject,
-        resourceType: res.resourceType,
-        fileUrl: res.fileUrl || `/api/study-resources/stream/${res.id}`,
+        chapterTitle: res.chapterTitle || res.title,
+        classLevel: String(res.classLevel || '9'),
+        subject: res.subject || 'Science',
+        resourceType: res.resourceType || (isFormula ? 'FORMULA_SHEET' : 'NOTES'),
+        fileUrl: targetUrl,
         fileReference: {
+          url: targetUrl,
           filename: `${(res.title || 'Notes').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`,
           fileSize: 1048576,
         },
@@ -469,7 +474,7 @@ const NotesAndPdfsPage = () => {
         isDownloadUnlocked: false,
         isFree: true,
       },
-      resourceId: res.id,
+      resourceId: targetId,
     });
   };
 
@@ -806,7 +811,7 @@ const NotesAndPdfsPage = () => {
                   {paginatedResources.map((item) => {
                     const isFormula = item.resourceType === 'FORMULA_SHEET';
                     return (
-                      <div key={item.id} className="mn-np-card">
+                      <div key={item.id || item._id} className="mn-np-card">
                         <div className="mn-np-card-top">
                           <span className="mn-np-card-doc-icon">📄</span>
                           <span className={`mn-np-card-badge ${isFormula ? 'formula' : 'notes'}`}>

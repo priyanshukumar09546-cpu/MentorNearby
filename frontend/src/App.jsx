@@ -2,13 +2,13 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import CookieConsent from './components/common/CookieConsent';
-import StarField from './components/StarField';
+import GlobalStars from './components/GlobalStars';
 
 // Primary Core Routes (Eagerly loaded for instant first paint)
 import HomePage from './pages/Home/HomePage';
@@ -95,44 +95,41 @@ const RouteLoadingFallback = () => (
   </div>
 );
 
-const App = () => {
-  useEffect(() => {
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || 'null');
-      if (user) {
-        const role = (user.role || '').toString().toLowerCase().trim();
-        if (window.location.pathname === '/tutor/dashboard' && (role === 'student' || role === 'parent')) {
-          window.location.replace('/student/dashboard');
-        } else if (window.location.pathname === '/student/dashboard' && role === 'tutor') {
-          window.location.replace('/tutor/dashboard');
-        }
-      }
-    } catch (_) {}
-  }, []);
+const AppContent = () => {
+  const { isDark, darkMode } = useTheme();
+  const isDarkMode = isDark ?? darkMode ?? true;
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <ToastProvider>
-          <NotificationProvider>
-            <BrowserRouter>
-              <StarField />
-              <Suspense fallback={<RouteLoadingFallback />}>
-                <Routes>
-                  {/* Public Admin Entry & Login */}
-                  <Route path="/admin" element={<AdminLoginPage />} />
-                  <Route path="/admin/login" element={<AdminLoginPage />} />
+    <div
+      style={{
+        backgroundColor: isDarkMode ? '#000000' : '#FFFBF5',
+        minHeight: '100vh',
+        position: 'relative',
+        isolation: 'isolate',
+      }}
+      className={isDarkMode ? 'dark text-white' : 'light text-gray-900'}
+    >
+      {/* STARS - FIXED BEHIND EVERYTHING, FOR ENTIRE WEBSITE */}
+      <GlobalStars show={isDarkMode} />
 
-                  {/* Admin Control Center Protected Routes */}
-                  <Route
-                    path="/admin/*"
-                    element={
-                      <ProtectedRoute roles={['admin']}>
-                        <AdminLayout>
-                          <Routes>
-                            <Route index element={<AdminDashboardPage />} />
-                            <Route path="dashboard" element={<AdminDashboardPage />} />
-                            <Route path="dashboard/*" element={<AdminDashboardPage />} />
+      {/* CONTENT - ON TOP OF STARS */}
+      <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
+            {/* Public Admin Entry & Login */}
+            <Route path="/admin" element={<AdminLoginPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+
+            {/* Admin Control Center Protected Routes */}
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminLayout>
+                    <Routes>
+                      <Route index element={<AdminDashboardPage />} />
+                      <Route path="dashboard" element={<AdminDashboardPage />} />
+                      <Route path="dashboard/*" element={<AdminDashboardPage />} />
                             <Route path="users" element={<AdminUsersPage />} />
                             <Route path="students" element={<AdminStudentsPage />} />
                             <Route path="tutors" element={<AdminTutorsPage />} />
@@ -287,6 +284,33 @@ const App = () => {
                   />
                 </Routes>
               </Suspense>
+            </div>
+          </div>
+  );
+};
+
+const App = () => {
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (user) {
+        const role = (user.role || '').toString().toLowerCase().trim();
+        if (window.location.pathname === '/tutor/dashboard' && (role === 'student' || role === 'parent')) {
+          window.location.replace('/student/dashboard');
+        } else if (window.location.pathname === '/student/dashboard' && role === 'tutor') {
+          window.location.replace('/tutor/dashboard');
+        }
+      }
+    } catch (_) {}
+  }, []);
+
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <NotificationProvider>
+            <BrowserRouter>
+              <AppContent />
             </BrowserRouter>
           </NotificationProvider>
         </ToastProvider>

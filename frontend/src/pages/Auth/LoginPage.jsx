@@ -87,6 +87,12 @@ const LoginPage = () => {
       const res = await login({ email: email.trim().toLowerCase(), password, role: selectedRole });
       console.log('[LOGIN SUCCESS] Backend auth response:', res);
       
+      const token = res?.token || res?.data?.token || res?.data?.data?.token;
+      if (token) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('mn_token', token);
+      }
+
       const verifiedUser = await checkAuth();
       const role = extractUserRole(verifiedUser || res?.user);
       

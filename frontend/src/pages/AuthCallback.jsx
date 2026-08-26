@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { extractUserRole, getRoleDashboard } from '../components/common/ProtectedRoute';
+import { extractUserRole } from '../components/common/ProtectedRoute';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -10,15 +10,26 @@ const AuthCallback = () => {
   useEffect(() => {
     const processCallback = async () => {
       try {
+        const params = new URLSearchParams(window.location.search);
+        const urlToken = params.get('token');
+        const urlRole = params.get('role');
+
+        if (urlToken) {
+          localStorage.setItem('token', urlToken);
+          localStorage.setItem('mn_token', urlToken);
+        }
+
         console.log('[AUTH CALLBACK] Verifying session via checkAuth()...');
         const verifiedUser = await checkAuth();
-        const role = extractUserRole(verifiedUser);
+        const role = extractUserRole(verifiedUser) || (urlRole || '').toLowerCase();
+        
         let targetDashboard = '/student-dashboard';
         if (role === 'tutor') {
           targetDashboard = '/tutor-dashboard';
         } else if (role === 'admin') {
           targetDashboard = '/admin/dashboard';
         }
+        
         console.log('[AUTH CALLBACK SUCCESS] Redirecting to:', targetDashboard);
         window.location.href = targetDashboard;
       } catch (err) {

@@ -1,7 +1,7 @@
 // ============================================================
 // api/client.js
-// MentorNearby Axios HTTP Client
-// Enforces withCredentials: true for cross-domain httpOnly cookies
+// MentorNearby Dual Auth Client (httpOnly Cookies + Bearer Token Fallback)
+// Ensures 100% auth reliability on iPhone Safari & Mobile Browsers
 // ============================================================
 
 import axios from 'axios';
@@ -15,15 +15,30 @@ const client = axios.create({
 
 axios.defaults.withCredentials = true;
 
-// Request interceptor: ensure credentials mode enabled on all requests
+// Request Interceptor: Attach Authorization Bearer Token (iPhone Safari Fallback) + withCredentials
 client.interceptors.request.use((config) => {
   config.withCredentials = true;
+  
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
   return config;
 });
 
-// Response interceptor: capture role cookie if present and handle 401 unauthenticated
+// Response Interceptor: Capture token and user role from JSON response
 client.interceptors.response.use(
   (response) => {
+    const returnedToken = response.data?.token || response.data?.data?.token;
+    if (returnedToken && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('token', returnedToken);
+        localStorage.setItem('mn_token', returnedToken);
+      } catch (_) {}
+    }
+
     const user = response.data?.user || response.data?.data?.user;
     if (user && user.role) {
       try {
@@ -38,11 +53,16 @@ client.interceptors.response.use(
     const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
 
     if (error.response?.status === 401 && !isAuthCheck) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('mn_token');
+      }
       if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
         window.location.href = '/admin/login';
       } else if (
         pathname.startsWith('/dashboard') ||
         pathname.startsWith('/tutor/dashboard') ||
+        pathname.startsWith('/student/dashboard') ||
         pathname.startsWith('/settings')
       ) {
         window.location.href = '/login';

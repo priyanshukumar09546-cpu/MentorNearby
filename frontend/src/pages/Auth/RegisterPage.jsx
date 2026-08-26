@@ -139,10 +139,15 @@ const RegisterPage = () => {
         password,
         role: 'STUDENT'
       });
+      const token = res?.token || res?.data?.token || res?.data?.data?.token;
+      if (token) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('mn_token', token);
+      }
       const verifiedUser = await checkAuth();
       const role = extractUserRole(verifiedUser || res?.user);
       const targetDashboard = getRoleDashboard(role || 'student');
-      navigate(targetDashboard, { replace: true });
+      window.location.href = targetDashboard;
     } catch (err) {
       const fieldErrors = err?.response?.data?.errors;
       let msg = err?.response?.data?.message;

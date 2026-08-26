@@ -407,12 +407,21 @@ const ProfilePage = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/search" className="sp-nav-link">
-                  <div className="sp-nav-left">
-                    <span className="sp-nav-icon">🔍</span>
-                    <span>Find Tutors</span>
-                  </div>
-                </Link>
+                {isTutor ? (
+                  <Link to="/find-students" className="sp-nav-link">
+                    <div className="sp-nav-left">
+                      <span className="sp-nav-icon">🔍</span>
+                      <span>Find Students</span>
+                    </div>
+                  </Link>
+                ) : (
+                  <Link to="/find-tutors" className="sp-nav-link">
+                    <div className="sp-nav-left">
+                      <span className="sp-nav-icon">🔍</span>
+                      <span>Find Tutors</span>
+                    </div>
+                  </Link>
+                )}
               </li>
               <li>
                 <Link to="/courses" className="sp-nav-link">

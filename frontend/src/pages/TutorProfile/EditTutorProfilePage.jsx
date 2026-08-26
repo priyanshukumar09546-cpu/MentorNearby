@@ -395,7 +395,7 @@ const EditTutorProfilePage = () => {
               </Link>
             </li>
             <li>
-              <Link to="/search" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
+              <Link to="/find-students" className="tpm-nav-link" onClick={() => setSidebarOpen(false)}>
                 <div className="tpm-nav-left">
                   <i className="fa-solid fa-magnifying-glass tpm-nav-icon"></i>
                   <span>Find Students</span>

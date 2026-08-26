@@ -258,7 +258,7 @@ const TutorDashboardPage = () => {
               </li>
 
               <li className="td-nav-item">
-                <Link to="/requirements" className="td-nav-link">
+                <Link to="/find-students" className="td-nav-link">
                   <div className="td-nav-left">
                     <span className="td-nav-icon">🔍</span>
                     <span>Find Students</span>
@@ -616,7 +616,7 @@ const TutorDashboardPage = () => {
                   <span className="td-empty-icon">✉️</span>
                   <p className="td-empty-title">No student requests yet</p>
                   <p className="td-empty-desc">Direct student inquiries and unlock notifications will appear here.</p>
-                  <Link to="/requirements" className="td-empty-btn">Find Students</Link>
+                  <Link to="/find-students" className="td-empty-btn">Find Students</Link>
                 </div>
               )}
             </section>
@@ -625,7 +625,7 @@ const TutorDashboardPage = () => {
             <section className="td-card td-requirements-card" aria-labelledby="td-req-heading">
               <div className="td-card-header">
                 <h2 className="td-card-title" id="td-req-heading">New Student Requirements</h2>
-                <Link to="/requirements" className="td-card-link">View All</Link>
+                <Link to="/find-students" className="td-card-link">View All</Link>
               </div>
 
               {studentRequirements.length > 0 ? (
@@ -647,7 +647,7 @@ const TutorDashboardPage = () => {
                             {new Date(req.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        <Link to="/requirements" className="td-btn-sm-outline">
+                        <Link to="/find-students" className="td-btn-sm-outline">
                           Interested
                         </Link>
                       </div>
@@ -659,7 +659,7 @@ const TutorDashboardPage = () => {
                   <span className="td-empty-icon">📋</span>
                   <p className="td-empty-title">No student requirements found</p>
                   <p className="td-empty-desc">New tuition requirements posted by students will appear here.</p>
-                  <Link to="/requirements" className="td-empty-btn">Browse Board</Link>
+                  <Link to="/find-students" className="td-empty-btn">Browse Board</Link>
                 </div>
               )}
             </section>

@@ -108,7 +108,10 @@ const Navbar = () => {
               <button
                 type="button"
                 className={`navbar-link-item ${isActive('/find-students') || isActive('/requirements') ? 'active' : ''}`}
-                onClick={() => toggleDropdown('findStudents')}
+                onClick={() => {
+                  toggleDropdown('findStudents');
+                  navigate('/find-students');
+                }}
                 onMouseEnter={() => setActiveDropdown('findStudents')}
               >
                 <span>Find Students</span>
@@ -118,7 +121,10 @@ const Navbar = () => {
               <button
                 type="button"
                 className={`navbar-link-item ${isActive('/search') || isActive('/find-tutors') || isActive('/tutors') ? 'active' : ''}`}
-                onClick={() => toggleDropdown('findTutors')}
+                onClick={() => {
+                  toggleDropdown('findTutors');
+                  navigate('/find-tutors');
+                }}
                 onMouseEnter={() => setActiveDropdown('findTutors')}
               >
                 <span>Find Tutors</span>

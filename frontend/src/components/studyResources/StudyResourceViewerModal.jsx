@@ -476,10 +476,11 @@ const StudyResourceViewerModalInner = ({
 
     const isMobile = window.innerWidth < 768;
     const clientWidth = container.clientWidth || window.innerWidth;
-    const padding = isMobile ? 12 : 48;
-    const maxDesktopWidth = 880;
+    const clientHeight = container.clientHeight || (window.innerHeight - 120);
+    const padding = isMobile ? 12 : 32;
+    const maxDesktopWidth = 860;
     const availableWidth = Math.max(260, Math.min(clientWidth - padding, maxDesktopWidth));
-    const targetWidth = Math.max(260, Math.round(availableWidth * (zoomLevel / 100)));
+    const availableHeight = Math.max(300, clientHeight - padding);
 
     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
       try {
@@ -487,9 +488,17 @@ const StudyResourceViewerModalInner = ({
         const canvas = canvasRefs.current[pageNum];
         if (!canvas) continue;
 
-        const viewport = page.getViewport({ scale: 1 });
-        const scale = targetWidth / viewport.width;
-        const scaledViewport = page.getViewport({ scale });
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scaleW = availableWidth / unscaledViewport.width;
+        const scaleH = availableHeight / unscaledViewport.height;
+
+        // Fit scale checks BOTH available container width AND available container height
+        const baseFitScale = (pdfDoc.numPages === 1 || isMobile)
+          ? Math.min(scaleW, scaleH)
+          : scaleW;
+
+        const targetScale = Math.max(0.4, baseFitScale * (zoomLevel / 100));
+        const scaledViewport = page.getViewport({ scale: targetScale });
 
         const dpr = window.devicePixelRatio || 1;
         canvas.width = Math.floor(scaledViewport.width * dpr);
@@ -539,8 +548,8 @@ const StudyResourceViewerModalInner = ({
   const handleTouchStart = (e) => {
     if (e.touches.length === 2) {
       const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
       );
       touchStartDistRef.current = dist;
     }
@@ -549,16 +558,13 @@ const StudyResourceViewerModalInner = ({
   const handleTouchMove = (e) => {
     if (e.touches.length === 2 && touchStartDistRef.current) {
       const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
       );
-      const diff = dist - touchStartDistRef.current;
-      if (Math.abs(diff) > 20) {
-        if (diff > 0) {
-          setZoomLevel((prev) => Math.min(prev + 10, 200));
-        } else {
-          setZoomLevel((prev) => Math.max(prev - 10, 60));
-        }
+      const delta = dist - touchStartDistRef.current;
+      if (Math.abs(delta) > 30) {
+        if (delta > 0) handleZoomIn();
+        else handleZoomOut();
         touchStartDistRef.current = dist;
       }
     }
@@ -573,9 +579,10 @@ const StudyResourceViewerModalInner = ({
   const handleZoomReset = () => setZoomLevel(100);
 
   const toggleFullscreen = () => {
-    if (!viewerContainerRef.current) return;
+    const el = viewerContainerRef.current;
+    if (!el) return;
     if (!document.fullscreenElement) {
-      viewerContainerRef.current.requestFullscreen?.().catch(() => {});
+      el.requestFullscreen?.().catch(() => {});
       setIsFullscreen(true);
     } else {
       document.exitFullscreen?.().catch(() => {});
@@ -646,7 +653,6 @@ const StudyResourceViewerModalInner = ({
         justifyContent: 'center',
       }}
     >
-      {/* Print Restriction & Mobile Responsive Viewer CSS */}
       <style>{`
         @media print {
           body * { display: none !important; }
@@ -656,6 +662,7 @@ const StudyResourceViewerModalInner = ({
           from { transform: translate(-50%, -20px); opacity: 0; }
           to { transform: translate(-50%, 0); opacity: 1; }
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .sr-protected-reader-overlay {
           position: fixed !important;
           top: 0 !important;
@@ -723,34 +730,53 @@ const StudyResourceViewerModalInner = ({
         )}
 
         {/* ------------------------------------------------------------ */}
-        {/* RESPONSIVE TOP BAR: TITLE & ZOOM CONTROLS WITH SAFE INSET    */}
+        {/* EXPLICIT THEME-ISOLATED TOP HEADER & CONTROLS (ABOVE PDF!)   */}
         {/* ------------------------------------------------------------ */}
         <header
-          className="bg-black/90 border-b border-neutral-800 p-2 sm:px-4 sm:py-3 flex flex-col gap-2 flex-shrink-0 z-30"
           style={{
+            backgroundColor: '#111111',
+            borderBottom: '1px solid #262626',
+            color: '#FFFFFF',
             paddingTop: 'max(8px, env(safe-area-inset-top))',
+            paddingBottom: '10px',
             paddingLeft: 'max(12px, env(safe-area-inset-left))',
             paddingRight: 'max(12px, env(safe-area-inset-right))',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            flexShrink: 0,
+            zIndex: 30,
           }}
         >
-          {/* Row 1: Document Badge, Title & Inward Back/Close Button */}
-          <div className="flex items-center justify-between gap-2 w-full min-w-0">
-            {/* Safe Inward Back/Close Button (Upper Left Area) */}
+          {/* Row 1: Safe Inward Back Button, Title, and Close Icon */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', width: '100%' }}>
+            {/* Safe Inward Back Button (Upper Left Area) */}
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-1.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 flex-shrink-0 transition-all border border-neutral-700 shadow-md active:scale-95"
               style={{
-                marginLeft: 'max(4px, env(safe-area-inset-left))',
+                backgroundColor: '#262626',
+                color: '#FFFFFF',
+                border: '1px solid #404040',
+                borderRadius: '20px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                flexShrink: 0,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
               }}
               title="Close Reader (ESC)"
             >
               <span>← Back</span>
             </button>
 
-            <div className="min-w-0 flex-1 overflow-hidden text-center sm:text-left mx-2">
+            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', textAlign: 'center', margin: '0 8px' }}>
               <h3
-                className="text-xs sm:text-sm md:text-base font-bold text-white truncate"
+                style={{ fontSize: '14px', fontWeight: '700', color: '#FFFFFF', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                 title={resource?.title || 'Study Resource'}
               >
                 {resource?.title ||
@@ -758,14 +784,14 @@ const StudyResourceViewerModalInner = ({
                     resource?.chapterTitle || 'Study Resource'
                   }`}
               </h3>
-              <div className="text-[10px] sm:text-xs text-neutral-400 flex items-center justify-center sm:justify-start gap-1.5 truncate">
+              <div style={{ fontSize: '11px', color: '#A3A3A3', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap', overflow: 'hidden' }}>
                 <span>{resource?.subject || 'Science'}</span>
                 <span>•</span>
                 <span>Class {resource?.classLevel || '9'}</span>
                 {numPages > 0 && (
                   <>
                     <span>•</span>
-                    <span className="text-emerald-400 font-semibold">
+                    <span style={{ color: '#10B981', fontWeight: '600' }}>
                       {numPages} {numPages === 1 ? 'Page' : 'Pages'}
                     </span>
                   </>
@@ -777,9 +803,20 @@ const StudyResourceViewerModalInner = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center font-bold text-sm flex-shrink-0 transition-colors border border-neutral-700"
               style={{
-                marginRight: 'max(4px, env(safe-area-inset-right))',
+                backgroundColor: '#262626',
+                color: '#FFFFFF',
+                border: '1px solid #404040',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                fontSize: '14px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}
               title="Close Reader"
             >
@@ -787,34 +824,39 @@ const StudyResourceViewerModalInner = ({
             </button>
           </div>
 
-          {/* Row 2: Reader Controls Toolbar */}
-          <div className="flex items-center justify-between gap-2 overflow-x-auto py-0.5 no-scrollbar text-xs">
-            <div className="flex items-center gap-2">
+          {/* Row 2: Reader Controls + DOWNLOAD BUTTON (ALL ABOVE THE PDF AREA!) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', fontSize: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span
-                className={`text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 rounded flex-shrink-0 ${
-                  isFormula
-                    ? 'bg-purple-950/70 text-purple-300 border border-purple-800'
-                    : 'bg-emerald-950/70 text-emerald-300 border border-emerald-800'
-                }`}
+                style={{
+                  fontSize: '10px',
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  backgroundColor: isFormula ? '#3B0764' : '#064E3B',
+                  color: isFormula ? '#F3E8FF' : '#D1FAE5',
+                  border: isFormula ? '1px solid #6B21A8' : '1px solid #047857',
+                }}
               >
                 {isFormula ? '📐 Formula Sheet' : '📚 Notes PDF'}
               </span>
             </div>
 
             {/* Center: Zoom Controls */}
-            <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-lg p-0.5 flex-shrink-0">
+            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#171717', border: '1px solid #262626', borderRadius: '8px', padding: '2px 4px' }}>
               <button
                 type="button"
                 onClick={handleZoomOut}
                 disabled={zoomLevel <= 60}
-                className="text-neutral-300 hover:text-white px-2 py-0.5 text-sm font-bold disabled:opacity-30"
+                style={{ color: '#E5E5E5', background: 'none', border: 'none', padding: '2px 8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}
                 title="Zoom Out"
               >
                 −
               </button>
               <span
                 onClick={handleZoomReset}
-                className="text-neutral-200 text-[11px] sm:text-xs font-semibold px-2 cursor-pointer hover:text-emerald-400 min-w-[42px] text-center select-none"
+                style={{ color: '#F5F5F5', fontSize: '12px', fontWeight: '600', padding: '0 8px', cursor: 'pointer', userSelect: 'none' }}
                 title="Reset Zoom (100%)"
               >
                 {zoomLevel}%
@@ -823,57 +865,135 @@ const StudyResourceViewerModalInner = ({
                 type="button"
                 onClick={handleZoomIn}
                 disabled={zoomLevel >= 200}
-                className="text-neutral-300 hover:text-white px-2 py-0.5 text-sm font-bold disabled:opacity-30"
-                title="Zoom In"
+                style={{ color: '#E5E5E5', background: 'none', border: 'none', padding: '2px 8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}
               >
                 +
               </button>
             </div>
 
-            {/* Fullscreen Toggle */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Right: Fullscreen Toggle & DOWNLOAD BUTTON (ABOVE PDF AREA!) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg px-2.5 py-1 text-xs font-medium flex items-center gap-1.5 transition-colors border border-neutral-700"
+                style={{ backgroundColor: '#262626', color: '#FFFFFF', border: '1px solid #404040', borderRadius: '8px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                 title="Toggle Fullscreen"
               >
                 <span>{isFullscreen ? '↘' : '⛶'}</span>
-                <span className="hidden md:inline">{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
+                <span>{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
               </button>
+
+              {/* Download PDF Button (Sitting in Header ABOVE PDF!) */}
+              {isUnlocked ? (
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  style={{
+                    backgroundColor: '#059669',
+                    color: '#FFFFFF',
+                    border: '1px solid #10B981',
+                    borderRadius: '20px',
+                    padding: '5px 14px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)',
+                    opacity: downloading ? 0.6 : 1,
+                  }}
+                  title="Download Original PDF File"
+                >
+                  <span>{downloading ? '⏳' : '📥'}</span>
+                  <span>{downloading ? 'Downloading...' : 'Download PDF'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (handleOpenPayment) {
+                      handleOpenPayment(resource);
+                    }
+                  }}
+                  style={{
+                    backgroundColor: '#059669',
+                    color: '#FFFFFF',
+                    border: '1px solid #10B981',
+                    borderRadius: '20px',
+                    padding: '5px 14px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title="Download Original PDF"
+                >
+                  <span>🔒</span>
+                  <span>Download PDF • ₹{downloadPrice}</span>
+                </button>
+              )}
             </div>
           </div>
         </header>
 
         {/* ------------------------------------------------------------ */}
-        {/* MAIN CENTERED DOCUMENT VIEWPORT (SOLID BLACK BACKGROUND)     */}
+        {/* MAIN CENTERED DOCUMENT VIEWPORT (PURE BLACK #000000 AREA)    */}
         {/* ------------------------------------------------------------ */}
         <div
           ref={scrollContainerRef}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 w-full max-w-full bg-black overflow-y-auto overflow-x-hidden relative flex flex-col items-center justify-center p-2 sm:p-6"
-          style={{ WebkitOverflowScrolling: 'touch', minHeight: 0, backgroundColor: '#000000' }}
+          style={{
+            flex: 1,
+            width: '100%',
+            backgroundColor: '#000000',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '12px',
+            WebkitOverflowScrolling: 'touch',
+            minHeight: 0,
+          }}
         >
           {/* Loading Indicator */}
           {loading && (
-            <div className="text-center my-auto p-8">
-              <div className="w-10 h-10 border-4 border-neutral-800 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-neutral-400 text-xs sm:text-sm font-semibold">
-                Loading PDF study material...
+            <div style={{ textAlign: 'center', margin: 'auto', padding: '32px' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '4px solid #262626',
+                  borderTopColor: '#10B981',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 16px auto',
+                }}
+              ></div>
+              <p style={{ color: '#A3A3A3', fontSize: '13px', fontWeight: '600' }}>
+                Loading original PDF study material...
               </p>
             </div>
           )}
 
           {/* Error Message */}
           {!loading && errorMsg && (
-            <div className="text-center my-auto p-6 bg-red-950/40 border border-red-800 rounded-xl max-w-md">
-              <p className="text-red-400 text-sm font-bold mb-3">⚠️ {errorMsg}</p>
+            <div style={{ textAlign: 'center', margin: 'auto', padding: '24px', backgroundColor: 'rgba(127, 29, 29, 0.3)', border: '1px solid #991B1B', borderRadius: '12px', maxWidth: '400px' }}>
+              <p style={{ color: '#FCA5A5', fontSize: '13px', fontWeight: '700', marginBottom: '12px' }}>⚠️ {errorMsg}</p>
               <button
                 type="button"
                 onClick={loadResourceForReading}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg"
+                style={{ backgroundColor: '#059669', color: '#FFFFFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
               >
                 Retry Loading
               </button>
@@ -882,29 +1002,42 @@ const StudyResourceViewerModalInner = ({
 
           {/* Original Image Document View (Centered, Preserved Aspect Ratio) */}
           {!loading && !errorMsg && isImageDoc && docImageSrc && (
-            <div className="relative w-full max-w-full flex-1 flex flex-col items-center justify-center py-2 my-auto">
-              <div className="relative max-w-full flex flex-col items-center justify-center my-auto">
+            <div style={{ position: 'relative', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: 'auto' }}>
+              <div style={{ position: 'relative', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: 'auto' }}>
                 <img
                   src={docImageSrc}
                   alt={resource?.title || 'Study Resource Document'}
-                  className="max-w-full max-h-[85vh] h-auto block bg-white rounded-md shadow-2xl transition-all duration-200 object-contain mx-auto"
                   style={{
-                    width: `${Math.min(zoomLevel, 180)}%`,
-                    maxWidth: zoomLevel <= 100 ? '100%' : 'none',
-                    maxHeight: zoomLevel <= 100 ? '85vh' : 'none',
+                    maxWidth: '100%',
+                    maxHeight: zoomLevel <= 100 ? 'calc(100vh - 120px)' : 'none',
+                    height: 'auto',
+                    display: 'block',
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '6px',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
                     objectFit: 'contain',
+                    margin: 'auto',
                   }}
                 />
                 {/* Subtle Single Watermark */}
                 <div
-                  className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-10"
-                  style={{ opacity: 0.08 }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    pointerEvents: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    zIndex: 10,
+                    opacity: 0.08,
+                  }}
                 >
-                  <div className="rotate-[-30deg] text-center select-none">
-                    <div className="text-xl sm:text-3xl font-black tracking-widest text-slate-900 uppercase">
+                  <div style={{ transform: 'rotate(-30deg)', textAlign: 'center', userSelect: 'none' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '3px', color: '#0F172A', textTransform: 'uppercase' }}>
                       MENTORNEARBY
                     </div>
-                    <div className="text-[10px] sm:text-xs font-bold text-slate-800 mt-1">
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#1E293B', marginTop: '4px' }}>
                       {userIdentifier} • {sessionCode}
                     </div>
                   </div>
@@ -917,37 +1050,60 @@ const StudyResourceViewerModalInner = ({
           {!loading && !errorMsg && !isImageDoc && !useFallbackIframe && pdfDoc && (
             <div
               ref={canvasContainerRef}
-              className="relative w-full max-w-full flex-1 flex flex-col items-center justify-center gap-4 py-2 my-auto"
+              style={{
+                position: 'relative',
+                width: '100%',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '16px',
+                margin: 'auto',
+              }}
             >
               {Array.from({ length: numPages }).map((_, index) => {
                 const pageNum = index + 1;
                 return (
                   <div
                     key={pageNum}
-                    className="relative max-w-full flex flex-col items-center justify-center my-auto"
+                    style={{ position: 'relative', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: 'auto' }}
                   >
                     <canvas
                       ref={(el) => {
                         canvasRefs.current[pageNum] = el;
                       }}
-                      className="max-w-full h-auto block bg-white rounded-md shadow-2xl transition-all duration-200"
                       style={{
                         maxWidth: '100%',
-                        maxHeight: numPages === 1 ? '85vh' : 'none',
+                        maxHeight: (numPages === 1 && zoomLevel <= 100) ? 'calc(100vh - 120px)' : 'none',
+                        height: 'auto',
+                        display: 'block',
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: '6px',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
                         objectFit: 'contain',
                       }}
                     />
 
                     {/* Subtle, Non-Intrusive Watermark (Single diagonal per page) */}
                     <div
-                      className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-10"
-                      style={{ opacity: 0.08 }}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        pointerEvents: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        zIndex: 10,
+                        opacity: 0.08,
+                      }}
                     >
-                      <div className="rotate-[-30deg] text-center select-none">
-                        <div className="text-xl sm:text-3xl font-black tracking-widest text-slate-900 uppercase">
+                      <div style={{ transform: 'rotate(-30deg)', textAlign: 'center', userSelect: 'none' }}>
+                        <div style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '3px', color: '#0F172A', textTransform: 'uppercase' }}>
                           MENTORNEARBY
                         </div>
-                        <div className="text-[10px] sm:text-xs font-bold text-slate-800 mt-1">
+                        <div style={{ fontSize: '11px', fontWeight: '700', color: '#1E293B', marginTop: '4px' }}>
                           {userIdentifier} • {sessionCode}
                         </div>
                       </div>
@@ -960,57 +1116,19 @@ const StudyResourceViewerModalInner = ({
 
           {/* Fallback Object & Iframe for browsers where PDF.js script couldn't run */}
           {!loading && !errorMsg && !isImageDoc && (useFallbackIframe || !pdfDoc) && (
-            <div className="relative w-full h-full min-h-[400px] flex-1 flex items-center justify-center bg-black rounded-lg overflow-hidden my-auto">
+            <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '400px', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000', borderRadius: '8px', overflow: 'hidden', margin: 'auto' }}>
               <object
                 data={`${pdfBlobUrl || streamFileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
                 type="application/pdf"
-                className="w-full h-full max-h-[85vh] border-none block min-h-[450px]"
+                style={{ width: '100%', height: '100%', maxHeight: 'calc(100vh - 120px)', border: 'none', display: 'block', minHeight: '450px' }}
               >
                 <iframe
                   src={`${pdfBlobUrl || streamFileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
                   title={resource?.title || 'Study Resource PDF'}
-                  className="w-full h-full max-h-[85vh] border-none block min-h-[450px]"
+                  style={{ width: '100%', height: '100%', maxHeight: 'calc(100vh - 120px)', border: 'none', display: 'block', minHeight: '450px' }}
                 />
               </object>
             </div>
-          )}
-        </div>
-
-        {/* ------------------------------------------------------------ */}
-        {/* SAFE-AREA FLOATING DOWNLOAD BUTTON (BOTTOM RIGHT AREA)       */}
-        {/* ------------------------------------------------------------ */}
-        <div
-          className="fixed z-50 flex items-center pointer-events-auto"
-          style={{
-            bottom: 'max(20px, env(safe-area-inset-bottom))',
-            right: 'max(20px, env(safe-area-inset-right))',
-          }}
-        >
-          {isUnlocked ? (
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={downloading}
-              className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-full px-5 py-3 text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shadow-2xl border border-emerald-400/30 disabled:opacity-50"
-              title="Download Original PDF File"
-            >
-              <span className="text-base sm:text-lg">{downloading ? '⏳' : '📥'}</span>
-              <span>{downloading ? 'Downloading...' : 'Download PDF'}</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                if (handleOpenPayment) {
-                  handleOpenPayment(resource);
-                }
-              }}
-              className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-full px-5 py-3 text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap shadow-2xl border border-emerald-400/30"
-              title="Download Original PDF"
-            >
-              <span className="text-base sm:text-lg">🔒</span>
-              <span>Download PDF • ₹{downloadPrice}</span>
-            </button>
           )}
         </div>
       </div>

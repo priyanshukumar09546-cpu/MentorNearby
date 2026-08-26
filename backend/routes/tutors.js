@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const {
   getTutorProfile,
+  getFeaturedTutors,
   updateTutorProfile,
   uploadProfilePhoto,
   uploadIntroVideo,
@@ -18,6 +19,9 @@ const {
 const { protect, authorize } = require('../middleware/auth');
 const { uploadPhoto, uploadVideo, uploadDocument } = require('../middleware/upload');
 const { uploadKycDocument, uploadTutorId } = require('../controllers/uploadController');
+
+// Public routes (Featured & Search)
+router.get('/featured', getFeaturedTutors);
 
 // Tutor ID Upload (Fast Verhoeff + Private Storage)
 router.post('/upload-id', uploadDocument, uploadTutorId);

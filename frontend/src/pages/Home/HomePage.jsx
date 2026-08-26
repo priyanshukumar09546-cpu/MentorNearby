@@ -84,15 +84,25 @@ const HomePage = () => {
   useEffect(() => {
     const fetchTutorsAndStats = async () => {
       try {
+        setLoadingTutors(true);
         const [tutorsRes, statsRes] = await Promise.allSettled([
-          searchTutors({ limit: 3, verified: 'true' }),
+          client.get('/tutors/featured'),
           getPublicStats(),
         ]);
+
         if (tutorsRes.status === 'fulfilled') {
-          setFeaturedTutors(tutorsRes.value.data?.data?.tutors || []);
+          const list = tutorsRes.value.data?.data?.tutors || tutorsRes.value.data?.tutors || tutorsRes.value.data?.data || [];
+          if (Array.isArray(list) && list.length > 0) {
+            setFeaturedTutors(list);
+          } else {
+            const fallback = await searchTutors({ limit: 6 });
+            setFeaturedTutors(fallback.data?.data?.tutors || fallback.data?.tutors || []);
+          }
         } else {
-          setFeaturedTutors([]);
+          const fallback = await searchTutors({ limit: 6 });
+          setFeaturedTutors(fallback.data?.data?.tutors || fallback.data?.tutors || []);
         }
+
         if (statsRes.status === 'fulfilled') {
           setPublicStats(statsRes.value.data?.data || {});
         }
@@ -386,7 +396,7 @@ const HomePage = () => {
                   {featuredTutors.slice(0, 3).map((tutor) => {
                     const tutorId = tutor._id || tutor.id;
                     const name = tutor.user?.name || tutor.name || 'Tutor';
-                    const photo = tutor.profilePhoto?.url || tutor.profilePhoto || tutor.user?.avatar || '';
+                    const photo = tutor.profilePic || tutor.user?.avatar || tutor.user?.profilePic || tutor.profilePhoto?.url || tutor.profilePhoto || '';
                     const subject = tutor.subjects?.join(', ') || tutor.subjects?.[0] || 'General Subjects';
                     const classes = tutor.classes?.length ? `Class ${tutor.classes.join(', ')}` : (tutor.grades?.length ? `Class ${tutor.grades.join(', ')}` : 'All Classes');
                     const exp = tutor.experience?.years ? `${tutor.experience.years}+ Years Exp.` : (tutor.experience ? `${tutor.experience} Exp.` : 'Experienced');

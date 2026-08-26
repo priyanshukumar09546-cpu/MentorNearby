@@ -203,3 +203,31 @@ exports.getTutorStats = asyncHandler(async (req, res, next) => {
 
   return success(res, 'Tutor statistics retrieved', stats);
 });
+
+// @desc    Get featured / top approved tutors for Homepage
+// @route   GET /api/tutors/featured
+// @access  Public
+exports.getFeaturedTutors = asyncHandler(async (req, res, next) => {
+  let tutors = await TutorProfile.find({
+    $or: [
+      { kycStatus: 'VERIFIED' },
+      { verificationStatus: { $in: ['APPROVED', 'VERIFIED', 'verified', 'approved'] } },
+      { profileVisibility: true }
+    ]
+  })
+  .populate('user', 'name email phone avatar profilePic role isSuspended')
+  .sort({ averageRating: -1, profileCompletionPercentage: -1, createdAt: -1 })
+  .limit(8);
+
+  let activeTutors = tutors.filter(t => t && t.user && !t.user.isSuspended);
+
+  // Fallback: If 0 tutors matched filter, return all profiles so Homepage is NEVER empty
+  if (!activeTutors || activeTutors.length === 0) {
+    const allTutors = await TutorProfile.find({})
+      .populate('user', 'name email phone avatar profilePic role isSuspended')
+      .limit(8);
+    activeTutors = allTutors.filter(t => t && t.user && !t.user.isSuspended);
+  }
+
+  return success(res, 'Featured tutors retrieved successfully', { tutors: activeTutors, data: activeTutors });
+});

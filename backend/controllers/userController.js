@@ -282,3 +282,28 @@ exports.markAllNotificationsRead = asyncHandler(async (req, res, next) => {
 
   return success(res, 'All notifications marked as read');
 });
+
+// @desc    Get featured students / tuition requirements for Tutors
+// @route   GET /api/users/students/featured
+// @access  Public
+exports.getFeaturedStudents = asyncHandler(async (req, res, next) => {
+  const TuitionRequirement = require('../models/TuitionRequirement');
+
+  let students = await StudentProfile.find({})
+    .populate('user', 'name email phone avatar profilePic role isSuspended')
+    .sort({ createdAt: -1 })
+    .limit(8);
+
+  let activeStudents = students.filter(s => s && s.user && !s.user.isSuspended);
+
+  // Fallback to open tuition requirements if student profiles count is low
+  if (activeStudents.length === 0) {
+    const requirements = await TuitionRequirement.find({ status: { $ne: 'CANCELLED' } })
+      .populate('student', 'name email phone avatar profilePic')
+      .sort({ createdAt: -1 })
+      .limit(8);
+    return success(res, 'Featured student requirements retrieved', { students: requirements, requirements, data: requirements });
+  }
+
+  return success(res, 'Featured students retrieved successfully', { students: activeStudents, data: activeStudents });
+});

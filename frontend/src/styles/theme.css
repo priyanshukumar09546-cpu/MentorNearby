@@ -109,26 +109,26 @@
 .theme-dark {
   --theme-name: 'dark';
 
-  /* Page & Surfaces */
-  --color-bg: #09090C;
-  --color-bg-secondary: #121217;
-  --color-bg-tertiary: #191922;
-  --color-surface: #14141A;
-  --color-surface-hover: #1A1A24;
-  --color-surface-raised: #1C1C26;
-  --color-surface-overlay: rgba(20, 20, 26, 0.88);
+  /* Page & Surfaces - Pure Black #000000 Default */
+  --color-bg: #000000;
+  --color-bg-secondary: #0a0a0a;
+  --color-bg-tertiary: #111111;
+  --color-surface: #141414;
+  --color-surface-hover: #1c1c1c;
+  --color-surface-raised: #1f1f1f;
+  --color-surface-overlay: rgba(0, 0, 0, 0.9);
 
   /* Typography */
-  --color-text-primary: #F8FAFC;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #64748B;
-  --color-text-disabled: #475569;
-  --color-text-inverse: #09090C;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A1A1AA;
+  --color-text-muted: #71717A;
+  --color-text-disabled: #52525B;
+  --color-text-inverse: #000000;
 
   /* Borders & Dividers */
-  --color-border: #22222E;
-  --color-border-subtle: #1A1A24;
-  --color-border-dark: #323244;
+  --color-border: #27272A;
+  --color-border-subtle: #18181B;
+  --color-border-dark: #3F3F46;
 
   /* MentorNearby Brand Gold Accent */
   --color-gold: #F59E0B;
@@ -161,21 +161,21 @@
   --color-info-text: #93C5FD;
 
   /* Navbar */
-  --navbar-bg: #09090C;
-  --navbar-border: #1E1E28;
-  --navbar-text: #F8FAFC;
+  --navbar-bg: #000000;
+  --navbar-border: #27272A;
+  --navbar-text: #FFFFFF;
   --navbar-text-hover: #F59E0B;
-  --navbar-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --navbar-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
 
   /* Cards */
-  --card-bg: #14141A;
-  --card-border: #22222E;
+  --card-bg: #141414;
+  --card-border: #27272A;
   --card-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
   --card-shadow-hover: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 15px rgba(245, 158, 11, 0.08);
 
   /* Inputs & Forms */
-  --input-bg: #181822;
-  --input-border: #282838;
+  --input-bg: #111111;
+  --input-border: #27272A;
   --input-border-focus: #F59E0B;
   --input-text: #F8FAFC;
   --input-placeholder: #64748B;

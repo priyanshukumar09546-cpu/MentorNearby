@@ -1752,3 +1752,52 @@
   background: #334155 !important;
 }
 
+/* Pure Black (#000000) Dark Mode Overrides for Student Dashboard */
+.dark .sd-layout,
+[data-theme="dark"] .sd-layout,
+.theme-dark .sd-layout {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.dark .sd-sidebar,
+[data-theme="dark"] .sd-sidebar,
+.theme-dark .sd-sidebar,
+.dark .sd-topbar,
+[data-theme="dark"] .sd-topbar,
+.theme-dark .sd-topbar {
+  background-color: #000000 !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+.dark .sd-welcome-box,
+[data-theme="dark"] .sd-welcome-box,
+.theme-dark .sd-welcome-box {
+  background-color: #111111 !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+.dark .sd-stat-card,
+[data-theme="dark"] .sd-stat-card,
+.theme-dark .sd-stat-card,
+.dark .sd-tutor-card,
+[data-theme="dark"] .sd-tutor-card,
+.theme-dark .sd-tutor-card,
+.dark .sd-section-card,
+[data-theme="dark"] .sd-section-card,
+.theme-dark .sd-section-card {
+  background-color: #141414 !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+.dark .sd-search-input,
+[data-theme="dark"] .sd-search-input,
+.theme-dark .sd-search-input {
+  background-color: #111111 !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+

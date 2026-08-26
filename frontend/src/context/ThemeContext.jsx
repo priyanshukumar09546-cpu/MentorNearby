@@ -1,37 +1,36 @@
 // ============================================================
 // context/ThemeContext.jsx
-// Global Appearance & Theme Management System for MentorNearby
-// Modes: ☀️ Light, 🌙 Dark, 🌗 System Default, ☕ Eye Comfort
-// Persisted in localStorage ('mentornearby-theme')
+// MentorNearby Global Appearance & Theme System
+// Default: Dark Mode (Pure Black #000000)
+// Switchable to Light Mode via Navbar Toggle
 // ============================================================
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext({
-  theme: 'light',
-  resolvedTheme: 'light',
+  theme: 'dark',
+  resolvedTheme: 'dark',
   setTheme: () => {},
   toggleTheme: () => {},
-  isDark: false,
+  isDark: true,
 });
 
-const THEME_STORAGE_KEY = 'mentornearby-theme';
-const LEGACY_STORAGE_KEY = 'tutornearby-theme';
+const PRIMARY_STORAGE_KEY = 'theme';
+const BRAND_STORAGE_KEY = 'mentornearby-theme';
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(() => {
     try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (saved && ['light', 'dark', 'system', 'eye-comfort'].includes(saved)) {
+      const saved = localStorage.getItem(PRIMARY_STORAGE_KEY) || localStorage.getItem(BRAND_STORAGE_KEY);
+      if (saved && ['light', 'dark', 'system'].includes(saved)) {
         return saved;
       }
     } catch (_) {}
-    return 'light'; // Default to light matching primary reference
+    return 'dark'; // DEFAULT TO DARK MODE (PURE BLACK)
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState('light');
+  const [resolvedTheme, setResolvedTheme] = useState('dark');
 
-  // Compute resolved theme
   useEffect(() => {
     const updateTheme = () => {
       let active = theme;
@@ -42,21 +41,17 @@ export const ThemeProvider = ({ children }) => {
 
       setResolvedTheme(active);
 
-      // Apply to document element
       const root = document.documentElement;
+      root.classList.remove('light', 'dark');
+      root.classList.add(active);
       root.setAttribute('data-theme', active);
-      root.className = `theme-${active}`;
-      if (active === 'dark' || active === 'eye-comfort') {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
+      root.className = `theme-${active} ${active}`;
+      root.style.colorScheme = active === 'dark' ? 'dark' : 'light';
 
-      if (active === 'light') {
-        root.style.colorScheme = 'light';
-      } else {
-        root.style.colorScheme = 'dark';
-      }
+      try {
+        localStorage.setItem(PRIMARY_STORAGE_KEY, theme);
+        localStorage.setItem(BRAND_STORAGE_KEY, theme);
+      } catch (_) {}
     };
 
     updateTheme();
@@ -75,10 +70,11 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   const setTheme = (newTheme) => {
-    if (['light', 'dark', 'system', 'eye-comfort'].includes(newTheme)) {
+    if (['light', 'dark', 'system'].includes(newTheme)) {
       setThemeState(newTheme);
       try {
-        localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+        localStorage.setItem(PRIMARY_STORAGE_KEY, newTheme);
+        localStorage.setItem(BRAND_STORAGE_KEY, newTheme);
       } catch (_) {}
     }
   };
@@ -88,7 +84,7 @@ export const ThemeProvider = ({ children }) => {
     setTheme(next);
   };
 
-  const isDark = resolvedTheme === 'dark' || resolvedTheme === 'eye-comfort';
+  const isDark = resolvedTheme === 'dark';
 
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme, isDark }}>

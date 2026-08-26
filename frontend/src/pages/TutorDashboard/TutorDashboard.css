@@ -1435,3 +1435,52 @@
     display: none !important;
   }
 }
+
+/* Pure Black (#000000) Dark Mode Overrides for Tutor Dashboard */
+.dark .td-layout,
+[data-theme="dark"] .td-layout,
+.theme-dark .td-layout {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.dark .td-sidebar,
+[data-theme="dark"] .td-sidebar,
+.theme-dark .td-sidebar,
+.dark .td-topbar,
+[data-theme="dark"] .td-topbar,
+.theme-dark .td-topbar {
+  background-color: #000000 !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+.dark .td-welcome-card,
+[data-theme="dark"] .td-welcome-card,
+.theme-dark .td-welcome-card {
+  background-color: #111111 !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+.dark .td-stat-card,
+[data-theme="dark"] .td-stat-card,
+.theme-dark .td-stat-card,
+.dark .td-card,
+[data-theme="dark"] .td-card,
+.theme-dark .td-card,
+.dark .td-section-card,
+[data-theme="dark"] .td-section-card,
+.theme-dark .td-section-card {
+  background-color: #141414 !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+.dark .td-search-input,
+[data-theme="dark"] .td-search-input,
+.theme-dark .td-search-input {
+  background-color: #111111 !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}

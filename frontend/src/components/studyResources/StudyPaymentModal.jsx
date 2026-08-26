@@ -267,6 +267,25 @@ const StudyPaymentModal = ({
     <div
       className="sr-payment-modal-overlay"
       onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        height: '100dvh',
+        background: 'rgba(15, 23, 42, 0.75)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        zIndex: 999999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        margin: 0,
+      }}
     >
       <div
         className="sr-payment-modal-box"

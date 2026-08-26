@@ -444,15 +444,46 @@ const NotesAndPdfsPage = () => {
     setCurrentPage(1);
   };
 
-  // Open In-Browser Viewer (100% Free Online Reading)
+  // Open In-Browser Viewer for Formula Sheets (Centered Modal) or Original Notes PDF in New Tab
   const handleViewPdf = (res) => {
     if (!res) return;
     const targetId = res._id || res.id || 'c9-sci-ch1-notes';
     const isSenior = ['11', '12'].includes(String(res.classLevel || '9'));
-    const isFormula = res.resourceType === 'FORMULA_SHEET' || res.type === 'FORMULA';
+    const isFormula =
+      res.resourceType === 'FORMULA_SHEET' ||
+      res.type === 'FORMULA' ||
+      (res.id && String(res.id).includes('formula')) ||
+      (res.title && String(res.title).toLowerCase().includes('formula'));
     const price = isFormula ? (isSenior ? 8 : 7) : (isSenior ? 14 : 12);
-    const targetUrl = res.fileUrl || res.fileReference?.url || `/api/study-resources/stream/${targetId}`;
 
+    const getFullDocUrl = (url) => {
+      if (!url) return '';
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      if (url.startsWith('/api/') || url.startsWith('/uploads/')) {
+        const backendBase =
+          import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim()
+            ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
+            : 'https://mentornearby-2.onrender.com';
+        return `${backendBase}${url}`;
+      }
+      return url;
+    };
+
+    const rawUrl = res.fileUrl || res.fileReference?.url || `/api/study-resources/stream/${targetId}`;
+    const targetUrl = getFullDocUrl(rawUrl);
+
+    if (!isFormula) {
+      // ---------------------------------------------------------------------
+      // NOTES PDF: Open the REAL ORIGINAL uploaded Notes PDF in a NEW BROWSER TAB
+      // No website background, no modal, no embedded viewer layout
+      // ---------------------------------------------------------------------
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // ---------------------------------------------------------------------
+    // FORMULA SHEET PDF: Open the working centered reader modal
+    // ---------------------------------------------------------------------
     setViewerData({
       isOpen: true,
       resource: {
@@ -463,11 +494,11 @@ const NotesAndPdfsPage = () => {
         chapterTitle: res.chapterTitle || res.title,
         classLevel: String(res.classLevel || '9'),
         subject: res.subject || 'Science',
-        resourceType: res.resourceType || (isFormula ? 'FORMULA_SHEET' : 'NOTES'),
+        resourceType: 'FORMULA_SHEET',
         fileUrl: targetUrl,
         fileReference: {
           url: targetUrl,
-          filename: `${(res.title || 'Notes').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`,
+          filename: `${(res.title || 'FormulaSheet').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`,
           fileSize: 1048576,
         },
         downloadPrice: price,

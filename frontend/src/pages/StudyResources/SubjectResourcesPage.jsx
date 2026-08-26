@@ -113,6 +113,34 @@ const SubjectResourcesPage = () => {
   const handleReadDoc = (resource, isCombo = false) => {
     const rId = typeof resource === 'string' ? resource : resource?._id || resource?.id;
     const rObj = typeof resource === 'object' ? resource : null;
+    const isFormula =
+      rObj?.resourceType === 'FORMULA_SHEET' ||
+      rObj?.type === 'FORMULA' ||
+      (rId && String(rId).includes('formula')) ||
+      (rObj?.title && String(rObj.title).toLowerCase().includes('formula'));
+
+    const getFullDocUrl = (url) => {
+      if (!url) return '';
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      if (url.startsWith('/api/') || url.startsWith('/uploads/')) {
+        const backendBase =
+          import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim()
+            ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
+            : 'https://mentornearby-2.onrender.com';
+        return `${backendBase}${url}`;
+      }
+      return url;
+    };
+
+    const targetUrl = getFullDocUrl(rObj?.fileUrl || rObj?.fileReference?.url || `/api/study-resources/stream/${rId}`);
+
+    if (!isFormula) {
+      // Notes PDF: Open original Notes PDF in a NEW BROWSER TAB directly
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Formula Sheet: Open in-browser centered viewer modal
     setViewerModalState({
       isOpen: true,
       resourceId: rId,

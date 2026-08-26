@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Cookies from 'js-cookie';
 import { API_BASE_URL } from './config';
 
 const client = axios.create({
@@ -6,14 +7,16 @@ const client = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor: attach Bearer token if stored locally
+axios.defaults.withCredentials = true;
+
+// Request interceptor: attach Bearer token if present in Cookies or LocalStorage
 client.interceptors.request.use((config) => {
   try {
     const token =
+      Cookies.get('token') ||
+      Cookies.get('jwt') ||
       localStorage.getItem('token') ||
-      localStorage.getItem('mn_token') ||
-      sessionStorage.getItem('token') ||
-      sessionStorage.getItem('mn_token');
+      localStorage.getItem('mn_token');
     if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -21,10 +24,10 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: capture token on auth responses & handle 401
+// Response interceptor: capture token and role on auth responses & handle 401
 client.interceptors.response.use(
   (response) => {
-    // Automatically preserve token and user locally when returned
+    // Automatically preserve token and user in Cookies & LocalStorage
     const token = response.data?.token || response.data?.data?.token;
     const user = response.data?.user || response.data?.data?.user;
     if (token) {
@@ -37,7 +40,9 @@ client.interceptors.response.use(
       try {
         localStorage.setItem('user', JSON.stringify(user));
         if (user.role) {
-          localStorage.setItem('role', user.role.toString().toLowerCase());
+          const normRole = user.role.toString().toUpperCase();
+          localStorage.setItem('role', normRole);
+          Cookies.set('role', normRole, { expires: 7, path: '/' });
         }
       } catch (_) {}
     }

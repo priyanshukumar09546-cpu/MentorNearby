@@ -16,7 +16,13 @@ All transactions for offline PDF downloads and contact unlocks are processed thr
 4. 100% Student Privacy Protection
 Exact residential addresses and phone numbers are protected and shared only when a tuition session is confirmed. Communication through MentorNearby verified channels ensures safe interactions.
 
-5. Contact Us
+5. Cookie Policy & Token Storage
+• Essential Cookies Used: 'token' (httpOnly authentication session token) and 'role' (user account role indicator: Tutor, Student, or Parent).
+• Purpose: Essential cookies maintain secure user authentication across page refreshes and personalize navigation based on your active role (Find Students vs Find Tutors).
+• Duration: Essential auth cookies remain active for up to 7 days unless manually cleared upon logging out.
+• Control & Management: You can clear cookies anytime via your browser settings or by clicking Logout in your account menu.
+
+6. Contact Us
 For any privacy-related requests or data deletion inquiries, please reach out to privacy@mentornearby.in.
 `;
 

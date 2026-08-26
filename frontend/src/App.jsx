@@ -7,6 +7,7 @@ import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import CookieConsent from './components/common/CookieConsent';
 
 // Primary Core Routes (Eagerly loaded for instant first paint)
 import HomePage from './pages/Home/HomePage';
@@ -275,6 +276,7 @@ const App = () => {
                           </Routes>
                         </div>
                         <Footer />
+                        <CookieConsent />
                       </div>
                     }
                   />

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
 import { getMe, login as apiLogin, register as apiRegister, logout as apiLogout, googleAuth as apiGoogleAuth } from '../api/auth';
 
 const AuthContext = createContext(null);
@@ -7,8 +8,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem('user');
-      const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
-      if (savedUser && token) {
+      const token = Cookies.get('token') || Cookies.get('jwt') || localStorage.getItem('token') || localStorage.getItem('mn_token');
+      if (savedUser) {
         const parsed = JSON.parse(savedUser);
         if (parsed.role) {
           parsed.role = parsed.role.toString().trim().toLowerCase();
@@ -19,19 +20,9 @@ export const AuthProvider = ({ children }) => {
     return null;
   });
 
-  const [isLoading, setIsLoading] = useState(() => {
-    const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
-    return !!token;
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = async () => {
-    const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
-    if (!token) {
-      setUser(null);
-      setIsLoading(false);
-      return null;
-    }
-
     try {
       console.log('[AuthContext] Verifying session with /api/auth/me...');
       const res = await getMe();
@@ -48,17 +39,24 @@ export const AuthProvider = ({ children }) => {
         try {
           localStorage.setItem('user', JSON.stringify(cleanUser));
           localStorage.setItem('role', normalizedRole);
+          Cookies.set('role', normalizedRole.toUpperCase(), { expires: 7, path: '/' });
         } catch (_) {}
         return cleanUser;
       } else {
         return null;
       }
     } catch (error) {
-      console.error('[AuthContext] Session verification failed:', error.response?.status, error.response?.data || error.message);
+      console.warn('[AuthContext] Session verification note:', error.response?.status, error.response?.data || error.message);
       if (error.response?.status === 401) {
         setUser(null);
         try {
-          localStorage.clear();
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('mn_token');
+          localStorage.removeItem('role');
+          Cookies.remove('token');
+          Cookies.remove('jwt');
+          Cookies.remove('role');
         } catch (_) {}
       }
       return null;
@@ -208,7 +206,15 @@ export const AuthProvider = ({ children }) => {
     try {
       apiLogout().catch(() => {});
     } catch (_) {}
-    localStorage.clear();
+    try {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('mn_token');
+      localStorage.removeItem('role');
+      Cookies.remove('token');
+      Cookies.remove('jwt');
+      Cookies.remove('role');
+    } catch (_) {}
     setUser(null);
     setIsLoading(false);
     window.location.replace('/login');

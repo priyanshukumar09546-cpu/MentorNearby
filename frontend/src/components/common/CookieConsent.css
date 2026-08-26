@@ -1,0 +1,121 @@
+/* ============================================================
+   CookieConsent.css — MentorNearby Privacy & Cookie Consent Banner
+   Fixed Bottom Floating Card • 90% mobile width • Non-Intrusive
+   ============================================================ */
+
+.mn-cookie-banner-wrap {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 640px;
+  background: #0F172A;
+  color: #F8FAFC;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-sizing: border-box;
+  animation: mnCookieSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes mnCookieSlideUp {
+  from {
+    transform: translate(-50%, 40px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.mn-cookie-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mn-cookie-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.mn-cookie-text {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #CBD5E1;
+  margin: 0;
+}
+
+.mn-cookie-text strong {
+  color: #FFFFFF;
+}
+
+.mn-cookie-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.mn-cookie-btn-accept {
+  background: #059669;
+  color: #FFFFFF;
+  border: 1px solid #10B981;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mn-cookie-btn-accept:hover {
+  background: #047857;
+}
+
+.mn-cookie-btn-learn {
+  color: #94A3B8;
+  border: 1px solid #475569;
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mn-cookie-btn-learn:hover {
+  color: #FFFFFF;
+  border-color: #94A3B8;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 600px) {
+  .mn-cookie-banner-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+  .mn-cookie-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .mn-cookie-btn-accept {
+    flex: 1;
+    text-align: center;
+  }
+}

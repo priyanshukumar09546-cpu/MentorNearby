@@ -306,14 +306,22 @@ exports.login = asyncHandler(async (req, res, next) => {
 });
 
 exports.logout = asyncHandler(async (req, res, next) => {
-  res.cookie('token', '', {
+  const isProd = process.env.NODE_ENV === 'production';
+  const clearOptions = {
     expires: new Date(0),
     maxAge: 0,
-    httpOnly: true,
     path: '/',
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-  });
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+  };
+
+  if (process.env.COOKIE_DOMAIN && isProd) {
+    clearOptions.domain = process.env.COOKIE_DOMAIN;
+  }
+
+  res.cookie('token', '', { ...clearOptions, httpOnly: true });
+  res.cookie('jwt', '', { ...clearOptions, httpOnly: true });
+  res.cookie('role', '', { ...clearOptions, httpOnly: false });
   return success(res, 'Logged out successfully');
 });
 

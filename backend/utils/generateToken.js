@@ -22,12 +22,24 @@ const setTokenCookie = (user, res) => {
     sameSite: isProd ? 'none' : 'lax',
   };
 
+  const roleCookieOptions = {
+    expires: new Date(
+      Date.now() + (process.env.JWT_COOKIE_EXPIRES_IN || 30) * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: false, // Accessible to frontend JS for fast navigation role reading
+    path: '/',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+  };
+
   if (process.env.COOKIE_DOMAIN && isProd) {
     cookieOptions.domain = process.env.COOKIE_DOMAIN;
+    roleCookieOptions.domain = process.env.COOKIE_DOMAIN;
   }
 
   res.cookie('token', token, cookieOptions);
   res.cookie('jwt', token, cookieOptions);
+  res.cookie('role', normalizedRole, roleCookieOptions);
   return token;
 };
 

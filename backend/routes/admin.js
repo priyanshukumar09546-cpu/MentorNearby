@@ -33,6 +33,8 @@ const {
   deleteStudentPermanently,
   getTutors,
   getTutorDetail,
+  approveTutor,
+  rejectTutor,
   suspendTutor,
   reactivateTutor,
   deleteTutorPermanently,
@@ -85,6 +87,12 @@ router.delete('/students/:id', deleteStudentPermanently);
 // Tutor specialized views & actions
 router.get('/tutors', getTutors);
 router.get('/tutors/:id', getTutorDetail);
+router.put('/tutors/:id/approve', approveTutor);
+router.post('/tutors/:id/approve', approveTutor);
+router.patch('/tutors/:id/approve', approveTutor);
+router.put('/tutors/:id/reject', rejectTutor);
+router.post('/tutors/:id/reject', rejectTutor);
+router.patch('/tutors/:id/reject', rejectTutor);
 router.put('/tutors/:id/suspend', suspendTutor);
 router.post('/tutors/:id/suspend', suspendTutor);
 router.patch('/tutors/:id/suspend', suspendTutor);

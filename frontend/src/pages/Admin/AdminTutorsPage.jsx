@@ -9,6 +9,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   getAdminTutors,
   getAdminTutorDetail,
+  approveTutor,
+  rejectTutor,
   suspendTutor,
   reactivateTutor,
   deleteTutorPermanently,
@@ -83,6 +85,32 @@ const AdminTutorsPage = () => {
   const handleCopy = (text, label) => {
     navigator.clipboard.writeText(text);
     showToast(`${label} copied to clipboard!`, 'info');
+  };
+
+  // ------------------------------------------------------------
+  // ACTION 0: ✓ APPROVE / ✕ REJECT TUTOR & SEND EMAIL
+  // ------------------------------------------------------------
+  const handleApprove = async (tutorId) => {
+    if (!window.confirm('Approve this tutor profile? A congratulation email will be sent to the tutor.')) return;
+    try {
+      await approveTutor(tutorId);
+      showToast('Tutor Approved & Congratulation Email Sent!', 'success');
+      fetchTutors();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to approve tutor', 'error');
+    }
+  };
+
+  const handleReject = async (tutorId) => {
+    const reason = window.prompt('Enter reason for rejection:', 'Verification documents or profile criteria not met');
+    if (reason === null) return;
+    try {
+      await rejectTutor(tutorId, { reason });
+      showToast('Tutor profile rejected.', 'info');
+      fetchTutors();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to reject tutor', 'error');
+    }
   };
 
   // ------------------------------------------------------------
@@ -487,10 +515,34 @@ const AdminTutorsPage = () => {
                         </span>
                       </td>
 
-                      {/* 8. 4 ACTIONS */}
+                      {/* 8. ACTIONS */}
                       <td className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
                           
+                          {/* Approve / Reject Buttons vs Approved Badge */}
+                          {profile.kycStatus !== 'VERIFIED' && !profile.isApproved && !tutor.isApproved ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleApprove(tutor._id)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                                title="Approve Tutor Profile & Send Congratulation Email"
+                              >
+                                ✓ Approve
+                              </button>
+                              <button
+                                onClick={() => handleReject(tutor._id)}
+                                className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-2.5 py-1 rounded-full text-xs font-bold transition cursor-pointer"
+                                title="Reject Tutor Profile"
+                              >
+                                ✕ Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-bold border border-emerald-200">
+                              ✓ Approved
+                            </span>
+                          )}
+
                           {/* ICON 1: 👁️ View Full Details Modal */}
                           <button
                             onClick={() => handleOpenView(tutor)}

@@ -1283,3 +1283,172 @@ exports.deleteTutorPermanently = asyncHandler(async (req, res, next) => {
     deletedTutorId: tutorUserId,
   });
 });
+
+// @desc    Approve tutor profile & send congratulation email
+// @route   PUT /api/admin/tutors/:id/approve
+// @access  Private (Admin only)
+exports.approveTutor = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  let tutorProfile = await TutorProfile.findOne({
+    $or: [
+      { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null }
+    ]
+  }).populate('user', 'name email phone avatar role');
+
+  let userDoc = null;
+  if (tutorProfile && tutorProfile.user) {
+    userDoc = tutorProfile.user;
+  } else {
+    userDoc = await User.findById(id);
+    if (userDoc) {
+      tutorProfile = await TutorProfile.findOne({ user: userDoc._id });
+    }
+  }
+
+  if (!userDoc && !tutorProfile) {
+    return error(res, 'Tutor not found', 404);
+  }
+
+  const userId = userDoc ? userDoc._id : tutorProfile.user;
+
+  if (tutorProfile) {
+    tutorProfile.isApproved = true;
+    tutorProfile.kycStatus = 'VERIFIED';
+    tutorProfile.verificationStatus = 'APPROVED';
+    tutorProfile.profileStatus = 'approved';
+    tutorProfile.profileVisibility = true;
+    tutorProfile.isVerified = true;
+    await tutorProfile.save();
+  } else {
+    tutorProfile = await TutorProfile.create({
+      user: userId,
+      isApproved: true,
+      kycStatus: 'VERIFIED',
+      verificationStatus: 'APPROVED',
+      profileStatus: 'approved',
+      profileVisibility: true,
+      isVerified: true
+    });
+  }
+
+  if (userDoc) {
+    userDoc.isVerified = true;
+    await userDoc.save();
+  }
+
+  const recipientEmail = userDoc?.email || tutorProfile?.email;
+  const recipientName = userDoc?.name || tutorProfile?.name || 'Tutor';
+
+  if (recipientEmail) {
+    try {
+      const sendEmail = require('../services/emailService').sendEmail;
+      await sendEmail({
+        to: recipientEmail,
+        subject: '🎉 Congratulations! You are now a Verified Tutor on MentorNearby',
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #FFFBF5; padding: 30px; border-radius: 12px; border: 1px solid #F0EAD6;">
+            <h2 style="color: #F59E0B; margin-top: 0;">Welcome to MentorNearby Family! 🎉</h2>
+            <p style="color: #333; font-size: 15px;">Hi <b>${recipientName}</b>,</p>
+            <p style="color: #333; font-size: 15px;"><b>Congratulations!</b> Your tutor profile has been <b>verified and approved</b> by our team.</p>
+            <p style="color: #333; font-size: 15px;">You are now officially a tutor on <b>MentorNearby.com</b> — India's trusted platform to find nearby tutors.</p>
+            <div style="background: #ffffff; border: 1px solid #F5EFE0; border-radius: 10px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 8px 0; color: #166534;">✅ <b>Your profile is now live</b> and visible to thousands of students in your city.</p>
+              <p style="margin: 8px 0; color: #166534;">✅ <b>Students can now contact you</b> and book your classes.</p>
+            </div>
+            <br>
+            <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/dashboard" style="background: #000000; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Go to Your Dashboard</a>
+            <br><br>
+            <p style="color: #666; font-size: 13px;">Keep your profile updated and respond quickly to get more students!</p>
+            <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;" />
+            <p style="color: #888; font-size: 12px;">Best regards,<br><b>Team MentorNearby</b><br><a href="https://mentornearby.com" style="color: #F59E0B;">www.mentornearby.com</a></p>
+          </div>
+        `
+      });
+      console.log(`✅ Congratulation email sent to approved tutor ${recipientEmail}`);
+    } catch (emailErr) {
+      console.error('⚠️ Failed to send tutor approval email:', emailErr);
+    }
+  }
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'TUTOR_APPROVED',
+    targetType: 'USER',
+    targetId: userId,
+    details: `Tutor ${recipientName} (${recipientEmail}) approved & email sent.`,
+    req,
+  });
+
+  return success(res, 'Tutor approved and email sent successfully', { tutor: tutorProfile });
+});
+
+// @desc    Reject tutor profile
+// @route   PUT /api/admin/tutors/:id/reject
+// @access  Private (Admin only)
+exports.rejectTutor = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { reason = 'Document or profile criteria not met' } = req.body;
+
+  let tutorProfile = await TutorProfile.findOne({
+    $or: [
+      { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null }
+    ]
+  }).populate('user', 'name email phone avatar role');
+
+  let userDoc = null;
+  if (tutorProfile && tutorProfile.user) {
+    userDoc = tutorProfile.user;
+  } else {
+    userDoc = await User.findById(id);
+    if (userDoc) {
+      tutorProfile = await TutorProfile.findOne({ user: userDoc._id });
+    }
+  }
+
+  if (!userDoc && !tutorProfile) {
+    return error(res, 'Tutor not found', 404);
+  }
+
+  if (tutorProfile) {
+    tutorProfile.isApproved = false;
+    tutorProfile.kycStatus = 'REJECTED';
+    tutorProfile.verificationStatus = 'REJECTED';
+    tutorProfile.rejectionReason = reason;
+    await tutorProfile.save();
+  }
+
+  const recipientEmail = userDoc?.email || tutorProfile?.email;
+  const recipientName = userDoc?.name || tutorProfile?.name || 'Tutor';
+
+  if (recipientEmail) {
+    try {
+      const sendEmail = require('../services/emailService').sendEmail;
+      await sendEmail({
+        to: recipientEmail,
+        subject: 'MentorNearby Profile Review Update',
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #FFFBF5; padding: 30px; border-radius: 12px; border: 1px solid #F0EAD6;">
+            <h2 style="color: #DC2626; margin-top: 0;">Profile Review Update</h2>
+            <p style="color: #333; font-size: 15px;">Hi <b>${recipientName}</b>,</p>
+            <p style="color: #333; font-size: 15px;">Thank you for registering on MentorNearby.</p>
+            <p style="color: #333; font-size: 15px;">Upon reviewing your tutor profile, our team was unable to approve it at this time.</p>
+            <div style="background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 10px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 0; color: #991B1B; font-size: 14px;"><b>Reason:</b> ${reason}</p>
+            </div>
+            <p style="color: #333; font-size: 14px;">Please update your profile details or resubmit valid verification documents to get verified.</p>
+            <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/kyc" style="background: #000000; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Update Profile & KYC</a>
+            <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;" />
+            <p style="color: #888; font-size: 12px;">Best regards,<br><b>Team MentorNearby</b></p>
+          </div>
+        `
+      });
+    } catch (e) {
+      console.error('⚠️ Failed to send tutor rejection email:', e);
+    }
+  }
+
+  return success(res, 'Tutor rejected successfully', { tutor: tutorProfile });
+});

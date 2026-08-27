@@ -99,6 +99,18 @@ const AppContent = () => {
   const { isDark, darkMode } = useTheme();
   const isDarkMode = isDark ?? darkMode ?? true;
 
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+      document.body.style.backgroundColor = '#000000';
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+      document.body.style.backgroundColor = '#FFFBF5';
+    }
+  }, [isDarkMode]);
+
   return (
     <div
       style={{
@@ -109,8 +121,46 @@ const AppContent = () => {
       }}
       className={isDarkMode ? 'dark text-white' : 'light text-gray-900'}
     >
-      {/* STARS - FIXED BEHIND EVERYTHING, FOR ENTIRE WEBSITE */}
-      <GlobalStars show={isDarkMode} />
+      {/* STARS & AMBIENT GLOW - FIXED BEHIND EVERYTHING, FOR ENTIRE WEBSITE */}
+      {isDarkMode && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: 'none',
+            backgroundColor: '#000000',
+          }}
+        >
+          <GlobalStars show={true} />
+          {/* Astrotalk style yellow wash bottom-left */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              width: '650px',
+              height: '450px',
+              background: 'radial-gradient(ellipse, rgba(250, 204, 21, 0.1) 0%, transparent 70%)',
+              filter: 'blur(60px)',
+              pointerEvents: 'none',
+            }}
+          />
+          {/* Astrotalk style amber wash top-right */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '500px',
+              height: '350px',
+              background: 'radial-gradient(ellipse, rgba(245, 158, 11, 0.08) 0%, transparent 70%)',
+              filter: 'blur(50px)',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
+      )}
 
       {/* CONTENT - ON TOP OF STARS */}
       <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>

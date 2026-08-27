@@ -47,15 +47,99 @@ html.light body {
   box-shadow: 0 0 25px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
 }
 
-.dark [class*="bg-white"]:hover,
-.dark .card:hover,
-.dark .feature-card:hover,
-.dark .mn-featured-tutor-card:hover,
-.dark .mn-stat-vertical-card:hover,
-.dark .mn-directory-col:hover,
-.dark .astro-glow:hover {
-  box-shadow: 0 0 35px rgba(251, 191, 36, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(251, 191, 36, 0.25) !important;
+/* Astrotalk-Style Dark Mode Navbar & Dropdowns */
+.dark nav,
+.dark header,
+.dark .navbar,
+.dark-nav {
+  background: rgba(0, 0, 0, 0.72) !important;
+  background-color: rgba(0, 0, 0, 0.72) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark nav a,
+.dark nav button,
+.dark .navbar-link-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+  transition: all 0.2s ease !important;
+}
+
+.dark nav a:hover,
+.dark nav button:hover,
+.dark .navbar-link-item:hover,
+.dark .navbar-link-item.active {
+  color: #FACC15 !important;
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.5) !important;
+}
+
+/* All dropdowns, menus, and popovers get Astrotalk dark glass & gold glow */
+.dark [class*="dropdown"],
+.dark [class*="menu"],
+.dark [class*="popover"],
+.dark [class*="modal"],
+.dark [class*="dialog"],
+.dark .nav-dropdown-menu,
+.dark .navbar-mobile-drawer,
+.dark .mn-notif-dropdown-root {
+  background: rgba(10, 10, 12, 0.95) !important;
+  background-color: rgba(10, 10, 12, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(250, 204, 21, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+.dark .nav-dropdown-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark .nav-dropdown-item:hover {
+  background: rgba(250, 204, 21, 0.08) !important;
+  border-color: rgba(250, 204, 21, 0.2) !important;
+}
+
+.dark .nav-dropdown-item:hover .nav-dd-title {
+  color: #FACC15 !important;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.4) !important;
+}
+
+.dark .nav-dd-title {
+  color: #FFFFFF !important;
+}
+
+.dark .nav-dd-sub {
+  color: #A1A1AA !important;
+}
+
+.dark .nav-lang-pill,
+.dark .nav-notification-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark .navbar-btn-signin {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+
+.dark .navbar-btn-signin:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #FACC15 !important;
+  box-shadow: 0 0 15px rgba(250, 204, 21, 0.3) !important;
+}
+
+.dark .navbar-btn-signup {
+  background: #E11D48 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 20px rgba(225, 29, 72, 0.35) !important;
+}
+
+.dark .navbar-btn-signup:hover {
+  box-shadow: 0 0 30px rgba(225, 29, 72, 0.55) !important;
 }
 
 /* Astrotalk-Style Column Light Glow Effect */

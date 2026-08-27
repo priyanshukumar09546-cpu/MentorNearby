@@ -7,6 +7,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { useNotifications } from '../../context/NotificationContext';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -14,6 +15,8 @@ import './Navbar.css';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { isDark, darkMode } = useTheme();
+  const isDarkMode = isDark ?? darkMode ?? true;
   const {
     unreadCount,
     dropdownOpen: notifDropdownOpen,
@@ -85,7 +88,21 @@ const Navbar = () => {
   };
 
   return (
-    <header className="navbar" ref={navRef}>
+    <header className={`navbar ${isDarkMode ? 'navbar-dark' : ''}`} ref={navRef}>
+      {isDarkMode && (
+        <div
+          className="navbar-glow-line"
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '100%',
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent 0%, rgba(250, 204, 21, 0.4) 50%, transparent 100%)',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
       <div className="navbar-container">
         {/* Brand Logo matching Reference */}
         <Link to="/" className="navbar-logo" aria-label="MentorNearby Home">

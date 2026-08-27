@@ -8,51 +8,105 @@ const razorpayService = require('../services/razorpayService');
 const emailService = require('../services/emailService');
 const { createNotification } = require('./notificationController');
 
+// Helper to resolve contact information for Tutor, Student, or Tuition Requirement
+const resolveContactInfo = async (targetId) => {
+  // 1. Try TutorProfile
+  const tutorProfile = await TutorProfile.findOne({
+    $or: [{ _id: targetId }, { user: targetId }]
+  }).populate('user', 'name email phone');
+  if (tutorProfile) {
+    return {
+      type: 'TUTOR',
+      name: tutorProfile.user?.name || tutorProfile.name || 'Tutor',
+      phone: tutorProfile.phone || tutorProfile.user?.phone || 'N/A',
+      email: tutorProfile.user?.email || 'N/A',
+      whatsappNumber: tutorProfile.whatsappNumber || tutorProfile.phone || tutorProfile.user?.phone || 'N/A'
+    };
+  }
+
+  // 2. Try TuitionRequirement
+  const TuitionRequirement = require('../models/TuitionRequirement');
+  const reqDoc = await TuitionRequirement.findById(targetId).populate('student', 'name email phone');
+  if (reqDoc) {
+    const StudentProfile = require('../models/StudentProfile');
+    const studentProfile = await StudentProfile.findOne({ user: reqDoc.student?._id || reqDoc.student });
+    return {
+      type: 'STUDENT_REQUIREMENT',
+      name: reqDoc.studentName || reqDoc.student?.name || 'Student Lead',
+      phone: reqDoc.student?.phone || studentProfile?.parentDetails?.phone || 'N/A',
+      email: reqDoc.student?.email || 'N/A',
+      whatsappNumber: studentProfile?.whatsappNumber || reqDoc.student?.phone || 'N/A'
+    };
+  }
+
+  // 3. Try StudentProfile or User
+  const StudentProfile = require('../models/StudentProfile');
+  const studentProfile = await StudentProfile.findOne({
+    $or: [{ _id: targetId }, { user: targetId }]
+  }).populate('user', 'name email phone');
+  if (studentProfile) {
+    return {
+      type: 'STUDENT',
+      name: studentProfile.user?.name || studentProfile.studentDetails?.name || 'Student',
+      phone: studentProfile.user?.phone || studentProfile.parentDetails?.phone || 'N/A',
+      email: studentProfile.user?.email || 'N/A',
+      whatsappNumber: studentProfile.whatsappNumber || studentProfile.user?.phone || 'N/A'
+    };
+  }
+
+  const userDoc = await User.findById(targetId);
+  if (userDoc) {
+    return {
+      type: userDoc.role,
+      name: userDoc.name,
+      phone: userDoc.phone || 'N/A',
+      email: userDoc.email || 'N/A',
+      whatsappNumber: userDoc.phone || 'N/A'
+    };
+  }
+
+  return null;
+};
+
 exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
-  const { tutorId } = req.params;
-  const studentId = req.user.id;
+  const targetId = req.params.tutorId || req.params.id;
+  const currentUserId = req.user.id;
   const isAdmin = (req.user.role || '').toString().trim().toUpperCase() === 'ADMIN';
 
   // Admin has instant, free universal access to any tutor/student contact
   if (isAdmin) {
-    const tutorProfile = await TutorProfile.findOne({
-      $or: [{ _id: tutorId }, { user: tutorId }]
-    }).populate('user', 'name email phone');
-
+    const contact = await resolveContactInfo(targetId);
     return success(res, 'Admin instant contact access', {
       alreadyUnlocked: true,
       isAdmin: true,
-      contactInfo: {
-        phone: tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A',
-        email: tutorProfile?.user?.email || 'N/A',
-        whatsappNumber: tutorProfile?.whatsappNumber || tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A'
+      contactInfo: contact || {
+        phone: 'N/A',
+        email: 'N/A',
+        whatsappNumber: 'N/A'
       }
     });
   }
 
   const existingUnlock = await ContactUnlock.findOne({
-    user: studentId,
-    tutor: tutorId,
+    user: currentUserId,
+    $or: [{ tutor: targetId }, { 'paymentDetails.targetId': targetId }],
     paymentStatus: 'COMPLETED'
   });
 
   if (existingUnlock) {
-    const tutorProfile = await TutorProfile.findOne({
-      $or: [{ _id: tutorId }, { user: tutorId }]
-    }).populate('user', 'name email phone');
-
+    const contact = await resolveContactInfo(targetId);
     return success(res, 'Already unlocked', {
       alreadyUnlocked: true,
-      contactInfo: {
-        phone: tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A',
-        email: tutorProfile?.user?.email || 'N/A',
-        whatsappNumber: tutorProfile?.whatsappNumber || tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A'
+      contactInfo: contact || {
+        phone: 'N/A',
+        email: 'N/A',
+        whatsappNumber: 'N/A'
       }
     });
   }
 
   const previousUnlocksCount = await ContactUnlock.countDocuments({
-    user: studentId,
+    user: currentUserId,
     paymentStatus: 'COMPLETED'
   });
 
@@ -69,55 +123,58 @@ exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
 });
 
 exports.createFreeUnlock = asyncHandler(async (req, res, next) => {
-  const { tutorId } = req.params;
+  const targetId = req.params.tutorId || req.params.id;
   const isAdmin = (req.user.role || '').toString().trim().toUpperCase() === 'ADMIN';
 
   if (isAdmin) {
-    const tutorProfile = await TutorProfile.findOne({
-      $or: [{ _id: tutorId }, { user: tutorId }]
-    }).populate('user', 'name email phone');
-
+    const contact = await resolveContactInfo(targetId);
     return success(res, 'Admin unlocked contact', {
-      contactInfo: {
-        phone: tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A',
-        email: tutorProfile?.user?.email || 'N/A',
-        whatsappNumber: tutorProfile?.whatsappNumber || tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A'
+      contactInfo: contact || {
+        phone: 'N/A',
+        email: 'N/A',
+        whatsappNumber: 'N/A'
       }
     });
   }
 
-  return error(res, 'Free contact unlocks are no longer available. All contact unlocks are ₹100.', 400);
+  return error(res, 'Free contact unlocks are disabled. Payment of ₹99 is required.', 402);
 });
 
 exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
-  const { tutorId } = req.body;
-  const studentId = req.user.id;
+  const targetId = req.body.tutorId || req.body.targetId;
+  const currentUserId = req.user.id;
 
-  const existingUnlock = await ContactUnlock.findOne({ user: studentId, tutor: tutorId, paymentStatus: 'COMPLETED' });
+  const existingUnlock = await ContactUnlock.findOne({
+    user: currentUserId,
+    $or: [{ tutor: targetId }, { 'paymentDetails.targetId': targetId }],
+    paymentStatus: 'COMPLETED'
+  });
+
   if (existingUnlock) {
     return error(res, 'Contact already unlocked', 400);
   }
 
   const previousUnlocksCount = await ContactUnlock.countDocuments({
-    user: studentId,
+    user: currentUserId,
     paymentStatus: 'COMPLETED'
   });
 
   const nextUnlockNumber = previousUnlocksCount + 1;
   const price = 99;
 
-  const order = await razorpayService.createOrder(price, 'INR', { userId: studentId, tutorId });
+  const order = await razorpayService.createOrder(price, 'INR', { userId: currentUserId, targetId });
 
   await ContactUnlock.create({
-    user: studentId,
-    tutor: tutorId,
+    user: currentUserId,
+    tutor: targetId,
     type: 'PAID',
     status: 'REQUESTED',
     paymentStatus: 'PENDING',
     paymentDetails: {
       orderId: order.id,
       amount: price,
-      currency: 'INR'
+      currency: 'INR',
+      targetId
     }
   });
 
@@ -144,7 +201,8 @@ exports.verifyPaymentAndUnlock = asyncHandler(async (req, res, next) => {
   }
   
   if (unlockRecord.paymentStatus === 'COMPLETED') {
-    return error(res, 'Contact already unlocked', 400);
+    const contact = await resolveContactInfo(unlockRecord.tutor || unlockRecord.paymentDetails?.targetId);
+    return success(res, 'Contact already unlocked', { contactInfo: contact });
   }
 
   unlockRecord.status = 'CONTACT_UNLOCKED';
@@ -153,39 +211,16 @@ exports.verifyPaymentAndUnlock = asyncHandler(async (req, res, next) => {
   await unlockRecord.save();
 
   const user = await User.findById(unlockRecord.user);
-  user.unlocksUsed += 1;
-  await user.save();
-
-  const tutorProfile = await TutorProfile.findOne({ user: unlockRecord.tutor }).populate('user', 'name email');
-
-  try {
-    await emailService.sendEmail({
-      to: req.user.email,
-      subject: 'Contact Unlocked (Paid)',
-      text: `You have successfully unlocked contact details for ${tutorProfile?.user?.name || 'Tutor'}`
-    });
-  } catch (emailErr) {
-    console.error('Contact unlock email notification failed (non-blocking):', emailErr.message);
+  if (user) {
+    user.unlocksUsed = (user.unlocksUsed || 0) + 1;
+    await user.save();
   }
 
-  await createNotification(
-    user._id,
-    'Contact Unlocked (Paid)',
-    `You have successfully unlocked contact details for ${tutorProfile.user.name}`,
-    'CONTACT',
-    `/chat/${unlockRecord.tutor}`
-  );
-
-  await createNotification(
-    unlockRecord.tutor,
-    'Contact Unlocked',
-    `${user.name} has unlocked your contact details.`,
-    'CONTACT',
-    `/chat/${user._id}`
-  );
+  const targetId = unlockRecord.tutor || unlockRecord.paymentDetails?.targetId;
+  const contact = await resolveContactInfo(targetId);
 
   return success(res, 'Payment verified and contact unlocked', {
-    contactInfo: { phone: tutorProfile.phone || 'N/A', email: tutorProfile.user.email }
+    contactInfo: contact || { phone: 'N/A', email: 'N/A', whatsappNumber: 'N/A' }
   });
 });
 

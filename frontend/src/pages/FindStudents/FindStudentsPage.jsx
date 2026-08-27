@@ -9,6 +9,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import UnlockContactModal from '../../components/payment/UnlockContactModal';
 import './FindStudentsPage.css';
 
 const FindStudentsPage = () => {
@@ -28,8 +29,10 @@ const FindStudentsPage = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [applyingId, setApplyingId] = useState(null);
-  const [appliedIds, setAppliedIds] = useState(new Set());
+  
+  // Contact Unlock Modal State
+  const [selectedLeadId, setSelectedLeadId] = useState(null);
+  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
 
   // Fetch Open Tuition Requirements from Backend API
   const fetchStudentRequirements = async () => {
@@ -83,30 +86,14 @@ const FindStudentsPage = () => {
     fetchStudentRequirements();
   };
 
-  const handleApplyLead = async (reqId) => {
+  const handleUnlockContact = (reqId) => {
     if (!isAuthenticated) {
-      showToast('Please login as a tutor to apply for student leads', 'info');
+      showToast('Please login to unlock student contact details', 'info');
       navigate('/login');
       return;
     }
-
-    const userRole = (user?.role || user?.user?.role || '').toString().toUpperCase();
-    if (userRole !== 'TUTOR' && userRole !== 'ADMIN') {
-      showToast('Only registered Tutors can apply for student requirements', 'warning');
-      return;
-    }
-
-    try {
-      setApplyingId(reqId);
-      await client.post(`/requirements/${reqId}/apply`);
-      showToast('Successfully submitted your proposal to the student!', 'success');
-      setAppliedIds((prev) => new Set(prev).add(reqId));
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Application submitted or pending response', 'info');
-      setAppliedIds((prev) => new Set(prev).add(reqId));
-    } finally {
-      setApplyingId(null);
-    }
+    setSelectedLeadId(reqId);
+    setUnlockModalOpen(true);
   };
 
   return (
@@ -309,23 +296,17 @@ const FindStudentsPage = () => {
                       <div className="mn-fs-card-footer">
                         <div className="mn-fs-status-tag">
                           <span>Status:</span>
-                          <span className="mn-fs-status-open">🟢 Open for Proposals</span>
+                          <span className="mn-fs-status-open">🟢 Open Requirement</span>
                         </div>
 
-                        {isApplied ? (
-                          <button type="button" disabled className="mn-fs-applied-btn">
-                            ✓ Proposal Sent
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleApplyLead(reqId)}
-                            disabled={isApplying}
-                            className="mn-fs-apply-btn"
-                          >
-                            {isApplying ? 'Sending Proposal...' : 'Apply for Lead →'}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleUnlockContact(reqId)}
+                          className="mn-fs-apply-btn flex items-center justify-center gap-1.5 font-bold cursor-pointer"
+                          title="Unlock Direct Student Phone, Email & WhatsApp"
+                        >
+                          <span>🔓 Unlock Contact</span>
+                        </button>
                       </div>
                     </div>
                   );
@@ -335,6 +316,15 @@ const FindStudentsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Unlock Contact Modal */}
+      {unlockModalOpen && (
+        <UnlockContactModal
+          isOpen={unlockModalOpen}
+          onClose={() => setUnlockModalOpen(false)}
+          tutorId={selectedLeadId}
+        />
+      )}
     </div>
   );
 };

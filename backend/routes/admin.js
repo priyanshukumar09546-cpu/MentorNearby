@@ -34,6 +34,7 @@ const {
   getTutors,
   getTutorDetail,
   approveTutor,
+  unapproveTutor,
   rejectTutor,
   suspendTutor,
   reactivateTutor,
@@ -91,6 +92,9 @@ router.get('/tutors/:id', getTutorDetail);
 router.put('/tutors/:id/approve', approveTutor);
 router.post('/tutors/:id/approve', approveTutor);
 router.patch('/tutors/:id/approve', approveTutor);
+router.put('/tutors/:id/unapprove', unapproveTutor);
+router.post('/tutors/:id/unapprove', unapproveTutor);
+router.patch('/tutors/:id/unapprove', unapproveTutor);
 router.put('/tutors/:id/reject', rejectTutor);
 router.post('/tutors/:id/reject', rejectTutor);
 router.patch('/tutors/:id/reject', rejectTutor);

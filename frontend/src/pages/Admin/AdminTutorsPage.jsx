@@ -10,6 +10,7 @@ import {
   getAdminTutors,
   getAdminTutorDetail,
   approveTutor,
+  unapproveTutor,
   rejectTutor,
   suspendTutor,
   reactivateTutor,
@@ -110,6 +111,17 @@ const AdminTutorsPage = () => {
       fetchTutors();
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to reject tutor', 'error');
+    }
+  };
+
+  const handleUnapprove = async (tutorId) => {
+    if (!window.confirm('Are you sure you want to remove this tutor from website? Their approval will be cancelled and their profile will immediately disappear from search and homepage.')) return;
+    try {
+      await unapproveTutor(tutorId, { reason: 'Approval cancelled by admin' });
+      showToast('Tutor approval cancelled and removed from website listings!', 'success');
+      fetchTutors();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to cancel tutor approval', 'error');
     }
   };
 
@@ -538,9 +550,18 @@ const AdminTutorsPage = () => {
                               </button>
                             </div>
                           ) : (
-                            <span className="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-bold border border-emerald-200">
-                              ✓ Approved
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-[11px] font-bold border border-emerald-200">
+                                ✓ Approved
+                              </span>
+                              <button
+                                onClick={() => handleUnapprove(tutor._id)}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-2 py-1 rounded-full text-[11px] font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                                title="Cancel Approval / Remove from Website Listings"
+                              >
+                                ✕ Unapprove
+                              </button>
+                            </div>
                           )}
 
                           {/* ICON 1: 👁️ View Full Details Modal */}
@@ -748,7 +769,41 @@ const AdminTutorsPage = () => {
             </div>
 
             {/* Footer */}
-            <div className="mt-6 pt-4 border-t border-[#E2E8F0] flex justify-end">
+            <div className="mt-6 pt-4 border-t border-[#E2E8F0] flex justify-between items-center flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                {viewModalData.tutor?.profile?.kycStatus === 'VERIFIED' || viewModalData.tutor?.profile?.isApproved || viewModalData.tutor?.isApproved ? (
+                  <button
+                    onClick={() => {
+                      handleUnapprove(viewModalData.tutor._id);
+                      setViewModalData({ isOpen: false, tutor: null, loading: false });
+                    }}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                  >
+                    ✕ Cancel Approval (Remove from Website)
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        handleApprove(viewModalData.tutor._id);
+                        setViewModalData({ isOpen: false, tutor: null, loading: false });
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                    >
+                      ✓ Approve Tutor &amp; Send Email
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleReject(viewModalData.tutor._id);
+                        setViewModalData({ isOpen: false, tutor: null, loading: false });
+                      }}
+                      className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                    >
+                      ✕ Reject Profile
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => setViewModalData({ isOpen: false, tutor: null, loading: false })}
                 className="admin-btn admin-btn-secondary text-xs"

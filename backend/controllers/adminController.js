@@ -1546,3 +1546,61 @@ exports.rejectTutor = asyncHandler(async (req, res, next) => {
 
   return success(res, 'Tutor rejected successfully', { tutor: tutorProfile });
 });
+
+// @desc    Unapprove / Cancel approval for tutor (remove from website and search)
+// @route   PUT /api/admin/tutors/:id/unapprove
+// @access  Private (Admin only)
+exports.unapproveTutor = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { reason = 'Approval cancelled by admin' } = req.body;
+
+  let tutorProfile = await TutorProfile.findOne({
+    $or: [
+      { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null }
+    ]
+  }).populate('user', 'name email phone avatar role');
+
+  let userDoc = null;
+  if (tutorProfile && tutorProfile.user) {
+    userDoc = tutorProfile.user;
+  } else {
+    userDoc = await User.findById(id);
+    if (userDoc) {
+      tutorProfile = await TutorProfile.findOne({ user: userDoc._id });
+    }
+  }
+
+  if (!userDoc && !tutorProfile) {
+    return error(res, 'Tutor not found', 404);
+  }
+
+  const userId = userDoc ? userDoc._id : tutorProfile.user;
+
+  if (tutorProfile) {
+    tutorProfile.isApproved = false;
+    tutorProfile.kycStatus = 'PENDING';
+    tutorProfile.verificationStatus = 'pending';
+    tutorProfile.profileStatus = 'pending';
+    tutorProfile.profileVisibility = false;
+    tutorProfile.isVerified = false;
+    tutorProfile.rejectionReason = reason;
+    await tutorProfile.save();
+  }
+
+  if (userDoc) {
+    userDoc.isVerified = false;
+    await userDoc.save();
+  }
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'TUTOR_UNAPPROVED',
+    targetType: 'USER',
+    targetId: userId,
+    details: `Tutor ${userDoc?.name || tutorProfile?.name || 'Tutor'} approval cancelled and profile hidden from website.`,
+    req,
+  });
+
+  return success(res, 'Tutor approval cancelled and removed from public website successfully', { tutor: tutorProfile });
+});

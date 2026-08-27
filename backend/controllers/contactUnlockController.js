@@ -11,6 +11,24 @@ const { createNotification } = require('./notificationController');
 exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
   const { tutorId } = req.params;
   const studentId = req.user.id;
+  const isAdmin = (req.user.role || '').toString().trim().toUpperCase() === 'ADMIN';
+
+  // Admin has instant, free universal access to any tutor/student contact
+  if (isAdmin) {
+    const tutorProfile = await TutorProfile.findOne({
+      $or: [{ _id: tutorId }, { user: tutorId }]
+    }).populate('user', 'name email phone');
+
+    return success(res, 'Admin instant contact access', {
+      alreadyUnlocked: true,
+      isAdmin: true,
+      contactInfo: {
+        phone: tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A',
+        email: tutorProfile?.user?.email || 'N/A',
+        whatsappNumber: tutorProfile?.whatsappNumber || tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A'
+      }
+    });
+  }
 
   const existingUnlock = await ContactUnlock.findOne({
     user: studentId,
@@ -19,10 +37,17 @@ exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
   });
 
   if (existingUnlock) {
-    const tutorProfile = await TutorProfile.findOne({ user: tutorId }).populate('user', 'name email');
+    const tutorProfile = await TutorProfile.findOne({
+      $or: [{ _id: tutorId }, { user: tutorId }]
+    }).populate('user', 'name email phone');
+
     return success(res, 'Already unlocked', {
       alreadyUnlocked: true,
-      contactInfo: { phone: tutorProfile?.phone || 'N/A', email: tutorProfile?.user?.email }
+      contactInfo: {
+        phone: tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A',
+        email: tutorProfile?.user?.email || 'N/A',
+        whatsappNumber: tutorProfile?.whatsappNumber || tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A'
+      }
     });
   }
 
@@ -44,6 +69,23 @@ exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
 });
 
 exports.createFreeUnlock = asyncHandler(async (req, res, next) => {
+  const { tutorId } = req.params;
+  const isAdmin = (req.user.role || '').toString().trim().toUpperCase() === 'ADMIN';
+
+  if (isAdmin) {
+    const tutorProfile = await TutorProfile.findOne({
+      $or: [{ _id: tutorId }, { user: tutorId }]
+    }).populate('user', 'name email phone');
+
+    return success(res, 'Admin unlocked contact', {
+      contactInfo: {
+        phone: tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A',
+        email: tutorProfile?.user?.email || 'N/A',
+        whatsappNumber: tutorProfile?.whatsappNumber || tutorProfile?.phone || tutorProfile?.user?.phone || 'N/A'
+      }
+    });
+  }
+
   return error(res, 'Free contact unlocks are no longer available. All contact unlocks are ₹100.', 400);
 });
 

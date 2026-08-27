@@ -43,6 +43,10 @@ const authorize = (...roles) => {
       return error(res, 'Not authorized to access this route', 401);
     }
     const userRole = (req.user.role || '').toString().trim().toUpperCase();
+    // Super-admin bypass: ADMIN role has universal authorization
+    if (userRole === 'ADMIN') {
+      return next();
+    }
     const allowedRoles = roles.map(r => r.toString().trim().toUpperCase());
     if (!allowedRoles.includes(userRole)) {
       return error(res, `User role ${req.user.role} is not authorized to access this route`, 403);

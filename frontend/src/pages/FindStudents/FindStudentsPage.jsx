@@ -226,8 +226,6 @@ const FindStudentsPage = () => {
               <div className="mn-fs-grid">
                 {requirements.map((req, idx) => {
                   const reqId = req._id || req.id || idx;
-                  const isApplied = appliedIds.has(reqId);
-                  const isApplying = applyingId === reqId;
 
                   const budgetText =
                     typeof req.budget === 'object' && req.budget !== null

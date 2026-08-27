@@ -1717,6 +1717,9 @@ const EditTutorProfilePage = () => {
                   try {
                     setSaving(true);
                     const payload = {
+                      mondayFridayHours: availabilityForm.weekdays,
+                      saturdayHours: availabilityForm.saturday,
+                      sundayHours: availabilityForm.sunday,
                       weekdays: availabilityForm.weekdays,
                       mondayFriday: availabilityForm.weekdays,
                       saturday: availabilityForm.saturday,

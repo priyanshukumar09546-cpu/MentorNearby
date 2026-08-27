@@ -128,25 +128,36 @@ exports.updateAvailability = asyncHandler(async (req, res, next) => {
   const sat = req.body.saturdayHours || req.body['Saturday Hours'] || req.body.saturday || '';
   const sun = req.body.sundayHours || req.body['Sunday Status / Hours'] || req.body.sunday || '';
 
-  const structuredAvailability = req.body.availability && typeof req.body.availability === 'object'
-    ? req.body.availability
-    : {
-        monday: { available: true, slots: [mf] },
-        tuesday: { available: true, slots: [mf] },
-        wednesday: { available: true, slots: [mf] },
-        thursday: { available: true, slots: [mf] },
-        friday: { available: true, slots: [mf] },
-        saturday: { available: Boolean(sat && sat !== 'Not Available'), slots: sat ? [sat] : [] },
-        sunday: { available: Boolean(sun && sun !== 'Not Available'), slots: sun ? [sun] : [] }
-      };
+  const structuredAvailability = {
+    mondayFriday: mf,
+    mondayFridayHours: mf,
+    weekdays: mf,
+    saturday: sat,
+    saturdayHours: sat,
+    sunday: sun,
+    sundayHours: sun,
+    monday: { available: true, slots: [mf] },
+    tuesday: { available: true, slots: [mf] },
+    wednesday: { available: true, slots: [mf] },
+    thursday: { available: true, slots: [mf] },
+    friday: { available: true, slots: [mf] },
+    saturdaySlot: { available: Boolean(sat && sat !== 'Not Available'), slots: sat ? [sat] : [] },
+    sundaySlot: { available: Boolean(sun && sun !== 'Not Available'), slots: sun ? [sun] : [] }
+  };
+
+  const userId = req.user?._id || req.user?.id;
 
   let tutorProfile = await TutorProfile.findOne({
-    $or: [{ user: req.user._id || req.user.id }, { _id: req.user._id || req.user.id }]
+    $or: [
+      { user: userId },
+      { userId: userId },
+      { _id: userId }
+    ]
   });
 
   if (!tutorProfile) {
     tutorProfile = await TutorProfile.create({
-      user: req.user._id || req.user.id,
+      user: userId,
       availability: structuredAvailability
     });
   } else {
@@ -155,10 +166,11 @@ exports.updateAvailability = asyncHandler(async (req, res, next) => {
   }
 
   return success(res, 'Availability schedule updated successfully', {
+    success: true,
     availability: tutorProfile.availability,
-    mondayToFriday: mf,
-    saturday: sat,
-    sunday: sun
+    mondayFridayHours: mf,
+    saturdayHours: sat,
+    sundayHours: sun
   });
 });
 

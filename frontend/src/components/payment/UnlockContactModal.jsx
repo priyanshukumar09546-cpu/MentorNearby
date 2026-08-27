@@ -122,21 +122,21 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
         {step === 'decision' && eligibility && (
           <div>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔓</div>
-            <h4 className="text-xl font-bold text-gray-900">Unlock Tutor Contact</h4>
-            <p className="text-gray-600 text-sm mt-1">Get direct access to phone number, email, and WhatsApp.</p>
+            <h4 className="text-xl font-bold text-gray-900 dark:text-white">Unlock Tutor Contact</h4>
+            <p className="text-gray-600 dark:text-zinc-400 text-sm mt-1">Get direct access to phone number, email, and WhatsApp.</p>
             
-            <div className="bg-slate-50 border border-slate-200 rounded-xl mt-4 p-5 text-left shadow-sm">
+            <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl mt-4 p-5 text-left shadow-sm">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-800 px-2.5 py-1 rounded">
+                <span className="text-xs font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 px-2.5 py-1 rounded">
                   Unlock #{eligibility.unlockNumber || 1}
                 </span>
-                <span className="text-2xl font-black text-gray-900">₹{eligibility.price}</span>
+                <span className="text-2xl font-black text-gray-900 dark:text-white">₹{eligibility.price}</span>
               </div>
-              <p className="text-xs text-gray-500 mb-4">
-                Standard contact unlock fee (₹100 per unlock).
+              <p className="text-xs text-gray-500 dark:text-zinc-400 mb-4">
+                Standard contact unlock fee (₹{eligibility.price} per unlock).
               </p>
               <button 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition shadow flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-3 px-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2 text-sm cursor-pointer border-none"
                 onClick={handlePaidUnlock}
               >
                 <span>💳 Pay ₹{eligibility.price} with Razorpay</span>

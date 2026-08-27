@@ -120,12 +120,12 @@ const AdminLayout = ({ children }) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#FFFBF5] text-gray-900 font-sans antialiased relative">
+    <div className="flex min-h-screen bg-[#FFFBF5] dark:bg-[#000000] text-gray-900 dark:text-white font-sans antialiased relative">
       
       {/* Mobile Drawer Overlay Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden backdrop-blur-xs transition-opacity"
+          className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-xs transition-opacity"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
@@ -135,13 +135,13 @@ const AdminLayout = ({ children }) => {
       {/* SIDEBAR - Fixed 260px                                         */}
       {/* ============================================================ */}
       <aside
-        className={`admin-sidebar w-[260px] min-w-[260px] max-w-[260px] fixed left-0 top-0 h-screen bg-[#FFFBF5] border-r border-[#F0EAD6] flex flex-col z-40 overflow-y-auto transition-transform duration-300 ease-in-out ${
+        className={`admin-sidebar w-[260px] min-w-[260px] max-w-[260px] fixed left-0 top-0 h-screen bg-[#FFFBF5] dark:bg-[#0A0A0A] border-r border-[#F0EAD6] dark:border-white/10 flex flex-col z-40 overflow-y-auto transition-transform duration-300 ease-in-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ width: '260px', minWidth: '260px', maxWidth: '260px' }}
       >
         {/* Logo Wrapper */}
-        <div className="h-[70px] px-6 flex items-center justify-between border-b border-[#F0EAD6] bg-[#FFFBF5] flex-shrink-0">
+        <div className="h-[70px] px-6 flex items-center justify-between border-b border-[#F0EAD6] dark:border-white/10 bg-[#FFFBF5] dark:bg-[#0A0A0A] flex-shrink-0">
           <Link to="/admin/dashboard" className="flex items-center gap-2.5 no-underline">
             <img
               src="/logo.png"
@@ -153,10 +153,10 @@ const AdminLayout = ({ children }) => {
               }}
             />
             <div className="flex flex-col">
-              <span className="text-sm font-black text-gray-900 tracking-tight leading-none">
+              <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight leading-none">
                 Mentor<span className="text-[#FF6B00]">Nearby</span>
               </span>
-              <span className="text-[8px] font-bold tracking-widest text-gray-400 uppercase mt-0.5">
+              <span className="text-[8px] font-bold tracking-widest text-gray-400 dark:text-zinc-500 uppercase mt-0.5">
                 ADMIN CONTROL CENTER
               </span>
             </div>
@@ -165,7 +165,7 @@ const AdminLayout = ({ children }) => {
           {/* Mobile Close Icon */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="md:hidden text-gray-500 hover:text-gray-900 p-1.5 rounded-lg hover:bg-amber-100/50 cursor-pointer"
+            className="md:hidden text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg hover:bg-amber-100/50 dark:hover:bg-white/5 cursor-pointer"
             aria-label="Close sidebar"
           >
             ✕
@@ -176,7 +176,7 @@ const AdminLayout = ({ children }) => {
         <nav className="flex-1 p-4 space-y-5 overflow-y-auto">
           {navGroups.map((grp) => (
             <div key={grp.group}>
-              <p className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 px-3 uppercase">
+              <p className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 tracking-widest mb-2 px-3 uppercase">
                 {grp.group}
               </p>
               <div className="space-y-1">
@@ -192,8 +192,8 @@ const AdminLayout = ({ children }) => {
                       onClick={() => setMobileOpen(false)}
                       className={`px-3 py-2 rounded-lg flex items-center gap-2.5 text-xs font-medium transition no-underline ${
                         isActive
-                          ? 'bg-[#FEF3C7] text-amber-950 font-bold border-l-4 border-amber-500 shadow-xs'
-                          : 'text-gray-600 hover:bg-[#F7F2E6] hover:text-gray-900'
+                          ? 'bg-[#FEF3C7] dark:bg-amber-500/10 text-amber-950 dark:text-amber-400 font-bold border-l-4 border-amber-500 shadow-xs'
+                          : 'text-gray-600 dark:text-zinc-400 hover:bg-[#F7F2E6] dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
                       }`}
                     >
                       <span className="text-sm flex-shrink-0">{item.icon}</span>
@@ -230,17 +230,17 @@ const AdminLayout = ({ children }) => {
       {/* MAIN CONTENT WRAPPER - Offset 260px                           */}
       {/* ============================================================ */}
       <div 
-        className="admin-main-wrapper flex-1 ml-0 md:ml-[260px] min-h-screen flex flex-col min-w-0 bg-[#FDFBF7] overflow-x-hidden"
+        className="admin-main-wrapper flex-1 ml-0 md:ml-[260px] min-h-screen flex flex-col min-w-0 bg-[#FDFBF7] dark:bg-[#000000] overflow-x-hidden"
         style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth > 768 ? '260px' : '0' }}
       >
         
         {/* Top Navbar */}
-        <header className="bg-[#FDFBF7] border-b border-[#F0EAD6] px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 flex-shrink-0">
+        <header className="bg-[#FDFBF7] dark:bg-[#0A0A0A] border-b border-[#F0EAD6] dark:border-white/10 px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 flex-shrink-0">
           <div className="flex items-center gap-3 md:gap-4 flex-1">
             {/* Hamburger Button for Mobile Drawer */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden text-gray-600 hover:text-gray-900 text-xl p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer"
+              className="md:hidden text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white text-xl p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer"
               title="Open Navigation"
               aria-label="Open Navigation"
             >
@@ -256,7 +256,7 @@ const AdminLayout = ({ children }) => {
                 placeholder="Search users, tutors, courses..."
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                className="w-full bg-[#FAF8F5] border border-[#F0EAD6] rounded-xl pl-9 pr-4 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition"
+                className="w-full bg-[#FAF8F5] dark:bg-white/5 border border-[#F0EAD6] dark:border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white dark:focus:bg-[#141414] transition"
               />
             </form>
           </div>
@@ -266,7 +266,7 @@ const AdminLayout = ({ children }) => {
             {/* Notifications Link */}
             <Link
               to="/admin/notifications"
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-amber-50 rounded-xl transition no-underline"
+              className="relative p-2 text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-amber-50 dark:hover:bg-white/5 rounded-xl transition no-underline"
               title="Notifications"
             >
               <span className="text-base">🔔</span>
@@ -276,41 +276,41 @@ const AdminLayout = ({ children }) => {
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2.5 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-amber-50/60 border border-transparent hover:border-[#F0EAD6] transition cursor-pointer"
+                className="flex items-center gap-2.5 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-amber-50/60 dark:hover:bg-white/5 border border-transparent hover:border-[#F0EAD6] dark:hover:border-white/10 transition cursor-pointer"
               >
                 <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-white font-black flex items-center justify-center text-xs shadow-xs">
                   {user?.name ? user.name[0].toUpperCase() : 'A'}
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-xs font-black text-gray-900 leading-none truncate max-w-[120px]">{user?.name || 'Admin'}</p>
-                  <p className="text-[10px] text-gray-500 font-medium mt-0.5 capitalize">{user?.role || 'Super Admin'}</p>
+                  <p className="text-xs font-black text-gray-900 dark:text-white leading-none truncate max-w-[120px]">{user?.name || 'Admin'}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-zinc-400 font-medium mt-0.5 capitalize">{user?.role || 'Super Admin'}</p>
                 </div>
                 <span className="text-[10px] text-gray-400 ml-0.5">▼</span>
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50 animate-fadeIn">
-                  <div className="px-3 py-2 border-b border-gray-100 mb-1">
-                    <p className="text-xs font-bold text-gray-900 truncate">{user?.name || 'Administrator'}</p>
-                    <p className="text-[10px] text-gray-500 truncate">{user?.email || 'admin@tutornearby.in'}</p>
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl p-2 z-50 animate-fadeIn text-gray-900 dark:text-white">
+                  <div className="px-3 py-2 border-b border-gray-100 dark:border-white/10 mb-1">
+                    <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{user?.name || 'Administrator'}</p>
+                    <p className="text-[10px] text-gray-500 dark:text-zinc-400 truncate">{user?.email || 'admin@tutornearby.in'}</p>
                   </div>
                   <Link
                     to="/admin/settings"
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900 no-underline"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white no-underline"
                   >
                     ⚙️ Settings
                   </Link>
                   <Link
                     to="/admin/audit-logs"
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900 no-underline"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white no-underline"
                   >
                     📜 Audit Logs
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 font-bold mt-1 text-left cursor-pointer border-none bg-transparent"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold mt-1 text-left cursor-pointer border-none bg-transparent"
                   >
                     🚪 Logout Session
                   </button>

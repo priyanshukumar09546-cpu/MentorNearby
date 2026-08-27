@@ -536,3 +536,89 @@
     padding: 16px 18px;
   }
 }
+
+/* ============================================================
+   DARK MODE OVERRIDES FOR FOOTER
+   ============================================================ */
+[data-theme="dark"] .mn-footer-root,
+.dark .mn-footer-root,
+.theme-dark .mn-footer-root {
+  background: rgba(0, 0, 0, 0.85) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .mn-footer-brand-title-navy,
+.dark .mn-footer-brand-title-navy,
+.theme-dark .mn-footer-brand-title-navy {
+  color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .mn-footer-brand-desc,
+.dark .mn-footer-brand-desc,
+.theme-dark .mn-footer-brand-desc {
+  color: #A1A1AA !important;
+}
+
+[data-theme="dark"] .mn-footer-col-title,
+.dark .mn-footer-col-title,
+.theme-dark .mn-footer-col-title {
+  color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .mn-footer-link,
+.dark .mn-footer-link,
+.theme-dark .mn-footer-link {
+  color: #A1A1AA !important;
+}
+
+[data-theme="dark"] .mn-footer-link:hover,
+.dark .mn-footer-link:hover,
+.theme-dark .mn-footer-link:hover {
+  color: #FACC15 !important;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+}
+
+[data-theme="dark"] .mn-footer-trust-banner,
+.dark .mn-footer-trust-banner,
+.theme-dark .mn-footer-trust-banner {
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+[data-theme="dark"] .mn-footer-trust-title,
+.dark .mn-footer-trust-title,
+.theme-dark .mn-footer-trust-title {
+  color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .mn-footer-trust-desc,
+.dark .mn-footer-trust-desc,
+.theme-dark .mn-footer-trust-desc {
+  color: #A1A1AA !important;
+}
+
+[data-theme="dark"] .mn-footer-social-card,
+.dark .mn-footer-social-card,
+.theme-dark .mn-footer-social-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .mn-footer-social-card:hover,
+.dark .mn-footer-social-card:hover,
+.theme-dark .mn-footer-social-card:hover {
+  background: rgba(250, 204, 21, 0.08) !important;
+  border-color: rgba(250, 204, 21, 0.25) !important;
+}
+
+[data-theme="dark"] .mn-footer-bottom-bar,
+.dark .mn-footer-bottom-bar,
+.theme-dark .mn-footer-bottom-bar {
+  background: #000000 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #71717A !important;
+}

@@ -6,9 +6,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { OFFICIAL_NCERT_BOOKS, formatChapterCode } from '../../data/officialNcertBooksCatalog';
+import { OFFICIAL_NCERT_BOOKS, formatChapterCode, getNcertPdfUrl } from '../../data/officialNcertBooksCatalog';
 import { OFFICIAL_STUDY_RESOURCES } from '../../data/officialStudyCatalog';
 import { searchStudyResources } from '../../api/studyResources';
+import StudyResourceViewerModal from '../../components/studyResources/StudyResourceViewerModal';
 import './BookReader.css';
 
 const BookReaderPage = () => {
@@ -19,6 +20,12 @@ const BookReaderPage = () => {
   const [currentBook, setCurrentBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [chapterSearch, setChapterSearch] = useState('');
+
+  // In-App Document Viewer State
+  const [viewerData, setViewerData] = useState({
+    isOpen: false,
+    resource: null,
+  });
 
   // Load Book Details
   useEffect(() => {
@@ -94,10 +101,22 @@ const BookReaderPage = () => {
     window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // Helper: Open Specific Chapter's Official NCERT PDF in New Tab
+  // Helper: Open Specific Chapter inside In-App PDF Reader
   const handleOpenChapter = (ch) => {
-    const targetUrl = ch.pdfUrl || ch.directPdfUrl || ch.officialChapterUrl || getNcertPdfUrl(currentBook?.ncertCode, ch.chapterNumber);
-    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    const targetUrl = ch.pdfUrl || ch.directPdfUrl || ch.officialChapterUrl || (currentBook?.ncertCode ? getNcertPdfUrl(currentBook.ncertCode, ch.chapterNumber) : null);
+    if (targetUrl) {
+      setViewerData({
+        isOpen: true,
+        resource: {
+          title: `${currentBook?.title || 'NCERT Book'} — Chapter ${ch.chapterNumber}: ${ch.title}`,
+          fileUrl: targetUrl,
+          type: 'PDF',
+          classLevel: currentBook?.classLevel,
+          subject: currentBook?.subject,
+          isFree: true,
+        },
+      });
+    }
   };
 
   if (loading || !currentBook) {
@@ -358,6 +377,15 @@ const BookReaderPage = () => {
         </div>
 
       </div>
+
+      {/* In-App Dedicated PDF Reader Modal */}
+      {viewerData.isOpen && (
+        <StudyResourceViewerModal
+          isOpen={viewerData.isOpen}
+          onClose={() => setViewerData({ isOpen: false, resource: null })}
+          resource={viewerData.resource}
+        />
+      )}
 
     </div>
   );

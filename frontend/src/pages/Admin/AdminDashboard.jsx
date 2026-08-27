@@ -9,16 +9,17 @@ const PlatformOverviewChart = ({ series = [] }) => {
 
   const chartData = useMemo(() => {
     if (series && series.length > 0) return series;
-    return [
-      { dateLabel: "May 20", users: 18, students: 12, tutors: 6, revenue: 350 },
-      { dateLabel: "May 21", users: 24, students: 15, tutors: 9, revenue: 480 },
-      { dateLabel: "May 22", users: 22, students: 14, tutors: 8, revenue: 420 },
-      { dateLabel: "May 23", users: 38, students: 25, tutors: 13, revenue: 920 },
-      { dateLabel: "May 24", users: 31, students: 20, tutors: 11, revenue: 680 },
-      { dateLabel: "May 25", users: 35, students: 22, tutors: 13, revenue: 590 },
-      { dateLabel: "May 26", users: 32, students: 21, tutors: 11, revenue: 520 },
-    ];
+    return [];
   }, [series]);
+
+  if (!chartData || chartData.length === 0) {
+    return (
+      <div className="w-full h-52 flex flex-col items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">
+        <span className="text-2xl mb-1">📊</span>
+        <span>No platform activity recorded for this period yet</span>
+      </div>
+    );
+  }
 
   const maxVal = Math.max(...chartData.map((d) => Math.max(d.users || 0, d.students || 0, d.tutors || 0)), 40);
   const width = 600;
@@ -110,16 +111,19 @@ const PlatformOverviewChart = ({ series = [] }) => {
 const UserGrowthAreaChart = ({ data = [] }) => {
   const chartData = useMemo(() => {
     if (data && data.length > 0) return data;
-    return [
-      { dateLabel: "Apr 27", users: 10 },
-      { dateLabel: "May 4", users: 25 },
-      { dateLabel: "May 11", users: 48 },
-      { dateLabel: "May 18", users: 70 },
-      { dateLabel: "May 26", users: 110 },
-    ];
+    return [];
   }, [data]);
 
-  const maxVal = Math.max(...chartData.map((d) => d.users || 0), 100);
+  if (!chartData || chartData.length === 0) {
+    return (
+      <div className="w-full h-28 flex flex-col items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">
+        <span className="text-xl mb-1">📈</span>
+        <span>No historical user growth recorded yet</span>
+      </div>
+    );
+  }
+
+  const maxVal = Math.max(...chartData.map((d) => d.users || 0), 10);
   const width = 360;
   const height = 130;
   const padX = 20;
@@ -178,15 +182,20 @@ const UserGrowthAreaChart = ({ data = [] }) => {
 const RevenueDonutChart = ({ breakdown = [] }) => {
   const data = useMemo(() => {
     if (breakdown && breakdown.length > 0) return breakdown;
-    return [
-      { source: "PPT / Study Material", amount: 78450, color: "#8B5CF6" },
-      { source: "Courses & PYQs", amount: 28750, color: "#10B981" },
-      { source: "Tutor Requests", amount: 9860, color: "#F59E0B" },
-      { source: "Contact Unlocks", amount: 7520, color: "#3B82F6" },
-    ];
+    return [];
   }, [breakdown]);
 
-  const total = Math.max(data.reduce((acc, item) => acc + (item.amount || 0), 0), 1);
+  const total = data.reduce((acc, item) => acc + (item.amount || 0), 0);
+
+  if (!data || data.length === 0 || total === 0) {
+    return (
+      <div className="w-full h-44 flex flex-col items-center justify-center text-gray-400 dark:text-zinc-500 text-xs py-4">
+        <span className="text-2xl mb-1">💰</span>
+        <span>No revenue transactions recorded for this period yet</span>
+      </div>
+    );
+  }
+
   const radius = 38;
   const strokeWidth = 14;
   const circumference = 2 * Math.PI * radius;
@@ -277,18 +286,23 @@ export default function AdminDashboard() {
   const students = data?.totalStudents ?? data?.students ?? 0;
   const tutors = data?.totalTutors ?? data?.tutors ?? 0;
   const tutorRequests = data?.totalTutorRequests ?? data?.tutorRequests ?? 0;
-  const courses = data?.totalCourses ?? 12;
-  const studyResources = data?.totalStudyResources ?? 34;
-  const books = data?.totalBooks ?? 18;
-  const payments = data?.totalPayments ?? 24;
+  const courses = data?.totalCourses ?? 0;
+  const studyResources = data?.totalStudyResources ?? 0;
+  const books = data?.totalBooks ?? 0;
+  const payments = data?.totalPayments ?? 0;
   const unlocks = data?.totalUnlocks ?? data?.unlocks ?? 0;
   const revenue = data?.totalRevenue ?? data?.periodRevenue ?? data?.revenue ?? 0;
+
+  const getGrowthText = (trendVal) => {
+    if (trendVal == null || isNaN(trendVal)) return "Live Platform Data";
+    return `${trendVal >= 0 ? '↗' : '↘'} ${Math.abs(trendVal).toFixed(1)}% vs prev period`;
+  };
 
   const topKPIs = [
     {
       title: "Total Users",
       value: totalUsers.toLocaleString("en-IN"),
-      growth: "↗ 8.5% from last week",
+      growth: getGrowthText(data?.trends?.users),
       icon: "👥",
       iconBg: "bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400",
       path: "/admin/users",
@@ -296,7 +310,7 @@ export default function AdminDashboard() {
     {
       title: "Students",
       value: students.toLocaleString("en-IN"),
-      growth: "↗ 7.2% from last week",
+      growth: getGrowthText(data?.trends?.students),
       icon: "👤",
       iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
       path: "/admin/students",
@@ -304,7 +318,7 @@ export default function AdminDashboard() {
     {
       title: "Tutors",
       value: tutors.toLocaleString("en-IN"),
-      growth: "↗ 6.1% from last week",
+      growth: getGrowthText(data?.trends?.tutors),
       icon: "🎓",
       iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
       path: "/admin/tutors",
@@ -312,7 +326,7 @@ export default function AdminDashboard() {
     {
       title: "Tutor Requests",
       value: tutorRequests.toLocaleString("en-IN"),
-      growth: "↗ 12.4% from last week",
+      growth: getGrowthText(data?.trends?.tutorRequests),
       icon: "📋",
       iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
       path: "/admin/requests",
@@ -320,7 +334,7 @@ export default function AdminDashboard() {
     {
       title: "Courses & PYQs",
       value: courses.toLocaleString("en-IN"),
-      growth: "↗ 9.3% from last week",
+      growth: "Live Platform Data",
       icon: "📖",
       iconBg: "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400",
       path: "/admin/courses",
@@ -331,7 +345,7 @@ export default function AdminDashboard() {
     {
       title: "Study Resources",
       value: studyResources.toLocaleString("en-IN"),
-      growth: "↗ 11.6%",
+      growth: "Live Catalog",
       icon: "📗",
       iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
       path: "/admin/study-resources",
@@ -339,7 +353,7 @@ export default function AdminDashboard() {
     {
       title: "NCERT & Books",
       value: books.toLocaleString("en-IN"),
-      growth: "↗ 7.8%",
+      growth: "Live Catalog",
       icon: "📘",
       iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
       path: "/admin/content",
@@ -347,7 +361,7 @@ export default function AdminDashboard() {
     {
       title: "Payments",
       value: payments.toLocaleString("en-IN"),
-      growth: "↗ 9.4%",
+      growth: getGrowthText(data?.trends?.revenue),
       icon: "💳",
       iconBg: "bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400",
       path: "/admin/payments",
@@ -355,27 +369,15 @@ export default function AdminDashboard() {
     {
       title: "Contact Unlocks",
       value: unlocks.toLocaleString("en-IN"),
-      growth: "↗ 8.7%",
+      growth: getGrowthText(data?.trends?.contactUnlocks),
       icon: "🔒",
       iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
       path: "/admin/contact-unlocks",
     },
   ];
 
-  const topTutorsList = data?.topTutors || [
-    { rank: 1, name: "Ankit Sir", rating: 4.9, reviews: 120, studentsCount: 520 },
-    { rank: 2, name: "Priya Ma'am", rating: 4.8, reviews: 98, studentsCount: 430 },
-    { rank: 3, name: "Ravi Sir", rating: 4.7, reviews: 85, studentsCount: 390 },
-    { rank: 4, name: "Neha Ma'am", rating: 4.6, reviews: 76, studentsCount: 350 },
-  ];
-
-  const recentRequestsList = data?.recentRequests || [
-    { studentName: "Rahul Kumar", classLevel: "Class 10", subject: "Maths", timeAgo: "2 min ago", status: "New" },
-    { studentName: "Priya Sharma", classLevel: "Class 11", subject: "Physics", timeAgo: "15 min ago", status: "Pending" },
-    { studentName: "Aman Verma", classLevel: "Class 12", subject: "Chemistry", timeAgo: "35 min ago", status: "Pending" },
-    { studentName: "Neha Singh", classLevel: "Class 9", subject: "Science", timeAgo: "1 hour ago", status: "New" },
-    { studentName: "Vikram Patel", classLevel: "Class 11", subject: "Biology", timeAgo: "2 hours ago", status: "Resolved" },
-  ];
+  const topTutorsList = data?.topPerformingTutors || data?.topTutors || [];
+  const recentRequestsList = data?.recentTutorRequests || data?.recentRequests || [];
 
   return (
     <div className="space-y-6 pb-8 bg-[#F8F9FA] dark:bg-[#0A0A0A] min-h-screen text-gray-900 dark:text-white transition-colors duration-200">
@@ -474,29 +476,35 @@ export default function AdminDashboard() {
               </div>
 
               <div className="space-y-3.5">
-                {topTutorsList.map((tutor, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-gray-400 w-3">{tutor.rank || idx + 1}</span>
-                      <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                        {tutor.avatar ? <img src={tutor.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : (tutor.name?.[0]?.toUpperCase() || "T")}
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 dark:text-white leading-tight">{tutor.name}</p>
-                        <p className="text-[10px] text-amber-500 font-semibold">{tutor.rating} ★ <span className="text-gray-400 font-normal">({tutor.reviews})</span></p>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-[11px] font-bold text-gray-700 dark:text-zinc-300">
-                        <span className="text-[10px] text-gray-400 font-normal">Students </span>{tutor.studentsCount}
-                      </p>
-                      <div className="w-16 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full mt-1 overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min((tutor.studentsCount / 600) * 100, 100)}%` }} />
-                      </div>
-                    </div>
+                {topTutorsList.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-gray-400 dark:text-zinc-500">
+                    <span>🎓 No tutor ratings recorded yet</span>
                   </div>
-                ))}
+                ) : (
+                  topTutorsList.map((tutor, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-gray-400 w-3">{tutor.rank || idx + 1}</span>
+                        <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                          {tutor.avatar ? <img src={tutor.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : (tutor.name?.[0]?.toUpperCase() || "T")}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white leading-tight">{tutor.name}</p>
+                          <p className="text-[10px] text-amber-500 font-semibold">{tutor.rating || 5.0} ★ <span className="text-gray-400 font-normal">({tutor.reviews || 0})</span></p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-[11px] font-bold text-gray-700 dark:text-zinc-300">
+                          <span className="text-[10px] text-gray-400 font-normal">Students </span>{tutor.studentsCount || 0}
+                        </p>
+                        <div className="w-16 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full mt-1 overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(((tutor.studentsCount || 0) / 100) * 100, 100)}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -514,11 +522,11 @@ export default function AdminDashboard() {
                 <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Users</p>
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-black text-gray-900 dark:text-white">{totalUsers.toLocaleString("en-IN")}</span>
-                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">↗ 8.5%</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Live Platform Data</span>
                 </div>
               </div>
 
-              <UserGrowthAreaChart data={data?.growth30d} />
+              <UserGrowthAreaChart data={data?.userGrowth30d || data?.growth30d} />
             </div>
           </div>
         </div>
@@ -539,12 +547,12 @@ export default function AdminDashboard() {
               <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Revenue</p>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-black text-gray-900 dark:text-white">₹{Number(revenue).toLocaleString("en-IN")}</span>
-                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">↗ 10.3% from last week</span>
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Live Platform Data</span>
               </div>
             </div>
 
             <p className="text-xs font-bold text-gray-700 dark:text-zinc-300 mt-4 mb-2">Revenue by Source</p>
-            <RevenueDonutChart breakdown={data?.revenueBySource} />
+            <RevenueDonutChart breakdown={data?.revenueBreakdown || data?.revenueBySource} />
           </div>
 
           {/* Card 2: Recent Tutor Requests */}
@@ -557,36 +565,42 @@ export default function AdminDashboard() {
             </div>
 
             <div className="space-y-3.5">
-              {recentRequestsList.map((req, idx) => {
-                const isNew = req.status === "New";
-                const isPending = req.status === "Pending";
-                const badgeStyle = isNew
-                  ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300"
-                  : isPending
-                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
-                  : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300";
+              {recentRequestsList.length === 0 ? (
+                <div className="py-6 text-center text-xs text-gray-400 dark:text-zinc-500">
+                  <span>📋 No recent tutor requests recorded yet</span>
+                </div>
+              ) : (
+                recentRequestsList.map((req, idx) => {
+                  const isNew = req.status === "New" || req.status === "pending";
+                  const isPending = req.status === "Pending";
+                  const badgeStyle = isNew
+                    ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300"
+                    : isPending
+                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300";
 
-                return (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                        {req.avatar ? <img src={req.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : (req.studentName?.[0]?.toUpperCase() || "S")}
+                  return (
+                    <div key={idx} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                          {req.avatar ? <img src={req.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : (req.studentName?.[0]?.toUpperCase() || req.name?.[0]?.toUpperCase() || "S")}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white leading-tight">{req.studentName || req.name || "Student Request"}</p>
+                          <p className="text-[10px] text-gray-500 dark:text-zinc-400">{req.classLevel || req.grade || "All Classes"} • {req.subject || "General"}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-gray-900 dark:text-white leading-tight">{req.studentName}</p>
-                        <p className="text-[10px] text-gray-500 dark:text-zinc-400">{req.classLevel} • {req.subject}</p>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-gray-400">{req.timeAgo || "Recently"}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeStyle}`}>
+                          {req.status || "Pending"}
+                        </span>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-gray-400">{req.timeAgo || "Recently"}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeStyle}`}>
-                        {req.status || "New"}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

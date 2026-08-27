@@ -416,25 +416,73 @@
   cursor: pointer;
 }
 
-/* Dark Mode Overrides */
+/* Dark Mode Overrides - Pure Black & Glass */
 [data-theme="dark"] .mn-fs-card,
 .dark .mn-fs-card,
 .theme-dark .mn-fs-card {
-  background: #131B2E !important;
-  border-color: #1E293B !important;
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   color: #F8FAFC !important;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .mn-fs-card:hover,
+.dark .mn-fs-card:hover,
+.theme-dark .mn-fs-card:hover {
+  border-color: rgba(251, 191, 36, 0.25) !important;
+  box-shadow: 0 0 35px rgba(251, 191, 36, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
 }
 
 [data-theme="dark"] .mn-fs-card-details,
 .dark .mn-fs-card-details,
 .theme-dark .mn-fs-card-details {
-  background: #0F172A !important;
-  border-color: #1E293B !important;
+  background: rgba(10, 10, 12, 0.7) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 [data-theme="dark"] .mn-fs-subject-tag,
 .dark .mn-fs-subject-tag,
 .theme-dark .mn-fs-subject-tag {
-  background: #1E293B !important;
+  background: rgba(255, 255, 255, 0.08) !important;
   color: #CBD5E1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .mn-fs-search-form,
+.dark .mn-fs-search-form,
+.theme-dark .mn-fs-search-form {
+  background: rgba(12, 12, 14, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-theme="dark"] .mn-fs-input-wrap,
+.dark .mn-fs-input-wrap,
+.theme-dark .mn-fs-input-wrap {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .mn-fs-input,
+.dark .mn-fs-input,
+.theme-dark .mn-fs-input {
+  color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .mn-fs-input::placeholder,
+.dark .mn-fs-input::placeholder,
+.theme-dark .mn-fs-input::placeholder {
+  color: #71717A !important;
+}
+
+[data-theme="dark"] .mn-fs-empty-state,
+.dark .mn-fs-empty-state,
+.theme-dark .mn-fs-empty-state {
+  background: rgba(15, 15, 18, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #F8FAFC !important;
 }

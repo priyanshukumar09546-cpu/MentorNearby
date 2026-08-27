@@ -1369,24 +1369,37 @@
 .dark .mn-find-tutor-card,
 .theme-dark .mn-find-tutor-card,
 [data-theme="dark"] .mn-find-tutor-card {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+:root[data-theme="dark"] .mn-find-tutor-card:hover,
+.dark .mn-find-tutor-card:hover,
+.theme-dark .mn-find-tutor-card:hover,
+[data-theme="dark"] .mn-find-tutor-card:hover {
+  border-color: rgba(251, 191, 36, 0.25) !important;
+  box-shadow: 0 0 35px rgba(251, 191, 36, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
 }
 
 :root[data-theme="dark"] .mn-find-top-tutors-sidebar,
 .dark .mn-find-top-tutors-sidebar,
 .theme-dark .mn-find-top-tutors-sidebar,
 [data-theme="dark"] .mn-find-top-tutors-sidebar {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
 
 :root[data-theme="dark"] .mn-top-tutor-row-card,
 .dark .mn-top-tutor-row-card,
 .theme-dark .mn-top-tutor-row-card,
 [data-theme="dark"] .mn-top-tutor-row-card {
-  background: #0f172a !important;
-  border-color: #334155 !important;
+  background: rgba(10, 10, 12, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 :root[data-theme="dark"] .mn-top-tutors-heading,
@@ -1412,8 +1425,9 @@
 .dark .mn-find-error-card,
 .theme-dark .mn-find-error-card,
 [data-theme="dark"] .mn-find-error-card {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
 }
 
 :root[data-theme="dark"] .mn-find-empty-title,

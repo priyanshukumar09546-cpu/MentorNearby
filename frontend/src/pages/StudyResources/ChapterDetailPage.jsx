@@ -91,11 +91,22 @@ const ChapterDetailPage = () => {
     fetchChapterData();
   }, [bookId, chNum]);
 
-  // Open Dedicated Official NCERT PDF in New Tab
+  // Open Dedicated In-App PDF Reader
   const handleOpenReader = (resTitle, customUrl) => {
     const targetUrl = customUrl || chapter?.pdfUrl || chapter?.directPdfUrl || chapter?.officialChapterUrl || chapter?.officialUrl || (book?.ncertCode ? getNcertPdfUrl(book.ncertCode, chNum) : book?.officialBookUrl);
     if (targetUrl) {
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      setViewerData({
+        isOpen: true,
+        resource: {
+          title: `${book?.title || 'NCERT Book'} — ${resTitle || chapter?.title || `Chapter ${chNum}`}`,
+          fileUrl: targetUrl,
+          type: 'PDF',
+          classLevel: book?.classLevel,
+          subject: book?.subject,
+          isFree: true,
+        },
+        resourceId: book?._id || book?.id,
+      });
     }
   };
 

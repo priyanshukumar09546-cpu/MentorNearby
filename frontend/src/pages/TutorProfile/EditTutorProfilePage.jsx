@@ -187,7 +187,9 @@ const EditTutorProfilePage = () => {
   const handleCropComplete = async (croppedData) => {
     setUploadingPhoto(true);
     const formData = new FormData();
+    formData.append('profilePic', croppedData.file);
     formData.append('photo', croppedData.file);
+    formData.append('image', croppedData.file);
     formData.append('file', croppedData.file);
 
     try {

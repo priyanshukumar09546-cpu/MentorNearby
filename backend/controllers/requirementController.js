@@ -1,6 +1,7 @@
 const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const TuitionRequirement = require('../models/TuitionRequirement');
+const StudentProfile = require('../models/StudentProfile');
 const TutorRequest = require('../models/TutorRequest');
 const User = require('../models/User');
 const { createNotification } = require('./notificationController');
@@ -190,104 +191,110 @@ exports.deleteRequirement = asyncHandler(async (req, res, next) => {
   return success(res, 'Requirement deleted successfully');
 });
 
-// @desc    Get nearby/relevant requirements
-// @route   GET /api/v1/requirements
-// @access  Private (Tutor only)
+// @desc    Get open tuition requirements / student inquiries (for find-students page)
+// @route   GET /api/requirements
+// @access  Public
 exports.getRequirements = asyncHandler(async (req, res, next) => {
-  if (req.user.role !== 'tutor' && req.user.role !== 'TUTOR') {
-    return error(res, 'Only tutors can search for requirements', 403);
+  const {
+    subject,
+    subjects,
+    q,
+    class: classGrade,
+    studentClass,
+    location,
+    city,
+    area,
+    mode,
+    teachingMode,
+    page = 1,
+    limit = 20,
+  } = req.query;
+
+  const filter = {
+    status: { $in: ['OPEN', 'Open'] }
+  };
+
+  // Subject search (matches subject query or q query)
+  const targetSubject = subject || q;
+  if (targetSubject) {
+    const subRegex = new RegExp(targetSubject.trim(), 'i');
+    filter.$or = [
+      { subjects: subRegex },
+      { studentClass: subRegex },
+      { class: subRegex },
+      { studentName: subRegex }
+    ];
+  } else if (subjects) {
+    const subArr = subjects.split(',').map(s => s.trim()).filter(Boolean);
+    if (subArr.length > 0) {
+      filter.subjects = { $in: subArr.map(s => new RegExp(s, 'i')) };
+    }
   }
 
-  let query;
-  
-  // Copy req.query
-  const reqQuery = { ...req.query };
-
-  // Fields to exclude
-  const removeFields = ['select', 'sort', 'page', 'limit'];
-
-  // Loop over removeFields and delete them from reqQuery
-  removeFields.forEach(param => delete reqQuery[param]);
-
-  // Create query string
-  let queryStr = JSON.stringify(reqQuery);
-
-  // Create operators ($gt, $gte, etc)
-  queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
-
-  const parsedQuery = JSON.parse(queryStr);
-  
-  // Default to only open requirements
-  if (!parsedQuery.status) {
-    parsedQuery.status = 'OPEN';
+  // Class filter
+  const targetClass = classGrade || studentClass;
+  if (targetClass && targetClass !== 'ALL' && targetClass !== 'All Classes') {
+    const clsRegex = new RegExp(targetClass.trim(), 'i');
+    filter.$and = [
+      ...(filter.$and || []),
+      {
+        $or: [
+          { class: clsRegex },
+          { studentClass: clsRegex }
+        ]
+      }
+    ];
   }
 
-  // Handle location (simple exact match or regex for city/area)
-  if (req.query.city) {
-    parsedQuery['location.city'] = { $regex: req.query.city, $options: 'i' };
-    delete parsedQuery.city;
-  }
-  if (req.query.area) {
-    parsedQuery['location.area'] = { $regex: req.query.area, $options: 'i' };
-    delete parsedQuery.area;
-  }
-  
-  // Handle subjects
-  if (req.query.subjects) {
-    const subjects = req.query.subjects.split(',');
-    parsedQuery.subjects = { $in: subjects };
-  }
-
-  // Finding resource
-  query = TuitionRequirement.find(parsedQuery);
-
-  // Select Fields
-  if (req.query.select) {
-    const fields = req.query.select.split(',').join(' ');
-    query = query.select(fields);
+  // Location / City filter
+  const targetLocation = location || city;
+  if (targetLocation && targetLocation !== 'ALL') {
+    const locRegex = new RegExp(targetLocation.trim(), 'i');
+    filter.$and = [
+      ...(filter.$and || []),
+      {
+        $or: [
+          { 'location.city': locRegex },
+          { 'location.area': locRegex }
+        ]
+      }
+    ];
   }
 
-  // Sort
-  if (req.query.sort) {
-    const sortBy = req.query.sort.split(',').join(' ');
-    query = query.sort(sortBy);
-  } else {
-    query = query.sort('-createdAt');
+  if (area) {
+    filter['location.area'] = new RegExp(area.trim(), 'i');
   }
 
-  // Pagination
-  const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 10;
-  const startIndex = (page - 1) * limit;
-  const endIndex = page * limit;
-  const total = await TuitionRequirement.countDocuments(parsedQuery);
-
-  query = query.skip(startIndex).limit(limit);
-
-  // Executing query
-  const requirements = await query;
-
-  // Pagination result
-  const pagination = {};
-
-  if (endIndex < total) {
-    pagination.next = {
-      page: page + 1,
-      limit
-    };
+  // Mode filter
+  const targetMode = mode || teachingMode;
+  if (targetMode && targetMode !== 'ALL' && targetMode !== 'All Modes') {
+    filter.teachingMode = new RegExp(targetMode.trim(), 'i');
   }
 
-  if (startIndex > 0) {
-    pagination.prev = {
-      page: page - 1,
-      limit
-    };
-  }
+  const pageNum = parseInt(page, 10) || 1;
+  const limitNum = Math.min(parseInt(limit, 10) || 20, 100);
+  const startIndex = (pageNum - 1) * limitNum;
+
+  const total = await TuitionRequirement.countDocuments(filter);
+  const requirements = await TuitionRequirement.find(filter)
+    .populate('student', 'name avatar role phone email isVerified')
+    .sort({ createdAt: -1 })
+    .skip(startIndex)
+    .limit(limitNum)
+    .lean();
 
   return success(res, 'Requirements retrieved successfully', {
+    total,
     count: requirements.length,
-    pagination,
-    data: requirements
+    requirements,
+    data: requirements,
+    pagination: {
+      currentPage: pageNum,
+      totalPages: Math.ceil(total / limitNum) || 1,
+      total,
+      hasNext: startIndex + requirements.length < total,
+      hasPrev: pageNum > 1,
+    }
   });
 });
 

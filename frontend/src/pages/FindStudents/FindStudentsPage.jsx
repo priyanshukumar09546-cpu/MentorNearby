@@ -37,7 +37,7 @@ const FindStudentsPage = () => {
     setError(null);
     try {
       const params = {};
-      if (searchQuery) params.subject = searchQuery;
+      if (searchQuery) params.q = searchQuery;
       if (classGrade) params.class = classGrade;
       if (location) params.location = location;
       if (teachingMode) params.mode = teachingMode;
@@ -46,16 +46,17 @@ const FindStudentsPage = () => {
       const response = await client.get('/requirements', { params });
       const payload = response.data?.data || response.data;
       const list = payload?.requirements || payload?.data || (Array.isArray(payload) ? payload : []);
-      const total = payload?.total ?? payload?.count ?? list.length;
+      const total = payload?.total ?? payload?.count ?? (Array.isArray(list) ? list.length : 0);
 
       setRequirements(Array.isArray(list) ? list : []);
       setTotalCount(total);
     } catch (err) {
-      console.warn('Failed to fetch open requirements, trying public fallback:', err);
+      console.warn('Failed to fetch open requirements, trying public endpoint fallback:', err?.message);
       try {
-        const fallbackRes = await client.get('/requirements/me');
-        const fallbackList = fallbackRes.data?.data?.requirements || [];
-        setRequirements(fallbackList);
+        const fallbackRes = await client.get('/requirements/public');
+        const fallbackPayload = fallbackRes.data?.data || fallbackRes.data;
+        const fallbackList = fallbackPayload?.requirements || fallbackPayload?.data || (Array.isArray(fallbackPayload) ? fallbackPayload : []);
+        setRequirements(Array.isArray(fallbackList) ? fallbackList : []);
         setTotalCount(fallbackList.length);
       } catch (_) {
         setError('Unable to load student leads. Please check your connection.');

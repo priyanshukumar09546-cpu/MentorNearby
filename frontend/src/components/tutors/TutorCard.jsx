@@ -9,10 +9,11 @@ const TutorCard = ({ tutor, userCoordinates, onUnlock }) => {
   const name = tutorUser.name || tutor.name || 'Tutor';
   const isVerified = tutor.kycStatus === 'VERIFIED';
 
-  const feeAmount = tutor.fees?.amount || 0;
-  const rawFreq = tutor.fees?.frequency || 'month';
-  const cleanFreq = rawFreq.toLowerCase().replace('per_', '').replace('ly', '');
-  const feeDisplay = `₹${feeAmount} / ${cleanFreq || 'month'}`;
+  const feeAmount = tutor.fees?.amount || tutor.hourlyRate || 0;
+  const rawFreq = (tutor.fees?.frequency || (tutor.hourlyRate ? 'Hour' : 'Month')).toString().toUpperCase();
+  const isHourly = rawFreq.includes('HOUR') || rawFreq === 'HOURLY';
+  const cleanFreq = isHourly ? 'hr' : 'mo';
+  const feeDisplay = feeAmount > 0 ? `₹${feeAmount} / ${cleanFreq}` : 'Fee on request';
 
   // Haversine distance calculation
   const tutorLat = tutor.location?.coordinates?.coordinates?.[1];

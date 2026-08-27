@@ -1045,12 +1045,47 @@ exports.approveStudent = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    const TuitionRequirement = mongoose.model('TuitionRequirement');
-    await TuitionRequirement.updateMany(
-      { student: userId },
-      { $set: { isApproved: true, status: 'OPEN' } }
-    );
-  } catch (_) {}
+    const existingReq = await TuitionRequirement.findOne({ student: userId });
+    if (!existingReq) {
+      const studentClass = studentProfile?.studentDetails?.class || studentProfile?.schoolDetails?.grade || studentProfile?.academicDetails?.degree || 'Class 10';
+      const studentCity = studentProfile?.location?.city || 'Local City';
+      const studentArea = studentProfile?.location?.area || 'Nearby';
+      const studentSubjects = (studentProfile?.academicDetails?.subjectsRequired?.length ? studentProfile.academicDetails.subjectsRequired : null)
+        || (studentProfile?.preferredSubjects?.length ? studentProfile.preferredSubjects : null)
+        || ['All Subjects'];
+      const studentMode = studentProfile?.tuitionRequirements?.mode || (studentProfile?.preferredModes?.length ? studentProfile.preferredModes[0] : 'Home Tuition');
+      const studentBudget = parseInt(studentProfile?.tuitionRequirements?.budget) || 5000;
+
+      await TuitionRequirement.create({
+        student: userId,
+        studentName: userDoc?.name || studentProfile?.studentDetails?.name || 'Student Lead',
+        class: studentClass,
+        studentClass: studentClass,
+        board: studentProfile?.studentDetails?.board || studentProfile?.schoolDetails?.board || 'CBSE',
+        medium: studentProfile?.studentDetails?.medium || 'English',
+        subjects: studentSubjects,
+        teachingMode: studentMode,
+        location: {
+          city: studentCity,
+          area: studentArea,
+          pincode: studentProfile?.location?.pincode || '110001',
+        },
+        budget: {
+          amount: studentBudget,
+          frequency: 'PER_MONTH'
+        },
+        status: 'OPEN',
+        isApproved: true
+      });
+    } else {
+      await TuitionRequirement.updateMany(
+        { student: userId },
+        { $set: { isApproved: true, status: 'OPEN' } }
+      );
+    }
+  } catch (syncErr) {
+    console.warn('Failed to sync tuition requirement on student approve:', syncErr.message);
+  }
 
   await logAuditAction({
     adminId: req.user._id,

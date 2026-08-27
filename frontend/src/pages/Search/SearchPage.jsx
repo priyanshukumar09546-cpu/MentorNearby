@@ -523,8 +523,11 @@ const SearchPage = () => {
                     const modeStr = Array.isArray(tutor.teachingModes) ? tutor.teachingModes.join(' & ') : (tutor.teachingModes || 'Online & Offline');
                     const ratingVal = tutor.averageRating && tutor.averageRating > 0 ? Number(tutor.averageRating).toFixed(1) : (tutor.totalReviews > 0 ? '5.0' : 'New');
                     const reviewsVal = tutor.totalReviews || 0;
-                    const feeAmount = tutor.fees?.amount || (tutor.fees?.hourlyRate || 'Contact');
-                    const priceVal = typeof feeAmount === 'number' ? `₹${feeAmount}/hr` : (feeAmount ? `${feeAmount}` : '₹300/hr');
+                    const feeAmount = tutor.fees?.amount || tutor.hourlyRate || 0;
+                    const rawFreq = (tutor.fees?.frequency || (tutor.hourlyRate ? 'Hour' : 'Month')).toString().toUpperCase();
+                    const isHourly = rawFreq.includes('HOUR') || rawFreq === 'HOURLY';
+                    const cleanUnit = isHourly ? '/hr' : '/mo';
+                    const priceVal = feeAmount > 0 ? `₹${feeAmount}${cleanUnit}` : 'Fee on request';
                     const isVerified = tutor.kycStatus === 'VERIFIED' || tutor.verificationStatus?.identity;
                     const isOnline = Array.isArray(tutor.teachingModes)
                       ? tutor.teachingModes.some(m => m.toUpperCase().includes('ONLINE'))
@@ -674,7 +677,11 @@ const SearchPage = () => {
                     const expYears = tutor.experience?.years ?? 2;
                     const ratingVal = tutor.averageRating && tutor.averageRating > 0 ? Number(tutor.averageRating).toFixed(1) : '5.0';
                     const reviewsVal = tutor.totalReviews || 0;
-                    const feeAmount = tutor.fees?.amount || (tutor.fees?.hourlyRate || 350);
+                    const feeAmount = tutor.fees?.amount || tutor.hourlyRate || 0;
+                    const rawFreq = (tutor.fees?.frequency || (tutor.hourlyRate ? 'Hour' : 'Month')).toString().toUpperCase();
+                    const isHourly = rawFreq.includes('HOUR') || rawFreq === 'HOURLY';
+                    const cleanUnit = isHourly ? '/hr' : '/mo';
+                    const feeDisplay = feeAmount > 0 ? `₹${feeAmount}${cleanUnit}` : 'Fee on request';
                     const isVerified = tutor.kycStatus === 'VERIFIED' || tutor.verificationStatus?.identity;
 
                     return (

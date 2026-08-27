@@ -330,25 +330,26 @@ exports.getPublicStudentProfile = asyncHandler(async (req, res, next) => {
 
   return success(res, 'Student profile retrieved successfully', {
     student: {
-      _id: studentUser?._id || id,
+      _id: studentUser?._id || requirement?._id || id,
       name: requirement?.studentName || studentUser?.name || studentProfile?.studentDetails?.name || 'Student Lead',
       avatar: studentUser?.avatar || studentProfile?.profilePhoto?.url || '',
       role: studentUser?.role || 'STUDENT',
       createdAt: studentUser?.createdAt || requirement?.createdAt || Date.now(),
       isVerified: studentUser?.isVerified || studentProfile?.isVerified || false,
-      profile: studentProfile || {},
-      studentDetails: studentProfile?.studentDetails || {
-        class: requirement?.class || requirement?.studentClass || 'Class 10',
-        board: requirement?.board || 'CBSE',
-        medium: requirement?.medium || 'English',
+      studentDetails: {
+        class: studentProfile?.studentDetails?.class || requirement?.class || requirement?.studentClass || 'Class 10',
+        board: studentProfile?.studentDetails?.board || requirement?.board || 'CBSE',
+        medium: studentProfile?.studentDetails?.medium || requirement?.medium || 'English',
       },
-      academicDetails: studentProfile?.academicDetails || {
-        subjectsRequired: requirement?.subjects || ['All Subjects'],
+      academicDetails: {
+        subjectsRequired: studentProfile?.academicDetails?.subjectsRequired || requirement?.subjects || ['All Subjects'],
       },
-      schoolDetails: studentProfile?.schoolDetails || {},
-      location: studentProfile?.location || requirement?.location || {
-        city: requirement?.location?.city || 'Local Area',
-        area: requirement?.location?.area || 'Nearby',
+      schoolDetails: {
+        schoolName: studentProfile?.schoolDetails?.schoolName || 'Verified School',
+      },
+      location: {
+        city: studentProfile?.location?.city || requirement?.location?.city || 'Local Area',
+        area: studentProfile?.location?.area || requirement?.location?.area || 'Nearby',
       },
       tuitionRequirements: {
         mode: requirement?.teachingMode || studentProfile?.tuitionRequirements?.mode || 'Home Tuition',

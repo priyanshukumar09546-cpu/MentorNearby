@@ -1,75 +1,116 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { useTheme } from "../context/ThemeContext";
 
 export default function GlobalStars({ show }) {
-  const canvasRef = useRef(null);
   const themeCtx = useTheme();
   const isVisible = show !== undefined ? show : (themeCtx?.isDark ?? themeCtx?.darkMode ?? true);
-
-  useEffect(() => {
-    if (!isVisible) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-
-    const setSize = () => {
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    setSize();
-
-    const stars = Array.from({ length: 180 }, () => ({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      r: Math.random() * 1.3 + 0.2,
-      alpha: Math.random() * 0.7 + 0.3,
-      speed: Math.random() * 0.015 + 0.005,
-      dir: Math.random() > 0.5 ? 1 : -1,
-    }));
-
-    let anim;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      stars.forEach((s) => {
-        s.alpha += s.speed * s.dir;
-        if (s.alpha <= 0.2 || s.alpha >= 1) {
-          s.dir *= -1;
-        }
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
-        ctx.shadowBlur = 4;
-        ctx.shadowColor = "white";
-        ctx.fill();
-      });
-      anim = requestAnimationFrame(animate);
-    };
-
-    animate();
-    window.addEventListener("resize", setSize);
-
-    return () => {
-      if (anim) cancelAnimationFrame(anim);
-      window.removeEventListener("resize", setSize);
-    };
-  }, [isVisible]);
 
   if (!isVisible) return null;
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 0,
-        pointerEvents: "none",
-      }}
-      aria-hidden="true"
-    />
+    <>
+      {/* 1. Deep Fixed Pitch Black Base */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          backgroundColor: "#000000",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* 2. Primary CSS Starfield Layer (High Density & Crisp White/Gold Stars) */}
+      <div
+        className="astro-stars-layer-1"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: "none",
+          backgroundImage: `
+            radial-gradient(1.5px 1.5px at 8% 12%, rgba(255,255,255,0.95), transparent),
+            radial-gradient(1.2px 1.2px at 22% 35%, rgba(254,240,138,0.9), transparent),
+            radial-gradient(1.8px 1.8px at 38% 18%, rgba(255,255,255,1), transparent),
+            radial-gradient(1.2px 1.2px at 52% 28%, rgba(255,255,255,0.85), transparent),
+            radial-gradient(1.6px 1.6px at 68% 75%, rgba(254,240,138,0.95), transparent),
+            radial-gradient(1.3px 1.3px at 82% 22%, rgba(255,255,255,0.9), transparent),
+            radial-gradient(1.5px 1.5px at 94% 65%, rgba(255,255,255,0.95), transparent),
+            radial-gradient(1.2px 1.2px at 14% 82%, rgba(255,255,255,0.85), transparent),
+            radial-gradient(2px 2px at 58% 55%, rgba(255,255,255,1), transparent),
+            radial-gradient(1.4px 1.4px at 45% 88%, rgba(254,240,138,0.9), transparent),
+            radial-gradient(1.2px 1.2px at 88% 92%, rgba(255,255,255,0.85), transparent),
+            radial-gradient(1.6px 1.6px at 30% 62%, rgba(255,255,255,0.95), transparent)
+          `,
+          backgroundRepeat: "repeat",
+          backgroundSize: "420px 420px",
+          opacity: 0.95,
+          animation: "twinkleStarfield 4s ease-in-out infinite alternate",
+        }}
+      />
+
+      {/* 3. Secondary Micro-Stars Layer (Deep Universe Texture) */}
+      <div
+        className="astro-stars-layer-2"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: "none",
+          backgroundImage: `
+            radial-gradient(1px 1px at 18% 22%, rgba(255,255,255,0.7), transparent),
+            radial-gradient(1.2px 1.2px at 42% 48%, rgba(255,255,255,0.8), transparent),
+            radial-gradient(1px 1px at 64% 15%, rgba(255,255,255,0.65), transparent),
+            radial-gradient(1.3px 1.3px at 78% 52%, rgba(254,240,138,0.8), transparent),
+            radial-gradient(1px 1px at 28% 85%, rgba(255,255,255,0.75), transparent),
+            radial-gradient(1.4px 1.4px at 92% 38%, rgba(255,255,255,0.85), transparent)
+          `,
+          backgroundRepeat: "repeat",
+          backgroundSize: "320px 320px",
+          opacity: 0.85,
+          animation: "twinkleStarfield 6s ease-in-out infinite alternate-reverse",
+        }}
+      />
+
+      {/* 4. Astrotalk Warm Yellow/Gold Ambient Glow Bottom-Left */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: "-5%",
+          left: "-5%",
+          width: "550px",
+          height: "550px",
+          background: "radial-gradient(circle, rgba(251,191,36,0.14) 0%, rgba(251,191,36,0.04) 35%, transparent 70%)",
+          filter: "blur(35px)",
+          zIndex: 1,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* 5. Astrotalk Subtle Amber Ambient Glow Top-Right */}
+      <div
+        style={{
+          position: "fixed",
+          top: "-5%",
+          right: "-5%",
+          width: "500px",
+          height: "500px",
+          background: "radial-gradient(circle, rgba(245,158,11,0.1) 0%, rgba(245,158,11,0.03) 35%, transparent 70%)",
+          filter: "blur(35px)",
+          zIndex: 1,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* CSS Twinkle Animation */}
+      <style>{`
+        @keyframes twinkleStarfield {
+          0% { opacity: 0.65; transform: scale(1); }
+          50% { opacity: 0.95; }
+          100% { opacity: 1; transform: scale(1.002); }
+        }
+      `}</style>
+    </>
   );
 }
+

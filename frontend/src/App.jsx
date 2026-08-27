@@ -117,53 +117,14 @@ const AppContent = () => {
         backgroundColor: isDarkMode ? '#000000' : '#FFFBF5',
         minHeight: '100vh',
         position: 'relative',
-        isolation: 'isolate',
       }}
       className={isDarkMode ? 'dark text-white' : 'light text-gray-900'}
     >
-      {/* STARS & AMBIENT GLOW - FIXED BEHIND EVERYTHING, FOR ENTIRE WEBSITE */}
-      {isDarkMode && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: 'none',
-            backgroundColor: '#000000',
-          }}
-        >
-          <GlobalStars show={true} />
-          {/* Astrotalk style yellow wash bottom-left */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              width: '650px',
-              height: '450px',
-              background: 'radial-gradient(ellipse, rgba(250, 204, 21, 0.1) 0%, transparent 70%)',
-              filter: 'blur(60px)',
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Astrotalk style amber wash top-right */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: '500px',
-              height: '350px',
-              background: 'radial-gradient(ellipse, rgba(245, 158, 11, 0.08) 0%, transparent 70%)',
-              filter: 'blur(50px)',
-              pointerEvents: 'none',
-            }}
-          />
-        </div>
-      )}
+      {/* CSS STARS - FIXED BEHIND EVERYTHING, FOR ENTIRE WEBSITE */}
+      {isDarkMode && <GlobalStars show={true} />}
 
-      {/* CONTENT - ON TOP OF STARS */}
-      <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
+      {/* CONTENT - ON TOP OF STARS (zIndex: 2) */}
+      <div style={{ position: 'relative', zIndex: 2, minHeight: '100vh' }}>
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
             {/* Public Admin Entry & Login */}

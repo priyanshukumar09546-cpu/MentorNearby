@@ -1205,7 +1205,7 @@ html.dark .mn-stat-vertical-card,
 html.dark .mn-directory-col {
   position: relative;
   overflow: hidden;
-  background: rgba(20, 20, 20, 0.72) !important;
+  background: rgba(15, 15, 18, 0.6) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);

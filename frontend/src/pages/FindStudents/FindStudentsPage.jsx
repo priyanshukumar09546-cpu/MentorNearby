@@ -9,7 +9,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import UnlockContactModal from '../../components/payment/UnlockContactModal';
 import './FindStudentsPage.css';
 
 const FindStudentsPage = () => {
@@ -29,10 +28,8 @@ const FindStudentsPage = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Contact Unlock Modal State
-  const [selectedLeadId, setSelectedLeadId] = useState(null);
-  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+  const [applyingId, setApplyingId] = useState(null);
+  const [appliedIds, setAppliedIds] = useState(new Set());
 
   // Fetch Open Tuition Requirements from Backend API
   const fetchStudentRequirements = async () => {
@@ -40,7 +37,7 @@ const FindStudentsPage = () => {
     setError(null);
     try {
       const params = {};
-      if (searchQuery) params.q = searchQuery;
+      if (searchQuery) params.subject = searchQuery;
       if (classGrade) params.class = classGrade;
       if (location) params.location = location;
       if (teachingMode) params.mode = teachingMode;
@@ -49,17 +46,16 @@ const FindStudentsPage = () => {
       const response = await client.get('/requirements', { params });
       const payload = response.data?.data || response.data;
       const list = payload?.requirements || payload?.data || (Array.isArray(payload) ? payload : []);
-      const total = payload?.total ?? payload?.count ?? (Array.isArray(list) ? list.length : 0);
+      const total = payload?.total ?? payload?.count ?? list.length;
 
       setRequirements(Array.isArray(list) ? list : []);
       setTotalCount(total);
     } catch (err) {
-      console.warn('Failed to fetch open requirements, trying public endpoint fallback:', err?.message);
+      console.warn('Failed to fetch open requirements, trying public fallback:', err);
       try {
-        const fallbackRes = await client.get('/requirements/public');
-        const fallbackPayload = fallbackRes.data?.data || fallbackRes.data;
-        const fallbackList = fallbackPayload?.requirements || fallbackPayload?.data || (Array.isArray(fallbackPayload) ? fallbackPayload : []);
-        setRequirements(Array.isArray(fallbackList) ? fallbackList : []);
+        const fallbackRes = await client.get('/requirements/me');
+        const fallbackList = fallbackRes.data?.data?.requirements || [];
+        setRequirements(fallbackList);
         setTotalCount(fallbackList.length);
       } catch (_) {
         setError('Unable to load student leads. Please check your connection.');
@@ -86,14 +82,30 @@ const FindStudentsPage = () => {
     fetchStudentRequirements();
   };
 
-  const handleUnlockContact = (reqId) => {
+  const handleApplyLead = async (reqId) => {
     if (!isAuthenticated) {
-      showToast('Please login to unlock student contact details', 'info');
+      showToast('Please login as a tutor to apply for student leads', 'info');
       navigate('/login');
       return;
     }
-    setSelectedLeadId(reqId);
-    setUnlockModalOpen(true);
+
+    const userRole = (user?.role || user?.user?.role || '').toString().toUpperCase();
+    if (userRole !== 'TUTOR' && userRole !== 'ADMIN') {
+      showToast('Only registered Tutors can apply for student requirements', 'warning');
+      return;
+    }
+
+    try {
+      setApplyingId(reqId);
+      await client.post(`/requirements/${reqId}/apply`);
+      showToast('Successfully submitted your proposal to the student!', 'success');
+      setAppliedIds((prev) => new Set(prev).add(reqId));
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Application submitted or pending response', 'info');
+      setAppliedIds((prev) => new Set(prev).add(reqId));
+    } finally {
+      setApplyingId(null);
+    }
   };
 
   return (
@@ -226,6 +238,8 @@ const FindStudentsPage = () => {
               <div className="mn-fs-grid">
                 {requirements.map((req, idx) => {
                   const reqId = req._id || req.id || idx;
+                  const isApplied = appliedIds.has(reqId);
+                  const isApplying = applyingId === reqId;
 
                   const budgetText =
                     typeof req.budget === 'object' && req.budget !== null
@@ -294,17 +308,23 @@ const FindStudentsPage = () => {
                       <div className="mn-fs-card-footer">
                         <div className="mn-fs-status-tag">
                           <span>Status:</span>
-                          <span className="mn-fs-status-open">🟢 Open Requirement</span>
+                          <span className="mn-fs-status-open">🟢 Open for Proposals</span>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleUnlockContact(reqId)}
-                          className="mn-fs-apply-btn flex items-center justify-center gap-1.5 font-bold cursor-pointer"
-                          title="Unlock Direct Student Phone, Email & WhatsApp"
-                        >
-                          <span>🔓 Unlock Contact</span>
-                        </button>
+                        {isApplied ? (
+                          <button type="button" disabled className="mn-fs-applied-btn">
+                            ✓ Proposal Sent
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleApplyLead(reqId)}
+                            disabled={isApplying}
+                            className="mn-fs-apply-btn"
+                          >
+                            {isApplying ? 'Unlocking...' : '🔓 Unlock Contact'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -314,15 +334,6 @@ const FindStudentsPage = () => {
           </div>
         )}
       </div>
-
-      {/* Unlock Contact Modal */}
-      {unlockModalOpen && (
-        <UnlockContactModal
-          isOpen={unlockModalOpen}
-          onClose={() => setUnlockModalOpen(false)}
-          tutorId={selectedLeadId}
-        />
-      )}
     </div>
   );
 };

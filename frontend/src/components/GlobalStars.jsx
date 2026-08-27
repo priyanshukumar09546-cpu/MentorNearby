@@ -8,109 +8,61 @@ export default function GlobalStars({ show }) {
   if (!isVisible) return null;
 
   return (
-    <>
-      {/* 1. Deep Fixed Pitch Black Base */}
+    <div
+      id="astrotalk-global-starfield"
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 0,
+        pointerEvents: "none",
+        backgroundColor: "#000000",
+        backgroundImage: `
+          radial-gradient(circle at 20px 30px, #ffffff 1.6px, transparent 1.6px),
+          radial-gradient(circle at 65px 95px, #fef08a 1.4px, transparent 1.4px),
+          radial-gradient(circle at 120px 45px, #ffffff 2.2px, transparent 2.2px),
+          radial-gradient(circle at 180px 140px, #ffffff 1.6px, transparent 1.6px),
+          radial-gradient(circle at 240px 70px, #fef08a 2px, transparent 2px),
+          radial-gradient(circle at 310px 180px, #ffffff 2.4px, transparent 2.4px),
+          radial-gradient(circle at 45px 230px, #ffffff 1.6px, transparent 1.6px),
+          radial-gradient(circle at 140px 280px, #fef08a 2px, transparent 2px),
+          radial-gradient(circle at 220px 220px, #ffffff 2px, transparent 2px),
+          radial-gradient(circle at 300px 310px, #ffffff 2.6px, transparent 2.6px),
+          radial-gradient(circle at 370px 90px, #ffffff 1.6px, transparent 1.6px),
+          radial-gradient(circle at 420px 250px, #fef08a 2px, transparent 2px)
+        `,
+        backgroundRepeat: "repeat",
+        backgroundSize: "380px 340px",
+      }}
+    >
+      {/* Astrotalk yellow glow left bottom */}
       <div
         style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 0,
-          backgroundColor: "#000000",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* 2. Primary CSS Starfield Layer (High Density & Crisp White/Gold Stars) */}
-      <div
-        className="astro-stars-layer-1"
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 1,
-          pointerEvents: "none",
-          backgroundImage: `
-            radial-gradient(1.5px 1.5px at 8% 12%, rgba(255,255,255,0.95), transparent),
-            radial-gradient(1.2px 1.2px at 22% 35%, rgba(254,240,138,0.9), transparent),
-            radial-gradient(1.8px 1.8px at 38% 18%, rgba(255,255,255,1), transparent),
-            radial-gradient(1.2px 1.2px at 52% 28%, rgba(255,255,255,0.85), transparent),
-            radial-gradient(1.6px 1.6px at 68% 75%, rgba(254,240,138,0.95), transparent),
-            radial-gradient(1.3px 1.3px at 82% 22%, rgba(255,255,255,0.9), transparent),
-            radial-gradient(1.5px 1.5px at 94% 65%, rgba(255,255,255,0.95), transparent),
-            radial-gradient(1.2px 1.2px at 14% 82%, rgba(255,255,255,0.85), transparent),
-            radial-gradient(2px 2px at 58% 55%, rgba(255,255,255,1), transparent),
-            radial-gradient(1.4px 1.4px at 45% 88%, rgba(254,240,138,0.9), transparent),
-            radial-gradient(1.2px 1.2px at 88% 92%, rgba(255,255,255,0.85), transparent),
-            radial-gradient(1.6px 1.6px at 30% 62%, rgba(255,255,255,0.95), transparent)
-          `,
-          backgroundRepeat: "repeat",
-          backgroundSize: "420px 420px",
-          opacity: 0.95,
-          animation: "twinkleStarfield 4s ease-in-out infinite alternate",
-        }}
-      />
-
-      {/* 3. Secondary Micro-Stars Layer (Deep Universe Texture) */}
-      <div
-        className="astro-stars-layer-2"
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 1,
-          pointerEvents: "none",
-          backgroundImage: `
-            radial-gradient(1px 1px at 18% 22%, rgba(255,255,255,0.7), transparent),
-            radial-gradient(1.2px 1.2px at 42% 48%, rgba(255,255,255,0.8), transparent),
-            radial-gradient(1px 1px at 64% 15%, rgba(255,255,255,0.65), transparent),
-            radial-gradient(1.3px 1.3px at 78% 52%, rgba(254,240,138,0.8), transparent),
-            radial-gradient(1px 1px at 28% 85%, rgba(255,255,255,0.75), transparent),
-            radial-gradient(1.4px 1.4px at 92% 38%, rgba(255,255,255,0.85), transparent)
-          `,
-          backgroundRepeat: "repeat",
-          backgroundSize: "320px 320px",
-          opacity: 0.85,
-          animation: "twinkleStarfield 6s ease-in-out infinite alternate-reverse",
-        }}
-      />
-
-      {/* 4. Astrotalk Warm Yellow/Gold Ambient Glow Bottom-Left */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: "-5%",
-          left: "-5%",
+          position: "absolute",
+          bottom: 0,
+          left: 0,
           width: "550px",
-          height: "550px",
-          background: "radial-gradient(circle, rgba(251,191,36,0.14) 0%, rgba(251,191,36,0.04) 35%, transparent 70%)",
+          height: "450px",
+          background: "radial-gradient(circle, rgba(251,191,36,0.18) 0%, rgba(251,191,36,0.05) 40%, transparent 70%)",
           filter: "blur(35px)",
-          zIndex: 1,
           pointerEvents: "none",
         }}
       />
-
-      {/* 5. Astrotalk Subtle Amber Ambient Glow Top-Right */}
+      {/* Astrotalk subtle amber glow top right */}
       <div
         style={{
-          position: "fixed",
-          top: "-5%",
-          right: "-5%",
-          width: "500px",
-          height: "500px",
-          background: "radial-gradient(circle, rgba(245,158,11,0.1) 0%, rgba(245,158,11,0.03) 35%, transparent 70%)",
+          position: "absolute",
+          top: 0,
+          right: 0,
+          width: "450px",
+          height: "350px",
+          background: "radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%)",
           filter: "blur(35px)",
-          zIndex: 1,
           pointerEvents: "none",
         }}
       />
-
-      {/* CSS Twinkle Animation */}
-      <style>{`
-        @keyframes twinkleStarfield {
-          0% { opacity: 0.65; transform: scale(1); }
-          50% { opacity: 0.95; }
-          100% { opacity: 1; transform: scale(1.002); }
-        }
-      `}</style>
-    </>
+    </div>
   );
 }
 

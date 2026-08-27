@@ -9,6 +9,8 @@ import React, { useState, useEffect } from 'react';
 import {
   getAdminStudents,
   getAdminStudentDetail,
+  approveStudent,
+  unapproveStudent,
   suspendStudent,
   reactivateStudent,
   deleteStudentPermanently,
@@ -83,6 +85,31 @@ const AdminStudentsPage = () => {
   const handleCopy = (text, label) => {
     navigator.clipboard.writeText(text);
     showToast(`${label} copied to clipboard!`, 'info');
+  };
+
+  // ------------------------------------------------------------
+  // ACTION 0: ✓ APPROVE / ✕ UNAPPROVE STUDENT
+  // ------------------------------------------------------------
+  const handleApprove = async (studentId) => {
+    if (!window.confirm('Approve this student profile and tuition requirements?')) return;
+    try {
+      await approveStudent(studentId);
+      showToast('Student Approved Successfully!', 'success');
+      fetchStudents();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to approve student', 'error');
+    }
+  };
+
+  const handleUnapprove = async (studentId) => {
+    if (!window.confirm('Are you sure you want to remove this student from website? Their approval will be cancelled and their tuition requirements will be hidden from /find-students.')) return;
+    try {
+      await unapproveStudent(studentId, { reason: 'Approval cancelled by admin' });
+      showToast('Student approval cancelled and removed from website listings!', 'success');
+      fetchStudents();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to cancel student approval', 'error');
+    }
   };
 
   // ------------------------------------------------------------
@@ -480,18 +507,41 @@ const AdminStudentsPage = () => {
                           >
                             {isSuspended ? '🔴 Suspended' : '🟢 Active'}
                           </span>
-                          {st.phoneVerified ? (
-                            <p className="text-[10px] text-emerald-700 font-semibold">✓ Verified</p>
+                          {st.profile?.isApproved || st.isVerified ? (
+                            <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-200">
+                              ✓ Approved
+                            </span>
                           ) : (
-                            <p className="text-[10px] text-amber-700 font-semibold">⏳ Unverified</p>
+                            <span className="inline-block bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded border border-amber-200">
+                              ⏳ Pending
+                            </span>
                           )}
                         </div>
                       </td>
 
-                      {/* 7. 4 ACTIONS */}
+                      {/* 7. ACTIONS */}
                       <td className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
                           
+                          {/* Approve / Unapprove Quick Action */}
+                          {st.profile?.isApproved || st.isVerified ? (
+                            <button
+                              onClick={() => handleUnapprove(st._id)}
+                              className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-2 py-1 rounded-full text-[11px] font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                              title="Cancel Approval / Remove Student from Website"
+                            >
+                              ✕ Unapprove
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleApprove(st._id)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                              title="Approve Student Profile &amp; Tuition Requirements"
+                            >
+                              ✓ Approve
+                            </button>
+                          )}
+
                           {/* ICON 1: 👁️ View Full Details Modal */}
                           <button
                             onClick={() => handleOpenView(st)}
@@ -682,7 +732,30 @@ const AdminStudentsPage = () => {
             </div>
 
             {/* Footer */}
-            <div className="mt-6 pt-4 border-t border-[#E2E8F0] flex justify-end">
+            <div className="mt-6 pt-4 border-t border-[#E2E8F0] flex justify-between items-center flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                {viewModalData.student?.profile?.isApproved || viewModalData.student?.isVerified ? (
+                  <button
+                    onClick={() => {
+                      handleUnapprove(viewModalData.student._id);
+                      setViewModalData({ isOpen: false, student: null, loading: false });
+                    }}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                  >
+                    ✕ Cancel Approval (Remove from Website)
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      handleApprove(viewModalData.student._id);
+                      setViewModalData({ isOpen: false, student: null, loading: false });
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                  >
+                    ✓ Approve Student &amp; Requirements
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setViewModalData({ isOpen: false, student: null, loading: false })}
                 className="admin-btn admin-btn-secondary text-xs"

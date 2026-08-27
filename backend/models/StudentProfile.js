@@ -108,7 +108,28 @@ const StudentProfileSchema = new mongoose.Schema({
     icon: String,
     color: String,
     earnedAt: { type: Date, default: Date.now }
-  }]
+  }],
+  isApproved: {
+    type: Boolean,
+    default: false
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationStatus: {
+    type: String,
+    enum: ['PENDING', 'VERIFIED', 'REJECTED'],
+    default: 'PENDING'
+  },
+  profileVisibility: {
+    type: Boolean,
+    default: true
+  },
+  rejectionReason: {
+    type: String,
+    default: ''
+  }
 }, {
   timestamps: true
 });

@@ -28,6 +28,8 @@ const {
   getAnalytics,
   getStudents,
   getStudentDetail,
+  approveStudent,
+  unapproveStudent,
   suspendStudent,
   reactivateStudent,
   deleteStudentPermanently,
@@ -78,6 +80,12 @@ router.post('/users/:id/unsuspend', unsuspendUser);
 // Student specialized views & actions
 router.get('/students', getStudents);
 router.get('/students/:id', getStudentDetail);
+router.put('/students/:id/approve', approveStudent);
+router.post('/students/:id/approve', approveStudent);
+router.patch('/students/:id/approve', approveStudent);
+router.put('/students/:id/unapprove', unapproveStudent);
+router.post('/students/:id/unapprove', unapproveStudent);
+router.patch('/students/:id/unapprove', unapproveStudent);
 router.put('/students/:id/suspend', suspendStudent);
 router.post('/students/:id/suspend', suspendStudent);
 router.patch('/students/:id/suspend', suspendStudent);

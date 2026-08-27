@@ -992,6 +992,141 @@ exports.getStudentDetail = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    Approve student profile
+// @route   PUT /api/admin/students/:id/approve
+// @access  Private (Admin only)
+exports.approveStudent = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  let studentProfile = await StudentProfile.findOne({
+    $or: [
+      { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null }
+    ]
+  }).populate('user', 'name email phone role');
+
+  let userDoc = null;
+  if (studentProfile && studentProfile.user) {
+    userDoc = studentProfile.user;
+  } else {
+    userDoc = await User.findById(id);
+    if (userDoc) {
+      studentProfile = await StudentProfile.findOne({ user: userDoc._id });
+    }
+  }
+
+  if (!userDoc && !studentProfile) {
+    return error(res, 'Student not found', 404);
+  }
+
+  const userId = userDoc ? userDoc._id : studentProfile.user;
+
+  if (studentProfile) {
+    studentProfile.isApproved = true;
+    studentProfile.isVerified = true;
+    studentProfile.profileVisibility = true;
+    studentProfile.verificationStatus = 'VERIFIED';
+    await studentProfile.save();
+  } else {
+    studentProfile = await StudentProfile.create({
+      user: userId,
+      isApproved: true,
+      isVerified: true,
+      profileVisibility: true,
+      verificationStatus: 'VERIFIED'
+    });
+  }
+
+  if (userDoc) {
+    userDoc.isVerified = true;
+    userDoc.phoneVerified = true;
+    await userDoc.save();
+  }
+
+  try {
+    const TuitionRequirement = mongoose.model('TuitionRequirement');
+    await TuitionRequirement.updateMany(
+      { student: userId },
+      { $set: { isApproved: true, status: 'OPEN' } }
+    );
+  } catch (_) {}
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'STUDENT_APPROVED',
+    targetType: 'USER',
+    targetId: userId,
+    details: `Student ${userDoc?.name || 'Student'} approved by admin.`,
+    req,
+  });
+
+  return success(res, 'Student approved successfully', { student: studentProfile });
+});
+
+// @desc    Unapprove / Cancel approval for student
+// @route   PUT /api/admin/students/:id/unapprove
+// @access  Private (Admin only)
+exports.unapproveStudent = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { reason = 'Approval cancelled by admin' } = req.body;
+
+  let studentProfile = await StudentProfile.findOne({
+    $or: [
+      { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null }
+    ]
+  }).populate('user', 'name email phone role');
+
+  let userDoc = null;
+  if (studentProfile && studentProfile.user) {
+    userDoc = studentProfile.user;
+  } else {
+    userDoc = await User.findById(id);
+    if (userDoc) {
+      studentProfile = await StudentProfile.findOne({ user: userDoc._id });
+    }
+  }
+
+  if (!userDoc && !studentProfile) {
+    return error(res, 'Student not found', 404);
+  }
+
+  const userId = userDoc ? userDoc._id : studentProfile.user;
+
+  if (studentProfile) {
+    studentProfile.isApproved = false;
+    studentProfile.isVerified = false;
+    studentProfile.profileVisibility = false;
+    studentProfile.verificationStatus = 'PENDING';
+    studentProfile.rejectionReason = reason;
+    await studentProfile.save();
+  }
+
+  if (userDoc) {
+    userDoc.isVerified = false;
+    await userDoc.save();
+  }
+
+  try {
+    const TuitionRequirement = mongoose.model('TuitionRequirement');
+    await TuitionRequirement.updateMany(
+      { student: userId },
+      { $set: { isApproved: false, status: 'PAUSED' } }
+    );
+  } catch (_) {}
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'STUDENT_UNAPPROVED',
+    targetType: 'USER',
+    targetId: userId,
+    details: `Student ${userDoc?.name || 'Student'} approval cancelled and unapproved.`,
+    req,
+  });
+
+  return success(res, 'Student approval cancelled and unapproved successfully', { student: studentProfile });
+});
+
 exports.suspendStudent = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const { reason } = req.body;

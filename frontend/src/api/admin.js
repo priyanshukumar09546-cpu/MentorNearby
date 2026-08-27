@@ -33,6 +33,8 @@ export const deleteTutorPermanently = (id, data) => client.delete(`/admin/tutors
 // Specialized Student Management APIs
 export const getAdminStudents = (params) => client.get('/admin/students', { params });
 export const getAdminStudentDetail = (id) => client.get(`/admin/students/${id}`);
+export const approveStudent = (id) => client.put(`/admin/students/${id}/approve`);
+export const unapproveStudent = (id, data) => client.put(`/admin/students/${id}/unapprove`, data);
 export const suspendStudent = (id, data) => client.post(`/admin/students/${id}/suspend`, data);
 export const reactivateStudent = (id) => client.post(`/admin/students/${id}/reactivate`);
 export const deleteStudentPermanently = (id, data) => client.delete(`/admin/students/${id}`, { data });

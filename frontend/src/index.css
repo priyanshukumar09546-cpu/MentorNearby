@@ -51,9 +51,12 @@ html.light body {
 .dark [class*="bg-[#FDFBF7]"],
 .dark [class*="bg-[#FAF8F5]"],
 .dark [class*="bg-[#141414]"],
-.dark [class*="bg-[#1E293B]"] {
-  background: rgba(15, 15, 18, 0.6) !important;
-  background-color: rgba(15, 15, 18, 0.6) !important;
+.dark [class*="bg-[#1E293B]"],
+.dark [class*="bg-gray-900"],
+.dark [class*="bg-slate-800"],
+.dark [class*="bg-[#111]"] {
+  background: rgba(18, 18, 18, 0.7) !important;
+  background-color: rgba(18, 18, 18, 0.7) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;

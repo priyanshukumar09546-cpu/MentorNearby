@@ -8,6 +8,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import CookieConsent from './components/common/CookieConsent';
+import StarsBackground from './components/StarsBackground';
 import GlobalStars from './components/GlobalStars';
 
 // Primary Core Routes (Eagerly loaded for instant first paint)
@@ -114,17 +115,17 @@ const AppContent = () => {
   return (
     <div
       style={{
-        backgroundColor: isDarkMode ? '#000000' : '#FFFBF5',
+        backgroundColor: isDarkMode ? 'transparent' : '#FFFBF5',
         minHeight: '100vh',
         position: 'relative',
       }}
       className={isDarkMode ? 'dark text-white' : 'light text-gray-900'}
     >
-      {/* CSS STARS - FIXED BEHIND EVERYTHING, FOR ENTIRE WEBSITE */}
-      {isDarkMode && <GlobalStars show={true} />}
+      {/* FIXED STARS & AMBIENT GLOW BACKGROUND IN DARK MODE (zIndex: 0) */}
+      {isDarkMode && <StarsBackground />}
 
-      {/* CONTENT - ON TOP OF STARS (zIndex: 2) */}
-      <div style={{ position: 'relative', zIndex: 2, minHeight: '100vh' }}>
+      {/* CONTENT - RELATIVE ON TOP OF STARS (zIndex: 10) */}
+      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', background: 'transparent' }}>
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
             {/* Public Admin Entry & Login */}

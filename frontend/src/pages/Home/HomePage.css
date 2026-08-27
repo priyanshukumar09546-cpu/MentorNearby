@@ -1256,9 +1256,27 @@ html.dark .mn-hero-visual-frame {
 /* ============================================================
    EXPLICIT DARK THEME HOMEPAGE COMPONENT STYLES
    ============================================================ */
+html.dark .mn-home-root,
+html.dark .mn-hero-section,
+html.dark .mn-directory-section,
+html.dark .mn-why-choose-section,
+html.dark .mn-trust-section,
+html.dark .mn-testimonials-section,
+html.dark .mn-faq-section,
+.dark .mn-home-root,
+.dark .mn-hero-section,
+.dark .mn-directory-section,
+.dark .mn-why-choose-section,
+.dark .mn-trust-section,
+.dark .mn-testimonials-section,
+.dark .mn-faq-section {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
 html.dark .mn-hero-search-bar,
 .dark .mn-hero-search-bar {
-  background: rgba(15, 15, 18, 0.75) !important;
+  background: rgba(18, 18, 18, 0.75) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   backdrop-filter: blur(16px) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
@@ -1273,7 +1291,7 @@ html.dark .mn-search-select,
 
 html.dark .mn-cta-card,
 .dark .mn-cta-card {
-  background: rgba(15, 15, 18, 0.6) !important;
+  background: rgba(18, 18, 18, 0.7) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(12px) !important;
   color: #FFFFFF !important;
@@ -1281,7 +1299,7 @@ html.dark .mn-cta-card,
 
 html.dark .mn-cta-card:hover,
 .dark .mn-cta-card:hover {
-  background: rgba(22, 22, 26, 0.8) !important;
+  background: rgba(25, 25, 28, 0.85) !important;
   border-color: rgba(251, 191, 36, 0.25) !important;
   box-shadow: 0 0 30px rgba(251, 191, 36, 0.12) !important;
 }
@@ -1298,7 +1316,7 @@ html.dark .mn-cta-card-sub,
 
 html.dark .mn-trust-mini-item,
 .dark .mn-trust-mini-item {
-  background: rgba(15, 15, 18, 0.5) !important;
+  background: rgba(18, 18, 18, 0.6) !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   backdrop-filter: blur(10px) !important;
 }
@@ -1315,14 +1333,14 @@ html.dark .mn-trust-mini-desc,
 
 html.dark .mn-subject-tile,
 .dark .mn-subject-tile {
-  background: rgba(15, 15, 18, 0.6) !important;
+  background: rgba(18, 18, 18, 0.7) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(12px) !important;
 }
 
 html.dark .mn-subject-tile:hover,
 .dark .mn-subject-tile:hover {
-  background: rgba(22, 22, 26, 0.8) !important;
+  background: rgba(25, 25, 28, 0.85) !important;
   border-color: rgba(251, 191, 36, 0.25) !important;
   box-shadow: 0 0 25px rgba(251, 191, 36, 0.15) !important;
 }
@@ -1334,7 +1352,7 @@ html.dark .mn-subject-tile-name,
 
 html.dark .mn-why-choose-card,
 .dark .mn-why-choose-card {
-  background: rgba(15, 15, 18, 0.6) !important;
+  background: rgba(18, 18, 18, 0.7) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(12px) !important;
 }
@@ -1357,7 +1375,7 @@ html.dark .mn-why-choose-desc,
 
 html.dark .mn-faq-item,
 .dark .mn-faq-item {
-  background: rgba(15, 15, 18, 0.6) !important;
+  background: rgba(18, 18, 18, 0.7) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(12px) !important;
 }
@@ -1374,7 +1392,7 @@ html.dark .mn-faq-answer,
 
 html.dark .mn-cta-banner-section,
 .dark .mn-cta-banner-section {
-  background: rgba(15, 15, 18, 0.7) !important;
+  background: rgba(18, 18, 18, 0.75) !important;
   border: 1px solid rgba(250, 204, 21, 0.2) !important;
   backdrop-filter: blur(16px) !important;
   box-shadow: 0 0 40px rgba(250, 204, 21, 0.08) !important;

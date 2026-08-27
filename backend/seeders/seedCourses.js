@@ -412,9 +412,9 @@ const seedCoursesData = async () => {
         const year = years[i];
         const isFree = year === 2025; // 2025 Board Paper is Configured Free Sample!
 
-        // Real YouTube video URLs (cbse solution videos)
-        const youtubeId = 'dQw4w9WgXcQ';
-        const youtubeUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
+        // Video solutions coming soon - empty video URLs
+        const youtubeId = '';
+        const youtubeUrl = '';
 
         await CoursePaper.create({
           course: course._id,
@@ -422,16 +422,16 @@ const seedCoursesData = async () => {
           title: `CBSE Class ${def.classLevel} ${def.subject} Board Paper ${year} — Complete Video Solution`,
           paperCode: `Set 1 / Code ${def.classLevel}0/${i + 1}/1`,
           isFreeSample: isFree,
-          youtubeUrl,
-          youtubeVideoId: youtubeId,
+          youtubeUrl: '',
+          youtubeVideoId: '',
           durationMinutes: 48,
           video: {
-            url: `https://res.cloudinary.com/tutornearby/video/upload/class${def.classLevel}_${def.subject.toLowerCase().replace(/\s+/g, '_')}_${year}_pyq.mp4`,
+            url: '',
             title: `Class ${def.classLevel} ${def.subject} ${year} Paper Step-by-Step Video Analysis`,
             durationSeconds: 2880,
             thumbnail: '',
-            youtubeUrl,
-            youtubeVideoId: youtubeId,
+            youtubeUrl: '',
+            youtubeVideoId: '',
           },
           ppt: {
             url: `https://res.cloudinary.com/tutornearby/raw/upload/CBSE_${def.classLevel}_${def.subject.replace(/\s+/g, '_')}_${year}_Solution_Notes.pdf`,

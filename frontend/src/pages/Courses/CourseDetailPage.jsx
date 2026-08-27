@@ -429,29 +429,54 @@ const CourseDetailPage = () => {
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleWatchVideo(paper)}
-                      style={{
-                        width: '100%',
-                        height: 36,
-                        background: '#DC2626',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: 6,
-                        fontSize: 12.5,
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                        boxShadow: '0 2px 6px rgba(220, 38, 38, 0.2)',
-                      }}
-                    >
-                      <span>▶</span>
-                      <span>Watch on YouTube</span>
-                    </button>
+                    {youtubeUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => handleWatchVideo(paper)}
+                        style={{
+                          width: '100%',
+                          height: 36,
+                          background: '#DC2626',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: 6,
+                          fontSize: 12.5,
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          boxShadow: '0 2px 6px rgba(220, 38, 38, 0.2)',
+                        }}
+                      >
+                        <span>▶</span>
+                        <span>Watch on YouTube</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        style={{
+                          width: '100%',
+                          height: 36,
+                          background: '#94A3B8',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: 6,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'not-allowed',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <span>⏳</span>
+                        <span>Coming Soon - Videos Uploading</span>
+                      </button>
+                    )}
                   </div>
                 );
               })}

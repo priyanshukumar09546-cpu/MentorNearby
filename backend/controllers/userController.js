@@ -284,6 +284,21 @@ exports.markAllNotificationsRead = asyncHandler(async (req, res, next) => {
   return success(res, 'All notifications marked as read');
 });
 
+// @desc    Get featured student requirements / leads
+// @route   GET /api/users/students/featured
+// @access  Public
+exports.getFeaturedStudents = asyncHandler(async (req, res, next) => {
+  const TuitionRequirement = require('../models/TuitionRequirement');
+  const requirements = await TuitionRequirement.find({
+    status: { $in: ['OPEN', 'Open'] }
+  })
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .lean();
+
+  return success(res, 'Featured students retrieved successfully', { students: requirements });
+});
+
 // @desc    Get public student profile by ID or Requirement ID
 // @route   GET /api/users/students/:id
 // @access  Public

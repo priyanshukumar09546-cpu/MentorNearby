@@ -123,14 +123,41 @@ exports.getTutorDashboard = asyncHandler(async (req, res, next) => {
 });
 
 exports.updateAvailability = asyncHandler(async (req, res, next) => {
-  const tutorProfile = await TutorProfile.findOneAndUpdate(
-    { user: req.user.id },
-    { availability: req.body.availability },
-    { new: true, runValidators: true }
-  );
+  let availability = req.body.availability || req.body;
+
+  // If payload sent as { mondayFriday, weekdays, saturday, sunday }
+  if (req.body.mondayFriday !== undefined || req.body.weekdays !== undefined || req.body.saturday !== undefined || req.body.sunday !== undefined) {
+    const weekdaysSlot = req.body.mondayFriday || req.body.weekdays || '05:00 PM - 09:00 PM';
+    const satSlot = req.body.saturday || '';
+    const sunSlot = req.body.sunday || '';
+    
+    availability = {
+      monday: { available: true, slots: [weekdaysSlot] },
+      tuesday: { available: true, slots: [weekdaysSlot] },
+      wednesday: { available: true, slots: [weekdaysSlot] },
+      thursday: { available: true, slots: [weekdaysSlot] },
+      friday: { available: true, slots: [weekdaysSlot] },
+      saturday: { available: Boolean(satSlot && satSlot !== 'Not Available'), slots: satSlot ? [satSlot] : [] },
+      sunday: { available: Boolean(sunSlot && sunSlot !== 'Not Available'), slots: sunSlot ? [sunSlot] : [] },
+      mondayFriday: weekdaysSlot,
+      weekdays: weekdaysSlot,
+      saturdayText: satSlot,
+      sundayText: sunSlot
+    };
+  }
+
+  let tutorProfile = await TutorProfile.findOne({
+    $or: [{ user: req.user.id }, { _id: req.user.id }]
+  });
 
   if (!tutorProfile) {
-    return error(res, 'Tutor profile not found', 404);
+    tutorProfile = await TutorProfile.create({
+      user: req.user.id,
+      availability
+    });
+  } else {
+    tutorProfile.availability = availability;
+    await tutorProfile.save({ validateBeforeSave: false });
   }
 
   return success(res, 'Availability updated successfully', { availability: tutorProfile.availability });

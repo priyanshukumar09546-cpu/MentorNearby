@@ -30,13 +30,20 @@ router.post('/upload-id', uploadDocument, uploadTutorId);
 router.get('/stats', protect, authorize('TUTOR'), getTutorStats);
 router.get('/dashboard/me', protect, authorize('TUTOR'), getTutorDashboard);
 router.get('/dashboard', protect, authorize('TUTOR'), getTutorDashboard);
-router.put('/profile/me', protect, authorize('TUTOR'), updateTutorProfile);
-router.put('/profile', protect, authorize('TUTOR'), updateTutorProfile);
-router.post('/profile/me/photo', protect, authorize('TUTOR'), uploadPhoto, uploadProfilePhoto);
-router.post('/profile/me/video', protect, authorize('TUTOR'), uploadVideo, uploadIntroVideo);
-router.put('/profile/me/availability', protect, authorize('TUTOR'), updateAvailability);
-router.put('/profile/me/safety', protect, authorize('TUTOR'), updateSafetyPreferences);
-router.put('/profile/me/visibility', protect, authorize('TUTOR'), toggleProfileVisibility);
+router.put('/profile/me', protect, authorize('TUTOR', 'ADMIN'), updateTutorProfile);
+router.put('/profile', protect, authorize('TUTOR', 'ADMIN'), updateTutorProfile);
+router.post('/profile/me/photo', protect, authorize('TUTOR', 'ADMIN'), uploadPhoto, uploadProfilePhoto);
+router.post('/photo', protect, authorize('TUTOR', 'ADMIN'), uploadPhoto, uploadProfilePhoto);
+router.post('/profile/me/video', protect, authorize('TUTOR', 'ADMIN'), uploadVideo, uploadIntroVideo);
+router.post('/video', protect, authorize('TUTOR', 'ADMIN'), uploadVideo, uploadIntroVideo);
+router.put('/profile/me/availability', protect, authorize('TUTOR', 'ADMIN'), updateAvailability);
+router.put('/availability', protect, authorize('TUTOR', 'ADMIN'), updateAvailability);
+router.post('/availability', protect, authorize('TUTOR', 'ADMIN'), updateAvailability);
+router.put('/profile/me/safety', protect, authorize('TUTOR', 'ADMIN'), updateSafetyPreferences);
+router.put('/safety', protect, authorize('TUTOR', 'ADMIN'), updateSafetyPreferences);
+router.put('/profile/me/visibility', protect, authorize('TUTOR', 'ADMIN'), toggleProfileVisibility);
+router.patch('/visibility', protect, authorize('TUTOR', 'ADMIN'), toggleProfileVisibility);
+router.put('/visibility', protect, authorize('TUTOR', 'ADMIN'), toggleProfileVisibility);
 
 // Admin approval / unapproval aliases
 const { approveTutor, unapproveTutor } = require('../controllers/adminController');

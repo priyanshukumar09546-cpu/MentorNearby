@@ -1699,21 +1699,29 @@ const EditTutorProfilePage = () => {
                 onClick={async () => {
                   try {
                     setSaving(true);
-                    await updateAvailability({
+                    const payload = {
+                      weekdays: availabilityForm.weekdays,
+                      mondayFriday: availabilityForm.weekdays,
+                      saturday: availabilityForm.saturday,
+                      sunday: availabilityForm.sunday,
                       availability: {
                         monday: { available: true, slots: [availabilityForm.weekdays] },
                         tuesday: { available: true, slots: [availabilityForm.weekdays] },
                         wednesday: { available: true, slots: [availabilityForm.weekdays] },
                         thursday: { available: true, slots: [availabilityForm.weekdays] },
                         friday: { available: true, slots: [availabilityForm.weekdays] },
-                        saturday: { available: true, slots: [availabilityForm.saturday] },
-                        sunday: { available: availabilityForm.sunday !== 'Not Available', slots: [availabilityForm.sunday] }
+                        saturday: { available: Boolean(availabilityForm.saturday && availabilityForm.saturday !== 'Not Available'), slots: availabilityForm.saturday ? [availabilityForm.saturday] : [] },
+                        sunday: { available: Boolean(availabilityForm.sunday && availabilityForm.sunday !== 'Not Available'), slots: availabilityForm.sunday ? [availabilityForm.sunday] : [] }
                       }
-                    });
+                    };
+                    console.log('Saving tutor availability payload:', payload);
+                    const res = await updateAvailability(payload);
+                    console.log('Availability save response:', res);
                     setActiveModal(null);
                     showToast('Availability schedule saved successfully!', 'success');
                   } catch (err) {
-                    showToast('Failed to save availability', 'error');
+                    console.error('Failed to save availability:', err);
+                    showToast(err.response?.data?.message || err.message || 'Failed to save availability', 'error');
                   } finally {
                     setSaving(false);
                   }

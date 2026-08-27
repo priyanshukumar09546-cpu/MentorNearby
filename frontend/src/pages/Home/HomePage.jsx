@@ -86,27 +86,22 @@ const HomePage = () => {
       try {
         setLoadingTutors(true);
         const [tutorsRes, statsRes] = await Promise.allSettled([
-          client.get('/tutors/featured'),
+          searchTutors({ limit: 8 }),
           getPublicStats(),
         ]);
 
         if (tutorsRes.status === 'fulfilled') {
-          const list = tutorsRes.value.data?.data?.tutors || tutorsRes.value.data?.tutors || tutorsRes.value.data?.data || [];
-          if (Array.isArray(list) && list.length > 0) {
+          const list = tutorsRes.value.data?.data?.tutors || tutorsRes.value.data?.data || tutorsRes.value.data?.tutors || [];
+          if (Array.isArray(list)) {
             setFeaturedTutors(list);
-          } else {
-            const fallback = await searchTutors({ limit: 6 });
-            setFeaturedTutors(fallback.data?.data?.tutors || fallback.data?.tutors || []);
           }
-        } else {
-          const fallback = await searchTutors({ limit: 6 });
-          setFeaturedTutors(fallback.data?.data?.tutors || fallback.data?.tutors || []);
         }
 
         if (statsRes.status === 'fulfilled') {
           setPublicStats(statsRes.value.data?.data || {});
         }
-      } catch (_) {
+      } catch (err) {
+        console.error('Error fetching homepage tutors:', err);
         setFeaturedTutors([]);
       } finally {
         setLoadingTutors(false);
@@ -199,7 +194,7 @@ const HomePage = () => {
                 </button>
               </form>
 
-              {/* 2 Large Action CTA Cards */}
+              {/* 3 Large Action CTA Cards */}
               <div className="mn-hero-cta-cards-row">
                 <Link to="/search" className="mn-cta-card">
                   <div className="mn-cta-card-icon-wrap">
@@ -208,6 +203,17 @@ const HomePage = () => {
                   <div className="mn-cta-card-content">
                     <div className="mn-cta-card-title">Find a Tutor</div>
                     <div className="mn-cta-card-sub">Search &amp; connect with verified tutors</div>
+                  </div>
+                  <span className="mn-cta-card-arrow">›</span>
+                </Link>
+
+                <Link to="/find-students" className="mn-cta-card">
+                  <div className="mn-cta-card-icon-wrap">
+                    <span className="mn-cta-icon">🎓</span>
+                  </div>
+                  <div className="mn-cta-card-content">
+                    <div className="mn-cta-card-title">Find Students</div>
+                    <div className="mn-cta-card-sub">Tuition leads &amp; student requests</div>
                   </div>
                   <span className="mn-cta-card-arrow">›</span>
                 </Link>
@@ -374,7 +380,7 @@ const HomePage = () => {
               <div className="mn-col-header">
                 <h3 className="mn-col-title">Featured Tutors</h3>
                 <div className="mn-col-header-right">
-                  <Link to="/search?verified=true" className="mn-col-view-all">View All</Link>
+                  <Link to="/search" className="mn-col-view-all">View All</Link>
                   <Link to="/search" className="mn-carousel-arrow-btn" aria-label="Next tutors">›</Link>
                 </div>
               </div>

@@ -38,6 +38,7 @@ const PostRequirementPage = lazy(() => import('./pages/StudentDashboard/PostRequ
 const StudentRequirementsPage = lazy(() => import('./pages/StudentDashboard/StudentRequirementsPage'));
 const TutorRequestsPage = lazy(() => import('./pages/TutorDashboard/TutorRequestsPage'));
 const FindStudentsPage = lazy(() => import('./pages/FindStudents/FindStudentsPage'));
+const StudentProfilePage = lazy(() => import('./pages/StudentProfile/StudentProfilePage'));
 const ChatPage = lazy(() => import('./pages/Chat/ChatPage'));
 const NotificationsPage = lazy(() => import('./pages/Notifications/NotificationsPage'));
 
@@ -210,6 +211,9 @@ const AppContent = () => {
                             <Route path="/students" element={<FindStudentsPage />} />
                             <Route path="/view-all-students" element={<FindStudentsPage />} />
                             <Route path="/requirements" element={<FindStudentsPage />} />
+                            <Route path="/student/:id" element={<StudentProfilePage />} />
+                            <Route path="/students/:id" element={<StudentProfilePage />} />
+                            <Route path="/student-profile/:id" element={<StudentProfilePage />} />
 
                             {/* 🎓 Courses & PYQ Mastery Routes */}
                             <Route path="/courses" element={<CoursesPage />} />

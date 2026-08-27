@@ -331,6 +331,46 @@
   margin-left: 4px;
 }
 
+.mn-fs-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mn-fs-view-btn {
+  background: transparent;
+  color: var(--color-text-primary, #0F172A);
+  border: 1px solid var(--border-color, #CBD5E1);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.dark .mn-fs-view-btn,
+[data-theme="dark"] .mn-fs-view-btn {
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.mn-fs-view-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: #94A3B8;
+}
+
+.dark .mn-fs-view-btn:hover,
+[data-theme="dark"] .mn-fs-view-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(251, 191, 36, 0.4) !important;
+}
+
 .mn-fs-apply-btn {
   background: #4338CA;
   color: #FFFFFF;

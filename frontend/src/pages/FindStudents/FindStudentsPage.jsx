@@ -274,7 +274,9 @@ const FindStudentsPage = () => {
                         </span>
                       </div>
 
-                      <h3 className="mn-fs-card-title">{req.title || `Tuition Needed for ${classText}`}</h3>
+                      <Link to={`/students/${reqId}`} className="hover:underline">
+                        <h3 className="mn-fs-card-title">{req.title || `Tuition Needed for ${classText}`}</h3>
+                      </Link>
 
                       <p className="mn-fs-card-meta">
                         👤 <strong>{req.studentName || 'Student'}</strong> • Posted {new Date(req.createdAt || Date.now()).toLocaleDateString()}
@@ -308,23 +310,33 @@ const FindStudentsPage = () => {
                       <div className="mn-fs-card-footer">
                         <div className="mn-fs-status-tag">
                           <span>Status:</span>
-                          <span className="mn-fs-status-open">🟢 Open for Proposals</span>
+                          <span className="mn-fs-status-open">🟢 Open Requirement</span>
                         </div>
 
-                        {isApplied ? (
-                          <button type="button" disabled className="mn-fs-applied-btn">
-                            ✓ Proposal Sent
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleApplyLead(reqId)}
-                            disabled={isApplying}
-                            className="mn-fs-apply-btn"
+                        <div className="mn-fs-btn-row">
+                          <Link
+                            to={`/students/${reqId}`}
+                            className="mn-fs-view-btn"
+                            title="View Full Student Details"
                           >
-                            {isApplying ? 'Unlocking...' : '🔓 Unlock Contact'}
-                          </button>
-                        )}
+                            👁️ View Profile
+                          </Link>
+
+                          {isApplied ? (
+                            <button type="button" disabled className="mn-fs-applied-btn">
+                              ✓ Unlocked
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleApplyLead(reqId)}
+                              disabled={isApplying}
+                              className="mn-fs-apply-btn"
+                            >
+                              {isApplying ? 'Unlocking...' : '🔓 Unlock Contact'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

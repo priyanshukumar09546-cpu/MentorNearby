@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const User = require('../models/User');
@@ -283,27 +284,82 @@ exports.markAllNotificationsRead = asyncHandler(async (req, res, next) => {
   return success(res, 'All notifications marked as read');
 });
 
-// @desc    Get featured students / tuition requirements for Tutors
-// @route   GET /api/users/students/featured
+// @desc    Get public student profile by ID or Requirement ID
+// @route   GET /api/users/students/:id
 // @access  Public
-exports.getFeaturedStudents = asyncHandler(async (req, res, next) => {
+exports.getPublicStudentProfile = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
   const TuitionRequirement = require('../models/TuitionRequirement');
 
-  let students = await StudentProfile.find({})
-    .populate('user', 'name email phone avatar profilePic role isSuspended')
-    .sort({ createdAt: -1 })
-    .limit(8);
-
-  let activeStudents = students.filter(s => s && s.user && !s.user.isSuspended);
-
-  // Fallback to open tuition requirements if student profiles count is low
-  if (activeStudents.length === 0) {
-    const requirements = await TuitionRequirement.find({ status: { $ne: 'CANCELLED' } })
-      .populate('student', 'name email phone avatar profilePic')
-      .sort({ createdAt: -1 })
-      .limit(8);
-    return success(res, 'Featured student requirements retrieved', { students: requirements, requirements, data: requirements });
+  // 1. Try finding TuitionRequirement first if ID corresponds to requirement
+  let requirement = null;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    requirement = await TuitionRequirement.findById(id).populate('student', 'name email avatar role createdAt');
   }
 
-  return success(res, 'Featured students retrieved successfully', { students: activeStudents, data: activeStudents });
+  let studentUserId = requirement?.student?._id || requirement?.student || id;
+
+  // 2. Find StudentProfile and User
+  let studentProfile = null;
+  let studentUser = null;
+
+  if (mongoose.Types.ObjectId.isValid(studentUserId)) {
+    studentProfile = await StudentProfile.findOne({
+      $or: [{ _id: studentUserId }, { user: studentUserId }]
+    }).populate('user', 'name email avatar role createdAt isVerified phoneVerified');
+
+    if (studentProfile && studentProfile.user) {
+      studentUser = studentProfile.user;
+    } else {
+      studentUser = await User.findById(studentUserId).select('name email avatar role createdAt isVerified phoneVerified');
+      if (studentUser) {
+        studentProfile = await StudentProfile.findOne({ user: studentUser._id });
+      }
+    }
+  }
+
+  if (!studentUser && !requirement && !studentProfile) {
+    return error(res, 'Student profile not found', 404);
+  }
+
+  // Fetch their open requirements if not already loaded
+  const studentOpenRequirements = await TuitionRequirement.find({
+    student: studentUser?._id || studentUserId,
+    status: { $in: ['OPEN', 'Open'] }
+  }).sort({ createdAt: -1 });
+
+  return success(res, 'Student profile retrieved successfully', {
+    student: {
+      _id: studentUser?._id || id,
+      name: requirement?.studentName || studentUser?.name || studentProfile?.studentDetails?.name || 'Student Lead',
+      avatar: studentUser?.avatar || studentProfile?.profilePhoto?.url || '',
+      role: studentUser?.role || 'STUDENT',
+      createdAt: studentUser?.createdAt || requirement?.createdAt || Date.now(),
+      isVerified: studentUser?.isVerified || studentProfile?.isVerified || false,
+      profile: studentProfile || {},
+      studentDetails: studentProfile?.studentDetails || {
+        class: requirement?.class || requirement?.studentClass || 'Class 10',
+        board: requirement?.board || 'CBSE',
+        medium: requirement?.medium || 'English',
+      },
+      academicDetails: studentProfile?.academicDetails || {
+        subjectsRequired: requirement?.subjects || ['All Subjects'],
+      },
+      schoolDetails: studentProfile?.schoolDetails || {},
+      location: studentProfile?.location || requirement?.location || {
+        city: requirement?.location?.city || 'Local Area',
+        area: requirement?.location?.area || 'Nearby',
+      },
+      tuitionRequirements: {
+        mode: requirement?.teachingMode || studentProfile?.tuitionRequirements?.mode || 'Home Tuition',
+        budget: requirement?.budget?.amount ? `₹${requirement.budget.amount}/mo` : (studentProfile?.tuitionRequirements?.budget || '₹5000/mo'),
+        frequency: requirement?.budget?.frequency || 'PER_MONTH',
+        preferredDays: requirement?.preferences?.days || studentProfile?.tuitionRequirements?.preferredDays || ['Monday - Friday'],
+        preferredTime: requirement?.preferences?.time || studentProfile?.tuitionRequirements?.preferredTime || 'Evening (4:00 PM - 7:00 PM)',
+      },
+      bio: studentProfile?.bio || studentProfile?.aboutMe || requirement?.preferences?.additionalRequirements || 'Seeking dedicated and qualified tutor for academic excellence.',
+      requirements: studentOpenRequirements.length > 0 ? studentOpenRequirements : (requirement ? [requirement] : []),
+      primaryRequirement: requirement || studentOpenRequirements[0] || null,
+    }
+  });
 });

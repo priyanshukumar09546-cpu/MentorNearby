@@ -13,12 +13,17 @@ const {
   markNotificationRead,
   markAllNotificationsRead,
   getFeaturedStudents,
+  getPublicStudentProfile,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 
 // Public endpoints
 router.get('/students/featured', getFeaturedStudents);
 router.get('/featured-students', getFeaturedStudents);
+router.get('/students/:id', getPublicStudentProfile);
+router.get('/student/:id', getPublicStudentProfile);
+router.get('/students/:id/public', getPublicStudentProfile);
+router.get('/public/students/:id', getPublicStudentProfile);
 
 // Protected routes
 router.use(protect);

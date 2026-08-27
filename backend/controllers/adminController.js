@@ -102,7 +102,7 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
     { $match: { paymentStatus: 'COMPLETED' } },
     { $group: { _id: null, totalRevenue: { $sum: '$paymentDetails.amount' } } }
   ]);
-  const totalRevenue = revenueAgg.length ? (revenueAgg[0].totalRevenue || 0) : 0;
+  let totalRevenue = revenueAgg.length ? (revenueAgg[0].totalRevenue || 0) : 0;
 
   // Today's Revenue Aggregation
   const startOfToday = new Date();
@@ -123,7 +123,7 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
     },
     { $group: { _id: null, periodRevenue: { $sum: '$paymentDetails.amount' } } }
   ]);
-  const periodRevenue = dateFilter ? (periodRevenueAgg.length ? (periodRevenueAgg[0].periodRevenue || 0) : 0) : totalRevenue;
+  let periodRevenue = dateFilter ? (periodRevenueAgg.length ? (periodRevenueAgg[0].periodRevenue || 0) : 0) : totalRevenue;
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const activeUsers = await User.countDocuments({ lastLogin: { $gte: thirtyDaysAgo } });
@@ -267,8 +267,8 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
   const unlockRevenue = unlockRevAgg[0]?.total || 0;
   const courseRevenue = courseRevAgg[0]?.total || 0;
   const studyRevenue = studyRevAgg[0]?.total || 0;
-  const totalRevenue = unlockRevenue + courseRevenue + studyRevenue;
-  const periodRevenue = totalRevenue;
+  totalRevenue = unlockRevenue + courseRevenue + studyRevenue;
+  periodRevenue = totalRevenue;
 
   const revenueBySource = [
     { source: 'PPT / Study Material', amount: studyRevenue, color: '#8B5CF6' },

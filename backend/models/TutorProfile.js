@@ -95,13 +95,8 @@ const TutorProfileSchema = new mongoose.Schema({
     }
   },
   availability: {
-    monday: { available: Boolean, slots: [String] },
-    tuesday: { available: Boolean, slots: [String] },
-    wednesday: { available: Boolean, slots: [String] },
-    thursday: { available: Boolean, slots: [String] },
-    friday: { available: Boolean, slots: [String] },
-    saturday: { available: Boolean, slots: [String] },
-    sunday: { available: Boolean, slots: [String] }
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   },
   location: {
     area: String,

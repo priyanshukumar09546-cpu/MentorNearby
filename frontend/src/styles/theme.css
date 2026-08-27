@@ -113,10 +113,10 @@
   --color-bg: #000000;
   --color-bg-secondary: #0a0a0a;
   --color-bg-tertiary: #111111;
-  --color-surface: #141414;
-  --color-surface-hover: #1c1c1c;
-  --color-surface-raised: #1f1f1f;
-  --color-surface-overlay: rgba(0, 0, 0, 0.9);
+  --color-surface: rgba(15, 15, 18, 0.6);
+  --color-surface-hover: rgba(22, 22, 26, 0.8);
+  --color-surface-raised: rgba(18, 18, 22, 0.65);
+  --color-surface-overlay: rgba(0, 0, 0, 0.85);
 
   /* Typography */
   --color-text-primary: #FFFFFF;
@@ -126,9 +126,9 @@
   --color-text-inverse: #000000;
 
   /* Borders & Dividers */
-  --color-border: #27272A;
-  --color-border-subtle: #18181B;
-  --color-border-dark: #3F3F46;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-dark: rgba(255, 255, 255, 0.15);
 
   /* MentorNearby Brand Gold Accent */
   --color-gold: #F59E0B;
@@ -161,21 +161,21 @@
   --color-info-text: #93C5FD;
 
   /* Navbar */
-  --navbar-bg: #000000;
-  --navbar-border: #27272A;
+  --navbar-bg: rgba(0, 0, 0, 0.72);
+  --navbar-border: rgba(255, 255, 255, 0.08);
   --navbar-text: #FFFFFF;
   --navbar-text-hover: #F59E0B;
   --navbar-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
 
   /* Cards */
-  --card-bg: #141414;
-  --card-border: #27272A;
+  --card-bg: rgba(15, 15, 18, 0.6);
+  --card-border: rgba(255, 255, 255, 0.08);
   --card-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
   --card-shadow-hover: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 15px rgba(245, 158, 11, 0.08);
 
   /* Inputs & Forms */
-  --input-bg: #111111;
-  --input-border: #27272A;
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.1);
   --input-border-focus: #F59E0B;
   --input-text: #F8FAFC;
   --input-placeholder: #64748B;

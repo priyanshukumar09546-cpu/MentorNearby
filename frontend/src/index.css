@@ -1,7 +1,7 @@
 @import './styles/theme.css';
 
 /* Entire website black when dark */
-.dark, html.dark, html.dark body, html.dark #root {
+html.dark, html.dark body, html.dark #root {
   background: #000000 !important;
   background-color: #000000 !important;
   color: #ffffff !important;
@@ -12,7 +12,7 @@ html.light body {
   color: #000000 !important;
 }
 
-/* All sections transparent so black + stars show through */
+/* All main wrappers and sections transparent so background stars show through */
 .dark main,
 .dark section,
 .dark .mn-home-root,
@@ -24,6 +24,8 @@ html.light body {
 .dark .mn-testimonials-section,
 .dark .mn-faq-section,
 .dark .admin-main-wrapper,
+.dark .mn-find-page-root,
+.dark .mn-fs-page,
 .dark div[class*="min-h-screen"],
 .dark div[class*="min-h-"] {
   background: transparent !important;
@@ -41,10 +43,15 @@ html.light body {
 .dark .mn-directory-col,
 .dark .mn-subject-tile,
 .dark .astro-glow,
+.dark .mn-find-tutor-card,
+.dark .mn-fs-card,
+.dark .mn-find-top-tutors-sidebar,
 .dark [class*="bg-white"],
 .dark [class*="bg-[#FFFBF5]"],
 .dark [class*="bg-[#FDFBF7]"],
-.dark [class*="bg-[#FAF8F5]"] {
+.dark [class*="bg-[#FAF8F5]"],
+.dark [class*="bg-[#141414]"],
+.dark [class*="bg-[#1E293B]"] {
   background: rgba(15, 15, 18, 0.6) !important;
   background-color: rgba(15, 15, 18, 0.6) !important;
   backdrop-filter: blur(12px) !important;
@@ -60,6 +67,8 @@ html.light body {
 .dark .mn-stat-vertical-card:hover,
 .dark .mn-directory-col:hover,
 .dark .mn-subject-tile:hover,
+.dark .mn-find-tutor-card:hover,
+.dark .mn-fs-card:hover,
 .dark .astro-glow:hover {
   background: rgba(22, 22, 26, 0.75) !important;
   box-shadow: 0 0 35px rgba(251, 191, 36, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;

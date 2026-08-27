@@ -33,7 +33,7 @@ exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
   const existingUnlock = await ContactUnlock.findOne({
     user: studentId,
     tutor: tutorId,
-    status: { $in: ['CONTACT_UNLOCKED', 'ACCEPTED'] }
+    paymentStatus: 'COMPLETED'
   });
 
   if (existingUnlock) {
@@ -53,11 +53,11 @@ exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
 
   const previousUnlocksCount = await ContactUnlock.countDocuments({
     user: studentId,
-    status: { $in: ['CONTACT_UNLOCKED', 'ACCEPTED'] }
+    paymentStatus: 'COMPLETED'
   });
 
   const nextUnlockNumber = previousUnlocksCount + 1;
-  const price = 100;
+  const price = 99;
 
   return success(res, 'Unlock eligibility', {
     alreadyUnlocked: false,
@@ -93,18 +93,18 @@ exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
   const { tutorId } = req.body;
   const studentId = req.user.id;
 
-  const existingUnlock = await ContactUnlock.findOne({ user: studentId, tutor: tutorId, status: { $in: ['CONTACT_UNLOCKED', 'ACCEPTED'] } });
+  const existingUnlock = await ContactUnlock.findOne({ user: studentId, tutor: tutorId, paymentStatus: 'COMPLETED' });
   if (existingUnlock) {
     return error(res, 'Contact already unlocked', 400);
   }
 
   const previousUnlocksCount = await ContactUnlock.countDocuments({
     user: studentId,
-    status: { $in: ['CONTACT_UNLOCKED', 'ACCEPTED'] }
+    paymentStatus: 'COMPLETED'
   });
 
   const nextUnlockNumber = previousUnlocksCount + 1;
-  const price = 100;
+  const price = 99;
 
   const order = await razorpayService.createOrder(price, 'INR', { userId: studentId, tutorId });
 

@@ -927,50 +927,74 @@
 :root[data-theme="dark"],
 .dark,
 .theme-dark,
+/* ============================================================
+   COURSES DARK THEME (PURE JET BLACK #000000 + RADIANT GOLD GLASS)
+   ============================================================ */
+:root[data-theme="dark"],
+.dark,
+.theme-dark,
 [data-theme="dark"] {
-  --color-courses-border: #334155;
-  --color-courses-bg: #0F172A;
-  --color-courses-text-primary: #F8FAFC;
-  --color-courses-text-secondary: #CBD5E1;
-  --color-courses-text-muted: #94A3B8;
+  --color-courses-border: rgba(255, 255, 255, 0.1);
+  --color-courses-bg: #000000;
+  --color-courses-navy-card: rgba(15, 15, 18, 0.6);
+  --color-courses-text-primary: #FFFFFF;
+  --color-courses-text-secondary: #A1A1AA;
+  --color-courses-text-muted: #71717A;
 }
 
 :root[data-theme="dark"] .mn-courses-page,
 .dark .mn-courses-page,
 .theme-dark .mn-courses-page,
 [data-theme="dark"] .mn-courses-page {
-  background-color: #0F172A !important;
-  color: #F8FAFC !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-courses-hero-card,
 .dark .mn-courses-hero-card,
 .theme-dark .mn-courses-hero-card,
 [data-theme="dark"] .mn-courses-hero-card {
-  background: #1E293B !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(16px) !important;
+  box-shadow: 0 0 35px rgba(251, 191, 36, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+:root[data-theme="dark"] .mn-courses-hero-card::before,
+.dark .mn-courses-hero-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 140%;
+  height: 200%;
+  background: radial-gradient(circle at 10% 50%, rgba(251, 191, 36, 0.12) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 :root[data-theme="dark"] .mn-courses-hero-title,
 .dark .mn-courses-hero-title,
 .theme-dark .mn-courses-hero-title,
 [data-theme="dark"] .mn-courses-hero-title {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-courses-hero-sub,
 .dark .mn-courses-hero-sub,
 .theme-dark .mn-courses-hero-sub,
 [data-theme="dark"] .mn-courses-hero-sub {
-  color: #94A3B8 !important;
+  color: #A1A1AA !important;
 }
 
 :root[data-theme="dark"] .mn-courses-category-btn,
 .dark .mn-courses-category-btn,
 .theme-dark .mn-courses-category-btn,
 [data-theme="dark"] .mn-courses-category-btn {
-  background: #1E293B !important;
-  border-color: #334155 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #CBD5E1 !important;
 }
 
@@ -978,47 +1002,50 @@
 .dark .mn-courses-category-btn:hover,
 .theme-dark .mn-courses-category-btn:hover,
 [data-theme="dark"] .mn-courses-category-btn:hover {
-  background: #334155 !important;
-  color: #F8FAFC !important;
+  background: rgba(250, 204, 21, 0.1) !important;
+  border-color: rgba(250, 204, 21, 0.3) !important;
+  color: #FACC15 !important;
 }
 
 :root[data-theme="dark"] .mn-courses-category-btn.active,
 .dark .mn-courses-category-btn.active,
 .theme-dark .mn-courses-category-btn.active,
 [data-theme="dark"] .mn-courses-category-btn.active {
-  background: #D97706 !important;
-  border-color: #D97706 !important;
-  color: #FFFFFF !important;
+  background: #F59E0B !important;
+  border-color: #F59E0B !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
 }
 
 :root[data-theme="dark"] .mn-courses-sidebar-card,
 .dark .mn-courses-sidebar-card,
 .theme-dark .mn-courses-sidebar-card,
 [data-theme="dark"] .mn-courses-sidebar-card {
-  background: #1E293B !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(14px) !important;
 }
 
 :root[data-theme="dark"] .mn-courses-filter-title,
 .dark .mn-courses-filter-title,
 .theme-dark .mn-courses-filter-title,
 [data-theme="dark"] .mn-courses-filter-title {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-courses-filter-label,
 .dark .mn-courses-filter-label,
 .theme-dark .mn-courses-filter-label,
 [data-theme="dark"] .mn-courses-filter-label {
-  color: #CBD5E1 !important;
+  color: #A1A1AA !important;
 }
 
 :root[data-theme="dark"] .mn-courses-class-pill,
 .dark .mn-courses-class-pill,
 .theme-dark .mn-courses-class-pill,
 [data-theme="dark"] .mn-courses-class-pill {
-  background: #0F172A !important;
-  border-color: #334155 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #CBD5E1 !important;
 }
 
@@ -1026,26 +1053,28 @@
 .dark .mn-courses-class-pill:hover,
 .theme-dark .mn-courses-class-pill:hover,
 [data-theme="dark"] .mn-courses-class-pill:hover {
-  background: #334155 !important;
-  color: #F8FAFC !important;
+  background: rgba(250, 204, 21, 0.1) !important;
+  border-color: rgba(250, 204, 21, 0.3) !important;
+  color: #FACC15 !important;
 }
 
 :root[data-theme="dark"] .mn-courses-class-pill.active,
 .dark .mn-courses-class-pill.active,
 .theme-dark .mn-courses-class-pill.active,
 [data-theme="dark"] .mn-courses-class-pill.active {
-  background: #D97706 !important;
-  border-color: #D97706 !important;
-  color: #FFFFFF !important;
+  background: #F59E0B !important;
+  border-color: #F59E0B !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
 }
 
 :root[data-theme="dark"] .mn-courses-select,
 .dark .mn-courses-select,
 .theme-dark .mn-courses-select,
 [data-theme="dark"] .mn-courses-select {
-  background-color: #0F172A !important;
-  border-color: #334155 !important;
-  color: #F8FAFC !important;
+  background-color: rgba(15, 15, 18, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
   color-scheme: dark;
 }
 
@@ -1053,39 +1082,40 @@
 .dark .mn-courses-select option,
 .theme-dark .mn-courses-select option,
 [data-theme="dark"] .mn-courses-select option {
-  background-color: #1E293B !important;
-  color: #F8FAFC !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-courses-search-bar,
 .dark .mn-courses-search-bar,
 .theme-dark .mn-courses-search-bar,
 [data-theme="dark"] .mn-courses-search-bar {
-  background: #1E293B !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
 }
 
 :root[data-theme="dark"] .mn-courses-search-input,
 .dark .mn-courses-search-input,
 .theme-dark .mn-courses-search-input,
 [data-theme="dark"] .mn-courses-search-input {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-courses-sort-dropdown-wrap,
 .dark .mn-courses-sort-dropdown-wrap,
 .theme-dark .mn-courses-sort-dropdown-wrap,
 [data-theme="dark"] .mn-courses-sort-dropdown-wrap {
-  background: #1E293B !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 :root[data-theme="dark"] .mn-courses-sort-select,
 .dark .mn-courses-sort-select,
 .theme-dark .mn-courses-sort-select,
 [data-theme="dark"] .mn-courses-sort-select {
-  background: #1E293B !important;
-  color: #F8FAFC !important;
+  background: rgba(15, 15, 18, 0.8) !important;
+  color: #FFFFFF !important;
   color-scheme: dark;
 }
 
@@ -1093,51 +1123,71 @@
 .dark .mn-courses-sort-select option,
 .theme-dark .mn-courses-sort-select option,
 [data-theme="dark"] .mn-courses-sort-select option {
-  background-color: #1E293B !important;
-  color: #F8FAFC !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-courses-grid-title,
 .dark .mn-courses-grid-title,
 .theme-dark .mn-courses-grid-title,
 [data-theme="dark"] .mn-courses-grid-title {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-courses-grid-subtitle,
 .dark .mn-courses-grid-subtitle,
 .theme-dark .mn-courses-grid-subtitle,
 [data-theme="dark"] .mn-courses-grid-subtitle {
-  color: #94A3B8 !important;
+  color: #A1A1AA !important;
 }
 
 :root[data-theme="dark"] .mn-course-card,
 .dark .mn-course-card,
 .theme-dark .mn-course-card,
 [data-theme="dark"] .mn-course-card {
-  background: #1E293B !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root[data-theme="dark"] .mn-course-card:hover,
+.dark .mn-course-card:hover,
+.theme-dark .mn-course-card:hover,
+[data-theme="dark"] .mn-course-card:hover {
+  background: rgba(22, 22, 26, 0.8) !important;
+  border-color: rgba(251, 191, 36, 0.25) !important;
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+:root[data-theme="dark"] .mn-course-card-thumb,
+.dark .mn-course-card-thumb,
+.theme-dark .mn-course-card-thumb,
+[data-theme="dark"] .mn-course-card-thumb {
+  background: linear-gradient(145deg, #050505 0%, #141414 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 :root[data-theme="dark"] .mn-course-title,
 .dark .mn-course-title,
 .theme-dark .mn-course-title,
 [data-theme="dark"] .mn-course-title {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-course-meta-row,
 .dark .mn-course-meta-row,
 .theme-dark .mn-course-meta-row,
 [data-theme="dark"] .mn-course-meta-row {
-  color: #94A3B8 !important;
+  color: #A1A1AA !important;
 }
 
 :root[data-theme="dark"] .mn-course-author,
 .dark .mn-course-author,
 .theme-dark .mn-course-author,
 [data-theme="dark"] .mn-course-author {
-  color: #64748B !important;
+  color: #71717A !important;
 }
 
 :root[data-theme="dark"] .mn-course-start-btn,
@@ -1145,7 +1195,7 @@
 .theme-dark .mn-course-start-btn,
 [data-theme="dark"] .mn-course-start-btn {
   background: transparent !important;
-  border-color: #D97706 !important;
+  border: 1px solid #F59E0B !important;
   color: #F59E0B !important;
 }
 
@@ -1153,16 +1203,17 @@
 .dark .mn-course-start-btn:hover,
 .theme-dark .mn-course-start-btn:hover,
 [data-theme="dark"] .mn-course-start-btn:hover {
-  background: #D97706 !important;
-  color: #FFFFFF !important;
+  background: #F59E0B !important;
+  color: #000000 !important;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4) !important;
 }
 
 :root[data-theme="dark"] .mn-courses-page-btn,
 .dark .mn-courses-page-btn,
 .theme-dark .mn-courses-page-btn,
 [data-theme="dark"] .mn-courses-page-btn {
-  background: #1E293B !important;
-  border-color: #334155 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #CBD5E1 !important;
 }
 
@@ -1170,7 +1221,7 @@
 .dark .mn-courses-page-btn:hover,
 .theme-dark .mn-courses-page-btn:hover,
 [data-theme="dark"] .mn-courses-page-btn:hover {
-  border-color: #D97706 !important;
+  border-color: #F59E0B !important;
   color: #F59E0B !important;
 }
 
@@ -1178,9 +1229,10 @@
 .dark .mn-courses-page-btn.active,
 .theme-dark .mn-courses-page-btn.active,
 [data-theme="dark"] .mn-courses-page-btn.active {
-  background: #D97706 !important;
-  border-color: #D97706 !important;
-  color: #FFFFFF !important;
+  background: #F59E0B !important;
+  border-color: #F59E0B !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
 }
 
 :root[data-theme="dark"] .mn-courses-why-card,
@@ -1191,8 +1243,9 @@
 .dark .mn-courses-delivery-card,
 .theme-dark .mn-courses-delivery-card,
 [data-theme="dark"] .mn-courses-delivery-card {
-  background: #1E293B !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
 }
 
 :root[data-theme="dark"] .mn-courses-why-title,
@@ -1207,7 +1260,7 @@
 .dark .mn-courses-why-h4,
 .theme-dark .mn-courses-why-h4,
 [data-theme="dark"] .mn-courses-why-h4 {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-courses-why-desc,
@@ -1218,53 +1271,54 @@
 .dark .mn-courses-delivery-sub,
 .theme-dark .mn-courses-delivery-sub,
 [data-theme="dark"] .mn-courses-delivery-sub {
-  color: #94A3B8 !important;
+  color: #A1A1AA !important;
 }
 
 :root[data-theme="dark"] .mn-courses-bottom-trust-strip,
 .dark .mn-courses-bottom-trust-strip,
 .theme-dark .mn-courses-bottom-trust-strip,
 [data-theme="dark"] .mn-courses-bottom-trust-strip {
-  background: #1E293B !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
 }
 
 :root[data-theme="dark"] .mn-courses-trust-icon-box,
 .dark .mn-courses-trust-icon-box,
 .theme-dark .mn-courses-trust-icon-box,
 [data-theme="dark"] .mn-courses-trust-icon-box {
-  background: #0F172A !important;
-  border-color: #334155 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 :root[data-theme="dark"] .mn-courses-trust-title,
 .dark .mn-courses-trust-title,
 .theme-dark .mn-courses-trust-title,
 [data-theme="dark"] .mn-courses-trust-title {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-courses-trust-desc,
 .dark .mn-courses-trust-desc,
 .theme-dark .mn-courses-trust-desc,
 [data-theme="dark"] .mn-courses-trust-desc {
-  color: #94A3B8 !important;
+  color: #A1A1AA !important;
 }
 
 :root[data-theme="dark"] .mn-courses-info-banner,
 .dark .mn-courses-info-banner,
 .theme-dark .mn-courses-info-banner,
 [data-theme="dark"] .mn-courses-info-banner {
-  background: #1E293B !important;
-  border-color: #334155 !important;
-  color: #93C5FD !important;
+  background: rgba(15, 15, 18, 0.7) !important;
+  border: 1px solid rgba(251, 191, 36, 0.2) !important;
+  color: #FDE68A !important;
 }
 
 :root[data-theme="dark"] .mn-courses-info-banner strong,
 .dark .mn-courses-info-banner strong,
 .theme-dark .mn-courses-info-banner strong,
 [data-theme="dark"] .mn-courses-info-banner strong {
-  color: #60A5FA !important;
+  color: #F59E0B !important;
 }
 
 /* Course Detail Page Dark Theme Support */
@@ -1280,41 +1334,42 @@
 :root[data-theme="dark"] .mn-cd-sidebar-card,
 .dark .mn-cd-sidebar-card,
 [data-theme="dark"] .mn-cd-sidebar-card {
-  background: #1E293B !important;
-  border-color: #334155 !important;
-  color: #F8FAFC !important;
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-cd-tabs-wrap,
 .dark .mn-cd-tabs-wrap,
 [data-theme="dark"] .mn-cd-tabs-wrap {
-  background: #0F172A !important;
-  border-color: #334155 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 :root[data-theme="dark"] .mn-cd-tab-btn,
 .dark .mn-cd-tab-btn,
 [data-theme="dark"] .mn-cd-tab-btn {
-  color: #94A3B8 !important;
+  color: #A1A1AA !important;
 }
 
 :root[data-theme="dark"] .mn-cd-tab-btn.active,
 .dark .mn-cd-tab-btn.active,
 [data-theme="dark"] .mn-cd-tab-btn.active {
-  background: #1E293B !important;
-  color: #F8FAFC !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #FACC15 !important;
 }
 
 :root[data-theme="dark"] .mn-cd-item-row,
 .dark .mn-cd-item-row,
 [data-theme="dark"] .mn-cd-item-row {
-  background: #0F172A !important;
-  border-color: #334155 !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 :root[data-theme="dark"] .mn-cd-item-title,
 .dark .mn-cd-item-title,
 [data-theme="dark"] .mn-cd-item-title {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 

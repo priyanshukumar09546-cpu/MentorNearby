@@ -417,6 +417,23 @@
 }
 
 /* Dark Mode Overrides - Pure Black & Glass */
+[data-theme="dark"] .mn-fs-page,
+.dark .mn-fs-page,
+.theme-dark .mn-fs-page {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .mn-fs-hero,
+.dark .mn-fs-hero,
+.theme-dark .mn-fs-hero {
+  background: rgba(15, 15, 18, 0.75) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) !important;
+  box-shadow: 0 0 35px rgba(251, 191, 36, 0.08) !important;
+}
+
 [data-theme="dark"] .mn-fs-card,
 .dark .mn-fs-card,
 .theme-dark .mn-fs-card {

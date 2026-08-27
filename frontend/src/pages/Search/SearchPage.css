@@ -1235,63 +1235,66 @@
 .dark .mn-find-page-root,
 .theme-dark .mn-find-page-root,
 [data-theme="dark"] .mn-find-page-root {
-  background-color: #0f172a !important;
-  color: #f8fafc !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-find-top-trust-card,
 .dark .mn-find-top-trust-card,
 .theme-dark .mn-find-top-trust-card,
 [data-theme="dark"] .mn-find-top-trust-card {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
 }
 
 :root[data-theme="dark"] .mn-top-trust-title,
 .dark .mn-top-trust-title,
 .theme-dark .mn-top-trust-title,
 [data-theme="dark"] .mn-top-trust-title {
-  color: #f8fafc !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-find-search-input-wrap,
 .dark .mn-find-search-input-wrap,
 .theme-dark .mn-find-search-input-wrap,
 [data-theme="dark"] .mn-find-search-input-wrap {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
 }
 
 :root[data-theme="dark"] .mn-find-search-input,
 .dark .mn-find-search-input,
 .theme-dark .mn-find-search-input,
 [data-theme="dark"] .mn-find-search-input {
-  color: #f8fafc !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-find-filters-toggle-btn,
 .dark .mn-find-filters-toggle-btn,
 .theme-dark .mn-find-filters-toggle-btn,
 [data-theme="dark"] .mn-find-filters-toggle-btn {
-  background: #1e293b !important;
-  border-color: #334155 !important;
-  color: #f8fafc !important;
+  background: rgba(15, 15, 18, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-find-sort-wrap,
 .dark .mn-find-sort-wrap,
 .theme-dark .mn-find-sort-wrap,
 [data-theme="dark"] .mn-find-sort-wrap {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 :root[data-theme="dark"] .mn-find-sort-select,
 .dark .mn-find-sort-select,
 .theme-dark .mn-find-sort-select,
 [data-theme="dark"] .mn-find-sort-select {
-  background: #1e293b !important;
-  color: #f8fafc !important;
+  background: rgba(15, 15, 18, 0.8) !important;
+  color: #FFFFFF !important;
   color-scheme: dark;
 }
 
@@ -1299,16 +1302,17 @@
 .dark .mn-find-sort-select option,
 .theme-dark .mn-find-sort-select option,
 [data-theme="dark"] .mn-find-sort-select option {
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-find-filter-sidebar,
 .dark .mn-find-filter-sidebar,
 .theme-dark .mn-find-filter-sidebar,
 [data-theme="dark"] .mn-find-filter-sidebar {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+  background: rgba(15, 15, 18, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(14px) !important;
 }
 
 :root[data-theme="dark"] .mn-filter-heading,
@@ -1319,23 +1323,23 @@
 .dark .mn-filter-lbl,
 .theme-dark .mn-filter-lbl,
 [data-theme="dark"] .mn-filter-lbl {
-  color: #f8fafc !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-select-box-wrap,
 .dark .mn-select-box-wrap,
 .theme-dark .mn-select-box-wrap,
 [data-theme="dark"] .mn-select-box-wrap {
-  background: #0f172a !important;
-  border-color: #334155 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 :root[data-theme="dark"] .mn-filter-select,
 .dark .mn-filter-select,
 .theme-dark .mn-filter-select,
 [data-theme="dark"] .mn-filter-select {
-  background: #0f172a !important;
-  color: #f8fafc !important;
+  background: transparent !important;
+  color: #FFFFFF !important;
   color-scheme: dark;
 }
 
@@ -1343,8 +1347,8 @@
 .dark .mn-filter-select option,
 .theme-dark .mn-filter-select option,
 [data-theme="dark"] .mn-filter-select option {
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
 }
 
 :root[data-theme="dark"] .mn-select-chevron,

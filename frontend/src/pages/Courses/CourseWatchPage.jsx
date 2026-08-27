@@ -182,15 +182,15 @@ const CourseWatchPage = () => {
   return (
     <div className="courses-page-root" style={{ paddingBottom: 60 }}>
       {/* Top Header Bar */}
-      <div style={{ background: '#0F172A', borderBottom: '1px solid #1E293B', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#FFFFFF', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ background: '#000000', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#FFFFFF', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link
             to={`/courses/${course?.slug || courseId}`}
-            style={{ color: '#94A3B8', textDecoration: 'none', fontSize: 13, fontWeight: 700 }}
+            style={{ color: '#A1A1AA', textDecoration: 'none', fontSize: 13, fontWeight: 700 }}
           >
             ← Back to Course
           </Link>
-          <span style={{ color: '#334155' }}>|</span>
+          <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>|</span>
           <h2 style={{ fontSize: 15, fontWeight: 800, color: '#F8FAFC', margin: 0 }}>
             {course?.title}
           </h2>

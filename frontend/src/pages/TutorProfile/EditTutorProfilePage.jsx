@@ -175,15 +175,12 @@ const EditTutorProfilePage = () => {
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) return showToast('Please upload a valid image', 'error');
-    if (file.size > 10 * 1024 * 1024) return showToast('Image size must be less than 10MB', 'error');
+    if (!file.type.startsWith('image/')) return showToast('Please upload a valid image (JPG, PNG, WebP)', 'error');
+    if (file.size > 15 * 1024 * 1024) return showToast('Image size must be less than 15MB', 'error');
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setRawCropSrc(reader.result);
-      setIsCropOpen(true);
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setRawCropSrc(objectUrl);
+    setIsCropOpen(true);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -191,21 +188,41 @@ const EditTutorProfilePage = () => {
     setUploadingPhoto(true);
     const formData = new FormData();
     formData.append('photo', croppedData.file);
+    formData.append('file', croppedData.file);
 
     try {
-      const uploadRes = await client.post('/upload/photo', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      const photoUrl = uploadRes.data.data.url;
-      const publicId = uploadRes.data.data.publicId || '';
+      let photoUrl = '';
+      let publicId = '';
 
-      await updateUserProfile({ avatar: photoUrl });
-      await updateTutorProfile({ profilePhoto: { url: photoUrl, publicId } });
-      await fetchProfile();
-      await refreshUser();
-      showToast('Profile photo updated & saved!', 'success');
+      try {
+        const uploadRes = await client.post('/tutors/upload-pic', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        photoUrl = uploadRes.data.data?.url || uploadRes.data?.url;
+        publicId = uploadRes.data.data?.publicId || uploadRes.data?.publicId || '';
+      } catch (_) {
+        const uploadRes = await client.post('/upload/photo', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        photoUrl = uploadRes.data.data?.url || uploadRes.data?.url;
+        publicId = uploadRes.data.data?.publicId || uploadRes.data?.publicId || '';
+      }
+
+      if (photoUrl) {
+        setProfileData(prev => ({
+          ...prev,
+          user: { ...prev.user, avatar: photoUrl },
+          tutorProfile: { ...prev.tutorProfile, profilePhoto: { url: photoUrl, publicId } }
+        }));
+        await updateUserProfile({ avatar: photoUrl });
+        await updateTutorProfile({ profilePhoto: { url: photoUrl, publicId } });
+        await fetchProfile();
+        await refreshUser();
+        showToast('Profile photo updated successfully!', 'success');
+      }
     } catch (error) {
-      showToast('Failed to upload photo', 'error');
+      console.error('Failed to upload photo:', error);
+      showToast(error.response?.data?.message || 'Failed to upload photo', 'error');
     } finally {
       setUploadingPhoto(false);
       setIsCropOpen(false);

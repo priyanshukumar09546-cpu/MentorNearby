@@ -63,21 +63,22 @@ exports.uploadProfilePhoto = asyncHandler(async (req, res, next) => {
     return error(res, 'Please provide an image file', 400);
   }
 
-  const tutorProfile = await TutorProfile.findOne({ user: req.user.id });
-  if (!tutorProfile) {
-    return error(res, 'Tutor profile not found', 404);
-  }
-
   const result = await cloudinaryService.uploadProfilePhoto(req.file.buffer, req.user.id);
-  
-  if (tutorProfile.profilePhoto) {
-     // TODO: [FUTURE] delete old photo from cloudinary using public_id
+  const photoUrl = result.secure_url || result.url;
+  const publicId = result.public_id || '';
+
+  let tutorProfile = await TutorProfile.findOne({
+    $or: [{ user: req.user._id || req.user.id }, { _id: req.user._id || req.user.id }]
+  });
+
+  if (tutorProfile) {
+    tutorProfile.profilePhoto = { url: photoUrl, publicId };
+    await tutorProfile.save({ validateBeforeSave: false });
   }
 
-  tutorProfile.profilePhoto = result.secure_url;
-  await tutorProfile.save();
+  await User.findByIdAndUpdate(req.user._id || req.user.id, { avatar: photoUrl });
 
-  return success(res, 'Profile photo uploaded successfully', { url: result.secure_url });
+  return success(res, 'Profile photo uploaded successfully', { url: photoUrl, publicId });
 });
 
 exports.uploadIntroVideo = asyncHandler(async (req, res, next) => {

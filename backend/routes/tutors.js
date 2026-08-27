@@ -34,6 +34,7 @@ router.put('/profile/me', protect, authorize('TUTOR', 'ADMIN'), updateTutorProfi
 router.put('/profile', protect, authorize('TUTOR', 'ADMIN'), updateTutorProfile);
 router.post('/profile/me/photo', protect, authorize('TUTOR', 'ADMIN'), uploadPhoto, uploadProfilePhoto);
 router.post('/photo', protect, authorize('TUTOR', 'ADMIN'), uploadPhoto, uploadProfilePhoto);
+router.post('/upload-pic', protect, uploadPhoto, uploadProfilePhoto);
 router.post('/profile/me/video', protect, authorize('TUTOR', 'ADMIN'), uploadVideo, uploadIntroVideo);
 router.post('/video', protect, authorize('TUTOR', 'ADMIN'), uploadVideo, uploadIntroVideo);
 router.put('/profile/me/availability', protect, updateAvailability);

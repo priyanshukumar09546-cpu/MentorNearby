@@ -38,6 +38,13 @@ router.put('/profile/me/availability', protect, authorize('TUTOR'), updateAvaila
 router.put('/profile/me/safety', protect, authorize('TUTOR'), updateSafetyPreferences);
 router.put('/profile/me/visibility', protect, authorize('TUTOR'), toggleProfileVisibility);
 
+// Admin approval / unapproval aliases
+const { approveTutor, unapproveTutor } = require('../controllers/adminController');
+router.put('/:id/approve', protect, authorize('ADMIN'), approveTutor);
+router.post('/:id/approve', protect, authorize('ADMIN'), approveTutor);
+router.put('/:id/unapprove', protect, authorize('ADMIN'), unapproveTutor);
+router.post('/:id/unapprove', protect, authorize('ADMIN'), unapproveTutor);
+
 // Public route for tutor profile by ID or slug
 router.get('/:id', getTutorProfile);
 

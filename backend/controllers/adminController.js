@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const User = require('../models/User');
+const StudentProfile = require('../models/StudentProfile');
 const TutorProfile = require('../models/TutorProfile');
 const KYC = require('../models/KYC');
 const Report = require('../models/Report');

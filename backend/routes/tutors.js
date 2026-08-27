@@ -36,9 +36,10 @@ router.post('/profile/me/photo', protect, authorize('TUTOR', 'ADMIN'), uploadPho
 router.post('/photo', protect, authorize('TUTOR', 'ADMIN'), uploadPhoto, uploadProfilePhoto);
 router.post('/profile/me/video', protect, authorize('TUTOR', 'ADMIN'), uploadVideo, uploadIntroVideo);
 router.post('/video', protect, authorize('TUTOR', 'ADMIN'), uploadVideo, uploadIntroVideo);
-router.put('/profile/me/availability', protect, authorize('TUTOR', 'ADMIN'), updateAvailability);
-router.put('/availability', protect, authorize('TUTOR', 'ADMIN'), updateAvailability);
-router.post('/availability', protect, authorize('TUTOR', 'ADMIN'), updateAvailability);
+router.put('/profile/me/availability', protect, updateAvailability);
+router.put('/availability', protect, updateAvailability);
+router.post('/availability', protect, updateAvailability);
+router.put('/me/availability', protect, updateAvailability);
 router.put('/profile/me/safety', protect, authorize('TUTOR', 'ADMIN'), updateSafetyPreferences);
 router.put('/safety', protect, authorize('TUTOR', 'ADMIN'), updateSafetyPreferences);
 router.put('/profile/me/visibility', protect, authorize('TUTOR', 'ADMIN'), toggleProfileVisibility);

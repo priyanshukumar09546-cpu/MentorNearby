@@ -123,44 +123,42 @@ exports.getTutorDashboard = asyncHandler(async (req, res, next) => {
 });
 
 exports.updateAvailability = asyncHandler(async (req, res, next) => {
-  let availability = req.body.availability || req.body;
+  const mf = req.body.mondayFridayHours || req.body['Monday - Friday Hours'] || req.body.mondayFriday || req.body.weekdays || '05:00 PM - 09:00 PM';
+  const sat = req.body.saturdayHours || req.body['Saturday Hours'] || req.body.saturday || '';
+  const sun = req.body.sundayHours || req.body['Sunday Status / Hours'] || req.body.sunday || '';
 
-  // If payload sent as { mondayFriday, weekdays, saturday, sunday }
-  if (req.body.mondayFriday !== undefined || req.body.weekdays !== undefined || req.body.saturday !== undefined || req.body.sunday !== undefined) {
-    const weekdaysSlot = req.body.mondayFriday || req.body.weekdays || '05:00 PM - 09:00 PM';
-    const satSlot = req.body.saturday || '';
-    const sunSlot = req.body.sunday || '';
-    
-    availability = {
-      monday: { available: true, slots: [weekdaysSlot] },
-      tuesday: { available: true, slots: [weekdaysSlot] },
-      wednesday: { available: true, slots: [weekdaysSlot] },
-      thursday: { available: true, slots: [weekdaysSlot] },
-      friday: { available: true, slots: [weekdaysSlot] },
-      saturday: { available: Boolean(satSlot && satSlot !== 'Not Available'), slots: satSlot ? [satSlot] : [] },
-      sunday: { available: Boolean(sunSlot && sunSlot !== 'Not Available'), slots: sunSlot ? [sunSlot] : [] },
-      mondayFriday: weekdaysSlot,
-      weekdays: weekdaysSlot,
-      saturdayText: satSlot,
-      sundayText: sunSlot
-    };
-  }
+  const structuredAvailability = req.body.availability && typeof req.body.availability === 'object'
+    ? req.body.availability
+    : {
+        monday: { available: true, slots: [mf] },
+        tuesday: { available: true, slots: [mf] },
+        wednesday: { available: true, slots: [mf] },
+        thursday: { available: true, slots: [mf] },
+        friday: { available: true, slots: [mf] },
+        saturday: { available: Boolean(sat && sat !== 'Not Available'), slots: sat ? [sat] : [] },
+        sunday: { available: Boolean(sun && sun !== 'Not Available'), slots: sun ? [sun] : [] }
+      };
 
   let tutorProfile = await TutorProfile.findOne({
-    $or: [{ user: req.user.id }, { _id: req.user.id }]
+    $or: [{ user: req.user._id || req.user.id }, { _id: req.user._id || req.user.id }]
   });
 
   if (!tutorProfile) {
     tutorProfile = await TutorProfile.create({
-      user: req.user.id,
-      availability
+      user: req.user._id || req.user.id,
+      availability: structuredAvailability
     });
   } else {
-    tutorProfile.availability = availability;
+    tutorProfile.availability = structuredAvailability;
     await tutorProfile.save({ validateBeforeSave: false });
   }
 
-  return success(res, 'Availability updated successfully', { availability: tutorProfile.availability });
+  return success(res, 'Availability schedule updated successfully', {
+    availability: tutorProfile.availability,
+    mondayToFriday: mf,
+    saturday: sat,
+    sunday: sun
+  });
 });
 
 exports.updateSafetyPreferences = asyncHandler(async (req, res, next) => {

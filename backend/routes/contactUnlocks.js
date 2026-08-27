@@ -16,10 +16,10 @@ const { protect, authorize } = require('../middleware/auth');
 router.use(protect);
 
 router.get('/check/:tutorId', checkUnlockEligibility);
-router.post('/free/:tutorId', authorize('STUDENT', 'ADMIN'), createFreeUnlock);
-router.post('/free', authorize('STUDENT', 'ADMIN'), createFreeUnlock);
-router.post('/create-order', authorize('STUDENT', 'ADMIN'), createPaymentOrder);
-router.post('/verify-payment', authorize('STUDENT', 'ADMIN'), verifyPaymentAndUnlock);
+router.post('/free/:tutorId', authorize('STUDENT', 'TUTOR', 'PARENT', 'ADMIN'), createFreeUnlock);
+router.post('/free', authorize('STUDENT', 'TUTOR', 'PARENT', 'ADMIN'), createFreeUnlock);
+router.post('/create-order', authorize('STUDENT', 'TUTOR', 'PARENT', 'ADMIN'), createPaymentOrder);
+router.post('/verify-payment', authorize('STUDENT', 'TUTOR', 'PARENT', 'ADMIN'), verifyPaymentAndUnlock);
 router.get('/my-unlocks', getMyUnlocks);
 
 module.exports = router;

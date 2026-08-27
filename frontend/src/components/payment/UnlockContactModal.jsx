@@ -122,8 +122,8 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
         {step === 'decision' && eligibility && (
           <div>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔓</div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white">Unlock Tutor Contact</h4>
-            <p className="text-gray-600 dark:text-zinc-400 text-sm mt-1">Get direct access to phone number, email, and WhatsApp.</p>
+            <h4 className="text-xl font-bold text-gray-900 dark:text-white">Unlock Direct Contact</h4>
+            <p className="text-gray-600 dark:text-zinc-400 text-sm mt-1">Get instant access to phone number, email, and WhatsApp.</p>
             
             <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl mt-4 p-5 text-left shadow-sm">
               <div className="flex justify-between items-center mb-3">
@@ -133,7 +133,7 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
                 <span className="text-2xl font-black text-gray-900 dark:text-white">₹{eligibility.price}</span>
               </div>
               <p className="text-xs text-gray-500 dark:text-zinc-400 mb-4">
-                Standard contact unlock fee (₹{eligibility.price} per unlock).
+                Standard contact unlock fee (₹{eligibility.price} per lead).
               </p>
               <button 
                 className="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-3 px-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2 text-sm cursor-pointer border-none"
@@ -156,7 +156,7 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
           <div>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
             <h4 className="text-success">Contact Unlocked!</h4>
-            <p className="text-muted mt-2">You can now reach out to the tutor directly.</p>
+            <p className="text-muted mt-2">You can now reach out directly.</p>
             
             <div className="card mt-6 p-4">
               <p className="text-lg font-bold">📞 {contactInfo.phone}</p>

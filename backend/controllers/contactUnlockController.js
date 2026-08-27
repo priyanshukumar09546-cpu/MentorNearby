@@ -105,13 +105,16 @@ exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
     });
   }
 
+  const contact = await resolveContactInfo(targetId);
+  const isStudentLead = contact?.type === 'STUDENT' || contact?.type === 'STUDENT_REQUIREMENT';
+  const price = isStudentLead ? 49 : 99;
+
   const previousUnlocksCount = await ContactUnlock.countDocuments({
     user: currentUserId,
     paymentStatus: 'COMPLETED'
   });
 
   const nextUnlockNumber = previousUnlocksCount + 1;
-  const price = 99;
 
   return success(res, 'Unlock eligibility', {
     alreadyUnlocked: false,
@@ -137,7 +140,11 @@ exports.createFreeUnlock = asyncHandler(async (req, res, next) => {
     });
   }
 
-  return error(res, 'Free contact unlocks are disabled. Payment of ₹99 is required.', 402);
+  const contact = await resolveContactInfo(targetId);
+  const isStudentLead = contact?.type === 'STUDENT' || contact?.type === 'STUDENT_REQUIREMENT';
+  const price = isStudentLead ? 49 : 99;
+
+  return error(res, `Free contact unlocks are disabled. Payment of ₹${price} is required.`, 402);
 });
 
 exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
@@ -154,13 +161,16 @@ exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
     return error(res, 'Contact already unlocked', 400);
   }
 
+  const contact = await resolveContactInfo(targetId);
+  const isStudentLead = contact?.type === 'STUDENT' || contact?.type === 'STUDENT_REQUIREMENT';
+  const price = isStudentLead ? 49 : 99;
+
   const previousUnlocksCount = await ContactUnlock.countDocuments({
     user: currentUserId,
     paymentStatus: 'COMPLETED'
   });
 
   const nextUnlockNumber = previousUnlocksCount + 1;
-  const price = 99;
 
   const order = await razorpayService.createOrder(price, 'INR', { userId: currentUserId, targetId });
 

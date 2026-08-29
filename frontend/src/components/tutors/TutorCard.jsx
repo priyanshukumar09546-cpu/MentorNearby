@@ -57,11 +57,8 @@ const TutorCard = ({ tutor, userCoordinates, onUnlock }) => {
     }
   };
 
-  const feeAmount = tutor.fees?.amount || tutor.hourlyRate || 0;
-  const rawFreq = (tutor.fees?.frequency || (tutor.hourlyRate ? 'Hour' : 'Month')).toString().toUpperCase();
-  const isHourly = rawFreq.includes('HOUR') || rawFreq === 'HOURLY';
-  const cleanFreq = isHourly ? 'hr' : 'mo';
-  const feeDisplay = feeAmount > 0 ? `₹${feeAmount} / ${cleanFreq}` : 'Fee on request';
+  const feeAmount = tutor.fees?.amount || tutor.monthlyFees || tutor.monthly_fees || tutor.fees || tutor.hourlyRate || tutor.price || 0;
+  const feeDisplay = feeAmount > 0 ? `₹${Number(feeAmount).toLocaleString('en-IN')} / month` : 'Fee on request';
 
   // Haversine distance calculation
   const tutorLat = tutor.location?.coordinates?.coordinates?.[1];

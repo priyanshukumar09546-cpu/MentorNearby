@@ -375,10 +375,10 @@ const SearchPage = () => {
                     value={priceRange}
                     onChange={(e) => setPriceRange(e.target.value)}
                   >
-                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">All Price</option>
-                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="300">Under ₹300/hr</option>
-                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="500">Under ₹500/hr</option>
-                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="800">Under ₹800/hr</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="">All Budgets</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="2000">Under ₹2,000 / month</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="5000">Under ₹5,000 / month</option>
+                    <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value="10000">Under ₹10,000 / month</option>
                   </select>
                   <span className="mn-select-chevron">▾</span>
                 </div>
@@ -522,12 +522,8 @@ const SearchPage = () => {
                     const loc = tutor.location?.city || tutor.location?.area || 'Local Area';
                     const modeStr = Array.isArray(tutor.teachingModes) ? tutor.teachingModes.join(' & ') : (tutor.teachingModes || 'Online & Offline');
                     const ratingVal = tutor.averageRating && tutor.averageRating > 0 ? Number(tutor.averageRating).toFixed(1) : (tutor.totalReviews > 0 ? '5.0' : 'New');
-                    const reviewsVal = tutor.totalReviews || 0;
-                    const feeAmount = tutor.fees?.amount || tutor.hourlyRate || 0;
-                    const rawFreq = (tutor.fees?.frequency || (tutor.hourlyRate ? 'Hour' : 'Month')).toString().toUpperCase();
-                    const isHourly = rawFreq.includes('HOUR') || rawFreq === 'HOURLY';
-                    const cleanUnit = isHourly ? '/hr' : '/mo';
-                    const priceVal = feeAmount > 0 ? `₹${feeAmount}${cleanUnit}` : 'Fee on request';
+                    const feeAmount = tutor.fees?.amount || tutor.monthlyFees || tutor.monthly_fees || tutor.fees || tutor.hourlyRate || tutor.price || 0;
+                    const priceVal = feeAmount > 0 ? `₹${Number(feeAmount).toLocaleString('en-IN')} / month` : 'Fee on request';
                     const isVerified = tutor.kycStatus === 'VERIFIED' || tutor.verificationStatus?.identity;
                     const isOnline = Array.isArray(tutor.teachingModes)
                       ? tutor.teachingModes.some(m => m.toUpperCase().includes('ONLINE'))
@@ -676,12 +672,8 @@ const SearchPage = () => {
                     const subjectName = tutor.subjects?.[0] || 'All Subjects';
                     const expYears = tutor.experience?.years ?? 2;
                     const ratingVal = tutor.averageRating && tutor.averageRating > 0 ? Number(tutor.averageRating).toFixed(1) : '5.0';
-                    const reviewsVal = tutor.totalReviews || 0;
-                    const feeAmount = tutor.fees?.amount || tutor.hourlyRate || 0;
-                    const rawFreq = (tutor.fees?.frequency || (tutor.hourlyRate ? 'Hour' : 'Month')).toString().toUpperCase();
-                    const isHourly = rawFreq.includes('HOUR') || rawFreq === 'HOURLY';
-                    const cleanUnit = isHourly ? '/hr' : '/mo';
-                    const feeDisplay = feeAmount > 0 ? `₹${feeAmount}${cleanUnit}` : 'Fee on request';
+                    const feeAmount = tutor.fees?.amount || tutor.monthlyFees || tutor.monthly_fees || tutor.fees || tutor.hourlyRate || tutor.price || 0;
+                    const feeDisplay = feeAmount > 0 ? `₹${Number(feeAmount).toLocaleString('en-IN')} / month` : 'Fee on request';
                     const isVerified = tutor.kycStatus === 'VERIFIED' || tutor.verificationStatus?.identity;
 
                     return (
@@ -708,7 +700,7 @@ const SearchPage = () => {
                             <div className="mn-top-tutor-rating">
                               <span className="mn-card-star">★</span> {ratingVal} ({reviewsVal})
                             </div>
-                            <div className="mn-top-tutor-fee">₹{feeAmount}/hr</div>
+                            <div className="mn-top-tutor-fee">{feeDisplay}</div>
                           </div>
 
                           <button

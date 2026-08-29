@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -103,6 +103,11 @@ const RouteLoadingFallback = () => (
 const AppContent = () => {
   const { isDark, darkMode } = useTheme();
   const isDarkMode = isDark ?? darkMode ?? false;
+  const location = useLocation();
+
+  const isChatRoute = ['/chat', '/messages', '/app/chat'].some((p) =>
+    location.pathname.startsWith(p)
+  );
 
   useEffect(() => {
     if (isDarkMode) {
@@ -112,16 +117,20 @@ const AppContent = () => {
     } else {
       document.documentElement.classList.add('light');
       document.documentElement.classList.remove('dark');
-      document.body.style.backgroundColor = '#FFFBF5';
+      document.body.style.backgroundColor = isChatRoute ? '#FFFFFF' : '#FFFBF5';
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, isChatRoute]);
 
   return (
     <div
       style={{
-        backgroundColor: isDarkMode ? '#000000' : '#FFFBF5',
+        backgroundColor: isDarkMode ? '#000000' : isChatRoute ? '#FFFFFF' : '#FFFBF5',
+        height: isChatRoute ? '100vh' : 'auto',
         minHeight: '100vh',
+        overflow: isChatRoute ? 'hidden' : 'visible',
         position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
       }}
       className={isDarkMode ? 'dark text-white' : 'light text-gray-900'}
     >
@@ -129,7 +138,19 @@ const AppContent = () => {
       {isDarkMode && <StarsBackground />}
 
       {/* CONTENT - RELATIVE ON TOP OF STARS (zIndex: 10) */}
-      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', background: 'transparent' }}>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          height: isChatRoute ? '100vh' : 'auto',
+          minHeight: isChatRoute ? '100vh' : '100vh',
+          overflow: isChatRoute ? 'hidden' : 'visible',
+          background: 'transparent',
+        }}
+      >
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
             {/* Public Admin Entry & Login */}
@@ -176,9 +197,26 @@ const AppContent = () => {
                   <Route
                     path="*"
                     element={
-                      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          height: isChatRoute ? '100%' : 'auto',
+                          minHeight: isChatRoute ? '100%' : '100vh',
+                          overflow: isChatRoute ? 'hidden' : 'visible',
+                          flex: 1,
+                        }}
+                      >
                         <Navbar />
-                        <div style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            flex: 1,
+                            display: isChatRoute ? 'flex' : 'block',
+                            flexDirection: isChatRoute ? 'column' : 'initial',
+                            overflow: isChatRoute ? 'hidden' : 'visible',
+                            minHeight: 0,
+                          }}
+                        >
                           <Routes>
                             <Route path="/" element={<HomePage />} />
                             <Route path="/login" element={<LoginPage />} />
@@ -311,8 +349,8 @@ const AppContent = () => {
                             <Route path="*" element={<NotFoundPage />} />
                           </Routes>
                         </div>
-                        <Footer />
-                        <CookieConsent />
+                        {!isChatRoute && <Footer />}
+                        {!isChatRoute && <CookieConsent />}
                       </div>
                     }
                   />

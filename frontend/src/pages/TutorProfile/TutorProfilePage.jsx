@@ -821,17 +821,51 @@ const TutorProfilePage = () => {
 
               <div className="tp-avail-table">
                 {[
-                  { day: 'Mon', key: 'monday', defaultSlot: '5:00 PM - 8:00 PM' },
-                  { day: 'Tue', key: 'tuesday', defaultSlot: '6:00 PM - 9:00 PM' },
-                  { day: 'Wed', key: 'wednesday', defaultSlot: 'Not Available' },
-                  { day: 'Thu', key: 'thursday', defaultSlot: '5:00 PM - 8:00 PM' },
-                  { day: 'Fri', key: 'friday', defaultSlot: '6:00 PM - 9:00 PM' },
-                  { day: 'Sat', key: 'saturday', defaultSlot: '10:00 AM - 2:00 PM' },
-                  { day: 'Sun', key: 'sunday', defaultSlot: '10:00 AM - 1:00 PM' },
+                  { day: 'Mon', key: 'monday' },
+                  { day: 'Tue', key: 'tuesday' },
+                  { day: 'Wed', key: 'wednesday' },
+                  { day: 'Thu', key: 'thursday' },
+                  { day: 'Fri', key: 'friday' },
+                  { day: 'Sat', key: 'saturday' },
+                  { day: 'Sun', key: 'sunday' },
                 ].map((item) => {
-                  const dayData = tutor.availability?.[item.key];
-                  const isAvail = dayData ? dayData.available !== false : item.defaultSlot !== 'Not Available';
-                  const slotStr = dayData?.slots?.length > 0 ? dayData.slots.join(', ') : item.defaultSlot;
+                  const availObj = tutor.availability || {};
+                  let isAvail = false;
+                  let slotStr = 'Not Available';
+
+                  // 1. Direct day object check
+                  const dayVal = availObj[item.key];
+                  if (dayVal && typeof dayVal === 'object') {
+                    isAvail = dayVal.available !== false && ((dayVal.slots && dayVal.slots.length > 0) || dayVal.available === true);
+                    slotStr = isAvail ? (dayVal.slots?.length > 0 ? dayVal.slots.join(', ') : 'Available') : 'Not Available';
+                  } else if (typeof dayVal === 'string' && dayVal.trim()) {
+                    isAvail = Boolean(dayVal.toLowerCase() !== 'not available' && dayVal.toLowerCase() !== 'off' && dayVal.toLowerCase() !== 'none');
+                    slotStr = isAvail ? dayVal : 'Not Available';
+                  } else if (item.key === 'saturday') {
+                    const satSlot = availObj.saturdayHours || availObj.saturdaySlot || availObj.saturday;
+                    if (typeof satSlot === 'string' && satSlot.trim()) {
+                      isAvail = Boolean(satSlot.toLowerCase() !== 'not available' && satSlot.toLowerCase() !== 'off' && satSlot.toLowerCase() !== 'none');
+                      slotStr = isAvail ? satSlot : 'Not Available';
+                    } else if (satSlot && typeof satSlot === 'object') {
+                      isAvail = Boolean(satSlot.available && satSlot.slots?.length > 0);
+                      slotStr = isAvail ? satSlot.slots.join(', ') : 'Not Available';
+                    }
+                  } else if (item.key === 'sunday') {
+                    const sunSlot = availObj.sundayHours || availObj.sundaySlot || availObj.sunday;
+                    if (typeof sunSlot === 'string' && sunSlot.trim()) {
+                      isAvail = Boolean(sunSlot.toLowerCase() !== 'not available' && sunSlot.toLowerCase() !== 'off' && sunSlot.toLowerCase() !== 'none');
+                      slotStr = isAvail ? sunSlot : 'Not Available';
+                    } else if (sunSlot && typeof sunSlot === 'object') {
+                      isAvail = Boolean(sunSlot.available && sunSlot.slots?.length > 0);
+                      slotStr = isAvail ? sunSlot.slots.join(', ') : 'Not Available';
+                    }
+                  } else if (['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(item.key)) {
+                    const weekdaySlot = availObj.weekdays || availObj.mondayFriday || availObj.mondayFridayHours;
+                    if (weekdaySlot && typeof weekdaySlot === 'string' && weekdaySlot.trim()) {
+                      isAvail = Boolean(weekdaySlot.toLowerCase() !== 'not available' && weekdaySlot.toLowerCase() !== 'off');
+                      slotStr = isAvail ? weekdaySlot : 'Not Available';
+                    }
+                  }
 
                   return (
                     <div key={item.day} className="tp-avail-row">

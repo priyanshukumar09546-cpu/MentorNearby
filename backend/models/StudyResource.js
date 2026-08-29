@@ -188,6 +188,16 @@ const studyResourceSchema = new mongoose.Schema(
       url: { type: String, trim: true },
       publicId: { type: String, trim: true },
     },
+    previewPages: [
+      {
+        page: { type: Number },
+        url: { type: String, trim: true },
+      },
+    ],
+    previewUrl: {
+      type: String,
+      trim: true,
+    },
     published: {
       type: Boolean,
       default: true,

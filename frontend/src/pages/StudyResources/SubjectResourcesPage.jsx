@@ -12,6 +12,8 @@ import {
   downloadStudyResourceFile, 
   downloadStudyResourceComboFile 
 } from '../../api/studyResources';
+import { downloadWatermarkedNote } from '../../api/notes';
+import PdfPreviewCard from '../../components/studyResources/PdfPreviewCard';
 import { useAuth } from '../../context/AuthContext';
 import { getResourceAccess } from '../../utils/studyResourceAccess';
 import StudyPaymentModal from '../../components/studyResources/StudyPaymentModal';
@@ -128,22 +130,21 @@ const SubjectResourcesPage = () => {
       return;
     }
     try {
-      const res = await downloadStudyResourceFile(resource._id || resource.id);
-      const url = res?.downloadUrl || res?.data?.downloadUrl;
-      if (url) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `${resource.title || 'study_notes'}.pdf`);
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      const res = await downloadWatermarkedNote(resource._id || resource.id);
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `MentorNearby_${resource.title || 'notes'}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       if (err.response?.status === 403) {
         handleBuySingleResource(resource);
       } else {
-        alert('Failed to download document. Please try again.');
+        alert('Download failed. Please try again.');
       }
     }
   };
@@ -620,9 +621,13 @@ const SubjectResourcesPage = () => {
                     const isFormula = res.resourceType === 'FORMULA_SHEET';
                     const isFreeDemo = isFreeDemoChapter || Boolean(res.isFreeDemo);
                     
-                    // Exact Pricing:
-                    // Class 9/10: Formula Sheet = ₹7, Notes/PPT = ₹12
-                    // Class 11/12: Formula Sheet = ₹8, Notes/PPT = ₹14
+                    const userIsSubscribed = Boolean(
+                      user?.isSubscribed &&
+                      user?.subscriptionExpiry &&
+                      new Date(user.subscriptionExpiry) > new Date()
+                    );
+                    const isUnlocked = userIsSubscribed || res.isDownloadUnlocked;
+
                     const displayOrigPrice = res.originalPrice || (isFormula ? 49 : 79);
                     const defaultSalePrice = isFormula ? singleFormulaPrice : singleNotesPrice;
                     const salePrice = Number(res.downloadPrice || res.salePrice) || defaultSalePrice;
@@ -630,7 +635,7 @@ const SubjectResourcesPage = () => {
                     return (
                       <div
                         key={res._id}
-                        className={`sr-resource-card ${res.isDownloadUnlocked ? 'unlocked' : ''}`}
+                        className={`sr-resource-card ${isUnlocked ? 'unlocked' : ''}`}
                       >
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -638,7 +643,7 @@ const SubjectResourcesPage = () => {
                               {isFormula ? '📘 FORMULA SHEET' : '📝 NOTES / PPT'}
                             </span>
                             
-                            {res.isDownloadUnlocked ? (
+                            {isUnlocked ? (
                               <span style={{ fontSize: 11, fontWeight: 800, color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: 12 }}>
                                 ✓ UNLOCKED
                               </span>
@@ -659,9 +664,9 @@ const SubjectResourcesPage = () => {
                           
                           {/* Pricing Display */}
                           <div className="sr-res-pricing">
-                            {res.isDownloadUnlocked ? (
+                            {isUnlocked ? (
                               <span style={{ fontSize: 12, fontWeight: 800, color: '#15803D', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <span>✓</span> {res.unlockedVia === 'FORMULA_COMBO' ? 'In Formula Combo' : res.unlockedVia === 'QA_COMBO' ? 'In Q&A Combo' : 'Purchased'}
+                                <span>✓</span> {userIsSubscribed ? 'Subscribed' : res.unlockedVia === 'FORMULA_COMBO' ? 'In Formula Combo' : res.unlockedVia === 'QA_COMBO' ? 'In Q&A Combo' : 'Purchased'}
                               </span>
                             ) : (
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -669,7 +674,7 @@ const SubjectResourcesPage = () => {
                                   📖 Free Online Reading
                                 </span>
                                 <span style={{ fontSize: 11, color: 'var(--color-text-secondary, #64748B)' }}>
-                                  Download PDF: ₹{salePrice}
+                                  PDF: Subscription (₹99/mo)
                                 </span>
                               </div>
                             )}
@@ -692,14 +697,14 @@ const SubjectResourcesPage = () => {
                               <span>📖</span> Read Free
                             </button>
 
-                            {res.isDownloadUnlocked ? (
+                            {isUnlocked ? (
                               <>
                                 <button
                                   type="button"
                                   onClick={() => handleDirectDownload(res)}
                                   className="sr-btn-open-single"
                                   style={{ background: '#1E293B', borderColor: '#1E293B', color: '#FFF' }}
-                                  title="Download purchased original document"
+                                  title="Download watermarked PDF document"
                                 >
                                   <span>⬇️</span> Download PDF
                                 </button>
@@ -727,9 +732,9 @@ const SubjectResourcesPage = () => {
                                 onClick={() => handleBuySingleResource({ ...res, salePrice, downloadPrice: salePrice, originalPrice: displayOrigPrice })}
                                 className="sr-btn-unlock-single"
                                 style={{ padding: '7px 12px', fontSize: 12 }}
-                                title={`Unlock original PDF download for ₹${salePrice}`}
+                                title="Unlock PDF download with subscription"
                               >
-                                <span>⬇️</span> ₹{salePrice}
+                                <span>🔒</span> Subscribe
                               </button>
                             )}
                           </div>

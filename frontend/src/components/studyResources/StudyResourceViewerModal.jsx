@@ -905,61 +905,94 @@ const StudyResourceViewerModalInner = ({
                 <span>{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
               </button>
 
-              {/* Download PDF Button (Sitting in Header ABOVE PDF!) */}
-              {isUnlocked ? (
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                  style={{
-                    backgroundColor: '#059669',
-                    color: '#FFFFFF',
-                    border: '1px solid #10B981',
-                    borderRadius: '20px',
-                    padding: '5px 14px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)',
-                    opacity: downloading ? 0.6 : 1,
-                  }}
-                  title="Download Original PDF File"
-                >
-                  <span>{downloading ? '⏳' : '📥'}</span>
-                  <span>{downloading ? 'Downloading...' : 'Download PDF'}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (handleOpenPayment) {
-                      handleOpenPayment(resource);
+              {/* Download PDF Button — Subscription-gated watermarked download */}
+              {(() => {
+                const currentUser = user;
+                const userIsSubscribed =
+                  currentUser?.isSubscribed &&
+                  currentUser?.subscriptionExpiry &&
+                  new Date(currentUser.subscriptionExpiry) > new Date();
+                const rId = resource?._id || resource?.id || propResource?._id || propResource?.id;
+
+                const handleSubscribedDownload = async () => {
+                  if (!rId) return;
+                  setDownloading(true);
+                  try {
+                    const { downloadWatermarkedNote } = await import('../../api/notes');
+                    const res = await downloadWatermarkedNote(rId);
+                    const blob = new Blob([res.data], { type: 'application/pdf' });
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `MentorNearby_${resource?.title || 'notes'}.pdf`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                  } catch (err) {
+                    if (err.response?.status === 403) {
+                      if (handleOpenPayment) handleOpenPayment(resource || propResource);
+                    } else {
+                      console.error('Download error:', err);
                     }
-                  }}
-                  style={{
-                    backgroundColor: '#059669',
-                    color: '#FFFFFF',
-                    border: '1px solid #10B981',
-                    borderRadius: '20px',
-                    padding: '5px 14px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)',
-                    whiteSpace: 'nowrap',
-                  }}
-                  title="Download Original PDF"
-                >
-                  <span>🔒</span>
-                  <span>Download PDF • ₹{downloadPrice}</span>
-                </button>
-              )}
+                  } finally {
+                    setDownloading(false);
+                  }
+                };
+
+                if (userIsSubscribed) {
+                  return (
+                    <button
+                      type="button"
+                      onClick={handleSubscribedDownload}
+                      disabled={downloading}
+                      style={{
+                        backgroundColor: '#059669',
+                        color: '#FFFFFF',
+                        border: '1px solid #10B981',
+                        borderRadius: '20px',
+                        padding: '5px 14px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)',
+                        opacity: downloading ? 0.6 : 1,
+                      }}
+                      title="Download Watermarked PDF"
+                    >
+                      <span>{downloading ? '⏳' : '📥'}</span>
+                      <span>{downloading ? 'Preparing...' : 'Download PDF'}</span>
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    type="button"
+                    onClick={() => { if (handleOpenPayment) handleOpenPayment(resource || propResource); }}
+                    style={{
+                      backgroundColor: '#2563EB',
+                      color: '#FFFFFF',
+                      border: '1px solid #3B82F6',
+                      borderRadius: '20px',
+                      padding: '5px 14px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      whiteSpace: 'nowrap',
+                    }}
+                    title="Subscribe to Download"
+                  >
+                    <span>🔒</span>
+                    <span>Subscribe to Download</span>
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </header>

@@ -17,6 +17,8 @@ import {
   downloadStudyResourceFile,
   downloadStudyResourceComboFile,
 } from '../../api/studyResources';
+import { createSubscriptionOrder, verifySubscriptionPayment } from '../../api/subscription';
+import { downloadWatermarkedNote } from '../../api/notes';
 
 // Helper to dynamically load Razorpay script
 const loadRazorpayScript = () => {
@@ -83,17 +85,11 @@ const StudyPaymentModal = ({
   const isPpt = Boolean(resource?.resourceType === 'PPT' || resource?.type === 'PPT' || resource?.isPpt);
   const isFormula = !isPpt && Boolean(bundle?.comboType === 'FORMULA_COMBO' || bundle?.type === 'FORMULA' || resource?.resourceType === 'FORMULA_SHEET');
 
-  // Strict Single Class + Single Subject Pricing Matrix
-  // Course PPT: Individual = ₹19
-  // Formula Sheet: Individual = ₹7 (9/10), ₹8 (11/12)
-  // Notes: Individual = ₹12 (9/10), ₹14 (11/12)
-  const individualPrice = isPpt
-    ? 19
-    : isFormula
-      ? (isSenior ? 8 : 7)
-      : Number(resource?.downloadPrice || resource?.salePrice || (isSenior ? 14 : 12));
-  const singleComboPrice = isFormula ? (isSenior ? 60 : 50) : (isSenior ? 120 : 100);
+  // Subscription Pricing (Student = ₹99/mo, Tutor = ₹149/mo)
+  const subscriptionPlanPrice = user?.role === 'TUTOR' ? 149 : 99;
+  const subscriptionPlanType = user?.role === 'TUTOR' ? 'teacher' : 'student';
 
+  const singleComboPrice = isFormula ? (isSenior ? 60 : 50) : (isSenior ? 120 : 100);
   const comboPrice = bundle?.price || singleComboPrice;
   const comboOriginalVal = bundle?.originalPrice || (isFormula ? (isSenior ? 256 : 168) : (isSenior ? 448 : 288));
 
@@ -110,37 +106,44 @@ const StudyPaymentModal = ({
     ? `All Formula Sheets for Class ${effectiveClass} ${effectiveSubject}`
     : `All Chapter Notes for Class ${effectiveClass} ${effectiveSubject}`);
 
-  const activePrice = isDirectCombo || selectedOption === 'COMBO' ? comboPrice : individualPrice;
-
+  const activePrice = isDirectCombo || selectedOption === 'COMBO' ? comboPrice : subscriptionPlanPrice;
   const itemTitle = resource?.title || `${resource?.chapter || 'Chapter'} – ${resource?.chapterTitle || 'Study Resource'}`;
 
-  // Trigger Automatic Post-Payment PDF Download
+  // Trigger Automatic Post-Payment Watermarked PDF Download
   const triggerPdfDownload = async (targetResId, targetTitle) => {
     try {
       const isComboDownload = isDirectCombo || selectedOption === 'COMBO';
-      const res = isComboDownload
-        ? await downloadStudyResourceComboFile(targetResId)
-        : await downloadStudyResourceFile(targetResId);
-
-      const downloadUrl = res?.data?.downloadUrl || res?.downloadUrl || res?.fileUrl || `/api/study-resources/stream/${targetResId}?download=true`;
-      const cleanFileName = res?.data?.fileName || res?.fileName || `${(targetTitle || 'MentorNearby_Study_Material').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
-
-      const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
-        ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
-        : (typeof window !== 'undefined' ? window.location.origin : 'https://mentornearby-2.onrender.com');
-      const streamUrl = downloadUrl.startsWith('http') ? downloadUrl : `${backendBase}${downloadUrl}`;
-
-      const response = await fetch(streamUrl, { credentials: 'include' });
-      if (response.ok) {
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
+      if (isComboDownload) {
+        const res = await downloadStudyResourceComboFile(targetResId);
+        const downloadUrl = res?.data?.downloadUrl || res?.downloadUrl || res?.fileUrl || `/api/study-resources/stream/${targetResId}?download=true`;
+        const cleanFileName = res?.data?.fileName || res?.fileName || `${(targetTitle || 'MentorNearby_Study_Material').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+        const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
+          ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
+          : (typeof window !== 'undefined' ? window.location.origin : 'https://mentornearby-2.onrender.com');
+        const streamUrl = downloadUrl.startsWith('http') ? downloadUrl : `${backendBase}${downloadUrl}`;
+        const response = await fetch(streamUrl, { credentials: 'include' });
+        if (response.ok) {
+          const blob = await response.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = cleanFileName;
+          document.body.appendChild(link);
+          link.click();
+          window.URL.revokeObjectURL(blobUrl);
+          document.body.removeChild(link);
+        }
+      } else {
+        const res = await downloadWatermarkedNote(targetResId);
+        const blob = new Blob([res.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = cleanFileName;
+        link.href = url;
+        link.setAttribute('download', `MentorNearby_${(targetTitle || 'notes').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
         document.body.appendChild(link);
         link.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(link);
+        link.remove();
+        window.URL.revokeObjectURL(url);
       }
     } catch (dErr) {
       console.error('Post-payment auto download failed:', dErr);
@@ -161,23 +164,81 @@ const StudyPaymentModal = ({
       const isComboOrder = isDirectCombo || selectedOption === 'COMBO';
       const targetResId = resource?._id || resource?.id || (bundle?.id || 'c9-sci-ch1-formula');
 
-      // 1. Create order on backend
-      let orderRes;
-      if (isComboOrder) {
-        orderRes = await createBundlePaymentOrder({
-          bundleId: bundle?._id || bundle?.id,
-          classLevel: effectiveClass,
-          subject: effectiveSubject,
-          comboType: isFormula ? 'FORMULA_COMBO' : 'QA_COMBO',
+      // If Individual download chosen -> use Subscription flow (Rs 99/mo)
+      if (!isComboOrder && selectedOption === 'INDIVIDUAL') {
+        const isLoaded = await loadRazorpayScript();
+        if (!isLoaded) {
+          setErrorMsg('Failed to load Razorpay payment gateway. Please check your connection.');
+          setLoading(false);
+          return;
+        }
+
+        const orderRes = await createSubscriptionOrder(subscriptionPlanType);
+        const { orderId, amount, currency, razorpayKeyId, userEmail, userName } =
+          orderRes.data.data;
+
+        const options = {
+          key: razorpayKeyId,
+          amount,
+          currency,
+          name: 'MentorNearby',
+          description: `${subscriptionPlanType === 'teacher' ? 'Teacher' : 'Student'} Plan — Unlimited Notes + Chats`,
+          order_id: orderId,
+          prefill: {
+            name: userName || user?.name || '',
+            email: userEmail || user?.email || '',
+            contact: user?.phone || '',
+          },
+          theme: { color: '#2563EB' },
+          handler: async function (response) {
+            try {
+              setLoading(true);
+              await verifySubscriptionPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                planType: subscriptionPlanType,
+              });
+              setPaymentSuccess(true);
+              showToast('🎉 Subscribed! Downloading watermarked PDF...', 'success');
+              await triggerPdfDownload(targetResId, itemTitle);
+              setTimeout(() => {
+                onClose();
+                if (onSuccess) onSuccess();
+              }, 1200);
+            } catch (vErr) {
+              setErrorMsg(vErr.response?.data?.message || 'Payment verification failed');
+            } finally {
+              setLoading(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setLoading(false);
+            },
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (resp) {
+          setErrorMsg(resp.error?.description || 'Payment was cancelled or failed.');
+          setLoading(false);
         });
-      } else {
-        orderRes = await createResourcePaymentOrder(targetResId);
+        rzp.open();
+        return;
       }
+
+      // Combo order flow
+      const orderRes = await createBundlePaymentOrder({
+        bundleId: bundle?._id || bundle?.id,
+        classLevel: effectiveClass,
+        subject: effectiveSubject,
+        comboType: isFormula ? 'FORMULA_COMBO' : 'QA_COMBO',
+      });
 
       const orderData = orderRes.data || orderRes;
       const { orderId, amount, currency, keyId } = orderData;
 
-      // 2. Load Razorpay script
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded && !orderId?.startsWith('stub_')) {
         setErrorMsg('Failed to load Razorpay payment gateway. Please check your internet connection.');
@@ -185,34 +246,12 @@ const StudyPaymentModal = ({
         return;
       }
 
-      // 3. Dev stub handler if Razorpay keys are in dev stub mode
-      if (orderId?.startsWith('stub_order_') || !window.Razorpay) {
-        const stubVerifyRes = await verifyStudyPayment({
-          razorpayOrderId: orderId,
-          razorpayPaymentId: `stub_payment_${Date.now()}`,
-          razorpaySignature: 'stub_signature',
-        });
-
-        setPaymentSuccess(true);
-        showToast(stubVerifyRes.message || 'Payment verified! Unlock complete.', 'success');
-        if (!isDirectCombo && selectedOption === 'INDIVIDUAL') {
-          await triggerPdfDownload(targetResId, itemTitle);
-        }
-        setLoading(false);
-        setTimeout(() => {
-          onClose();
-          if (onSuccess) onSuccess();
-        }, 1200);
-        return;
-      }
-
-      // 4. Live Razorpay Options
       const options = {
         key: keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: Math.round(Number(amount || activePrice) * 100).toString(),
         currency: currency || 'INR',
         name: 'MentorNearby',
-        description: isComboOrder ? comboName : itemTitle,
+        description: comboName,
         order_id: orderId,
         prefill: {
           name: user?.name || '',
@@ -233,9 +272,6 @@ const StudyPaymentModal = ({
 
             setPaymentSuccess(true);
             showToast(verifyRes.message || 'Payment verified! Unlocked successfully.', 'success');
-            if (!isDirectCombo && selectedOption === 'INDIVIDUAL') {
-              await triggerPdfDownload(targetResId, itemTitle);
-            }
             setTimeout(() => {
               onClose();
               if (onSuccess) onSuccess();
@@ -411,7 +447,7 @@ const StudyPaymentModal = ({
               </div>
 
               <div className="sr-payment-options-list">
-                {/* Option 1: Individual Download */}
+                {/* Option 1: Monthly Subscription */}
                 <label
                   className={`sr-payment-opt-item ${selectedOption === 'INDIVIDUAL' ? 'active' : ''}`}
                   onClick={() => setSelectedOption('INDIVIDUAL')}
@@ -424,12 +460,12 @@ const StudyPaymentModal = ({
                       onChange={() => setSelectedOption('INDIVIDUAL')}
                     />
                     <div>
-                      <div className="sr-payment-opt-title">Individual Download</div>
-                      <div className="sr-payment-opt-sub">Download this specific PDF / PPT</div>
+                      <div className="sr-payment-opt-title">Monthly Subscription (Recommended)</div>
+                      <div className="sr-payment-opt-sub">Unlock All Notes &amp; Formula Sheets + Unlimited Chats</div>
                     </div>
                   </div>
                   <div className="sr-payment-opt-price">
-                    ₹{individualPrice}
+                    ₹{subscriptionPlanPrice}/mo
                   </div>
                 </label>
 
@@ -501,7 +537,9 @@ const StudyPaymentModal = ({
                 ? '✓ Unlocked!'
                 : isDirectCombo
                   ? `Pay ₹${comboPrice} & Unlock Combo`
-                  : `Pay ₹${activePrice} & Download`}
+                  : selectedOption === 'INDIVIDUAL'
+                    ? `Subscribe for ₹${subscriptionPlanPrice}/mo`
+                    : `Pay ₹${activePrice} & Unlock`}
           </button>
 
           <div className="sr-payment-footer-note" style={{ marginTop: 8 }}>

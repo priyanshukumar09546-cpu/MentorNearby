@@ -43,6 +43,7 @@ const studyResourceRoutes = require('./routes/studyResources');
 const courseRoutes = require('./routes/courses');
 const cmsRoutes = require('./routes/cmsRoutes');
 const subscriptionRoutes = require('./routes/subscriptions');
+const notesRoutes = require('./routes/notes');
 const { initScheduledSync } = require('./services/ncertSyncService');
 
 const app = express();
@@ -240,6 +241,7 @@ app.use('/api/study-resources', studyResourceRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/notes', notesRoutes);
 
 // Static uploads serving (for local master study combo files & documents)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

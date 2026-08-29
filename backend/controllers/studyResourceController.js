@@ -1641,6 +1641,14 @@ exports.adminCreateResource = asyncHandler(async (req, res, next) => {
     };
   }
 
+  let previewPages = [];
+  if (finalFileUrl && finalFileUrl.includes('res.cloudinary.com')) {
+    previewPages = [
+      { page: 1, url: finalFileUrl.replace(/\/upload\/(?:v\d+\/)?/, '/upload/pg_1,w_1000,f_png/').replace(/\.pdf$/i, '.png') },
+      { page: 2, url: finalFileUrl.replace(/\/upload\/(?:v\d+\/)?/, '/upload/pg_2,w_1000,f_png/').replace(/\.pdf$/i, '.png') },
+    ];
+  }
+
   const newResource = await StudyResource.create({
     title,
     description,
@@ -1667,6 +1675,11 @@ exports.adminCreateResource = asyncHandler(async (req, res, next) => {
     fileFormat: finalFormat,
     cloudinaryPublicId: finalPublicId,
     fileReference: fileRef,
+    previewPages,
+    thumbnail: {
+      url: previewPages[0]?.url || finalFileUrl,
+      publicId: finalPublicId || '',
+    },
   });
 
   return success(res, 'Study resource created successfully', { resource: newResource }, 201);
@@ -1737,6 +1750,20 @@ exports.adminUpdateResource = asyncHandler(async (req, res, next) => {
       mimeType: detected.mimeType,
       fileType: detected.fileType,
     };
+  }
+
+  // Auto-generate 2-page preview images if Cloudinary URL
+  if (resource.fileUrl && resource.fileUrl.includes('res.cloudinary.com')) {
+    resource.previewPages = [
+      { page: 1, url: resource.fileUrl.replace(/\/upload\/(?:v\d+\/)?/, '/upload/pg_1,w_1000,f_png/').replace(/\.pdf$/i, '.png') },
+      { page: 2, url: resource.fileUrl.replace(/\/upload\/(?:v\d+\/)?/, '/upload/pg_2,w_1000,f_png/').replace(/\.pdf$/i, '.png') },
+    ];
+    if (!resource.thumbnail || !resource.thumbnail.url) {
+      resource.thumbnail = {
+        url: resource.previewPages[0]?.url || resource.fileUrl,
+        publicId: resource.cloudinaryPublicId || '',
+      };
+    }
   }
 
   // Pre-save hook runs on save()

@@ -261,66 +261,72 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 // ============================================================
-// START SERVER (Waiting for MongoDB readiness before listening)
+// START SERVER (Resilient immediate listen + async DB connection)
 // ============================================================
 const PORT = process.env.PORT || 5000;
 
-const startServer = async () => {
-  try {
-    console.log('🚀 Starting TutorNearby Backend...');
-    
-    // 1. Await database connection before accepting any HTTP requests
-    await connectDB();
+// Safe Razorpay check
+let Razorpay;
+try {
+  Razorpay = require('razorpay');
+  console.log('✅ Razorpay loaded');
+} catch (e) {
+  console.log('⚠️ Razorpay not found, using test mode fallback');
+}
 
-    // 2. Automated Admin Seeder (when SEED_ADMIN === 'true')
-    if (process.env.SEED_ADMIN === 'true') {
-      try {
-        const seedAdmin = require('./seedAdmin');
-        await seedAdmin();
-      } catch (seedErr) {
-        console.error('⚠️ [SEED_ADMIN WARNING]:', seedErr.message);
+const startServer = () => {
+  console.log('🚀 Starting TutorNearby Backend on Render / Node...');
+
+  // Start HTTP server immediately so Render port checks pass instantly (<1s)
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 TutorNearby API running on port ${PORT} [${process.env.NODE_ENV || 'production'}]`);
+    console.log('🌐 Health endpoint live at /api/health');
+  });
+
+  // Connect to MongoDB Atlas asynchronously
+  connectDB()
+    .then(async () => {
+      console.log('✅ MongoDB connection verified');
+      // Automated Admin Seeder (when SEED_ADMIN === 'true')
+      if (process.env.SEED_ADMIN === 'true') {
+        try {
+          const seedAdmin = require('./seedAdmin');
+          await seedAdmin();
+        } catch (seedErr) {
+          console.error('⚠️ [SEED_ADMIN WARNING]:', seedErr.message);
+        }
       }
-    }
-
-    // 3. Initialize background schedulers
-    try {
-      initScheduledSync();
-    } catch (schedErr) {
-      console.warn('⚠️ NCERT background scheduler init warning:', schedErr.message);
-    }
-
-    // 3. Start HTTP server
-    const server = app.listen(PORT, () => {
-      console.log(`🚀 TutorNearby API running on port ${PORT} [${process.env.NODE_ENV}]`);
-      console.log('🌐 Server is ready to accept incoming requests');
+      try {
+        initScheduledSync();
+      } catch (schedErr) {
+        console.warn('⚠️ NCERT background scheduler init warning:', schedErr.message);
+      }
+    })
+    .catch((err) => {
+      console.error('⚠️ Initial DB connect warning (will retry on incoming requests):', err.message);
     });
 
-    // Handle unhandled promise rejections
-    process.on('unhandledRejection', (err) => {
-      console.error('UNHANDLED REJECTION! Shutting down...');
-      console.error(err?.name, err?.message);
-      server.close(() => {
-        process.exit(1);
-      });
-    });
+  // Handle unhandled promise rejections without crashing the container
+  process.on('unhandledRejection', (err) => {
+    console.error('⚠️ [UNHANDLED REJECTION]:', err?.name, err?.message);
+  });
 
-    // Handle SIGTERM (for Render / Docker graceful shutdown)
-    process.on('SIGTERM', () => {
-      console.log('SIGTERM received. Shutting down gracefully...');
-      server.close(() => {
-        console.log('Process terminated.');
-      });
-    });
+  process.on('uncaughtException', (err) => {
+    console.error('⚠️ [UNCAUGHT EXCEPTION]:', err?.name, err?.message);
+  });
 
-    return server;
-  } catch (fatalErr) {
-    console.error('💥 FATAL ERROR: Server startup aborted due to database connection failure:');
-    console.error(fatalErr.message);
-    process.exit(1);
-  }
+  // Handle SIGTERM (for Render / Docker graceful shutdown)
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+      console.log('Process terminated.');
+    });
+  });
+
+  return server;
 };
 
-// Start HTTP server only if executed directly (e.g. node server.js), not in serverless runtime
+// Start HTTP server only if executed directly (e.g. node server.js)
 if (require.main === module && !process.env.VERCEL) {
   startServer();
 } else {

@@ -38,3 +38,9 @@ export const unapproveStudent = (id, data) => client.put(`/admin/students/${id}/
 export const suspendStudent = (id, data) => client.post(`/admin/students/${id}/suspend`, data);
 export const reactivateStudent = (id) => client.post(`/admin/students/${id}/reactivate`);
 export const deleteStudentPermanently = (id, data) => client.delete(`/admin/students/${id}`, { data });
+
+// Subscription Management APIs
+export const getAdminSubscriptions = (params) => client.get('/admin/subscriptions', { params });
+export const grantUserSubscription = (id, data) => client.post(`/admin/users/${id}/grant-subscription`, data);
+export const revokeUserSubscription = (id) => client.post(`/admin/users/${id}/revoke-subscription`);
+

@@ -74,48 +74,76 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
     query.kycStatus = 'VERIFIED';
   }
 
-  let sortOption = {};
-  switch (sort) {
-    case 'fees_asc':
-      sortOption = { 'fees.amount': 1 };
-      break;
-    case 'fees_desc':
-      sortOption = { 'fees.amount': -1 };
-      break;
-    case 'experience':
-      sortOption = { 'experience.years': -1 };
-      break;
-    case 'rating':
-      sortOption = { averageRating: -1 };
-      break;
-    default:
-      // relevance - might need complex scoring, default to profileCompletion or random for now
-      sortOption = { profileCompletionPercentage: -1 };
-  }
+  const pageNum = parseInt(page) || 1;
+  const limitNum = Math.min(parseInt(limit) || 20, 50);
 
-  const pageNum = parseInt(page);
-  const limitNum = Math.min(parseInt(limit), 50);
-  const startIndex = (pageNum - 1) * limitNum;
-
+  // Fetch tutors with user subscription and lead tracking fields
   const tutors = await TutorProfile.find(query)
-    .populate('user', 'name isSuspended')
-    .sort(sortOption)
-    .skip(startIndex)
-    .limit(limitNum);
+    .populate('user', 'name isSuspended isSubscribed freeLeadsUsed freeChatsUsed subscriptionExpiry subscriptionType')
+    .lean();
 
   // Filter out any suspended or orphaned profiles
   const activeTutors = tutors.filter(t => t.user && !t.user.isSuspended);
 
-  const total = await TutorProfile.countDocuments(query);
+  // Helper: check active subscription
+  const isUserSubscribed = (t) =>
+    Boolean(
+      t.user?.isSubscribed &&
+      t.user?.subscriptionExpiry &&
+      new Date(t.user.subscriptionExpiry) > new Date()
+    );
+
+  // Apply Ranking / Sorting:
+  if (sort === 'fees_asc') {
+    activeTutors.sort((a, b) => (a.fees?.amount || 0) - (b.fees?.amount || 0));
+  } else if (sort === 'fees_desc') {
+    activeTutors.sort((a, b) => (b.fees?.amount || 0) - (a.fees?.amount || 0));
+  } else if (sort === 'experience') {
+    activeTutors.sort((a, b) => (b.experience?.years || 0) - (a.experience?.years || 0));
+  } else if (sort === 'rating') {
+    activeTutors.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+  } else {
+    // ── Default Ranking Algorithm ────────────────────────────
+    // 1. isSubscribed teachers first (top listing)
+    // 2. Then by rating (highest rating)
+    // 3. Then by freeLeadsUsed (new teachers get a chance)
+    activeTutors.sort((a, b) => {
+      const aSub = isUserSubscribed(a) ? 1 : 0;
+      const bSub = isUserSubscribed(b) ? 1 : 0;
+      if (aSub !== bSub) return bSub - aSub; // Subscribed first
+
+      const aRating = a.averageRating || 0;
+      const bRating = b.averageRating || 0;
+      if (aRating !== bRating) return bRating - aRating; // Higher rating first
+
+      const aLeads = a.user?.freeLeadsUsed ?? 0;
+      const bLeads = b.user?.freeLeadsUsed ?? 0;
+      if (aLeads !== bLeads) return aLeads - bLeads; // Lower leads used first (new teacher boost)
+
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+  }
+
+  // Decorate with isTop and isNew flags
+  const decoratedTutors = activeTutors.map((t) => ({
+    ...t,
+    isTop: isUserSubscribed(t),
+    isNew: !isUserSubscribed(t) && ((t.user?.freeLeadsUsed ?? 0) <= 1),
+    isSubscribed: isUserSubscribed(t),
+  }));
+
+  const total = decoratedTutors.length;
   const pages = Math.ceil(total / limitNum);
+  const startIndex = (pageNum - 1) * limitNum;
+  const paginatedTutors = decoratedTutors.slice(startIndex, startIndex + limitNum);
 
   // Increment search appearances in background
-  Promise.all(activeTutors.map(tutor => 
+  Promise.all(paginatedTutors.map(tutor => 
     TutorProfile.findByIdAndUpdate(tutor._id, { $inc: { searchAppearances: 1 } })
   )).catch(err => console.error('Error incrementing search appearances:', err));
 
   return success(res, 'Tutors fetched successfully', {
-    tutors: activeTutors,
+    tutors: paginatedTutors,
     total,
     page: pageNum,
     pages

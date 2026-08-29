@@ -17,7 +17,9 @@ const isActiveSubscriber = (user) => {
   return new Date(user.subscriptionExpiry) > new Date();
 };
 
-// @desc    Send a message (filtered, with freemium gate)
+const { sendLeadWhatsAppAlert } = require('../services/whatsappService');
+
+// @desc    Send a message (filtered, with freemium gate & spam protection)
 // @route   POST /api/chat/:userId
 // @access  Private (limit enforced by checkChatLimit middleware in route)
 exports.sendMessage = asyncHandler(async (req, res, next) => {
@@ -38,6 +40,32 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     return error(res, 'Receiver not found', 404);
   }
 
+  // ── Spam Control 1: Rate limit 1 message per 10 seconds ──────
+  const tenSecondsAgo = new Date(Date.now() - 10 * 1000);
+  const lastMessage = await Message.findOne({
+    sender: senderId,
+    createdAt: { $gte: tenSecondsAgo },
+  }).sort({ createdAt: -1 });
+
+  if (lastMessage) {
+    const elapsedMs = Date.now() - new Date(lastMessage.createdAt).getTime();
+    const waitSec = Math.max(1, Math.ceil((10000 - elapsedMs) / 1000));
+    return error(res, `Please wait ${waitSec}s before sending another message.`, 429, 'RATE_LIMITED');
+  }
+
+  // ── Spam Control 2: Prevent consecutive duplicate messages ───
+  const previousMessage = await Message.findOne({
+    sender: senderId,
+    receiver: receiverId,
+  }).sort({ createdAt: -1 });
+
+  if (
+    previousMessage &&
+    previousMessage.content.trim().toLowerCase() === content.trim().toLowerCase()
+  ) {
+    return error(res, 'Please do not repeat the exact same message.', 400, 'DUPLICATE_MESSAGE');
+  }
+
   // Filter message content before saving
   const filteredContent = filterMessage(content.trim());
 
@@ -45,10 +73,10 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     sender: senderId,
     receiver: receiverId,
     content: filteredContent,
-    originalBlocked: filteredContent !== content.trim(), // flag if something was redacted
+    originalBlocked: filteredContent !== content.trim(),
   });
 
-  // Notify receiver
+  // Notify receiver in-app
   await createNotification(
     receiverId,
     'New Message',
@@ -56,6 +84,16 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     'CONTACT',
     `/chat/${senderId}`
   );
+
+  // Send WhatsApp Lead Alert if receiver is a tutor
+  if (receiver.role === 'TUTOR') {
+    sendLeadWhatsAppAlert({
+      teacherPhone: receiver.phone,
+      studentName: req.user.name,
+      subject: 'Tuition Lead',
+      location: req.user.city || req.user.area || 'Nearby',
+    }).catch(() => {});
+  }
 
   return success(res, 'Message sent successfully', {
     message,

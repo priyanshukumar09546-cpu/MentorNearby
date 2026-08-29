@@ -1775,3 +1775,174 @@ exports.unapproveTutor = asyncHandler(async (req, res, next) => {
 
   return success(res, 'Tutor approval cancelled and removed from public website successfully', { tutor: tutorProfile });
 });
+
+// ============================================================
+// SUBSCRIPTION MANAGEMENT (Admin Control Center)
+// ============================================================
+
+// @desc    Get all subscriptions with stats and pagination
+// @route   GET /api/admin/subscriptions
+// @access  Private (Admin only)
+exports.adminGetSubscriptions = asyncHandler(async (req, res, next) => {
+  const { search, role, status = 'all', page = 1, limit = 50 } = req.query;
+
+  const query = {};
+
+  if (role) {
+    query.role = role.toUpperCase();
+  }
+
+  if (status === 'active') {
+    query.isSubscribed = true;
+    query.subscriptionExpiry = { $gt: new Date() };
+  } else if (status === 'expired') {
+    query.$or = [
+      { isSubscribed: false, subscriptionExpiry: { $exists: true, $ne: null } },
+      { isSubscribed: true, subscriptionExpiry: { $lte: new Date() } },
+    ];
+  } else {
+    // Return anyone who is currently subscribed OR has a subscription expiry on record
+    query.$or = [
+      { isSubscribed: true },
+      { subscriptionExpiry: { $exists: true, $ne: null } },
+    ];
+  }
+
+  if (search) {
+    const searchRegex = new RegExp(search.trim(), 'i');
+    query.$and = [
+      {
+        $or: [
+          { name: searchRegex },
+          { email: searchRegex },
+          { phone: searchRegex },
+        ],
+      },
+    ];
+  }
+
+  const pageNum = parseInt(page) || 1;
+  const limitNum = Math.min(parseInt(limit) || 50, 100);
+  const startIndex = (pageNum - 1) * limitNum;
+
+  const total = await User.countDocuments(query);
+  const subscribers = await User.find(query)
+    .select('name email phone role isSubscribed subscriptionType subscriptionExpiry razorpaySubscriptionId freeChatsUsed freeLeadsUsed createdAt')
+    .sort({ subscriptionExpiry: -1, createdAt: -1 })
+    .skip(startIndex)
+    .limit(limitNum)
+    .lean();
+
+  const now = new Date();
+  const totalActive = await User.countDocuments({
+    isSubscribed: true,
+    subscriptionExpiry: { $gt: now },
+  });
+  const totalStudentsSubscribed = await User.countDocuments({
+    role: { $in: ['STUDENT', 'PARENT'] },
+    isSubscribed: true,
+    subscriptionExpiry: { $gt: now },
+  });
+  const totalTutorsSubscribed = await User.countDocuments({
+    role: 'TUTOR',
+    isSubscribed: true,
+    subscriptionExpiry: { $gt: now },
+  });
+
+  const estimatedMonthlyRevenue = (totalStudentsSubscribed * 99) + (totalTutorsSubscribed * 149);
+
+  return success(res, 'Subscriptions fetched successfully', {
+    subscribers,
+    total,
+    page: pageNum,
+    pages: Math.ceil(total / limitNum),
+    stats: {
+      totalActive,
+      totalStudentsSubscribed,
+      totalTutorsSubscribed,
+      estimatedMonthlyRevenue,
+    },
+  });
+});
+
+// @desc    Manually grant subscription to a user (teacher/student)
+// @route   POST /api/admin/users/:id/grant-subscription
+// @access  Private (Admin only)
+exports.adminGrantSubscription = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { days = 30, planType } = req.body;
+
+  const user = await User.findById(id);
+  if (!user) {
+    return error(res, 'User not found', 404);
+  }
+
+  const durationDays = parseInt(days) || 30;
+  const now = new Date();
+  const currentExpiry = user.subscriptionExpiry && new Date(user.subscriptionExpiry) > now
+    ? new Date(user.subscriptionExpiry)
+    : now;
+
+  const newExpiry = new Date(currentExpiry.getTime() + durationDays * 24 * 60 * 60 * 1000);
+  const determinedPlan = planType || (user.role === 'TUTOR' ? 'teacher' : 'student');
+
+  user.isSubscribed = true;
+  user.subscriptionExpiry = newExpiry;
+  user.subscriptionType = determinedPlan;
+  await user.save();
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'USER_ROLE_CHANGED',
+    targetType: 'USER',
+    targetId: user._id,
+    details: `Manually granted ${durationDays} days of ${determinedPlan} subscription (valid until ${newExpiry.toLocaleDateString('en-IN')}) to ${user.name} (${user.email}).`,
+    req,
+  });
+
+  return success(res, `Successfully granted ${durationDays} days of subscription to ${user.name}`, {
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isSubscribed: user.isSubscribed,
+      subscriptionType: user.subscriptionType,
+      subscriptionExpiry: user.subscriptionExpiry,
+    },
+  });
+});
+
+// @desc    Manually revoke subscription
+// @route   POST /api/admin/users/:id/revoke-subscription
+// @access  Private (Admin only)
+exports.adminRevokeSubscription = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = await User.findById(id);
+  if (!user) {
+    return error(res, 'User not found', 404);
+  }
+
+  user.isSubscribed = false;
+  user.subscriptionExpiry = new Date(Date.now() - 1000);
+  await user.save();
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'USER_ROLE_CHANGED',
+    targetType: 'USER',
+    targetId: user._id,
+    details: `Revoked active subscription for ${user.name} (${user.email}).`,
+    req,
+  });
+
+  return success(res, `Subscription revoked for ${user.name}`, {
+    user: {
+      _id: user._id,
+      name: user.name,
+      isSubscribed: false,
+      subscriptionExpiry: user.subscriptionExpiry,
+    },
+  });
+});

@@ -41,6 +41,9 @@ const {
   suspendTutor,
   reactivateTutor,
   deleteTutorPermanently,
+  adminGetSubscriptions,
+  adminGrantSubscription,
+  adminRevokeSubscription,
 } = require('../controllers/adminController');
 const {
   adminGetKycList,
@@ -141,6 +144,11 @@ router.get('/connections', getConnections);
 router.get('/reviews', getReviews);
 router.get('/contact-unlocks', getContactUnlocks);
 router.get('/payments', getContactUnlocks);
+
+// Subscriptions Management
+router.get('/subscriptions', adminGetSubscriptions);
+router.post('/users/:id/grant-subscription', adminGrantSubscription);
+router.post('/users/:id/revoke-subscription', adminRevokeSubscription);
 
 // NCERT Sync & Educational Resources Management
 const {

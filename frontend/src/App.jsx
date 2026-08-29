@@ -62,6 +62,7 @@ const AdminContentPage = lazy(() => import('./pages/Admin/AdminContentPage'));
 const AdminCoursesPage = lazy(() => import('./pages/Admin/AdminCoursesPage'));
 const AdminStudyResourcesPage = lazy(() => import('./pages/Admin/AdminStudyResourcesPage'));
 const AdminFooterCmsPage = lazy(() => import('./pages/Admin/AdminFooterCmsPage'));
+const AdminSubscriptionsPage = lazy(() => import('./pages/Admin/AdminSubscriptionsPage'));
 
 // Books & Courses Secondary Routes
 const BooksHomePage = lazy(() => import('./pages/Books/BooksHomePage'));
@@ -156,6 +157,7 @@ const AppContent = () => {
                             <Route path="footer" element={<AdminFooterCmsPage />} />
                             <Route path="reports" element={<AdminReportsPage />} />
                             <Route path="payments" element={<AdminPaymentsPage />} />
+                            <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
                             <Route path="contact-unlocks" element={<AdminContactUnlocksPage />} />
                             <Route path="analytics" element={<AdminAnalyticsPage />} />
                             <Route path="notifications" element={<AdminNotificationsPage />} />

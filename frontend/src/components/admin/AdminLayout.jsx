@@ -62,6 +62,7 @@ const AdminLayout = ({ children }) => {
     {
       group: 'FINANCE',
       items: [
+        { path: '/admin/subscriptions', label: 'Subscriptions & Paid Users', icon: '💎' },
         { path: '/admin/payments', label: 'Payments & Revenue', icon: '💳' },
         { path: '/admin/contact-unlocks', label: 'Contact Unlocks', icon: '📱' },
       ],

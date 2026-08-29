@@ -401,6 +401,7 @@ const AdminStudentsPage = () => {
                   <th>ACADEMIC DETAILS</th>
                   <th>TUITION PREFERENCE</th>
                   <th>LOCATION</th>
+                  <th>PLAN &amp; CHATS</th>
                   <th>STATUS</th>
                   <th className="text-right">ACTIONS</th>
                 </tr>
@@ -412,6 +413,7 @@ const AdminStudentsPage = () => {
                   const tuition = st.profile?.tuitionRequirements || {};
                   const isSuspended = st.isSuspended;
                   const phoneNum = st.phone || parent.phone || '';
+                  const isSub = Boolean(st.isSubscribed && st.subscriptionExpiry && new Date(st.subscriptionExpiry) > new Date());
 
                   return (
                     <tr key={st._id} className={isSuspended ? 'bg-red-50/40' : ''}>
@@ -493,6 +495,24 @@ const AdminStudentsPage = () => {
                         ) : (
                           <span className="text-[#85857D] italic text-xs">Location not set</span>
                         )}
+                      </td>
+
+                      {/* 5.5 PLAN & CHATS USAGE */}
+                      <td>
+                        <div className="space-y-1">
+                          {isSub ? (
+                            <span className="inline-block bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full text-[10.5px] font-extrabold">
+                              ⭐ Subscribed
+                            </span>
+                          ) : (
+                            <span className="inline-block bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10.5px] font-bold">
+                              Free Plan
+                            </span>
+                          )}
+                          <div className="text-[11px] font-semibold text-[#475569]">
+                            💬 <strong>{st.freeChatsUsed ?? 0} / 3</strong> Chats Used
+                          </div>
+                        </div>
                       </td>
 
                       {/* 6. STATUS */}

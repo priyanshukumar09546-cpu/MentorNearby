@@ -15,6 +15,7 @@ import {
   suspendTutor,
   reactivateTutor,
   deleteTutorPermanently,
+  grantUserSubscription,
 } from '../../api/admin';
 import { useToast } from '../../context/ToastContext';
 import ProfileAvatar from '../../components/common/ProfileAvatar';
@@ -40,6 +41,7 @@ const AdminTutorsPage = () => {
   // Centered Modals state
   const [viewModalData, setViewModalData] = useState({ isOpen: false, tutor: null, loading: false });
   const [profileStatusModalData, setProfileStatusModalData] = useState({ isOpen: false, tutor: null });
+  const [subModalData, setSubModalData] = useState({ isOpen: false, tutor: null, days: 30, planType: 'teacher', loading: false });
   const [suspendModalData, setSuspendModalData] = useState({ isOpen: false, tutor: null, reason: 'Policy violation', customReason: '', submitting: false });
   const [reactivateModalData, setReactivateModalData] = useState({ isOpen: false, tutor: null, submitting: false });
   const [deleteModalData, setDeleteModalData] = useState({
@@ -122,6 +124,28 @@ const AdminTutorsPage = () => {
       fetchTutors();
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to cancel tutor approval', 'error');
+    }
+  };
+
+  // ------------------------------------------------------------
+  // ACTION: 💎 GRANT SUBSCRIPTION
+  // ------------------------------------------------------------
+  const handleGrantSub = async (e) => {
+    e.preventDefault();
+    if (!subModalData.tutor) return;
+    try {
+      setSubModalData((prev) => ({ ...prev, loading: true }));
+      const userId = subModalData.tutor.user?._id || subModalData.tutor._id;
+      const res = await grantUserSubscription(userId, {
+        days: subModalData.days,
+        planType: subModalData.planType,
+      });
+      showToast(res.data?.message || 'Subscription granted successfully!', 'success');
+      setSubModalData({ isOpen: false, tutor: null, days: 30, planType: 'teacher', loading: false });
+      fetchTutors();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to grant subscription', 'error');
+      setSubModalData((prev) => ({ ...prev, loading: false }));
     }
   };
 
@@ -581,6 +605,24 @@ const AdminTutorsPage = () => {
                             title="Check Profile Completion & Missing Info"
                           >
                             🔗
+                          </button>
+
+                          {/* ICON 2.5: 💎 Grant Subscription */}
+                          <button
+                            onClick={() =>
+                              setSubModalData({
+                                isOpen: true,
+                                tutor,
+                                days: 30,
+                                planType: 'teacher',
+                                loading: false,
+                              })
+                            }
+                            className="admin-btn-square"
+                            style={{ background: '#FEF3C7', color: '#B45309', borderColor: '#FDE68A' }}
+                            title="Grant 30-Day Teacher Subscription"
+                          >
+                            💎
                           </button>
 
                           {/* ICON 3: 🚫 Suspend or ♻️ Restore */}
@@ -1089,6 +1131,86 @@ const AdminTutorsPage = () => {
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* Centered Modal: 💎 Grant Subscription */}
+      {subModalData.isOpen && subModalData.tutor && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-box max-w-md w-full">
+            <div className="admin-modal-header bg-amber-500/10 border-b border-amber-500/20">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">💎</span>
+                <div>
+                  <h3 className="admin-modal-title text-amber-900">Grant Tutor Subscription</h3>
+                  <p className="text-xs text-amber-700">Tutor: {subModalData.tutor.name || 'Teacher'}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSubModalData({ ...subModalData, isOpen: false })}
+                className="admin-modal-close text-amber-900"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleGrantSub} className="p-6 space-y-4 text-xs">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900">
+                <p className="font-bold">⭐ Top Listing &amp; Unlimited Leads</p>
+                <p className="mt-1">
+                  Granting a subscription will place this teacher at the TOP of search rankings and allow unlimited responses to student tuition leads.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Duration (Days)</label>
+                <select
+                  value={subModalData.days}
+                  onChange={(e) => setSubModalData({ ...subModalData, days: Number(e.target.value) })}
+                  className="admin-select w-full"
+                >
+                  <option value={7}>7 Days (1 Week)</option>
+                  <option value={15}>15 Days (2 Weeks)</option>
+                  <option value={30}>30 Days (1 Month)</option>
+                  <option value={60}>60 Days (2 Months)</option>
+                  <option value={90}>90 Days (3 Months)</option>
+                  <option value={180}>180 Days (6 Months)</option>
+                  <option value={365}>365 Days (1 Year)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Plan Type</label>
+                <select
+                  value={subModalData.planType}
+                  onChange={(e) => setSubModalData({ ...subModalData, planType: e.target.value })}
+                  className="admin-select w-full"
+                >
+                  <option value="teacher">Teacher Plan (₹149/mo value)</option>
+                  <option value="vip">VIP Unlimited</option>
+                </select>
+              </div>
+
+              <div className="pt-3 border-t border-[#E2E8F0] flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSubModalData({ ...subModalData, isOpen: false })}
+                  className="admin-btn admin-btn-secondary"
+                  disabled={subModalData.loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={subModalData.loading}
+                  className="admin-btn bg-amber-600 text-white hover:bg-amber-700 font-bold"
+                >
+                  {subModalData.loading ? 'Granting...' : 'Confirm Subscription'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

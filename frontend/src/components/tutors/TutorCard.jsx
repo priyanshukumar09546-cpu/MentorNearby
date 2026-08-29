@@ -51,9 +51,44 @@ const TutorCard = ({ tutor, userCoordinates, onUnlock }) => {
         {/* Info */}
         <div className="mn-tutor-info-wrap">
           <div className="mn-tutor-head-row">
-            <h3 className="mn-tutor-card-name">
+            <h3 className="mn-tutor-card-name" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
               <span>{name}</span>
               {isVerified && <span className="mn-verified-pill">✓ Verified</span>}
+              {(tutor.isTop || tutor.isSubscribed || tutorUser.isSubscribed) && (
+                <span
+                  style={{
+                    background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                    color: '#FFFFFF',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '10px',
+                    fontWeight: '900',
+                    letterSpacing: '0.5px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    boxShadow: '0 2px 6px rgba(217, 119, 6, 0.3)',
+                  }}
+                >
+                  ⭐ TOP
+                </span>
+              )}
+              {tutor.isNew && !(tutor.isTop || tutor.isSubscribed || tutorUser.isSubscribed) && (
+                <span
+                  style={{
+                    background: '#DCFCE7',
+                    color: '#166534',
+                    border: '1px solid #BBF7D0',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '10px',
+                    fontWeight: '900',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  🌱 NEW
+                </span>
+              )}
             </h3>
 
             {/* Rating */}

@@ -65,12 +65,32 @@ const FAQS = [
   },
 ];
 
+const LIVE_ACTIVITIES = [
+  { name: 'Rahul', city: 'Bareilly', action: 'just chatted with Class 10 Maths teacher', time: '2 mins ago', icon: '💬' },
+  { name: 'Priya', city: 'Civil Lines', action: 'contacted Physics home tutor for Class 12', time: 'Just now', icon: '⚡' },
+  { name: 'Amit', city: 'Rajendra Nagar', action: 'started chat with Chemistry mentor', time: '4 mins ago', icon: '🧪' },
+  { name: 'Ananya', city: 'Subhash Nagar', action: 'unlocked Biology revision notes', time: 'Just now', icon: '📖' },
+  { name: 'Vikram', city: 'Model Town', action: 'requested demo with English tutor', time: '1 min ago', icon: '👨‍🏫' },
+  { name: 'Sneha', city: 'Rampur Garden', action: 'connected with Science teacher within 3km', time: '3 mins ago', icon: '📍' },
+  { name: 'Rohan', city: 'Mahanagar', action: 'chatted with Mathematics faculty', time: 'Just now', icon: '💬' },
+];
+
 const HomePage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState({ location: '', subject: '' });
   const [openFaq, setOpenFaq] = useState(null);
   const [featuredTutors, setFeaturedTutors] = useState([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
+  const [activeActivityIndex, setActiveActivityIndex] = useState(0);
+
+  // Live Activity rotation every 5 seconds
+  useEffect(() => {
+    const activityTimer = setInterval(() => {
+      setActiveActivityIndex((prev) => (prev + 1) % LIVE_ACTIVITIES.length);
+    }, 5000);
+    return () => clearInterval(activityTimer);
+  }, []);
+
   const [publicStats, setPublicStats] = useState({
     totalStudents: 0,
     totalVerifiedTutors: 0,
@@ -141,29 +161,29 @@ const HomePage = () => {
             <div className="mn-hero-left-col">
               {/* Eyebrow Pill */}
               <div className="mn-hero-eyebrow-pill">
-                <span className="mn-eyebrow-icon">🛡️</span>
-                <span>India's Trusted Tutor Platform</span>
+                <span className="mn-eyebrow-icon">📍</span>
+                <span>5km Ke Andar Verified Home Tutors</span>
               </div>
 
               {/* Main Headline */}
-              <h1 className="mn-hero-main-title" id="mn-hero-heading">
-                Find Trusted<br />
-                Tutors <span className="mn-gold-highlight">Near You</span>
+              <h1 className="mn-hero-main-title" id="mn-hero-heading" style={{ fontSize: 'clamp(28px, 4vw, 44px)', lineHeight: 1.15 }}>
+                Apne Mohalle Ka Best<br />
+                Home Tutor Dhoondhe <span className="mn-gold-highlight">- 5km Ke Andar</span>
               </h1>
 
               {/* Subtitle */}
               <p className="mn-hero-sub-text">
-                Connect with background-verified tutors for home tuition, online classes and exam prep.
+                Apne area ke verified home tutors se direct baat karein. Zero commission, affordable fees, aur pehle free chat!
               </p>
 
-              {/* Unified Quick Search Bar */}
+              {/* Unified Quick Search Bar (Location + Subject) */}
               <form className="mn-hero-search-bar" onSubmit={handleSearch} role="search">
                 <div className="mn-search-field">
                   <span className="mn-search-field-icon">📍</span>
                   <input
                     type="text"
                     className="mn-search-input"
-                    placeholder="City / Area"
+                    placeholder="Location (e.g. Bareilly, Civil Lines)"
                     value={search.location}
                     onChange={(e) => setSearch((s) => ({ ...s, location: e.target.value }))}
                   />
@@ -179,7 +199,7 @@ const HomePage = () => {
                     value={search.subject}
                     onChange={(e) => setSearch((s) => ({ ...s, subject: e.target.value }))}
                   >
-                    <option value="">Subject</option>
+                    <option value="">Select Subject</option>
                     {POPULAR_SUBJECTS.map((s) => (
                       <option key={s.name} value={s.name}>
                         {s.name}
@@ -190,9 +210,52 @@ const HomePage = () => {
                 </div>
 
                 <button type="submit" className="mn-search-submit-btn">
-                  Find a Tutor
+                  Search Tutors
                 </button>
               </form>
+
+              {/* 4 Feature Boxes Below Hero */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gap: 10,
+                  marginTop: 18,
+                  marginBottom: 18,
+                  width: '100%',
+                }}
+              >
+                {[
+                  { icon: '🛡️', title: 'Verified Teachers', desc: '100% ID & Degree Checked' },
+                  { icon: '💬', title: 'Free Chat Pehle', desc: 'Direct Message & Talk' },
+                  { icon: '💰', title: 'Affordable Fees', desc: 'Transparent & Low Cost' },
+                  { icon: '📍', title: 'Nearby Only', desc: '5km Ke Andar Local Tutors' },
+                ].map((box, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: 12,
+                      padding: '10px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    <span style={{ fontSize: 20 }}>{box.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>
+                        {box.title}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#64748B', marginTop: 2, fontWeight: 500 }}>
+                        {box.desc}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
               {/* 3 Large Action CTA Cards */}
               <div className="mn-hero-cta-cards-row">
@@ -228,41 +291,6 @@ const HomePage = () => {
                   </div>
                   <span className="mn-cta-card-arrow">›</span>
                 </Link>
-              </div>
-
-              {/* 4 Trust Badges in a Row */}
-              <div className="mn-hero-trust-row">
-                <div className="mn-trust-mini-item">
-                  <span className="mn-trust-mini-icon">🛡️</span>
-                  <div>
-                    <div className="mn-trust-mini-title">KYC Verified Tutors</div>
-                    <div className="mn-trust-mini-desc">100% Safe &amp; Secure</div>
-                  </div>
-                </div>
-
-                <div className="mn-trust-mini-item">
-                  <span className="mn-trust-mini-icon">💼</span>
-                  <div>
-                    <div className="mn-trust-mini-title">Trusted Contact Info</div>
-                    <div className="mn-trust-mini-desc">Parents Safety First</div>
-                  </div>
-                </div>
-
-                <div className="mn-trust-mini-item">
-                  <span className="mn-trust-mini-icon">👥</span>
-                  <div>
-                    <div className="mn-trust-mini-title">Verified Students</div>
-                    <div className="mn-trust-mini-desc">Build Real Connections</div>
-                  </div>
-                </div>
-
-                <div className="mn-trust-mini-item">
-                  <span className="mn-trust-mini-icon">📖</span>
-                  <div>
-                    <div className="mn-trust-mini-title">16+ Subjects Covered</div>
-                    <div className="mn-trust-mini-desc">For All Grades</div>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -341,6 +369,50 @@ const HomePage = () => {
               </div>
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================ */}
+      {/* 1.5 LIVE ACTIVITY TICKER: "Abhi Active Students"            */}
+      {/* ============================================================ */}
+      <section
+        style={{
+          background: 'linear-gradient(90deg, rgba(254, 243, 199, 0.45) 0%, rgba(253, 230, 138, 0.3) 100%)',
+          borderTop: '1px solid #FDE68A',
+          borderBottom: '1px solid #FDE68A',
+          padding: '12px 16px',
+        }}
+        aria-label="Live Student Activity on MentorNearby"
+      >
+        <div className="mn-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FEF3C7', border: '1px solid #F59E0B', padding: '4px 12px', borderRadius: 20 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A', display: 'inline-block', boxShadow: '0 0 8px #16A34A' }}></span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Abhi Active Students
+            </span>
+          </div>
+
+          <div
+            key={activeActivityIndex}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 13.5,
+              fontWeight: 600,
+              color: '#1E293B',
+              animation: 'fadeIn 0.4s ease-in-out',
+            }}
+          >
+            <span style={{ fontSize: 16 }}>{LIVE_ACTIVITIES[activeActivityIndex].icon}</span>
+            <span>
+              <strong>{LIVE_ACTIVITIES[activeActivityIndex].name}</strong> from <span style={{ color: '#D97706', fontWeight: 700 }}>{LIVE_ACTIVITIES[activeActivityIndex].city}</span>{' '}
+              {LIVE_ACTIVITIES[activeActivityIndex].action}
+            </span>
+            <span style={{ fontSize: 11, color: '#64748B', marginLeft: 4 }}>
+              • {LIVE_ACTIVITIES[activeActivityIndex].time}
+            </span>
           </div>
         </div>
       </section>
@@ -576,6 +648,78 @@ const HomePage = () => {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================ */}
+      {/* 5. SEO FOOTER CONTENT: LOCAL TUITION IN BAREILLY & NEARBY    */}
+      {/* ============================================================ */}
+      <section
+        style={{
+          background: '#F8FAFC',
+          borderTop: '1px solid #E2E8F0',
+          padding: '48px 0 36px',
+        }}
+        aria-label="Local Home Tuition and Tutor Directory Keywords"
+      >
+        <div className="mn-container">
+          <div style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>
+              Home Tuition in Bareilly &amp; Private Tutors Near You
+            </h2>
+            <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6, maxWidth: 900 }}>
+              MentorNearby is India's dedicated hyper-local home tuition and private tutor marketplace connecting students and parents directly with background-verified teachers within 5km. Whether you need Class 10 Board Exam prep, Class 12 IIT-JEE/NEET coaching, or foundational primary school guidance, find top-rated tutors near your locality with zero middleman commissions and free initial chat.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: 20,
+              paddingTop: 16,
+              borderTop: '1px solid #E2E8F0',
+            }}
+          >
+            <div>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>
+                Popular Localities in Bareilly
+              </h3>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 2 }}>
+                <li><Link to="/search?location=Civil+Lines" style={{ color: '#64748B', textDecoration: 'none' }}>Home Tutors in Civil Lines, Bareilly</Link></li>
+                <li><Link to="/search?location=Rajendra+Nagar" style={{ color: '#64748B', textDecoration: 'none' }}>Home Tuition in Rajendra Nagar</Link></li>
+                <li><Link to="/search?location=Subhash+Nagar" style={{ color: '#64748B', textDecoration: 'none' }}>Private Tutors in Subhash Nagar</Link></li>
+                <li><Link to="/search?location=Model+Town" style={{ color: '#64748B', textDecoration: 'none' }}>CBSE Tutors in Model Town</Link></li>
+                <li><Link to="/search?location=Rampur+Garden" style={{ color: '#64748B', textDecoration: 'none' }}>Maths &amp; Science Tutors in Rampur Garden</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>
+                Top Subjects &amp; Classes
+              </h3>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 2 }}>
+                <li><Link to="/search?subject=Maths" style={{ color: '#64748B', textDecoration: 'none' }}>Class 10 Maths Home Tutor near me</Link></li>
+                <li><Link to="/search?subject=Physics" style={{ color: '#64748B', textDecoration: 'none' }}>Class 12 Physics &amp; Numerical Faculty</Link></li>
+                <li><Link to="/search?subject=Chemistry" style={{ color: '#64748B', textDecoration: 'none' }}>Class 11 &amp; 12 Chemistry Tutors</Link></li>
+                <li><Link to="/search?subject=Biology" style={{ color: '#64748B', textDecoration: 'none' }}>NEET Biology Mentors in Bareilly</Link></li>
+                <li><Link to="/search?subject=English" style={{ color: '#64748B', textDecoration: 'none' }}>Spoken English &amp; Grammar Classes</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>
+                Quick Search Searches
+              </h3>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 2 }}>
+                <li><Link to="/search" style={{ color: '#64748B', textDecoration: 'none' }}>Tuition near me within 5km</Link></li>
+                <li><Link to="/search" style={{ color: '#64748B', textDecoration: 'none' }}>Female Home Tutor in Bareilly</Link></li>
+                <li><Link to="/books" style={{ color: '#64748B', textDecoration: 'none' }}>Free NCERT Solutions PDF</Link></li>
+                <li><Link to="/study-resources" style={{ color: '#64748B', textDecoration: 'none' }}>Topper Notes &amp; Formula Sheets</Link></li>
+                <li><Link to="/become-tutor" style={{ color: '#64748B', textDecoration: 'none' }}>Join as Home Tutor (Earn ₹15k-₹40k/mo)</Link></li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>

@@ -90,10 +90,15 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
   // Notify receiver in-app
   await createNotification(
     receiverId,
-    'New Message',
-    `You have received a new message from ${req.user.name}.`,
-    'CONTACT',
-    `/chat/${senderId}`
+    `New Message from ${req.user.name}`,
+    filteredContent || 'Sent you a new message',
+    'MESSAGE',
+    `/messages?user=${senderId}&chat=${[senderId, receiverId].sort().join('_')}&recipient=${senderId}`,
+    {
+      senderId: senderId,
+      conversationId: [senderId, receiverId].sort().join('_'),
+      actionText: 'Reply in Chat',
+    }
   );
 
   // Send WhatsApp Lead Alert if receiver is a tutor

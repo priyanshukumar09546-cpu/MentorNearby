@@ -10,8 +10,21 @@ const NotificationSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.ObjectId,
       ref: 'User',
-      required: true,
       index: true,
+    },
+    recipient: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'User',
+      index: true,
+    },
+    sender: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    conversationId: {
+      type: String,
+      default: null,
     },
     title: {
       type: String,
@@ -116,8 +129,8 @@ const NotificationSchema = new mongoose.Schema(
   }
 );
 
-// Compound index for fast querying user inbox
+// Compound indexes for ultra-fast inbox querying
 NotificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
-NotificationSchema.index({ user: 1, type: 1, createdAt: -1 });
+NotificationSchema.index({ recipient: 1, isRead: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Notification', NotificationSchema);

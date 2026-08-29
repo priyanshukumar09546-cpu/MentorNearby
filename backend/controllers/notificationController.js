@@ -21,6 +21,7 @@ const asyncHandler = require('../utils/asyncHandler');
  * @access  Private (Logged-in Users)
  */
 exports.getNotifications = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id || req.user.id;
   const {
     page = 1,
     limit = 20,
@@ -32,7 +33,9 @@ exports.getNotifications = asyncHandler(async (req, res, next) => {
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 20));
 
-  const query = { user: req.user.id };
+  const query = {
+    $or: [{ user: userId }, { recipient: userId }],
+  };
 
   // Tab Filtering
   if (tab === 'unread') {
@@ -49,25 +52,39 @@ exports.getNotifications = asyncHandler(async (req, res, next) => {
   // Search in title / message
   if (search && search.trim()) {
     const sRegex = new RegExp(search.trim(), 'i');
-    query.$or = [{ title: sRegex }, { message: sRegex }];
+    query.$and = [{ $or: [{ title: sRegex }, { message: sRegex }] }];
   }
 
   const [notifications, total, unreadCount] = await Promise.all([
     Notification.find(query)
       .sort({ createdAt: -1 })
+      .populate('sender', 'name avatar role')
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum)
       .lean(),
     Notification.countDocuments(query),
-    Notification.countDocuments({ user: req.user.id, isRead: false }),
+    Notification.countDocuments({
+      $or: [{ user: userId }, { recipient: userId }],
+      isRead: false,
+    }),
   ]);
 
-  return success(res, 'Notifications retrieved successfully', {
-    notifications,
-    total,
+  return res.status(200).json({
+    success: true,
+    count: unreadCount,
     unreadCount,
+    total,
+    notifications,
     page: pageNum,
     pages: Math.ceil(total / limitNum) || 1,
+    data: {
+      count: unreadCount,
+      unreadCount,
+      total,
+      notifications,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum) || 1,
+    },
   });
 });
 
@@ -77,12 +94,18 @@ exports.getNotifications = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.getUnreadCount = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id || req.user.id;
   const unreadCount = await Notification.countDocuments({
-    user: req.user.id,
+    $or: [{ user: userId }, { recipient: userId }],
     isRead: false,
   });
 
-  return success(res, 'Unread count retrieved', { unreadCount });
+  return res.status(200).json({
+    success: true,
+    count: unreadCount,
+    unreadCount,
+    data: { count: unreadCount, unreadCount },
+  });
 });
 
 /**
@@ -91,9 +114,10 @@ exports.getUnreadCount = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.getNotificationById = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id || req.user.id;
   const notification = await Notification.findOne({
     _id: req.params.id,
-    user: req.user.id,
+    $or: [{ user: userId }, { recipient: userId }],
   });
 
   if (!notification) {
@@ -107,13 +131,14 @@ exports.getNotificationById = asyncHandler(async (req, res, next) => {
   }
 
   const unreadCount = await Notification.countDocuments({
-    user: req.user.id,
+    $or: [{ user: userId }, { recipient: userId }],
     isRead: false,
   });
 
   return success(res, 'Notification retrieved', {
     notification,
     unreadCount,
+    count: unreadCount,
   });
 });
 
@@ -123,25 +148,27 @@ exports.getNotificationById = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.markAsRead = asyncHandler(async (req, res, next) => {
-  const notification = await Notification.findOne({
-    _id: req.params.id,
-    user: req.user.id,
-  });
-
-  if (!notification) {
-    return error(res, 'Notification not found', 404);
-  }
-
-  notification.isRead = true;
-  notification.readAt = new Date();
-  await notification.save();
+  const userId = req.user._id || req.user.id;
+  const notification = await Notification.findOneAndUpdate(
+    {
+      _id: req.params.id,
+      $or: [{ user: userId }, { recipient: userId }],
+    },
+    { isRead: true, readAt: new Date() },
+    { new: true }
+  );
 
   const unreadCount = await Notification.countDocuments({
-    user: req.user.id,
+    $or: [{ user: userId }, { recipient: userId }],
     isRead: false,
   });
 
-  return success(res, 'Notification marked as read', { unreadCount });
+  return res.status(200).json({
+    success: true,
+    count: unreadCount,
+    unreadCount,
+    notification,
+  });
 });
 
 /**
@@ -150,12 +177,21 @@ exports.markAsRead = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.markAllAsRead = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id || req.user.id;
   await Notification.updateMany(
-    { user: req.user.id, isRead: false },
+    {
+      $or: [{ user: userId }, { recipient: userId }],
+      isRead: false,
+    },
     { isRead: true, readAt: new Date() }
   );
 
-  return success(res, 'All notifications marked as read', { unreadCount: 0 });
+  return res.status(200).json({
+    success: true,
+    count: 0,
+    unreadCount: 0,
+    message: 'All notifications marked as read',
+  });
 });
 
 /**
@@ -638,6 +674,9 @@ exports.createNotification = async (
 
     const notification = await Notification.create({
       user: userId,
+      recipient: userId,
+      sender: options.senderId || options.sender || null,
+      conversationId: options.conversationId || null,
       title: title.trim(),
       message: message.trim(),
       type: (type || 'INFO').toUpperCase(),

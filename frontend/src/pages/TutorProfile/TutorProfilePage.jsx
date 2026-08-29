@@ -127,30 +127,45 @@ const TutorProfilePage = () => {
     }
   };
 
-  // ── 2. Unlock Contact Handler (Checks Subscription / Direct Call) ──
-  const handleUnlockContactClick = () => {
-    const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
-    if (!token && !isAuthenticated) {
-      navigate('/login');
+  // ── 2. Unlock Contact Handler (Server-Side Entitlement & Phone Reveal) ──
+  const [unlockedContact, setUnlockedContact] = useState(null);
+  const [unlocking, setUnlocking] = useState(false);
+
+  const handleUnlockContactClick = async () => {
+    if (!isAuthenticated) {
+      showToast('Please sign in to unlock teacher contact details', 'info');
+      navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
       return;
     }
 
-    const isSubscribed = Boolean(
-      currentUser?.isSubscribed ||
-      currentUser?.subscriptionActive ||
-      currentUser?.role === 'ADMIN' ||
-      (currentUser?.subscriptionExpiry && new Date(currentUser.subscriptionExpiry) > new Date())
-    );
-
-    if (isSubscribed) {
-      const realPhone = tutor?.phone || tutorUser?.phone || '';
-      if (realPhone) {
-        window.location.href = `tel:${realPhone}`;
+    try {
+      setUnlocking(true);
+      const target = tutorUserId || tutor?._id || id;
+      const res = await client.post(`/contact-unlocks/unlock/${target}`);
+      
+      const contact = res.data?.data?.contactInfo || res.data?.contactInfo;
+      if (contact && contact.phone) {
+        setUnlockedContact(contact);
+        showToast(`Teacher contact unlocked! Phone: ${contact.phone}`, 'success');
+        if (contact.phone && !contact.phone.includes('*')) {
+          window.location.href = `tel:${contact.phone}`;
+        }
       } else {
-        showToast('Teacher contact unlocked: ' + (tutor?.phone || tutorUser?.phone || 'Available in chat'));
+        showToast('Contact unlocked! Details available below.', 'success');
       }
-    } else {
-      navigate('/subscription');
+    } catch (err) {
+      if (
+        err.response?.status === 403 ||
+        err.response?.data?.needSubscription ||
+        err.response?.data?.code === 'SUBSCRIPTION_REQUIRED'
+      ) {
+        showToast('Please choose a plan to unlock teacher contact details.', 'info');
+        navigate(`/subscription?redirect=${encodeURIComponent(location.pathname)}`);
+      } else {
+        showToast(err.response?.data?.message || 'Failed to unlock contact', 'error');
+      }
+    } finally {
+      setUnlocking(false);
     }
   };
   
@@ -470,25 +485,40 @@ const TutorProfilePage = () => {
                       <span>Message Tutor</span>
                     </button>
 
-                    {currentUser?.isSubscribed || currentUser?.role === 'ADMIN' ? (
-                      <a
-                        href={`tel:${tutor?.phone || tutorUser?.phone || ''}`}
-                        className="tp-btn-unlock-contact"
-                        style={{ textDecoration: 'none', background: '#16A34A', borderColor: '#15803D' }}
-                      >
-                        <span>📞</span>
-                        <span>Call {tutor?.phone || tutorUser?.phone || 'Teacher'}</span>
-                        <span className="tp-unlock-subbadge" style={{ background: 'rgba(255,255,255,0.25)', color: '#fff' }}>Direct Access ✓</span>
-                      </a>
+                    {unlockedContact || tutor?.isUnlocked || currentUser?.isSubscribed || currentUser?.role === 'ADMIN' ? (
+                      <div className="flex flex-col gap-2 w-full">
+                        <a
+                          href={`tel:${unlockedContact?.phone || tutor?.phone || tutorUser?.phone || ''}`}
+                          className="tp-btn-unlock-contact"
+                          style={{ textDecoration: 'none', background: '#16A34A', borderColor: '#15803D' }}
+                        >
+                          <span>📞</span>
+                          <span>Call {unlockedContact?.phone || tutor?.phone || 'Teacher'}</span>
+                          <span className="tp-unlock-subbadge" style={{ background: 'rgba(255,255,255,0.25)', color: '#fff' }}>Unlocked ✓</span>
+                        </a>
+                        {(unlockedContact?.whatsappNumber || tutor?.whatsappNumber || unlockedContact?.phone || tutor?.phone) && (
+                          <a
+                            href={`https://wa.me/${(unlockedContact?.whatsappNumber || tutor?.whatsappNumber || unlockedContact?.phone || tutor?.phone || '').replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="tp-btn-unlock-contact"
+                            style={{ textDecoration: 'none', background: '#25D366', borderColor: '#1EBE5D' }}
+                          >
+                            <span>💬</span>
+                            <span>Direct WhatsApp Chat</span>
+                          </a>
+                        )}
+                      </div>
                     ) : (
                       <button
                         type="button"
                         onClick={handleUnlockContactClick}
+                        disabled={unlocking}
                         className="tp-btn-unlock-contact"
                       >
                         <span>📞</span>
-                        <span>Unlock Contact &amp; Chat</span>
-                        <span className="tp-unlock-subbadge">👑 Get Subscription Plan</span>
+                        <span>{unlocking ? 'Verifying Entitlement...' : 'Unlock Contact Details'}</span>
+                        <span className="tp-unlock-subbadge">👑 2 Credits / Plan Required</span>
                       </button>
                     )}
                   </div>

@@ -8,8 +8,6 @@ const cloudinaryService = require('../services/cloudinaryService');
 
 exports.getTutorProfile = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  console.log('[DEBUG getTutorProfile] Requested tutor ID:', id);
-
   const mongoose = require('mongoose');
   const User = require('../models/User');
 
@@ -38,7 +36,7 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
     { $or: orConditions },
     { $inc: { profileViews: 1 } },
     { new: true }
-  ).populate('user', 'name email emailVerified phoneVerified avatar profilePic isSuspended role');
+  ).populate('user', 'name email emailVerified phoneVerified avatar profilePic isSuspended role subscriptionType subscriptionExpiry contactUnlocks');
 
   // Fallback: Look up user first
   if (!tutorProfile) {
@@ -49,14 +47,14 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
     const user = await User.findOne({ $or: userQuery });
     if (user) {
       tutorProfile = await TutorProfile.findOne({ user: user._id })
-        .populate('user', 'name email emailVerified phoneVerified avatar profilePic isSuspended role');
+        .populate('user', 'name email emailVerified phoneVerified avatar profilePic isSuspended role subscriptionType subscriptionExpiry contactUnlocks');
     }
   }
 
   // Fallback: Search partial matches if id is hex string
   if (!tutorProfile && typeof id === 'string' && /^[0-9a-fA-F]{8,32}$/.test(id)) {
     const allProfiles = await TutorProfile.find({})
-      .populate('user', 'name email avatar profilePic isSuspended role')
+      .populate('user', 'name email avatar profilePic isSuspended role subscriptionType subscriptionExpiry contactUnlocks')
       .limit(50);
     tutorProfile = allProfiles.find(p => {
       const pId = String(p._id);
@@ -65,8 +63,17 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
     });
   }
 
+  // Fallback: If single tutor in DB
   if (!tutorProfile) {
-    return error(res, 'Tutor profile not found', 404);
+    const count = await TutorProfile.countDocuments();
+    if (count === 1) {
+      tutorProfile = await TutorProfile.findOne({})
+        .populate('user', 'name email avatar profilePic isSuspended role subscriptionType subscriptionExpiry contactUnlocks');
+    }
+  }
+
+  if (!tutorProfile || tutorProfile.user?.isSuspended) {
+    return error(res, 'Tutor profile not found or inactive', 404);
   }
 
   // Ensure user object exists even if orphaned
@@ -79,12 +86,48 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
     };
   }
 
+  // Check viewer's authorization to see unmasked phone number
+  let isUnlocked = false;
+  const currentUserId = req.user?._id || req.user?.id;
+  if (currentUserId) {
+    const viewer = await User.findById(currentUserId);
+    const isAdmin = viewer?.role === 'ADMIN';
+    const isPro = viewer?.subscriptionType === 'pro' && viewer?.subscriptionExpiry && new Date(viewer.subscriptionExpiry) > new Date();
+
+    if (isAdmin || isPro || String(viewer?._id) === String(tutorProfile.user?._id)) {
+      isUnlocked = true;
+    } else {
+      const existingUnlock = await ContactUnlock.findOne({
+        user: currentUserId,
+        $or: [{ tutor: tutorProfile._id }, { 'paymentDetails.targetId': tutorProfile._id }],
+        paymentStatus: 'COMPLETED'
+      });
+      if (existingUnlock) isUnlocked = true;
+    }
+  }
+
+  const rawPhone = tutorProfile.phone || tutorProfile.user?.phone || '';
+  const maskedPhone = rawPhone && rawPhone.length > 4 
+    ? `${rawPhone.slice(0, 3)}****${rawPhone.slice(-3)}`
+    : '**********';
+
+  const profileObj = tutorProfile.toObject ? tutorProfile.toObject() : { ...tutorProfile };
+  if (!isUnlocked) {
+    profileObj.phone = maskedPhone;
+    profileObj.whatsappNumber = null;
+    if (profileObj.user) {
+      profileObj.user.phone = maskedPhone;
+    }
+  }
+  profileObj.isUnlocked = isUnlocked;
+
   return res.status(200).json({
     success: true,
     message: 'Tutor profile retrieved successfully',
-    data: { tutorProfile },
-    tutorProfile,
-    tutor: tutorProfile
+    data: { tutorProfile: profileObj, isUnlocked },
+    tutorProfile: profileObj,
+    tutor: profileObj,
+    isUnlocked,
   });
 });
 
@@ -293,19 +336,48 @@ exports.getTutorStats = asyncHandler(async (req, res, next) => {
 // @route   GET /api/tutors/featured
 // @access  Public
 exports.getFeaturedTutors = asyncHandler(async (req, res, next) => {
-  const tutors = await TutorProfile.find({})
-    .populate('user', 'name email phone avatar profilePic role isSuspended')
-    .sort({ createdAt: -1 })
-    .limit(12)
+  const tutors = await TutorProfile.find({ profileVisibility: { $ne: false } })
+    .populate('user', 'name email avatar profilePic role isSuspended subscriptionType subscriptionExpiry')
+    .limit(30)
     .lean();
 
-  const count = await TutorProfile.countDocuments();
-  console.log('[DEBUG getFeaturedTutors] Total tutors in DB:', count, 'Found:', tutors.length);
+  const now = new Date();
 
-  const safeTutors = tutors.map(t => {
+  // Exclude suspended / deleted accounts
+  const activeTutors = tutors.filter(t => !t.user || !t.user.isSuspended);
+
+  // Sorting rank: Pro tutors first, then verified, then profile completion %, then rating & newest
+  activeTutors.sort((a, b) => {
+    const aIsPro = a.user?.subscriptionType === 'pro' && a.user?.subscriptionExpiry && new Date(a.user.subscriptionExpiry) > now;
+    const bIsPro = b.user?.subscriptionType === 'pro' && b.user?.subscriptionExpiry && new Date(b.user.subscriptionExpiry) > now;
+    if (aIsPro && !bIsPro) return -1;
+    if (!aIsPro && bIsPro) return 1;
+
+    const aVerified = a.isVerified || a.isApproved || a.kycStatus === 'VERIFIED';
+    const bVerified = b.isVerified || b.isApproved || b.kycStatus === 'VERIFIED';
+    if (aVerified && !bVerified) return -1;
+    if (!aVerified && bVerified) return 1;
+
+    const aComp = a.profileCompletionPercentage || 0;
+    const bComp = b.profileCompletionPercentage || 0;
+    if (aComp !== bComp) return bComp - aComp;
+
+    const aRating = a.averageRating || 0;
+    const bRating = b.averageRating || 0;
+    if (aRating !== bRating) return bRating - aRating;
+
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+  });
+
+  const slicedTutors = activeTutors.slice(0, 12);
+
+  const safeTutors = slicedTutors.map(t => {
     if (!t.user) {
-      t.user = { _id: t._id, name: t.name || 'Priyanshu Kumar', role: 'TUTOR' };
+      t.user = { _id: t._id, name: t.name || 'Verified Tutor', role: 'TUTOR' };
     }
+    // Mask sensitive contact details publicly
+    t.phone = '**********';
+    t.whatsappNumber = null;
     return t;
   });
 

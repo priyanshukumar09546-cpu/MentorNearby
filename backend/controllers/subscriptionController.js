@@ -1,6 +1,7 @@
 // ============================================================
 // controllers/subscriptionController.js
-// Razorpay subscription plans: Student ₹99/mo, Teacher ₹149/mo
+// MentorNearby 4-Tier Subscription & Contact Unlock System
+// Free ₹0 | Single Unlock ₹99 | Starter ₹199/mo | Pro ₹499/mo
 // ============================================================
 
 const Razorpay = require('razorpay');
@@ -8,8 +9,10 @@ const crypto = require('crypto');
 const asyncHandler = require('../utils/asyncHandler');
 const { success, error } = require('../utils/apiResponse');
 const User = require('../models/User');
+const TutorProfile = require('../models/TutorProfile');
+const ContactUnlock = require('../models/ContactUnlock');
 
-// Lazily initialize Razorpay so the module doesn't crash when loaded without env vars
+// Lazily initialize Razorpay
 const getRazorpay = () => {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     throw new Error('Razorpay keys not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in environment.');
@@ -22,13 +25,82 @@ const getRazorpay = () => {
 
 // Plan pricing (in paise — INR × 100)
 const PLANS = {
-  student: { amount: 9900, currency: 'INR', label: 'Basic Plan (5 Unlocks)', interval: 30, unlocks: 5 },
-  basic: { amount: 9900, currency: 'INR', label: 'Basic Plan (5 Unlocks)', interval: 30, unlocks: 5 },
-  premium: { amount: 19900, currency: 'INR', label: 'Premium Plan (15 Unlocks)', interval: 30, unlocks: 15 },
-  teacher: { amount: 14900, currency: 'INR', label: 'Teacher Plan (Unlimited Leads)', interval: 30, unlocks: 0 },
+  free: {
+    amount: 0,
+    currency: 'INR',
+    label: 'Free Plan',
+    interval: 0,
+    unlocks: 0,
+    isSubscription: false,
+    badge: null,
+  },
+  single: {
+    amount: 9900,
+    currency: 'INR',
+    label: 'Single Unlock – 2 Contacts (₹99)',
+    interval: 0,
+    unlocks: 2,
+    isSubscription: false,
+    badge: 'One-Time',
+  },
+  starter: {
+    amount: 19900,
+    currency: 'INR',
+    label: 'Starter Plan – 20 Contacts (₹199/mo)',
+    interval: 30,
+    unlocks: 20,
+    isSubscription: true,
+    badge: 'Most Popular for Students',
+  },
+  pro: {
+    amount: 49900,
+    currency: 'INR',
+    label: 'Pro Plan – Unlimited Contacts (₹499/mo)',
+    interval: 30,
+    unlocks: 999999,
+    isSubscription: true,
+    badge: 'Best for Tutors',
+  },
+  // Backward compatibility aliases
+  basic: {
+    amount: 9900,
+    currency: 'INR',
+    label: 'Single Unlock – 2 Contacts (₹99)',
+    interval: 0,
+    unlocks: 2,
+    isSubscription: false,
+    badge: 'One-Time',
+  },
+  student: {
+    amount: 19900,
+    currency: 'INR',
+    label: 'Starter Plan – 20 Contacts (₹199/mo)',
+    interval: 30,
+    unlocks: 20,
+    isSubscription: true,
+    badge: 'Most Popular for Students',
+  },
+  teacher: {
+    amount: 49900,
+    currency: 'INR',
+    label: 'Pro Plan – Unlimited Contacts (₹499/mo)',
+    interval: 30,
+    unlocks: 999999,
+    isSubscription: true,
+    badge: 'Best for Tutors',
+  },
+  premium: {
+    amount: 19900,
+    currency: 'INR',
+    label: 'Starter Plan – 20 Contacts (₹199/mo)',
+    interval: 30,
+    unlocks: 20,
+    isSubscription: true,
+    badge: 'Most Popular for Students',
+  },
 };
 
-// @desc    Create a Razorpay order for subscription
+// @desc    Create a Razorpay order for subscription / unlock
 // @route   POST /api/subscription/create-order
 // @access  Private
 exports.createOrder = asyncHandler(async (req, res, next) => {
@@ -36,21 +108,22 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
   const user = await User.findById(userId);
   if (!user) return error(res, 'User not found', 404);
 
-  // Determine plan from body or user role
-  let planKey = req.body.planType || req.body.plan || req.body.planId;
-
-  if (!planKey) {
-    planKey = user.role === 'TUTOR' ? 'teacher' : 'basic';
-  }
-
-  planKey = planKey.toLowerCase();
-  if (planKey === 'student') planKey = 'basic';
-
-  if (!PLANS[planKey]) {
-    planKey = 'basic';
-  }
+  // Normalize plan key
+  let planKey = (req.body.planType || req.body.plan || req.body.planId || 'single').toLowerCase();
+  if (planKey === 'single_unlock' || planKey === 'single-unlock') planKey = 'single';
+  if (!PLANS[planKey]) planKey = 'single';
 
   const plan = PLANS[planKey];
+
+  if (plan.amount === 0) {
+    return res.status(200).json({
+      success: true,
+      message: 'Free plan activated',
+      planType: 'free',
+      amount: 0,
+    });
+  }
+
   let orderId = `order_test_${Date.now()}`;
   let razorpayKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY || 'rzp_test_placeholder';
 
@@ -59,7 +132,7 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     const order = await razorpay.orders.create({
       amount: plan.amount,
       currency: plan.currency,
-      receipt: `sub_${userId}_${Date.now()}`,
+      receipt: `mn_${planKey}_${userId}_${Date.now().toString().slice(-8)}`,
       notes: {
         userId: String(userId),
         planType: planKey,
@@ -70,7 +143,7 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     orderId = order.id;
     razorpayKeyId = process.env.RAZORPAY_KEY_ID;
   } catch (err) {
-    console.warn('⚠️ Razorpay live order generation fallback (using test order):', err.message);
+    console.warn('⚠️ Razorpay live order fallback (using test order):', err.message);
     orderId = `order_test_${Date.now()}`;
   }
 
@@ -78,8 +151,8 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     success: true,
     message: 'Subscription order created',
     orderId,
-    amount: 99,
-    currency: 'INR',
+    amount: plan.amount,
+    currency: plan.currency,
     key: razorpayKeyId,
     planType: planKey,
     planLabel: plan.label,
@@ -97,7 +170,7 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    Verify Razorpay payment and activate subscription
+// @desc    Verify Razorpay payment and activate subscription / unlock credits
 // @route   POST /api/subscription/verify
 // @access  Private
 exports.verifyPayment = asyncHandler(async (req, res, next) => {
@@ -116,9 +189,11 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
   const actualOrderId = razorpay_order_id || orderId || `order_test_${Date.now()}`;
   const actualPaymentId = razorpay_payment_id || paymentId || `pay_test_${Date.now()}`;
 
-  let planKey = (planType || plan || 'basic').toLowerCase();
-  if (planKey === 'student') planKey = 'basic';
-  const selectedPlan = PLANS[planKey] || PLANS.basic;
+  let planKey = (planType || plan || 'single').toLowerCase();
+  if (planKey === 'single_unlock' || planKey === 'single-unlock') planKey = 'single';
+  if (!PLANS[planKey]) planKey = 'single';
+
+  const selectedPlan = PLANS[planKey];
 
   // Verify HMAC signature if keys exist and signature is provided (skip for test payments)
   if (
@@ -143,39 +218,83 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
   }
 
   const userId = req.user._id || req.user.id;
-  const subType = planKey === 'teacher' ? 'teacher' : planKey;
-  const unlocksToAdd = selectedPlan.unlocks || (planKey === 'premium' ? 15 : (planKey === 'teacher' ? 0 : 5));
-
-  // Activate subscription for 30 days
-  const expiry = new Date();
-  expiry.setDate(expiry.getDate() + 30);
-
   const user = await User.findById(userId);
   if (!user) return error(res, 'User not found', 404);
 
-  user.isSubscribed = true;
-  user.subscriptionType = subType;
-  user.subscriptionExpiry = expiry;
-  user.razorpaySubscriptionId = actualPaymentId;
-  user.isPremium = true;
-  user.premiumExpiresAt = expiry;
-  user.contactUnlocks = (user.contactUnlocks || 0) + unlocksToAdd;
-  user.subscription = {
-    plan: planKey,
-    isActive: true,
-    expiry,
-    contactUnlocks: (user.subscription?.contactUnlocks || 0) + unlocksToAdd,
-  };
+  // Prevent duplicate payment credits
+  if (user.razorpaySubscriptionId === actualPaymentId && !actualPaymentId.startsWith('pay_test_')) {
+    return res.status(200).json({
+      success: true,
+      message: 'Payment already processed.',
+      plan: user.subscriptionType,
+      contactUnlocks: user.contactUnlocks,
+      isSubscribed: user.isSubscribed,
+    });
+  }
 
+  const isMonthlySubscription = selectedPlan.isSubscription;
+  let expiry = null;
+
+  if (isMonthlySubscription) {
+    expiry = new Date();
+    expiry.setDate(expiry.getDate() + 30);
+    user.isSubscribed = true;
+    user.subscriptionExpiry = expiry;
+    user.isPremium = true;
+    user.premiumExpiresAt = expiry;
+  }
+
+  // 1. Single Unlock (₹99) -> EXACTLY 2 unlock credits
+  if (planKey === 'single' || planKey === 'basic') {
+    user.contactUnlocks = (user.contactUnlocks || 0) + 2;
+    user.subscriptionType = 'single';
+    user.subscription = {
+      plan: 'single',
+      isActive: true,
+      expiry: user.subscriptionExpiry || null,
+      contactUnlocks: user.contactUnlocks,
+    };
+  } else if (planKey === 'starter' || planKey === 'student' || planKey === 'premium') {
+    // 2. Starter (₹199) -> 20 unlock credits + 30 days validity
+    user.contactUnlocks = (user.contactUnlocks || 0) + 20;
+    user.subscriptionType = 'starter';
+    user.subscription = {
+      plan: 'starter',
+      isActive: true,
+      expiry,
+      contactUnlocks: user.contactUnlocks,
+    };
+  } else if (planKey === 'pro' || planKey === 'teacher') {
+    // 3. Pro (₹499) -> Unlimited unlocks + Top Featured Listing + Verified
+    user.contactUnlocks = 999999;
+    user.subscriptionType = 'pro';
+    user.subscription = {
+      plan: 'pro',
+      isActive: true,
+      expiry,
+      contactUnlocks: 999999,
+    };
+
+    // If user is a tutor, mark verified and profile completion
+    await TutorProfile.findOneAndUpdate(
+      { user: user._id },
+      { isVerified: true, isApproved: true }
+    ).catch(() => {});
+  }
+
+  user.razorpaySubscriptionId = actualPaymentId;
   await user.save();
 
-  // If a tutor or teacher was being unlocked, create ContactUnlock and resolve contact info
+  // If this purchase was triggered to unlock a specific tutor/student, unlock now
   let contactInfo = null;
   const targetId = tutorId || teacherId;
   if (targetId) {
     try {
-      const ContactUnlock = require('../models/ContactUnlock');
-      const TutorProfile = require('../models/TutorProfile');
+      // Consume 1 credit if not pro
+      if (user.subscriptionType !== 'pro' && user.contactUnlocks > 0) {
+        user.contactUnlocks -= 1;
+        await user.save();
+      }
 
       await ContactUnlock.create({
         user: user._id,
@@ -183,7 +302,7 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
         type: 'PAID',
         status: 'CONTACT_UNLOCKED',
         paymentStatus: 'COMPLETED',
-        paymentDetails: { orderId: actualOrderId, paymentId: actualPaymentId, amount: 99 },
+        paymentDetails: { orderId: actualOrderId, paymentId: actualPaymentId, amount: selectedPlan.amount / 100 },
       });
 
       const tutorDoc = await TutorProfile.findOne({
@@ -198,16 +317,6 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
           email: tutorDoc.user?.email || tutorDoc.email || '',
           whatsappNumber: tutorDoc.whatsappNumber || realPhone,
         };
-      } else {
-        const targetUser = await User.findById(targetId);
-        if (targetUser) {
-          contactInfo = {
-            name: targetUser.name,
-            phone: targetUser.phone || '',
-            email: targetUser.email || '',
-            whatsappNumber: targetUser.whatsappNumber || targetUser.phone || '',
-          };
-        }
       }
     } catch (unlockErr) {
       console.warn('Unlock record creation warning:', unlockErr.message);
@@ -216,25 +325,23 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
 
   return res.status(200).json({
     success: true,
-    message: 'Test subscription activated! 5 contact unlocks added.',
-    isSubscribed: true,
-    subscriptionType: subType,
-    subscriptionExpiry: expiry,
+    message: `${selectedPlan.label} activated successfully!`,
+    planType: user.subscriptionType,
+    isSubscribed: user.isSubscribed,
+    subscriptionExpiry: user.subscriptionExpiry,
     contactUnlocks: user.contactUnlocks,
-    subscription: user.subscription,
     contactInfo,
     data: {
-      isSubscribed: true,
-      subscriptionType: subType,
-      subscriptionExpiry: expiry,
+      planType: user.subscriptionType,
+      isSubscribed: user.isSubscribed,
+      subscriptionExpiry: user.subscriptionExpiry,
       contactUnlocks: user.contactUnlocks,
-      subscription: user.subscription,
       contactInfo,
     },
   });
 });
 
-// @desc    Razorpay webhook handler (autopay renewal)
+// @desc    Razorpay webhook handler
 // @route   POST /api/subscription/webhook
 // @access  Public (validated by Razorpay-Signature header)
 exports.webhook = asyncHandler(async (req, res, next) => {
@@ -252,19 +359,16 @@ exports.webhook = asyncHandler(async (req, res, next) => {
   const event = req.body.event;
   const payload = req.body.payload;
 
-  // Handle successful payment events
-  if (
-    event === 'payment.captured' ||
-    event === 'subscription.charged' ||
-    event === 'order.paid'
-  ) {
+  if (event === 'payment.captured' || event === 'subscription.charged' || event === 'order.paid') {
     const notes = payload?.payment?.entity?.notes || payload?.order?.entity?.notes || {};
     const userId = notes.userId;
-    const planType = notes.planType || 'student';
+    const planType = notes.planType || 'starter';
 
     if (userId) {
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + 30);
+
+      const planUnlocks = planType === 'pro' ? 999999 : (planType === 'starter' ? 20 : 2);
 
       await User.findByIdAndUpdate(userId, {
         isSubscribed: true,
@@ -272,41 +376,56 @@ exports.webhook = asyncHandler(async (req, res, next) => {
         subscriptionExpiry: expiry,
         isPremium: true,
         premiumExpiresAt: expiry,
+        $inc: { contactUnlocks: planUnlocks },
       });
 
-      console.log(`✅ Subscription renewed for userId=${userId}, plan=${planType}`);
+      console.log(`✅ Subscription processed for userId=${userId}, plan=${planType}`);
     }
   }
 
   return res.status(200).json({ success: true, received: true });
 });
 
-// @desc    Get current user's subscription status
+// @desc    Get current user's subscription status & unlock entitlement
 // @route   GET /api/subscription/status
 // @access  Private
 exports.getStatus = asyncHandler(async (req, res, next) => {
   const userId = req.user._id || req.user.id;
   const user = await User.findById(userId).select(
-    'isSubscribed subscriptionType subscriptionExpiry freeChatsUsed freeLeadsUsed role razorpaySubscriptionId'
+    'isSubscribed subscriptionType subscriptionExpiry contactUnlocks freeChatsUsed freeLeadsUsed role razorpaySubscriptionId dailyViewsCount lastViewDate'
   );
 
-  const isActive = user.isSubscribed && user.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date();
+  if (!user) return error(res, 'User not found', 404);
 
-  const FREE_LIMIT = user.role === 'TUTOR' ? 5 : 3;
-  const PLAN_PRICE = user.role === 'TUTOR' ? 149 : 99;
-  const PLAN_TYPE = user.role === 'TUTOR' ? 'teacher' : 'student';
+  const isExpired = user.subscriptionExpiry && new Date(user.subscriptionExpiry) < new Date();
+  let currentPlan = user.subscriptionType || 'free';
+  if (isExpired && (currentPlan === 'starter' || currentPlan === 'pro')) {
+    currentPlan = 'free';
+  }
+
+  const isPro = currentPlan === 'pro' && !isExpired;
+  const isStarter = currentPlan === 'starter' && !isExpired;
+  const isSingle = currentPlan === 'single';
+
+  let remainingUnlocksFormatted = '0 Unlocks';
+  if (isPro) {
+    remainingUnlocksFormatted = 'Unlimited';
+  } else if (isStarter) {
+    remainingUnlocksFormatted = `${user.contactUnlocks || 0} / 20 Remaining`;
+  } else if (isSingle || (user.contactUnlocks || 0) > 0) {
+    remainingUnlocksFormatted = `${user.contactUnlocks || 0} Remaining`;
+  }
 
   return success(res, 'Subscription status retrieved', {
-    isSubscribed: isActive,
-    subscriptionType: user.subscriptionType,
+    plan: currentPlan,
+    subscriptionType: currentPlan,
+    isSubscribed: isPro || isStarter || (user.contactUnlocks > 0),
     subscriptionExpiry: user.subscriptionExpiry,
-    freeChatsUsed: user.freeChatsUsed,
-    freeLeadsUsed: user.freeLeadsUsed,
-    freeChatsLimit: FREE_LIMIT,
-    chatsRemaining: isActive ? null : Math.max(0, FREE_LIMIT - user.freeChatsUsed),
-    suggestedPlan: {
-      type: PLAN_TYPE,
-      price: PLAN_PRICE,
-    },
+    contactUnlocks: user.contactUnlocks || 0,
+    remainingUnlocksFormatted,
+    isPro,
+    isStarter,
+    isSingle,
+    dailyViewsRemaining: Math.max(0, 3 - (user.dailyViewsCount || 0)),
   });
 });

@@ -71,28 +71,17 @@ const resolveContactInfo = async (targetId) => {
 exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
   const targetId = req.params.tutorId || req.params.id;
   const currentUserId = req.user.id;
+  const isAdmin = (req.user.role || '').toString().trim().toUpperCase() === 'ADMIN';
+
   const userDoc = await User.findById(currentUserId);
-  const isSubscribed = Boolean(
-    userDoc?.isSubscribed &&
-    userDoc?.subscriptionExpiry &&
-    new Date(userDoc.subscriptionExpiry) > new Date()
-  );
+  if (!userDoc) return error(res, 'User not found', 404);
 
-  // Admin or Subscribed user has instant, free universal access to any tutor/student contact
-  if (isAdmin || isSubscribed) {
-    const contact = await resolveContactInfo(targetId);
-    return success(res, 'Instant contact access for subscribed user', {
-      alreadyUnlocked: true,
-      isSubscribed: true,
-      isAdmin,
-      contactInfo: contact || {
-        phone: 'N/A',
-        email: 'N/A',
-        whatsappNumber: 'N/A'
-      }
-    });
-  }
+  const isExpired = userDoc.subscriptionExpiry && new Date(userDoc.subscriptionExpiry) < new Date();
+  const isPro = userDoc.subscriptionType === 'pro' && !isExpired;
+  const isStarter = userDoc.subscriptionType === 'starter' && !isExpired;
+  const availableCredits = userDoc.contactUnlocks || 0;
 
+  // 1. Check if already unlocked
   const existingUnlock = await ContactUnlock.findOne({
     user: currentUserId,
     $or: [{ tutor: targetId }, { 'paymentDetails.targetId': targetId }],
@@ -103,48 +92,117 @@ exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
     const contact = await resolveContactInfo(targetId);
     return success(res, 'Already unlocked', {
       alreadyUnlocked: true,
-      contactInfo: contact || {
-        phone: 'N/A',
-        email: 'N/A',
-        whatsappNumber: 'N/A'
-      }
+      contactInfo: contact || { phone: 'N/A', email: 'N/A', whatsappNumber: 'N/A' },
+      availableCredits,
     });
   }
 
-  return success(res, 'Unlock eligibility - requires subscription', {
+  // 2. Admin or Pro has instant unlimited access
+  if (isAdmin || isPro) {
+    const contact = await resolveContactInfo(targetId);
+    return success(res, 'Instant unlimited contact access', {
+      alreadyUnlocked: true,
+      isUnlimited: true,
+      isAdmin,
+      isPro,
+      contactInfo: contact || { phone: 'N/A', email: 'N/A', whatsappNumber: 'N/A' },
+      availableCredits: 999999,
+    });
+  }
+
+  // 3. User has available unlock credits (from Single ₹99 or Starter ₹199)
+  if (availableCredits > 0) {
+    return success(res, 'Credits available to unlock', {
+      alreadyUnlocked: false,
+      hasCredits: true,
+      requiresSubscription: false,
+      availableCredits,
+    });
+  }
+
+  // 4. No credits available
+  return success(res, 'Unlock requires subscription plan or single unlock purchase', {
     alreadyUnlocked: false,
+    hasCredits: false,
     requiresSubscription: true,
-    isSubscribed: false,
-    price: 99,
-    unlockNumber: 1,
-    freeRemaining: 0
+    needSubscription: true,
+    availableCredits: 0,
   });
 });
 
-exports.createFreeUnlock = asyncHandler(async (req, res, next) => {
-  const targetId = req.params.tutorId || req.params.id;
+exports.createFreeUnlock = exports.unlockContact = asyncHandler(async (req, res, next) => {
+  const targetId = req.params.tutorId || req.params.id || req.body.targetId || req.body.tutorId;
   const currentUserId = req.user.id;
   const isAdmin = (req.user.role || '').toString().trim().toUpperCase() === 'ADMIN';
 
   const userDoc = await User.findById(currentUserId);
-  const isSubscribed = Boolean(
-    userDoc?.isSubscribed &&
-    userDoc?.subscriptionExpiry &&
-    new Date(userDoc.subscriptionExpiry) > new Date()
-  );
+  if (!userDoc) return error(res, 'User not found', 404);
 
-  if (isAdmin || isSubscribed) {
+  const isExpired = userDoc.subscriptionExpiry && new Date(userDoc.subscriptionExpiry) < new Date();
+  const isPro = userDoc.subscriptionType === 'pro' && !isExpired;
+
+  // 1. Check if already unlocked
+  const existingUnlock = await ContactUnlock.findOne({
+    user: currentUserId,
+    $or: [{ tutor: targetId }, { 'paymentDetails.targetId': targetId }],
+    paymentStatus: 'COMPLETED'
+  });
+
+  if (existingUnlock) {
     const contact = await resolveContactInfo(targetId);
-    return success(res, 'Unlocked contact successfully', {
-      contactInfo: contact || {
-        phone: 'N/A',
-        email: 'N/A',
-        whatsappNumber: 'N/A'
-      }
+    return success(res, 'Contact details retrieved', {
+      contactInfo: contact || { phone: 'N/A', email: 'N/A', whatsappNumber: 'N/A' },
+      remainingCredits: userDoc.contactUnlocks || 0,
     });
   }
 
-  return error(res, 'Active MentorNearby subscription required to unlock direct contact details.', 402);
+  // 2. Admin or Pro (unlimited)
+  if (isAdmin || isPro) {
+    await ContactUnlock.create({
+      user: currentUserId,
+      tutor: targetId,
+      type: 'PRO_UNLIMITED',
+      status: 'CONTACT_UNLOCKED',
+      paymentStatus: 'COMPLETED',
+      paymentDetails: { amount: 0, plan: 'pro' },
+    });
+
+    const contact = await resolveContactInfo(targetId);
+    return success(res, 'Contact unlocked with Pro membership', {
+      contactInfo: contact || { phone: 'N/A', email: 'N/A', whatsappNumber: 'N/A' },
+      remainingCredits: 999999,
+    });
+  }
+
+  // 3. User has at least 1 credit (Single ₹99 or Starter ₹199)
+  if ((userDoc.contactUnlocks || 0) > 0) {
+    userDoc.contactUnlocks = Math.max(0, userDoc.contactUnlocks - 1);
+    userDoc.unlocksUsed = (userDoc.unlocksUsed || 0) + 1;
+    await userDoc.save();
+
+    await ContactUnlock.create({
+      user: currentUserId,
+      tutor: targetId,
+      type: 'CREDIT',
+      status: 'CONTACT_UNLOCKED',
+      paymentStatus: 'COMPLETED',
+      paymentDetails: { amount: 0, plan: userDoc.subscriptionType || 'single' },
+    });
+
+    const contact = await resolveContactInfo(targetId);
+    return success(res, 'Contact unlocked successfully! 1 credit used.', {
+      contactInfo: contact || { phone: 'N/A', email: 'N/A', whatsappNumber: 'N/A' },
+      remainingCredits: userDoc.contactUnlocks,
+    });
+  }
+
+  // 4. No credits and not Pro
+  return res.status(403).json({
+    success: false,
+    needSubscription: true,
+    code: 'SUBSCRIPTION_REQUIRED',
+    message: 'Active MentorNearby subscription or unlock credit required to view tutor phone numbers.',
+  });
 });
 
 exports.createPaymentOrder = asyncHandler(async (req, res, next) => {

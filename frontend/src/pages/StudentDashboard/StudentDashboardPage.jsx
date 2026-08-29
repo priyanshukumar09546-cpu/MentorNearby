@@ -457,6 +457,37 @@ const StudentDashboardPage = () => {
           </section>
 
           {/* ========================================================
+              MEMBERSHIP & UNLOCK ENTITLEMENT STATUS BANNER
+              ======================================================== */}
+          <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs uppercase font-extrabold tracking-wider px-2.5 py-0.5 bg-blue-500/30 text-blue-200 border border-blue-400/30 rounded-md">
+                  Active Plan: {user?.subscriptionType === 'single' ? 'SINGLE UNLOCK' : (user?.subscriptionType ? user.subscriptionType.toUpperCase() : 'FREE')}
+                </span>
+                {user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date() && (
+                  <span className="text-xs text-blue-200">
+                    • Valid till {new Date(user.subscriptionExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-lg font-bold text-white mt-1.5 flex items-center gap-2">
+                <span>⚡ Available Unlocks:</span>
+                <span className="text-emerald-300 font-extrabold">
+                  {user?.subscriptionType === 'pro' ? 'Unlimited' : `${user?.contactUnlocks ?? 0} Remaining`}
+                </span>
+              </h3>
+            </div>
+            <Link
+              to="/subscription"
+              className="bg-white hover:bg-blue-50 text-blue-900 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <span>👑</span>
+              <span>Upgrade Plan / Buy Unlocks</span>
+            </Link>
+          </div>
+
+          {/* ========================================================
               2. FOUR STAT / KPI CARDS (REAL DATA ONLY)
               ======================================================== */}
           <section className="sd-stats-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Student Overview Statistics">
@@ -496,15 +527,17 @@ const StudentDashboardPage = () => {
               </div>
             </div>
 
-            {/* Card 4: Contact Unlocks Used */}
+            {/* Card 4: Contact Unlocks Available / Used */}
             <div className="sd-stat-card bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900">
               <div className="sd-stat-icon-wrap green">
-                <span>🔒</span>
+                <span>🔓</span>
               </div>
               <div className="sd-stat-content">
-                <span className="sd-stat-label text-gray-500 font-medium text-xs">Contact Unlocks Used</span>
-                <span className="sd-stat-number text-gray-900 font-extrabold text-2xl">{unlocksUsed}</span>
-                <span className="sd-stat-subtext text-gray-400 text-xs">Unlock to view contacts</span>
+                <span className="sd-stat-label text-gray-500 font-medium text-xs">Contact Unlocks</span>
+                <span className="sd-stat-number text-gray-900 font-extrabold text-2xl">
+                  {user?.subscriptionType === 'pro' ? '∞' : (user?.contactUnlocks ?? 0)}
+                </span>
+                <span className="sd-stat-subtext text-gray-400 text-xs">Used: {unlocksUsed}</span>
               </div>
             </div>
           </section>

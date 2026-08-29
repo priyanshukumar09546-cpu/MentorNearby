@@ -16,6 +16,9 @@ const { protect, authorize } = require('../middleware/auth');
 router.use(protect);
 
 router.get('/check/:tutorId', checkUnlockEligibility);
+router.get('/eligibility/:tutorId', checkUnlockEligibility);
+router.post('/unlock/:tutorId', authorize('STUDENT', 'TUTOR', 'PARENT', 'ADMIN'), createFreeUnlock);
+router.post('/unlock', authorize('STUDENT', 'TUTOR', 'PARENT', 'ADMIN'), createFreeUnlock);
 router.post('/free/:tutorId', authorize('STUDENT', 'TUTOR', 'PARENT', 'ADMIN'), createFreeUnlock);
 router.post('/free', authorize('STUDENT', 'TUTOR', 'PARENT', 'ADMIN'), createFreeUnlock);
 router.post('/create-order', authorize('STUDENT', 'TUTOR', 'PARENT', 'ADMIN'), createPaymentOrder);

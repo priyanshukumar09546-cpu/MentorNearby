@@ -141,8 +141,8 @@ const UserSchema = new mongoose.Schema({
   },
   subscriptionType: {
     type: String,
-    enum: ['student', 'teacher', 'basic', 'premium', 'vip', null],
-    default: null
+    enum: ['free', 'single', 'single_unlock', 'starter', 'pro', 'student', 'teacher', 'basic', 'premium', 'vip', null],
+    default: 'free'
   },
   subscriptionExpiry: {
     type: Date,
@@ -150,6 +150,14 @@ const UserSchema = new mongoose.Schema({
   },
   razorpaySubscriptionId: {
     type: String,
+    default: null
+  },
+  dailyViewsCount: {
+    type: Number,
+    default: 0
+  },
+  lastViewDate: {
+    type: Date,
     default: null
   }
 }, {

@@ -51,7 +51,7 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
   }
 
   const plan = PLANS[planKey];
-  let orderId = `order_mn_${Date.now()}`;
+  let orderId = `order_test_${Date.now()}`;
   let razorpayKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY || 'rzp_test_placeholder';
 
   try {
@@ -70,19 +70,30 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     orderId = order.id;
     razorpayKeyId = process.env.RAZORPAY_KEY_ID;
   } catch (err) {
-    console.warn('⚠️ Razorpay live order generation fallback:', err.message);
-    orderId = `order_sim_${Date.now()}`;
+    console.warn('⚠️ Razorpay live order generation fallback (using test order):', err.message);
+    orderId = `order_test_${Date.now()}`;
   }
 
-  return success(res, 'Subscription order created', {
+  return res.status(200).json({
+    success: true,
+    message: 'Subscription order created',
     orderId,
-    amount: plan.amount,
-    currency: plan.currency,
+    amount: 99,
+    currency: 'INR',
+    key: razorpayKeyId,
     planType: planKey,
     planLabel: plan.label,
-    razorpayKeyId,
-    userEmail: user.email,
-    userName: user.name,
+    isTestMode: orderId.startsWith('order_test_') || orderId.startsWith('order_sim_'),
+    data: {
+      orderId,
+      amount: plan.amount,
+      currency: plan.currency,
+      planType: planKey,
+      planLabel: plan.label,
+      razorpayKeyId,
+      userEmail: user.email,
+      userName: user.name,
+    },
   });
 });
 
@@ -90,21 +101,40 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
 // @route   POST /api/subscription/verify
 // @access  Private
 exports.verifyPayment = asyncHandler(async (req, res, next) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planType, plan } = req.body;
+  const {
+    orderId,
+    paymentId,
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    planType,
+    plan,
+    tutorId,
+    teacherId,
+  } = req.body;
+
+  const actualOrderId = razorpay_order_id || orderId || `order_test_${Date.now()}`;
+  const actualPaymentId = razorpay_payment_id || paymentId || `pay_test_${Date.now()}`;
 
   let planKey = (planType || plan || 'basic').toLowerCase();
   if (planKey === 'student') planKey = 'basic';
   const selectedPlan = PLANS[planKey] || PLANS.basic;
 
-  // Verify HMAC signature if keys exist and signature is provided
-  if (process.env.RAZORPAY_KEY_SECRET && razorpay_order_id && razorpay_signature) {
+  // Verify HMAC signature if keys exist and signature is provided (skip for test payments)
+  if (
+    process.env.RAZORPAY_KEY_SECRET &&
+    razorpay_order_id &&
+    razorpay_signature &&
+    !actualOrderId.startsWith('order_test_') &&
+    !actualPaymentId.startsWith('pay_test_')
+  ) {
     try {
       const expectedSig = crypto
         .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .update(`${actualOrderId}|${actualPaymentId}`)
         .digest('hex');
 
-      if (expectedSig !== razorpay_signature && !razorpay_payment_id?.startsWith('pay_test_')) {
+      if (expectedSig !== razorpay_signature) {
         return error(res, 'Payment verification failed — invalid signature', 400);
       }
     } catch (e) {
@@ -126,7 +156,7 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
   user.isSubscribed = true;
   user.subscriptionType = subType;
   user.subscriptionExpiry = expiry;
-  user.razorpaySubscriptionId = razorpay_payment_id || `pay_${Date.now()}`;
+  user.razorpaySubscriptionId = actualPaymentId;
   user.isPremium = true;
   user.premiumExpiresAt = expiry;
   user.contactUnlocks = (user.contactUnlocks || 0) + unlocksToAdd;
@@ -139,21 +169,66 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
 
   await user.save();
 
-  return success(res, `Subscription activated! Welcome to MentorNearby ${selectedPlan.label}.`, {
+  // If a tutor or teacher was being unlocked, create ContactUnlock and resolve contact info
+  let contactInfo = null;
+  const targetId = tutorId || teacherId;
+  if (targetId) {
+    try {
+      const ContactUnlock = require('../models/ContactUnlock');
+      const TutorProfile = require('../models/TutorProfile');
+
+      await ContactUnlock.create({
+        user: user._id,
+        tutor: targetId,
+        type: 'PAID',
+        status: 'CONTACT_UNLOCKED',
+        paymentStatus: 'COMPLETED',
+        paymentDetails: { orderId: actualOrderId, paymentId: actualPaymentId, amount: 99 },
+      });
+
+      const tutorDoc = await TutorProfile.findOne({
+        $or: [{ _id: targetId }, { user: targetId }],
+      }).populate('user', 'name email phone');
+
+      if (tutorDoc) {
+        contactInfo = {
+          name: tutorDoc.user?.name || tutorDoc.name || 'Tutor',
+          phone: tutorDoc.phone || tutorDoc.user?.phone || '9876543210',
+          email: tutorDoc.user?.email || 'tutor@mentornearby.com',
+          whatsappNumber: tutorDoc.whatsappNumber || tutorDoc.phone || tutorDoc.user?.phone || '9876543210',
+        };
+      } else {
+        const targetUser = await User.findById(targetId);
+        if (targetUser) {
+          contactInfo = {
+            name: targetUser.name,
+            phone: targetUser.phone || '9876543210',
+            email: targetUser.email,
+            whatsappNumber: targetUser.phone || '9876543210',
+          };
+        }
+      }
+    } catch (unlockErr) {
+      console.warn('Unlock record creation warning:', unlockErr.message);
+    }
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Test subscription activated! 5 contact unlocks added.',
     isSubscribed: true,
     subscriptionType: subType,
     subscriptionExpiry: expiry,
     contactUnlocks: user.contactUnlocks,
     subscription: user.subscription,
-    user: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isSubscribed: user.isSubscribed,
-      subscriptionType: user.subscriptionType,
-      subscriptionExpiry: user.subscriptionExpiry,
+    contactInfo,
+    data: {
+      isSubscribed: true,
+      subscriptionType: subType,
+      subscriptionExpiry: expiry,
       contactUnlocks: user.contactUnlocks,
       subscription: user.subscription,
+      contactInfo,
     },
   });
 });

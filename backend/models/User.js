@@ -105,6 +105,33 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ['MONTHLY', 'YEARLY', 'LIFETIME', null],
     default: null
+  },
+  // ── Freemium Subscription (new model) ──────────────────────
+  freeChatsUsed: {
+    type: Number,
+    default: 0
+  },
+  freeLeadsUsed: {
+    type: Number,
+    default: 0
+  },
+  isSubscribed: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  subscriptionType: {
+    type: String,
+    enum: ['student', 'teacher', null],
+    default: null
+  },
+  subscriptionExpiry: {
+    type: Date,
+    default: null
+  },
+  razorpaySubscriptionId: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true

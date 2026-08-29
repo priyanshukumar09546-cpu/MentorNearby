@@ -1,36 +1,35 @@
+// ============================================================
+// controllers/chatController.js
+// Chat with freemium limits + message filtering
+// ============================================================
+
 const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const Message = require('../models/Message');
-const ContactUnlock = require('../models/ContactUnlock');
 const User = require('../models/User');
+const { filterMessage } = require('../utils/messageFilter');
 const { createNotification } = require('./notificationController');
 
-// Helper to check if users can chat
-const canChat = async (user1Id, user2Id) => {
-  const contactUnlock = await ContactUnlock.findOne({
-    $or: [
-      { user: user1Id, tutor: user2Id },
-      { user: user2Id, tutor: user1Id }
-    ],
-    status: { $in: ['CONTACT_UNLOCKED', 'ACCEPTED', 'COMPLETED'] }
-  });
-
-  return !!contactUnlock;
+// ── Helper: check if subscription is still active ─────────
+const isActiveSubscriber = (user) => {
+  if (!user.isSubscribed) return false;
+  if (!user.subscriptionExpiry) return false;
+  return new Date(user.subscriptionExpiry) > new Date();
 };
 
-// @desc    Send a message
-// @route   POST /api/v1/chat/:userId
-// @access  Private
+// @desc    Send a message (filtered, with freemium gate)
+// @route   POST /api/chat/:userId
+// @access  Private (limit enforced by checkChatLimit middleware in route)
 exports.sendMessage = asyncHandler(async (req, res, next) => {
   const receiverId = req.params.userId;
-  const senderId = req.user.id;
+  const senderId = req.user._id || req.user.id;
   const { content } = req.body;
 
-  if (!content) {
+  if (!content || !content.trim()) {
     return error(res, 'Please provide message content', 400);
   }
 
-  if (senderId === receiverId) {
+  if (String(senderId) === String(receiverId)) {
     return error(res, 'You cannot send a message to yourself', 400);
   }
 
@@ -39,15 +38,14 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     return error(res, 'Receiver not found', 404);
   }
 
-  const allowed = await canChat(senderId, receiverId);
-  if (!allowed) {
-    return error(res, 'You must unlock contact with this user before messaging', 403);
-  }
+  // Filter message content before saving
+  const filteredContent = filterMessage(content.trim());
 
   const message = await Message.create({
     sender: senderId,
     receiver: receiverId,
-    content
+    content: filteredContent,
+    originalBlocked: filteredContent !== content.trim(), // flag if something was redacted
   });
 
   // Notify receiver
@@ -59,27 +57,29 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     `/chat/${senderId}`
   );
 
-  return success(res, 'Message sent successfully', message, 201);
+  return success(res, 'Message sent successfully', {
+    message,
+    wasFiltered: filteredContent !== content.trim(),
+    freeChatsUsed: req.user.freeChatsUsed,
+    isSubscribed: isActiveSubscriber(req.user),
+  }, 201);
 });
 
 // @desc    Get messages for a conversation
-// @route   GET /api/v1/chat/:userId
+// @route   GET /api/chat/:userId
 // @access  Private
 exports.getMessages = asyncHandler(async (req, res, next) => {
   const otherUserId = req.params.userId;
-  const currentUserId = req.user.id;
-
-  const allowed = await canChat(currentUserId, otherUserId);
-  if (!allowed) {
-    return error(res, 'You do not have access to this conversation', 403);
-  }
+  const currentUserId = req.user._id || req.user.id;
 
   const messages = await Message.find({
     $or: [
       { sender: currentUserId, receiver: otherUserId },
-      { sender: otherUserId, receiver: currentUserId }
-    ]
-  }).sort({ createdAt: 1 });
+      { sender: otherUserId, receiver: currentUserId },
+    ],
+  })
+    .sort({ createdAt: 1 })
+    .lean();
 
   // Mark unread messages as read
   await Message.updateMany(
@@ -87,34 +87,98 @@ exports.getMessages = asyncHandler(async (req, res, next) => {
     { read: true }
   );
 
-  return success(res, 'Messages retrieved successfully', { count: messages.length, data: messages });
+  return success(res, 'Messages retrieved successfully', {
+    count: messages.length,
+    data: messages,
+  });
 });
 
-// @desc    Get list of conversations
-// @route   GET /api/v1/chat
+// @desc    Get list of conversations (unique users this user has chatted with)
+// @route   GET /api/chat
 // @access  Private
 exports.getConversations = asyncHandler(async (req, res, next) => {
-  const currentUserId = req.user.id;
+  const currentUserId = req.user._id || req.user.id;
 
-  // Find all contact unlocks where current user is involved and status is allowed
-  const unlocks = await ContactUnlock.find({
-    $or: [
-      { user: currentUserId },
-      { tutor: currentUserId }
-    ],
-    status: { $in: ['CONTACT_UNLOCKED', 'ACCEPTED', 'COMPLETED'] }
-  }).populate('user', 'name avatar').populate('tutor', 'name avatar');
+  // Aggregate to find all unique conversation partners
+  const conversations = await Message.aggregate([
+    {
+      $match: {
+        $or: [{ sender: currentUserId }, { receiver: currentUserId }],
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $cond: [
+            { $eq: ['$sender', currentUserId] },
+            '$receiver',
+            '$sender',
+          ],
+        },
+        lastMessage: { $last: '$$ROOT' },
+        updatedAt: { $max: '$createdAt' },
+      },
+    },
+    { $sort: { updatedAt: -1 } },
+  ]);
 
-  const conversations = unlocks.map(unlock => {
-    // If current user is 'user', the other is 'tutor', else the other is 'user'
-    const isUser = unlock.user._id.toString() === currentUserId;
-    return {
-      otherUser: isUser ? unlock.tutor : unlock.user,
-      contactUnlockId: unlock._id,
-      status: unlock.status,
-      unlockedAt: unlock.unlockedAt || unlock.updatedAt
-    };
+  // Populate the other user's info
+  const populated = await User.populate(conversations, {
+    path: '_id',
+    select: 'name avatar role',
   });
 
-  return success(res, 'Conversations retrieved successfully', { count: conversations.length, data: conversations });
+  const result = populated.map((conv) => ({
+    otherUser: conv._id,
+    lastMessage: conv.lastMessage,
+    updatedAt: conv.updatedAt,
+  }));
+
+  // Fetch current user subscription status for counter display
+  const currentUser = await User.findById(currentUserId).select(
+    'freeChatsUsed freeLeadsUsed isSubscribed subscriptionType subscriptionExpiry role'
+  );
+
+  const FREE_LIMIT = currentUser.role === 'TUTOR' ? 5 : 3;
+  const usedCount = currentUser.role === 'TUTOR'
+    ? currentUser.freeChatsUsed
+    : currentUser.freeChatsUsed;
+
+  return success(res, 'Conversations retrieved successfully', {
+    count: result.length,
+    data: result,
+    subscription: {
+      isSubscribed: isActiveSubscriber(currentUser),
+      subscriptionType: currentUser.subscriptionType,
+      subscriptionExpiry: currentUser.subscriptionExpiry,
+      freeChatsUsed: usedCount,
+      freeChatsLimit: FREE_LIMIT,
+      chatsRemaining: Math.max(0, FREE_LIMIT - usedCount),
+    },
+  });
+});
+
+// @desc    Get subscription & chat limit status for current user
+// @route   GET /api/chat/my-status
+// @access  Private
+exports.getMyChatStatus = asyncHandler(async (req, res, next) => {
+  const currentUserId = req.user._id || req.user.id;
+  const currentUser = await User.findById(currentUserId).select(
+    'freeChatsUsed freeLeadsUsed isSubscribed subscriptionType subscriptionExpiry role'
+  );
+
+  const FREE_LIMIT = currentUser.role === 'TUTOR' ? 5 : 3;
+  const usedCount = currentUser.freeChatsUsed;
+  const active = isActiveSubscriber(currentUser);
+
+  return success(res, 'Chat status retrieved', {
+    isSubscribed: active,
+    subscriptionType: currentUser.subscriptionType,
+    subscriptionExpiry: currentUser.subscriptionExpiry,
+    freeChatsUsed: usedCount,
+    freeChatsLimit: FREE_LIMIT,
+    chatsRemaining: active ? Infinity : Math.max(0, FREE_LIMIT - usedCount),
+    paywallPlan: currentUser.role === 'TUTOR' ? 149 : 99,
+    paywallPlanType: currentUser.role === 'TUTOR' ? 'teacher' : 'student',
+  });
 });

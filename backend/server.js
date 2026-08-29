@@ -66,19 +66,33 @@ app.use((req, res, next) => {
 // ============================================================
 // CORS CONFIGURATION
 // ============================================================
+const allowedOrigins = [
+  "https://www.mentornearby.com",
+  "https://mentornearby.com",
+  "https://mentornearby-1t2o.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5174",
+];
+
 app.use(cors({
-  origin: [
-    "https://www.mentornearby.com",
-    "https://mentornearby.com",
-    "http://localhost:3000",
-    "http://localhost:5173"
-  ],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.includes('mentornearby')) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"]
+  optionsSuccessStatus: 200,
 }));
 
+app.options('*', cors());
+
 // ============================================================
-// HEALTH CHECK (Fast public endpoint for UptimeRobot / Render Awake)
+// HEALTH CHECK & ROOT (Fast public endpoint for UptimeRobot / Render Awake)
 // ============================================================
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -94,6 +108,10 @@ app.get('/health', (req, res) => {
     time: new Date(),
     uptime: process.uptime(),
   });
+});
+
+app.get('/', (req, res) => {
+  res.status(200).send("MentorNearby API Running");
 });
 
 // ============================================================

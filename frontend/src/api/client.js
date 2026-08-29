@@ -1,15 +1,21 @@
 // ============================================================
 // api/client.js
-// MentorNearby Dual Auth Client (httpOnly Cookies + Bearer Token Fallback)
-// Ensures 100% auth reliability on iPhone Safari & Mobile Browsers
+// MentorNearby Axios Client (Dual Auth: Cookies + Bearer Token Fallback)
+// Ensures 100% auth reliability on iPhone Safari, Vercel & Mobile Browsers
 // ============================================================
 
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { API_BASE_URL } from './config';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.mentornearby.com';
+console.log('Using API URL:', API_URL);
+
+const baseURL = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`;
 
 const client = axios.create({
-  baseURL: API_BASE_URL || 'https://api.mentornearby.com/api',
+  baseURL,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 25000,
   withCredentials: true,
 });
 
@@ -18,7 +24,7 @@ axios.defaults.withCredentials = true;
 // Request Interceptor: Attach Authorization Bearer Token (iPhone Safari Fallback) + withCredentials
 client.interceptors.request.use((config) => {
   config.withCredentials = true;
-  
+
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
     if (token) {
@@ -72,4 +78,5 @@ client.interceptors.response.use(
   }
 );
 
+export const api = client;
 export default client;

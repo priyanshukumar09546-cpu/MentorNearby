@@ -108,8 +108,17 @@ const LoginPage = () => {
     } catch (err) {
       console.error('[LOGIN ERROR CATCH BLOCK]:', err);
       console.error('[LOGIN ERROR DETAILS]:', err?.response?.data || err?.message);
-      const backendMessage = err?.response?.data?.message || err?.message || 'Invalid email or password. Please try again.';
-      setErrorMsg(backendMessage);
+      const msg = err?.response?.data?.message || err?.message || 'Invalid email or password. Please try again.';
+      if (
+        msg.includes('Network Error') ||
+        msg.includes('Unable to connect') ||
+        err.code === 'ERR_NETWORK' ||
+        !err.response
+      ) {
+        setErrorMsg('Server starting hai, 30 second wait karke retry karo. Render sleep me hai.');
+      } else {
+        setErrorMsg(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -130,10 +139,16 @@ const LoginPage = () => {
       }
     } catch (err) {
       setGoogleLoading(false);
-      if (err.response?.data?.message) {
+      const msg = err.response?.data?.message || err.message || '';
+      if (
+        msg.includes('Network Error') ||
+        msg.includes('Unable to connect') ||
+        err.code === 'ERR_NETWORK' ||
+        !err.response
+      ) {
+        setErrorMsg('Server starting hai, 30 second wait karke retry karo. Render sleep me hai.');
+      } else if (err.response?.data?.message) {
         setErrorMsg(err.response.data.message);
-      } else if (err.code === 'ERR_NETWORK' || !err.response) {
-        setErrorMsg('Unable to connect to MentorNearby backend server. Please check your network or server status.');
       } else {
         setErrorMsg('Google sign-in is currently unavailable. Please sign in with email & password.');
       }

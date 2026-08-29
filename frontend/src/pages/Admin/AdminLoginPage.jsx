@@ -89,7 +89,15 @@ const AdminLoginPage = () => {
       }
     } catch (err) {
       console.error('[AdminLogin Error]:', err.response?.status, err.response?.data || err.message);
-      const msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Invalid admin credentials. Access restricted.';
+      let msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Invalid admin credentials. Access restricted.';
+      if (
+        msg.includes('Network Error') ||
+        msg.includes('Unable to connect') ||
+        err.code === 'ERR_NETWORK' ||
+        !err.response
+      ) {
+        msg = 'Server starting hai, 30 second wait karke retry karo. Render sleep me hai.';
+      }
       setErrorMsg(msg);
       showToast(msg, 'error');
     } finally {

@@ -19,6 +19,13 @@ export const getTutorDashboard = () =>
       Pragma: 'no-cache',
     },
   });
+export const getFeaturedTutors = () =>
+  client.get(`/tutors/featured?_t=${Date.now()}`, {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
+    },
+  });
 export const updateAvailability = (data) => client.put('/tutors/availability', data);
 export const updateSafetyPreferences = (data) => client.put('/tutors/safety', data);
 export const toggleProfileVisibility = () => client.patch('/tutors/visibility');

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { searchTutors, getPublicStats } from '../../api/search';
+import { getFeaturedTutors } from '../../api/tutors';
 import { useTheme } from '../../context/ThemeContext';
 import UnlockContactModal from '../../components/payment/UnlockContactModal';
 import './HomePage.css';
@@ -147,14 +148,26 @@ const HomePage = () => {
       try {
         setLoadingTutors(true);
         const [tutorsRes, statsRes] = await Promise.allSettled([
-          searchTutors({ limit: 8 }),
+          getFeaturedTutors(),
           getPublicStats(),
         ]);
 
         if (tutorsRes.status === 'fulfilled') {
-          const list = tutorsRes.value.data?.data?.tutors || tutorsRes.value.data?.data || tutorsRes.value.data?.tutors || [];
-          if (Array.isArray(list)) {
+          const list =
+            tutorsRes.value.data?.data?.tutors ||
+            tutorsRes.value.data?.tutors ||
+            tutorsRes.value.data?.data ||
+            (Array.isArray(tutorsRes.value.data) ? tutorsRes.value.data : []);
+          if (Array.isArray(list) && list.length > 0) {
             setFeaturedTutors(list);
+          } else {
+            const fallbackRes = await searchTutors({ limit: 8 });
+            const fallbackList =
+              fallbackRes.data?.data?.tutors ||
+              fallbackRes.data?.tutors ||
+              fallbackRes.data?.data ||
+              [];
+            setFeaturedTutors(Array.isArray(fallbackList) ? fallbackList : []);
           }
         }
 
@@ -515,7 +528,7 @@ const HomePage = () => {
               ) : featuredTutors.length > 0 ? (
                 <div className="mn-featured-tutors-grid">
                   {featuredTutors.slice(0, 3).map((tutor) => {
-                    const tutorId = tutor._id || tutor.id;
+                    const tutorId = tutor._id || tutor.user?._id || tutor.userId || tutor.id || tutor.user;
                     const name = tutor.user?.name || tutor.name || 'Tutor';
                     const photo = tutor.profilePic || tutor.user?.avatar || tutor.user?.profilePic || tutor.profilePhoto?.url || tutor.profilePhoto || '';
                     const subject = tutor.subjects?.join(', ') || tutor.subjects?.[0] || 'General Subjects';

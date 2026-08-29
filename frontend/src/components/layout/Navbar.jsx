@@ -68,6 +68,11 @@ const Navbar = () => {
   };
 
   useEffect(() => {
+    console.log(
+      'Fetching notifications from',
+      (import.meta.env.VITE_API_URL || 'https://api.mentornearby.com') +
+        '/api/notifications/unread-count'
+    );
     fetchBellCount();
     const interval = setInterval(fetchBellCount, 10000);
     return () => clearInterval(interval);

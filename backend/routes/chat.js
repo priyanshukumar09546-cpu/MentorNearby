@@ -32,6 +32,13 @@ router.get('/my-status', getMyChatStatus);
 router.get('/:userId', getMessages);
 
 // Send a message (freemium gate applied here)
+router.post('/send', checkChatLimit('chat'), (req, res, next) => {
+  if (req.body.recipientId || req.body.receiverId || req.body.receiver || req.body.userId) {
+    req.params.userId = req.body.recipientId || req.body.receiverId || req.body.receiver || req.body.userId;
+  }
+  return sendMessage(req, res, next);
+});
+router.post('/send/:userId', checkChatLimit('chat'), sendMessage);
 router.post('/:userId', checkChatLimit('chat'), sendMessage);
 
 module.exports = router;

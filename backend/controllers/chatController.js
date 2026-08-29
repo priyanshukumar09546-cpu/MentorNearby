@@ -7,6 +7,7 @@ const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const Message = require('../models/Message');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const { filterMessage, hasContactInfo } = require('../utils/messageFilter');
 const { createNotification } = require('./notificationController');
 
@@ -84,22 +85,30 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     sender: senderId,
     receiver: receiverId,
     content: filteredContent,
-    originalBlocked: filteredContent !== content.trim(),
+    originalBlocked: filteredContent !== content?.trim(),
   });
 
-  // Notify receiver in-app
-  await createNotification(
-    receiverId,
-    `New Message from ${req.user.name}`,
-    filteredContent || 'Sent you a new message',
-    'MESSAGE',
-    `/messages?user=${senderId}&chat=${[senderId, receiverId].sort().join('_')}&recipient=${senderId}`,
-    {
-      senderId: senderId,
-      conversationId: [senderId, receiverId].sort().join('_'),
+  // ── Guaranteed In-App Notification Creation ──
+  try {
+    const convId = [String(senderId), String(receiverId)].sort().join('_');
+    await Notification.create({
+      user: receiverId,
+      recipient: receiverId,
+      sender: senderId,
+      title: `New message from ${req.user.name}`,
+      message: filteredContent || 'Sent you a new message',
+      conversationId: convId,
+      type: 'MESSAGE',
+      actionUrl: `/messages?user=${senderId}&chat=${convId}&recipient=${senderId}`,
       actionText: 'Reply in Chat',
-    }
-  );
+      isRead: false,
+      status: 'DELIVERED',
+      sentAt: new Date(),
+    });
+    console.log('🔔 Notification created for', receiverId);
+  } catch (notifErr) {
+    console.error('Error creating notification on chat:', notifErr);
+  }
 
   // Send WhatsApp Lead Alert if receiver is a tutor
   if (receiver.role === 'TUTOR') {
@@ -113,7 +122,7 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 
   return success(res, 'Message sent successfully', {
     message,
-    wasFiltered: filteredContent !== content.trim(),
+    wasFiltered: filteredContent !== content?.trim(),
     freeChatsUsed: req.user.freeChatsUsed,
     isSubscribed: isActiveSubscriber(req.user),
   }, 201);

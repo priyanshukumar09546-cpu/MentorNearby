@@ -100,6 +100,7 @@ safeRoute('/api/courses', './routes/courses');
 safeRoute('/api/admin', './routes/admin');
 safeRoute('/api/users', './routes/users');
 safeRoute('/api/notifications', './routes/notifications');
+console.log('✅ Notifications route mounted');
 safeRoute('/api/upload', './routes/upload');
 safeRoute('/api/requirements', './routes/requirements');
 safeRoute('/api/resources', './routes/resources');

@@ -9,7 +9,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import UnlockContactModal from '../../components/payment/UnlockContactModal';
 import './StudentProfilePage.css';
 
 const StudentProfilePage = () => {
@@ -21,7 +20,6 @@ const StudentProfilePage = () => {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -82,7 +80,23 @@ const StudentProfilePage = () => {
       navigate('/login');
       return;
     }
-    setUnlockModalOpen(true);
+    const isSubscribed = Boolean(
+      currentUser?.isSubscribed ||
+      currentUser?.subscriptionActive ||
+      currentUser?.role === 'ADMIN' ||
+      (currentUser?.subscriptionExpiry && new Date(currentUser.subscriptionExpiry) > new Date())
+    );
+
+    if (isSubscribed) {
+      const phone = student?.parentDetails?.phone || student?.phone || student?.user?.phone;
+      if (phone) {
+        window.location.href = `tel:${phone}`;
+      } else {
+        showToast('Parent contact available in direct messages', 'info');
+      }
+    } else {
+      navigate('/subscription');
+    }
   };
 
   if (loading) {
@@ -303,17 +317,7 @@ const StudentProfilePage = () => {
           </div>
 
         </div>
-
       </div>
-
-      {/* Unlock Contact Modal */}
-      {unlockModalOpen && (
-        <UnlockContactModal
-          isOpen={unlockModalOpen}
-          onClose={() => setUnlockModalOpen(false)}
-          tutorId={student._id || id}
-        />
-      )}
     </div>
   );
 };

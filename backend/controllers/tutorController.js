@@ -295,8 +295,8 @@ exports.getTutorStats = asyncHandler(async (req, res, next) => {
 exports.getFeaturedTutors = asyncHandler(async (req, res, next) => {
   const tutors = await TutorProfile.find({})
     .populate('user', 'name email phone avatar profilePic role isSuspended')
-    .sort({ averageRating: -1, createdAt: -1 })
-    .limit(8)
+    .sort({ createdAt: -1 })
+    .limit(12)
     .lean();
 
   const count = await TutorProfile.countDocuments();
@@ -309,9 +309,11 @@ exports.getFeaturedTutors = asyncHandler(async (req, res, next) => {
     return t;
   });
 
-  return res.status(200).json({
+  return res.json({
     success: true,
     data: safeTutors,
     tutors: safeTutors
   });
 });
+
+exports.getTutorById = exports.getTutorProfile;

@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import UnlockContactModal from '../../components/payment/UnlockContactModal';
 import ThemeSwitcher from '../../components/layout/ThemeSwitcher';
 import './StudentDashboard.css';
 
@@ -723,22 +722,8 @@ const StudentDashboardPage = () => {
               </Link>
             </div>
           </section>
-
         </main>
       </div>
-
-      {/* Contact Unlock Modal */}
-      {selectedTutorId && (
-        <UnlockContactModal
-          isOpen={unlockModalOpen}
-          onClose={() => {
-            setUnlockModalOpen(false);
-            setSelectedTutorId(null);
-          }}
-          tutorId={selectedTutorId}
-        />
-      )}
-
     </div>
   );
 };

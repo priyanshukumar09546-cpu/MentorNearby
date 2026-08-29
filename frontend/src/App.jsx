@@ -8,6 +8,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import CookieConsent from './components/common/CookieConsent';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import StarsBackground from './components/StarsBackground';
 import GlobalStars from './components/GlobalStars';
 
@@ -338,17 +339,19 @@ const App = () => {
   }, []);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <ToastProvider>
-          <NotificationProvider>
-            <BrowserRouter>
-              <AppContent />
-            </BrowserRouter>
-          </NotificationProvider>
-        </ToastProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <NotificationProvider>
+              <BrowserRouter>
+                <AppContent />
+              </BrowserRouter>
+            </NotificationProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 };
 

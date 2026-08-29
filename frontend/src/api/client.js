@@ -9,7 +9,7 @@ import Cookies from 'js-cookie';
 import { API_BASE_URL } from './config';
 
 const client = axios.create({
-  baseURL: API_BASE_URL || 'https://mentornearby-2.onrender.com/api',
+  baseURL: API_BASE_URL || 'https://api.mentornearby.com/api',
   withCredentials: true,
 });
 

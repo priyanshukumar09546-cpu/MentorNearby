@@ -1,5 +1,6 @@
-export const API_BASE_URL = 'https://mentornearby-2.onrender.com/api';
-export const HEALTH_CHECK_URL = 'https://mentornearby-2.onrender.com/health';
+const rawUrl = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim()) || 'https://api.mentornearby.com';
+export const API_BASE_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
+export const HEALTH_CHECK_URL = `${rawUrl.replace(/\/api$/, '')}/api/health`;
 
 export const isBackendAlive = async () => {
   try {

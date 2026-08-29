@@ -323,7 +323,7 @@ const StudyResourceViewerModalInner = ({
       const backendBase =
         import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim()
           ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
-          : 'https://mentornearby-2.onrender.com';
+          : 'https://api.mentornearby.com';
       return `${backendBase}${url}`;
     }
     return url;

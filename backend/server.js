@@ -64,45 +64,37 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
-// CORS CONFIGURATION (Explicit Allowed Origins for Credentials)
+// CORS CONFIGURATION
 // ============================================================
-const allowedOrigins = [
-  "https://mentornearby.netlify.app",
-  "https://mentornearby.com",
-  "https://www.mentornearby.com",
-  "https://admin.mentornearby.com",
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:3000",
-  "https://mentor-nearby-frontend.vercel.app",
-  "https://mentor-nearby.vercel.app",
-  "https://mentornearby.vercel.app",
-  process.env.FRONTEND_URL
-].filter(Boolean);
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (
-      !origin ||
-      allowedOrigins.includes(origin) ||
-      origin.endsWith('.netlify.app') ||
-      origin.endsWith('.vercel.app') ||
-      origin.endsWith('.onrender.com') ||
-      origin.includes('mentornearby') ||
-      origin.includes('localhost')
-    ) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+app.use(cors({
+  origin: [
+    "https://www.mentornearby.com",
+    "https://mentornearby.com",
+    "http://localhost:3000",
+    "http://localhost:5173"
+  ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-};
+  methods: ["GET", "POST", "PUT", "DELETE"]
+}));
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+// ============================================================
+// HEALTH CHECK (Fast public endpoint for UptimeRobot / Render Awake)
+// ============================================================
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    time: new Date(),
+    uptime: process.uptime(),
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    time: new Date(),
+    uptime: process.uptime(),
+  });
+});
 
 // ============================================================
 // SECURITY MIDDLEWARE
@@ -199,22 +191,7 @@ app.use('/api/auth/verify-otp', authLimiter);
 app.use('/api/auth/aadhaar/send-otp', authLimiter);
 app.use('/api/auth/aadhaar/verify-otp', authLimiter);
 
-// ============================================================
-// HEALTH CHECK
-// ============================================================
-const healthCheckHandler = (req, res) => {
-  const isDbConnected = mongoose.connection.readyState === 1;
-  res.status(isDbConnected ? 200 : 503).json({
-    success: isDbConnected,
-    message: isDbConnected ? 'MentorNearby API is healthy' : 'Database connection unavailable',
-    dbState: isDbConnected ? 'CONNECTED' : 'DISCONNECTED',
-    environment: process.env.NODE_ENV,
-    timestamp: new Date().toISOString(),
-  });
-};
 
-app.get('/health', healthCheckHandler);
-app.get('/api/health', healthCheckHandler);
 
 // ============================================================
 // API ROUTES

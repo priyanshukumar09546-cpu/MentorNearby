@@ -1,4 +1,5 @@
 import client from './client';
+import { HEALTH_CHECK_URL } from './config';
 
 export const register = (data) => client.post('/auth/register', data);
 export const login = (data) => client.post('/auth/login', data);
@@ -35,11 +36,11 @@ export const verifyAadhaarOtp = (clientId, otp, aadhaarNumber) =>
 
 // Health Check APIs
 export const checkHealth = () =>
-  fetch('https://mentornearby-2.onrender.com/health').then((r) => r.json());
+  fetch(HEALTH_CHECK_URL).then((r) => r.json());
 
 export const isBackendAlive = async () => {
   try {
-    const res = await fetch('https://mentornearby-2.onrender.com/health', {
+    const res = await fetch(HEALTH_CHECK_URL, {
       method: 'GET',
       cache: 'no-cache',
     });

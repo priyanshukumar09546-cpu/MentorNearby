@@ -140,7 +140,7 @@ const CourseDetailPage = () => {
 
       const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
         ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
-        : (typeof window !== 'undefined' ? window.location.origin : 'https://mentornearby-2.onrender.com');
+        : (typeof window !== 'undefined' ? window.location.origin : 'https://api.mentornearby.com');
       const streamUrl = fileUrl.startsWith('http') ? fileUrl : `${backendBase}${fileUrl}`;
 
       const response = await fetch(streamUrl, { credentials: 'include' });

@@ -4,15 +4,14 @@
 // ============================================================
 
 import client from './client';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://mentornearby-2.onrender.com/api';
+import { API_BASE_URL } from './config';
 
 /**
  * Get the URL for the 2-page preview PDF (public, no auth)
  * Use this in an iframe or <embed> — browser renders it inline
  */
 export const getNotePreviewUrl = (resourceId) =>
-  `${API_BASE}/notes/${resourceId}/preview`;
+  `${API_BASE_URL}/notes/${resourceId}/preview`;
 
 /**
  * Trigger a watermarked PDF download for subscribed users.

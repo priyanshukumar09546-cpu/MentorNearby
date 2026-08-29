@@ -42,15 +42,15 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://mentornearby-2.onrender.com/api/:match*"
+      "destination": "https://api.mentornearby.com/api/:match*"
     },
     {
       "source": "/health",
-      "destination": "https://mentornearby-2.onrender.com/health"
+      "destination": "https://api.mentornearby.com/health"
     },
     {
       "source": "/uploads/:match*",
-      "destination": "https://mentornearby-2.onrender.com/uploads/:match*"
+      "destination": "https://api.mentornearby.com/uploads/:match*"
     },
     {
       "source": "/(.*)",

@@ -119,7 +119,7 @@ const StudyPaymentModal = ({
         const cleanFileName = res?.data?.fileName || res?.fileName || `${(targetTitle || 'MentorNearby_Study_Material').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
         const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
           ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
-          : (typeof window !== 'undefined' ? window.location.origin : 'https://mentornearby-2.onrender.com');
+          : (typeof window !== 'undefined' ? window.location.origin : 'https://api.mentornearby.com');
         const streamUrl = downloadUrl.startsWith('http') ? downloadUrl : `${backendBase}${downloadUrl}`;
         const response = await fetch(streamUrl, { credentials: 'include' });
         if (response.ok) {

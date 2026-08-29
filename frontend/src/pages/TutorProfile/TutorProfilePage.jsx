@@ -4,7 +4,7 @@
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { getTutorProfile } from '../../api/tutors';
 import { getTutorReviews, createReview } from '../../api/reviews';
 import { saveTutor, removeSavedTutor, checkIsSaved } from '../../api/savedTutors';
@@ -19,14 +19,16 @@ import './TutorProfilePage.css';
 
 const TutorProfilePage = () => {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user: currentUser, isAuthenticated } = useAuth();
   const { showToast } = useToast();
 
-  const [tutor, setTutor] = useState(null);
+  const initialTutor = location.state?.tutor || null;
+  const [tutor, setTutor] = useState(initialTutor);
   const [reviews, setReviews] = useState([]);
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialTutor);
   const [error, setError] = useState(null);
 
   // Interactive States
@@ -54,24 +56,87 @@ const TutorProfilePage = () => {
     let isMounted = true;
     const fetchTutorData = async () => {
       try {
-        setLoading(true);
+        if (!tutor) setLoading(true);
         setError(null);
-        const res = await getTutorProfile(id);
-        const tutorData =
-          res.data?.data?.tutorProfile ||
-          res.data?.tutorProfile ||
-          res.data?.data?.tutor ||
-          res.data?.tutor ||
-          res.data?.data ||
-          res.data;
-        if (!tutorData || typeof tutorData !== 'object' || Array.isArray(tutorData)) {
-          throw new Error('Tutor profile not found.');
+
+        let tutorData = null;
+
+        // 1. Fetch from direct profile endpoint
+        try {
+          const res = await getTutorProfile(id);
+          tutorData =
+            res.data?.data?.tutorProfile ||
+            res.data?.tutorProfile ||
+            res.data?.data?.tutor ||
+            res.data?.tutor ||
+            res.data?.data ||
+            res.data;
+        } catch (apiErr) {
+          console.warn('Direct profile API call failed, attempting fallback...', apiErr);
         }
-        if (isMounted) {
+
+        // 2. Fallback: Check featured tutors endpoint if direct call didn't find profile
+        if (!tutorData || typeof tutorData !== 'object' || Array.isArray(tutorData)) {
+          try {
+            const featRes = await client.get('/tutors/featured');
+            const featList = featRes.data?.data?.tutors || featRes.data?.tutors || featRes.data?.data || (Array.isArray(featRes.data) ? featRes.data : []);
+            const match = featList.find(t => {
+              const tid = String(t._id || '');
+              const uid = String(t.user?._id || t.user || '');
+              const slug = String(t.slug || '');
+              const reqId = String(id || '');
+              return (
+                tid === reqId ||
+                uid === reqId ||
+                slug === reqId ||
+                (reqId.length >= 6 && tid.startsWith(reqId.slice(0, 8))) ||
+                (reqId.length >= 6 && uid.startsWith(reqId.slice(0, 8)))
+              );
+            });
+            if (match) {
+              tutorData = match;
+            }
+          } catch (featErr) {
+            console.warn('Featured tutors fallback failed:', featErr);
+          }
+        }
+
+        // 3. Fallback: Check search tutors endpoint
+        if (!tutorData || typeof tutorData !== 'object' || Array.isArray(tutorData)) {
+          try {
+            const searchRes = await client.get(`/search/tutors?limit=30`);
+            const searchList = searchRes.data?.data?.tutors || searchRes.data?.tutors || searchRes.data?.data || [];
+            const match = searchList.find(t => {
+              const tid = String(t._id || '');
+              const uid = String(t.user?._id || t.user || '');
+              const slug = String(t.slug || '');
+              const reqId = String(id || '');
+              return (
+                tid === reqId ||
+                uid === reqId ||
+                slug === reqId ||
+                (reqId.length >= 6 && tid.startsWith(reqId.slice(0, 8))) ||
+                (reqId.length >= 6 && uid.startsWith(reqId.slice(0, 8)))
+              );
+            });
+            if (match) {
+              tutorData = match;
+            }
+          } catch (searchErr) {
+            console.warn('Search fallback failed:', searchErr);
+          }
+        }
+
+        if (!tutorData || typeof tutorData !== 'object' || Array.isArray(tutorData)) {
+          if (!tutor) {
+            throw new Error('Tutor profile not found.');
+          }
+        } else if (isMounted) {
           setTutor(tutorData);
         }
 
-        const tutorUserId = tutorData?.user?._id || tutorData?.user || tutorData?._id;
+        const effectiveTutor = tutorData || tutor;
+        const tutorUserId = effectiveTutor?.user?._id || effectiveTutor?.user || effectiveTutor?._id;
 
         // Fetch Reviews (non-blocking)
         if (tutorUserId) {
@@ -104,7 +169,7 @@ const TutorProfilePage = () => {
         }
       } catch (err) {
         console.error('Error loading tutor profile for ID:', id, err);
-        if (isMounted) {
+        if (isMounted && !tutor) {
           setError('Failed to load tutor profile.');
         }
       } finally {

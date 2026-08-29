@@ -577,7 +577,7 @@ const HomePage = () => {
                     return (
                       <div key={tutorId} className="mn-featured-tutor-card">
                         {/* Tutor Image & Verified Badge */}
-                        <Link to={`/tutor/${tutorId}`} className="mn-tutor-photo-wrap block" style={{ textDecoration: 'none' }}>
+                        <Link to={`/tutor/${tutorId}`} state={{ tutor }} className="mn-tutor-photo-wrap block" style={{ textDecoration: 'none' }}>
                           {isVerified && <span className="mn-verified-badge">VERIFIED</span>}
                           {photo ? (
                             <img src={photo} alt={name} className="mn-tutor-photo-img" />
@@ -590,7 +590,7 @@ const HomePage = () => {
 
                         {/* Tutor Info */}
                         <div className="mn-tutor-card-body">
-                          <Link to={`/tutor/${tutorId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                          <Link to={`/tutor/${tutorId}`} state={{ tutor }} style={{ textDecoration: 'none', color: 'inherit' }}>
                             <h4 className="mn-tutor-name hover:text-blue-600 transition">{name}</h4>
                           </Link>
                           <div className="mn-tutor-subject-classes" title={`${subjectsList} • ${classes}`}>
@@ -615,6 +615,7 @@ const HomePage = () => {
 
                           <Link
                             to={`/tutor/${tutorId}`}
+                            state={{ tutor }}
                             className="mn-tutor-profile-btn"
                           >
                             View Profile

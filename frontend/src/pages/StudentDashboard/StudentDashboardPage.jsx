@@ -188,7 +188,7 @@ const StudentDashboardPage = () => {
   const userInitial = userName.charAt(0).toUpperCase();
 
   return (
-    <div className="sd-layout min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors">
+    <div className="sd-layout min-h-screen bg-[#f8faff] text-gray-900">
       
       {/* Mobile Drawer Backdrop */}
       {sidebarOpen && (
@@ -202,7 +202,7 @@ const StudentDashboardPage = () => {
       {/* ========================================================
           LEFT SIDEBAR
           ======================================================== */}
-      <aside className={`sd-sidebar ${sidebarOpen ? 'open' : ''} bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800`}>
+      <aside className={`sd-sidebar ${sidebarOpen ? 'open' : ''} bg-white border-r border-gray-200`}>
         <div className="sd-sidebar-top">
           
           {/* Brand Logo */}
@@ -249,9 +249,21 @@ const StudentDashboardPage = () => {
               </li>
 
               <li className="sd-nav-item">
+                <Link to="/saved-tutors" className="sd-nav-link">
+                  <div className="sd-nav-left">
+                    <span className="sd-nav-icon">⭐</span>
+                    <span>Saved Tutors</span>
+                  </div>
+                  {savedCount > 0 && (
+                    <span className="sd-nav-badge">{savedCount}</span>
+                  )}
+                </Link>
+              </li>
+
+              <li className="sd-nav-item">
                 <Link to="/study-resources" className="sd-nav-link">
                   <div className="sd-nav-left">
-                    <span className="sd-nav-icon">📖</span>
+                    <span className="sd-nav-icon">📄</span>
                     <span>Study Resources</span>
                   </div>
                 </Link>
@@ -261,7 +273,7 @@ const StudentDashboardPage = () => {
                 <Link to="/books" className="sd-nav-link">
                   <div className="sd-nav-left">
                     <span className="sd-nav-icon">📚</span>
-                    <span>NCERT & Free Books</span>
+                    <span>NCERT Books</span>
                   </div>
                 </Link>
               </li>
@@ -273,7 +285,7 @@ const StudentDashboardPage = () => {
                     <span>Messages</span>
                   </div>
                   {unreadMessagesCount > 0 && (
-                    <span className="sd-nav-badge">{unreadMessagesCount}</span>
+                    <span className="sd-nav-badge highlight">{unreadMessagesCount}</span>
                   )}
                 </Link>
               </li>
@@ -282,84 +294,43 @@ const StudentDashboardPage = () => {
                 <Link to="/notifications" className="sd-nav-link">
                   <div className="sd-nav-left">
                     <span className="sd-nav-icon">🔔</span>
-                    <span>Alerts</span>
+                    <span>Notifications</span>
                   </div>
                   {unreadAlertsCount > 0 && (
-                    <span className="sd-nav-badge">{unreadAlertsCount}</span>
+                    <span className="sd-nav-badge highlight">{unreadAlertsCount}</span>
                   )}
-                </Link>
-              </li>
-
-              <li className="sd-nav-item">
-                <Link to="/bookmarks" className="sd-nav-link">
-                  <div className="sd-nav-left">
-                    <span className="sd-nav-icon">🔖</span>
-                    <span>Bookmarks</span>
-                  </div>
-                </Link>
-              </li>
-
-              <li className="sd-nav-item">
-                <Link to="/my-courses" className="sd-nav-link">
-                  <div className="sd-nav-left">
-                    <span className="sd-nav-icon">📺</span>
-                    <span>My Courses</span>
-                  </div>
-                </Link>
-              </li>
-
-              <li className="sd-nav-item">
-                <Link to="/student/purchases" className="sd-nav-link">
-                  <div className="sd-nav-left">
-                    <span className="sd-nav-icon">🛍️</span>
-                    <span>My Purchases</span>
-                  </div>
-                </Link>
-              </li>
-
-              <li className="sd-nav-item">
-                <Link to="/settings" className="sd-nav-link">
-                  <div className="sd-nav-left">
-                    <span className="sd-nav-icon">⚙️</span>
-                    <span>Settings</span>
-                  </div>
-                </Link>
-              </li>
-
-              <li className="sd-nav-item">
-                <Link to="/contact" className="sd-nav-link">
-                  <div className="sd-nav-left">
-                    <span className="sd-nav-icon">❓</span>
-                    <span>Help & Support</span>
-                  </div>
                 </Link>
               </li>
             </ul>
           </nav>
         </div>
 
-        {/* Refer & Earn Sidebar Card */}
-        <div className="sd-refer-card">
-          <div className="sd-refer-gift-icon" aria-hidden="true">🎁</div>
-          <h4 className="sd-refer-title">Refer &amp; Earn!</h4>
-          <p className="sd-refer-desc">Invite your friends and earn exciting rewards.</p>
-          <button
-            type="button"
-            className="sd-refer-btn"
-            onClick={handleReferClick}
-          >
-            Refer Now
-          </button>
+        {/* Sidebar Bottom: Referral Widget */}
+        <div className="sd-sidebar-bottom">
+          <div className="sd-refer-card">
+            <div className="sd-refer-icon">🎁</div>
+            <div className="sd-refer-content">
+              <span className="sd-refer-title">Refer a Friend</span>
+              <span className="sd-refer-desc">Invite classmates &amp; get free contacts</span>
+              <button
+                type="button"
+                className="sd-refer-btn"
+                onClick={handleReferClick}
+              >
+                Copy Link
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 
       {/* ========================================================
-          MAIN DASHBOARD CANVAS
+          MAIN VIEWPORT & CANVAS
           ======================================================== */}
-      <div className="sd-main">
+      <div className="sd-main-wrap flex-1 min-w-0 bg-[#f8faff]">
         
         {/* Top Navbar */}
-        <header className="sd-topbar bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+        <header className="sd-topbar bg-white border-b border-gray-200">
           <div className="sd-topbar-left">
             <button
               type="button"
@@ -373,7 +344,7 @@ const StudentDashboardPage = () => {
             <form onSubmit={handleSearchSubmit} className="sd-search-form" role="search">
               <input
                 type="text"
-                className="sd-search-input"
+                className="sd-search-input bg-slate-50 border border-gray-200 text-gray-900"
                 placeholder="Search for tutors, subjects or courses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -386,7 +357,7 @@ const StudentDashboardPage = () => {
 
           <div className="sd-topbar-right">
             {/* Theme Toggle */}
-            <ThemeSwitcher compact={false} />
+            <ThemeSwitcher compact={true} />
 
             {/* Messages Icon */}
             <Link to="/messages" className="sd-icon-btn" aria-label="Messages">
@@ -421,13 +392,13 @@ const StudentDashboardPage = () => {
                 </div>
                 <div className="sd-user-meta">
                   <span className="sd-user-name">{userName}</span>
-                  <span className="sd-user-role">Student / Parent</span>
+                  <span className="sd-user-role">Student</span>
                 </div>
                 <span className="sd-user-chevron">⌄</span>
               </button>
 
               {userDropdownOpen && (
-                <div className="sd-dropdown-menu bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700" role="menu">
+                <div className="sd-dropdown-menu bg-white border border-gray-200 shadow-lg" role="menu">
                   <Link to="/profile" className="sd-dropdown-item" onClick={() => setUserDropdownOpen(false)}>
                     <span>👤</span> Profile Details
                   </Link>
@@ -437,7 +408,7 @@ const StudentDashboardPage = () => {
                   <Link to="/settings" className="sd-dropdown-item" onClick={() => setUserDropdownOpen(false)}>
                     <span>⚙️</span> Account Settings
                   </Link>
-                  <div style={{ height: '1px', background: '#f1f5f9', margin: '4px 0' }} className="dark:bg-gray-700"></div>
+                  <div style={{ height: '1px', background: '#f1f5f9', margin: '4px 0' }}></div>
                   <button type="button" className="sd-dropdown-item danger" onClick={handleLogout}>
                     <span>🚪</span> Sign Out
                   </button>
@@ -448,24 +419,24 @@ const StudentDashboardPage = () => {
         </header>
 
         {/* Dashboard Content Canvas */}
-        <main className="sd-canvas">
+        <main className="sd-canvas p-4 sm:p-6 lg:p-8 space-y-6">
           
           {/* ========================================================
               1. WELCOME HERO BANNER
               ======================================================== */}
-          <section className="sd-hero-card bg-blue-50 dark:bg-gray-800 border border-blue-100 dark:border-gray-700 text-gray-900 dark:text-white" aria-labelledby="sd-welcome-heading">
+          <section className="sd-hero-card bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white rounded-2xl shadow-md p-6 sm:p-8" aria-labelledby="sd-welcome-heading">
             <div className="sd-hero-left">
-              <h1 className="sd-hero-title text-gray-900 dark:text-white" id="sd-welcome-heading">
+              <h1 className="sd-hero-title text-white font-extrabold text-2xl sm:text-3xl" id="sd-welcome-heading">
                 Welcome back, {userName} 👋
               </h1>
-              <p className="sd-hero-subtitle text-gray-600 dark:text-gray-300">
+              <p className="sd-hero-subtitle text-blue-100 text-sm sm:text-base mt-2">
                 Find the right mentor and continue your learning journey.
               </p>
-              <div className="sd-hero-actions flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <Link to="/search" className="sd-hero-btn-primary w-full sm:w-auto justify-center whitespace-nowrap">
+              <div className="sd-hero-actions flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-5">
+                <Link to="/search" className="bg-white text-blue-700 font-bold px-5 py-2.5 rounded-xl shadow-sm hover:bg-blue-50 transition flex items-center justify-center gap-2">
                   <span>👤</span> Find a Tutor
                 </Link>
-                <Link to="/courses" className="sd-hero-btn-secondary w-full sm:w-auto justify-center whitespace-nowrap dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <Link to="/courses" className="bg-white/20 hover:bg-white/30 text-white font-semibold px-5 py-2.5 rounded-xl border border-white/30 transition flex items-center justify-center gap-2">
                   <span>📖</span> Explore Courses
                 </Link>
               </div>
@@ -479,52 +450,52 @@ const StudentDashboardPage = () => {
           {/* ========================================================
               2. FOUR STAT / KPI CARDS (REAL DATA ONLY)
               ======================================================== */}
-          <section className="sd-stats-row" aria-label="Student Overview Statistics">
+          <section className="sd-stats-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Student Overview Statistics">
             {/* Card 1: Tutors Contacted */}
-            <div className="sd-stat-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+            <div className="sd-stat-card bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900">
               <div className="sd-stat-icon-wrap red">
                 <span>❤️</span>
               </div>
               <div className="sd-stat-content">
-                <span className="sd-stat-label text-gray-500 dark:text-gray-300">Tutors Contacted</span>
-                <span className="sd-stat-number text-gray-900 dark:text-white">{contactedCount}</span>
-                <span className="sd-stat-subtext text-gray-400 dark:text-gray-400">Keep connecting!</span>
+                <span className="sd-stat-label text-gray-500 font-medium text-xs">Tutors Contacted</span>
+                <span className="sd-stat-number text-gray-900 font-extrabold text-2xl">{contactedCount}</span>
+                <span className="sd-stat-subtext text-gray-400 text-xs">Keep connecting!</span>
               </div>
             </div>
 
             {/* Card 2: Saved Tutors */}
-            <div className="sd-stat-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+            <div className="sd-stat-card bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900">
               <div className="sd-stat-icon-wrap amber">
                 <span>⭐</span>
               </div>
               <div className="sd-stat-content">
-                <span className="sd-stat-label text-gray-500 dark:text-gray-300">Saved Tutors</span>
-                <span className="sd-stat-number text-gray-900 dark:text-white">{savedCount}</span>
-                <span className="sd-stat-subtext text-gray-400 dark:text-gray-400">Save your favorite tutors</span>
+                <span className="sd-stat-label text-gray-500 font-medium text-xs">Saved Tutors</span>
+                <span className="sd-stat-number text-gray-900 font-extrabold text-2xl">{savedCount}</span>
+                <span className="sd-stat-subtext text-gray-400 text-xs">Save your favorite tutors</span>
               </div>
             </div>
 
             {/* Card 3: Active Requests */}
-            <div className="sd-stat-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+            <div className="sd-stat-card bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900">
               <div className="sd-stat-icon-wrap purple">
                 <span>✉️</span>
               </div>
               <div className="sd-stat-content">
-                <span className="sd-stat-label text-gray-500 dark:text-gray-300">Active Requests</span>
-                <span className="sd-stat-number text-gray-900 dark:text-white">{activeRequestsCount}</span>
-                <span className="sd-stat-subtext text-gray-400 dark:text-gray-400">Awaiting response</span>
+                <span className="sd-stat-label text-gray-500 font-medium text-xs">Active Requests</span>
+                <span className="sd-stat-number text-gray-900 font-extrabold text-2xl">{activeRequestsCount}</span>
+                <span className="sd-stat-subtext text-gray-400 text-xs">Awaiting response</span>
               </div>
             </div>
 
             {/* Card 4: Contact Unlocks Used */}
-            <div className="sd-stat-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+            <div className="sd-stat-card bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900">
               <div className="sd-stat-icon-wrap green">
                 <span>🔒</span>
               </div>
               <div className="sd-stat-content">
-                <span className="sd-stat-label text-gray-500 dark:text-gray-300">Contact Unlocks Used</span>
-                <span className="sd-stat-number text-gray-900 dark:text-white">{unlocksUsed}</span>
-                <span className="sd-stat-subtext text-gray-400 dark:text-gray-400">Unlock to view contacts</span>
+                <span className="sd-stat-label text-gray-500 font-medium text-xs">Contact Unlocks Used</span>
+                <span className="sd-stat-number text-gray-900 font-extrabold text-2xl">{unlocksUsed}</span>
+                <span className="sd-stat-subtext text-gray-400 text-xs">Unlock to view contacts</span>
               </div>
             </div>
           </section>
@@ -532,28 +503,28 @@ const StudentDashboardPage = () => {
           {/* ========================================================
               3. TWO-COLUMN MIDDLE SECTION (REAL DATA ONLY)
               ======================================================== */}
-          <div className="sd-middle-section">
+          <div className="sd-middle-section grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* COLUMN 1: RECOMMENDED COURSES */}
             <section className="sd-courses-column" aria-labelledby="sd-rec-courses-heading">
-              <div className="sd-section-header">
-                <h2 className="sd-section-title text-gray-900 dark:text-white" id="sd-rec-courses-heading">
+              <div className="sd-section-header flex items-center justify-between mb-4">
+                <h2 className="sd-section-title text-gray-900 font-bold text-lg" id="sd-rec-courses-heading">
                   <span>📖</span> Recommended Courses for You
                 </h2>
-                <Link to="/courses" className="sd-section-link">
+                <Link to="/courses" className="sd-section-link text-blue-600 font-semibold text-xs hover:underline">
                   Explore All Courses →
                 </Link>
               </div>
 
               {recommendedCourses.length > 0 ? (
-                <div className="sd-courses-grid">
+                <div className="sd-courses-grid grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {recommendedCourses.map((course) => {
                     const isClass12 = course.classLevel === '12' || (course.title && course.title.includes('12'));
                     const bannerClass = isClass12 ? 'class-12' : 'class-10';
                     const classLabel = course.classLevel ? `CLASS ${course.classLevel}` : 'PYQ MASTERY';
 
                     return (
-                      <div key={course._id} className="sd-course-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+                      <div key={course._id} className="sd-course-card bg-white border border-gray-200 shadow-xs rounded-xl overflow-hidden text-gray-900">
                         <div className={`sd-course-banner ${bannerClass}`}>
                           <div>
                             <div className="sd-cb-top-tag">{classLabel}</div>
@@ -568,17 +539,17 @@ const StudentDashboardPage = () => {
                           </div>
                         </div>
 
-                        <div className="sd-course-body">
-                          <h3 className="sd-course-title text-gray-900 dark:text-white">{course.title}</h3>
-                          <ul className="sd-course-feature-list">
-                            <li className="sd-course-feature-item text-gray-600 dark:text-gray-300">
-                              <span className="check">✓</span> {course.pyqYearsRange || '10+ Years Board PYQs'}
+                        <div className="sd-course-body p-4">
+                          <h3 className="sd-course-title text-gray-900 font-bold text-sm line-clamp-1">{course.title}</h3>
+                          <ul className="sd-course-feature-list space-y-1 my-2">
+                            <li className="sd-course-feature-item text-gray-600 text-xs">
+                              <span className="check text-emerald-600">✓</span> {course.pyqYearsRange || '10+ Years Board PYQs'}
                             </li>
-                            <li className="sd-course-feature-item text-gray-600 dark:text-gray-300">
-                              <span className="check">✓</span> Solved Papers &amp; Video Solutions
+                            <li className="sd-course-feature-item text-gray-600 text-xs">
+                              <span className="check text-emerald-600">✓</span> Solved Papers &amp; Video Solutions
                             </li>
                           </ul>
-                          <Link to={`/courses/${course.slug || course._id}`} className="sd-course-yt-btn">
+                          <Link to={`/courses/${course.slug || course._id}`} className="sd-course-yt-btn block text-center bg-red-600 text-white font-bold py-2 rounded-lg text-xs hover:bg-red-700 transition">
                             <span>▶</span> Explore Course
                           </Link>
                         </div>
@@ -587,28 +558,28 @@ const StudentDashboardPage = () => {
                   })}
                 </div>
               ) : (
-                <div className="sd-empty-state-box bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                  <span className="sd-empty-icon">🎓</span>
-                  <p className="sd-empty-title text-gray-900 dark:text-white">No courses published yet</p>
-                  <p className="sd-empty-desc text-gray-500 dark:text-gray-400">Check back soon for solved board examination papers.</p>
-                  <Link to="/courses" className="sd-empty-btn">Browse Catalog</Link>
+                <div className="sd-empty-state-box bg-white border border-gray-200 rounded-xl p-8 text-center">
+                  <span className="sd-empty-icon text-3xl">🎓</span>
+                  <p className="sd-empty-title text-gray-900 font-bold mt-2">No courses published yet</p>
+                  <p className="sd-empty-desc text-gray-500 text-xs mt-1">Check back soon for solved board examination papers.</p>
+                  <Link to="/courses" className="sd-empty-btn inline-block mt-3 bg-blue-600 text-white font-semibold px-4 py-1.5 rounded-lg text-xs">Browse Catalog</Link>
                 </div>
               )}
             </section>
 
             {/* COLUMN 2: FIND TRUSTED TUTORS NEAR YOU */}
             <section className="sd-tutors-column" aria-labelledby="sd-trusted-tutors-heading">
-              <div className="sd-section-header">
-                <h2 className="sd-section-title text-gray-900 dark:text-white" id="sd-trusted-tutors-heading">
+              <div className="sd-section-header flex items-center justify-between mb-4">
+                <h2 className="sd-section-title text-gray-900 font-bold text-lg" id="sd-trusted-tutors-heading">
                   <span>🧑‍🏫</span> Find Trusted Tutors Near You
                 </h2>
-                <Link to="/search" className="sd-section-link">
+                <Link to="/search" className="sd-section-link text-blue-600 font-semibold text-xs hover:underline">
                   View All Tutors →
                 </Link>
               </div>
 
               {recommendedTutors.length > 0 ? (
-                <div className="sd-tutors-grid">
+                <div className="sd-tutors-grid grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {recommendedTutors.map((tutor) => {
                     const tutorId = tutor.user?._id || tutor._id;
                     const name = tutor.name || tutor.user?.name || 'Verified Educator';
@@ -624,7 +595,7 @@ const StudentDashboardPage = () => {
                     const isVerified = tutor.kycStatus === 'VERIFIED';
 
                     return (
-                      <div key={tutorId} className="sd-tutor-card bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+                      <div key={tutorId} className="sd-tutor-card bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900">
                         <div className="sd-tutor-photo-wrap">
                           {photoUrl ? (
                             <img
@@ -648,23 +619,23 @@ const StudentDashboardPage = () => {
                           </div>
                         )}
 
-                        <h3 className="sd-tutor-name text-gray-900 dark:text-white" title={name}>{name}</h3>
-                        <p className="sd-tutor-subject text-gray-600 dark:text-gray-300" title={subject}>{subject}</p>
-                        <p className="sd-tutor-location text-gray-500 dark:text-gray-400">📍 {locationText}</p>
-                        <div className="sd-tutor-rating">
+                        <h3 className="sd-tutor-name text-gray-900 font-bold text-sm" title={name}>{name}</h3>
+                        <p className="sd-tutor-subject text-gray-600 text-xs" title={subject}>{subject}</p>
+                        <p className="sd-tutor-location text-gray-500 text-xs">📍 {locationText}</p>
+                        <div className="sd-tutor-rating text-xs font-semibold text-amber-600">
                           <span>⭐</span> {rating} {reviews > 0 ? `(${reviews})` : ''}
                         </div>
 
-                        <div className="sd-tutor-actions">
-                          <Link to={`/tutor/${tutorId}`} className="sd-tutor-btn-profile dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        <div className="sd-tutor-actions flex gap-2 mt-3">
+                          <Link to={`/tutor/${tutorId}`} className="sd-tutor-btn-profile bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-semibold px-3 py-1.5 rounded-lg text-xs flex-1 text-center">
                             View Profile
                           </Link>
                           <button
                             type="button"
-                            className="sd-tutor-btn-contact"
+                            className="sd-tutor-btn-contact bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-lg text-xs flex-1"
                             onClick={() => handleContactClick(tutor)}
                           >
-                            Contact Tutor
+                            Contact
                           </button>
                         </div>
                       </div>
@@ -672,11 +643,11 @@ const StudentDashboardPage = () => {
                   })}
                 </div>
               ) : (
-                <div className="sd-empty-state-box bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                  <span className="sd-empty-icon">🧑‍🏫</span>
-                  <p className="sd-empty-title text-gray-900 dark:text-white">No verified tutors found near you</p>
-                  <p className="sd-empty-desc text-gray-500 dark:text-gray-400">Try searching across all subjects or expanding your location.</p>
-                  <Link to="/search" className="sd-empty-btn">Find Tutors</Link>
+                <div className="sd-empty-state-box bg-white border border-gray-200 rounded-xl p-8 text-center">
+                  <span className="sd-empty-icon text-3xl">🧑‍🏫</span>
+                  <p className="sd-empty-title text-gray-900 font-bold mt-2">No verified tutors found near you</p>
+                  <p className="sd-empty-desc text-gray-500 text-xs mt-1">Try searching across all subjects or expanding your location.</p>
+                  <Link to="/search" className="sd-empty-btn inline-block mt-3 bg-blue-600 text-white font-semibold px-4 py-1.5 rounded-lg text-xs">Find Tutors</Link>
                 </div>
               )}
             </section>
@@ -686,59 +657,59 @@ const StudentDashboardPage = () => {
               4. STUDY RESOURCES SECTION
               ======================================================== */}
           <section className="sd-resources-section" aria-labelledby="sd-resources-heading">
-            <div className="sd-section-header">
-              <h2 className="sd-section-title text-gray-900 dark:text-white" id="sd-resources-heading">
+            <div className="sd-section-header mb-4">
+              <h2 className="sd-section-title text-gray-900 font-bold text-lg" id="sd-resources-heading">
                 <span>📑</span> Study Resources
               </h2>
             </div>
 
-            <div className="sd-resources-grid">
+            <div className="sd-resources-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Resource 1 */}
-              <Link to="/study-resources" className="sd-resource-card formula bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+              <Link to="/study-resources" className="sd-resource-card formula bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900 flex items-center gap-3 hover:border-blue-300 transition">
                 <div className="sd-resource-icon-box blue">
                   <span>📄</span>
                 </div>
-                <div className="sd-resource-text">
-                  <span className="sd-resource-title text-gray-900 dark:text-white">Formula Sheets</span>
-                  <span className="sd-resource-desc text-gray-500 dark:text-gray-400">Important formulas at one place</span>
+                <div className="sd-resource-text flex-1 min-w-0">
+                  <span className="sd-resource-title text-gray-900 font-bold text-sm block">Formula Sheets</span>
+                  <span className="sd-resource-desc text-gray-500 text-xs block truncate">Important formulas at one place</span>
                 </div>
-                <span className="sd-resource-arrow">→</span>
+                <span className="sd-resource-arrow text-gray-400">→</span>
               </Link>
 
               {/* Resource 2 */}
-              <Link to="/study-resources" className="sd-resource-card questions bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+              <Link to="/study-resources" className="sd-resource-card questions bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900 flex items-center gap-3 hover:border-emerald-300 transition">
                 <div className="sd-resource-icon-box green">
                   <span>❓</span>
                 </div>
-                <div className="sd-resource-text">
-                  <span className="sd-resource-title text-gray-900 dark:text-white">Important Questions</span>
-                  <span className="sd-resource-desc text-gray-500 dark:text-gray-400">Chapter-wise important questions</span>
+                <div className="sd-resource-text flex-1 min-w-0">
+                  <span className="sd-resource-title text-gray-900 font-bold text-sm block">Important Questions</span>
+                  <span className="sd-resource-desc text-gray-500 text-xs block truncate">Chapter-wise important questions</span>
                 </div>
-                <span className="sd-resource-arrow">→</span>
+                <span className="sd-resource-arrow text-gray-400">→</span>
               </Link>
 
               {/* Resource 3 */}
-              <Link to="/books" className="sd-resource-card ncert bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+              <Link to="/books" className="sd-resource-card ncert bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900 flex items-center gap-3 hover:border-indigo-300 transition">
                 <div className="sd-resource-icon-box indigo">
                   <span>📖</span>
                 </div>
-                <div className="sd-resource-text">
-                  <span className="sd-resource-title text-gray-900 dark:text-white">NCERT &amp; Free Books</span>
-                  <span className="sd-resource-desc text-gray-500 dark:text-gray-400">Access NCERT books and more</span>
+                <div className="sd-resource-text flex-1 min-w-0">
+                  <span className="sd-resource-title text-gray-900 font-bold text-sm block">NCERT &amp; Free Books</span>
+                  <span className="sd-resource-desc text-gray-500 text-xs block truncate">Access NCERT books and more</span>
                 </div>
-                <span className="sd-resource-arrow">→</span>
+                <span className="sd-resource-arrow text-gray-400">→</span>
               </Link>
 
               {/* Resource 4 */}
-              <Link to="/study-resources" className="sd-resource-card revision bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white">
+              <Link to="/study-resources" className="sd-resource-card revision bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900 flex items-center gap-3 hover:border-rose-300 transition">
                 <div className="sd-resource-icon-box red">
                   <span>📑</span>
                 </div>
-                <div className="sd-resource-text">
-                  <span className="sd-resource-title text-gray-900 dark:text-white">Revision Material</span>
-                  <span className="sd-resource-desc text-gray-500 dark:text-gray-400">Notes &amp; PDFs for quick revision</span>
+                <div className="sd-resource-text flex-1 min-w-0">
+                  <span className="sd-resource-title text-gray-900 font-bold text-sm block">Revision Material</span>
+                  <span className="sd-resource-desc text-gray-500 text-xs block truncate">Notes &amp; PDFs for quick revision</span>
                 </div>
-                <span className="sd-resource-arrow">→</span>
+                <span className="sd-resource-arrow text-gray-400">→</span>
               </Link>
             </div>
           </section>

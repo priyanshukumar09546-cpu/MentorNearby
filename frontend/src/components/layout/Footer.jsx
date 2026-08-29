@@ -252,9 +252,21 @@ const Footer = () => {
 
   // Hidden on dedicated workspace viewports
   const isExcludedRoute =
-    location.pathname === '/dashboard' ||
-    location.pathname === '/tutor/dashboard' ||
-    location.pathname === '/tutor/profile/edit' ||
+    location.pathname.startsWith('/dashboard') ||
+    location.pathname.startsWith('/student-dashboard') ||
+    location.pathname.startsWith('/student/dashboard') ||
+    location.pathname.startsWith('/tutor-dashboard') ||
+    location.pathname.startsWith('/tutor/dashboard') ||
+    location.pathname.startsWith('/tutor/requests') ||
+    location.pathname.startsWith('/student-requests') ||
+    location.pathname.startsWith('/tutor/profile') ||
+    location.pathname.startsWith('/student/profile') ||
+    location.pathname.startsWith('/student/purchases') ||
+    location.pathname.startsWith('/student/requirements') ||
+    location.pathname.startsWith('/saved-tutors') ||
+    location.pathname.startsWith('/post-requirement') ||
+    location.pathname.startsWith('/purchases') ||
+    location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/courses/watch/');
 
   useEffect(() => {

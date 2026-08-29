@@ -34,7 +34,7 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// Response Interceptor: Capture token and user role from JSON response
+// Response Interceptor: Capture token and user role from JSON response + Auto-retry on Render sleep
 client.interceptors.response.use(
   (response) => {
     const returnedToken = response.data?.token || response.data?.data?.token;
@@ -54,7 +54,24 @@ client.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
+  async (error) => {
+    const cfg = error.config;
+
+    // Auto-retry once after 5s if Render is waking up from sleep
+    if (
+      cfg &&
+      !cfg._retry &&
+      (error.message?.includes('Network Error') ||
+        error.code === 'ECONNABORTED' ||
+        error.code === 'ERR_NETWORK' ||
+        !error.response)
+    ) {
+      cfg._retry = true;
+      console.warn('[API Retry] Server starting up. Retrying request in 5 seconds...', cfg.url);
+      await new Promise((r) => setTimeout(r, 5000));
+      return client(cfg);
+    }
+
     const isAuthCheck = error.config?.url?.includes('/auth/me') || error.config?.url?.includes('/login');
     const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
 

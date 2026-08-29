@@ -100,7 +100,7 @@ const RouteLoadingFallback = () => (
 
 const AppContent = () => {
   const { isDark, darkMode } = useTheme();
-  const isDarkMode = isDark ?? darkMode ?? true;
+  const isDarkMode = isDark ?? darkMode ?? false;
 
   useEffect(() => {
     if (isDarkMode) {
@@ -117,7 +117,7 @@ const AppContent = () => {
   return (
     <div
       style={{
-        backgroundColor: isDarkMode ? 'transparent' : '#FFFBF5',
+        backgroundColor: isDarkMode ? '#000000' : '#FFFBF5',
         minHeight: '100vh',
         position: 'relative',
       }}
@@ -203,6 +203,9 @@ const AppContent = () => {
                             <Route path="/tutor/profile/edit" element={<ProtectedRoute roles={['tutor']}><EditTutorProfilePage /></ProtectedRoute>} />
                             <Route path="/tutor/kyc" element={<ProtectedRoute roles={['tutor']}><KYCPage /></ProtectedRoute>} />
                             <Route path="/tutor/:id" element={<TutorProfilePage />} />
+                            <Route path="/teacher/:id" element={<TutorProfilePage />} />
+                            <Route path="/teachers/:id" element={<TutorProfilePage />} />
+                            <Route path="/teacher-profile/:id" element={<TutorProfilePage />} />
 
                             {/* 🔍 Tutor & Student Search Routes */}
                             <Route path="/search" element={<SearchPage />} />

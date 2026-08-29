@@ -8,11 +8,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext({
-  theme: 'dark',
-  resolvedTheme: 'dark',
+  theme: 'light',
+  resolvedTheme: 'light',
   setTheme: () => {},
   toggleTheme: () => {},
-  isDark: true,
+  isDark: false,
 });
 
 const PRIMARY_STORAGE_KEY = 'theme';
@@ -26,10 +26,10 @@ export const ThemeProvider = ({ children }) => {
         return saved;
       }
     } catch (_) {}
-    return 'dark'; // DEFAULT TO DARK MODE (PURE BLACK)
+    return 'light'; // DEFAULT TO CLEAN LIGHT THEME (#FFFBF5 / #FFFFFF)
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState('dark');
+  const [resolvedTheme, setResolvedTheme] = useState('light');
 
   useEffect(() => {
     const updateTheme = () => {

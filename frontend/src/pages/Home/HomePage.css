@@ -1451,4 +1451,18 @@ html.dark .mn-cta-banner-section,
   box-shadow: 0 0 40px rgba(250, 204, 21, 0.08) !important;
 }
 
+/* SEO Footer Content Section Dark Mode */
+.mn-seo-section {
+  background-color: #F8FAFC;
+  border-top: 1px solid #E2E8F0;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+html.dark .mn-seo-section,
+.dark .mn-seo-section {
+  background-color: #0A0A0F !important;
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+
 

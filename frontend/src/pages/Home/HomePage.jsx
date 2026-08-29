@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { searchTutors, getPublicStats } from '../../api/search';
+import { useTheme } from '../../context/ThemeContext';
 import UnlockContactModal from '../../components/payment/UnlockContactModal';
 import './HomePage.css';
 
@@ -84,6 +85,8 @@ const HERO_PHRASES = [
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { isDark, darkMode } = useTheme();
+  const isDarkMode = isDark ?? darkMode ?? false;
   const [search, setSearch] = useState({ location: '', subject: '' });
   const [openFaq, setOpenFaq] = useState(null);
   const [featuredTutors, setFeaturedTutors] = useState([]);
@@ -697,68 +700,236 @@ const HomePage = () => {
       {/* 5. SEO FOOTER CONTENT: LOCAL TUITION IN BAREILLY & NEARBY    */}
       {/* ============================================================ */}
       <section
+        className="mn-seo-section bg-slate-50 dark:bg-[#0a0a0f] border-t border-slate-200 dark:border-white/10 text-slate-900 dark:text-gray-100 transition-colors duration-200"
         style={{
-          background: '#F8FAFC',
-          borderTop: '1px solid #E2E8F0',
+          background: isDarkMode ? '#0a0a0f' : '#F8FAFC',
+          borderTop: isDarkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
           padding: '48px 0 36px',
         }}
         aria-label="Local Home Tuition and Tutor Directory Keywords"
       >
         <div className="mn-container">
           <div style={{ marginBottom: 24 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>
+            <h2
+              className="text-slate-900 dark:text-white"
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: isDarkMode ? '#FFFFFF' : '#0F172A',
+                marginBottom: 8,
+              }}
+            >
               Home Tuition in Bareilly &amp; Private Tutors Near You
             </h2>
-            <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6, maxWidth: 900 }}>
+            <p
+              className="text-slate-600 dark:text-gray-300"
+              style={{
+                fontSize: 13,
+                color: isDarkMode ? '#94A3B8' : '#64748B',
+                lineHeight: 1.6,
+                maxWidth: 900,
+              }}
+            >
               MentorNearby is India's dedicated hyper-local home tuition and private tutor marketplace connecting students and parents directly with background-verified teachers within 5km. Whether you need Class 10 Board Exam prep, Class 12 IIT-JEE/NEET coaching, or foundational primary school guidance, find top-rated tutors near your locality with zero middleman commissions and free initial chat.
             </p>
           </div>
 
           <div
+            className="border-t border-slate-200 dark:border-white/10"
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
               gap: 20,
               paddingTop: 16,
-              borderTop: '1px solid #E2E8F0',
+              borderTop: isDarkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
             }}
           >
             <div>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>
+              <h3
+                className="text-slate-700 dark:text-gray-200"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: isDarkMode ? '#E2E8F0' : '#334155',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: 10,
+                }}
+              >
                 Popular Localities in Bareilly
               </h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 2 }}>
-                <li><Link to="/search?location=Civil+Lines" style={{ color: '#64748B', textDecoration: 'none' }}>Home Tutors in Civil Lines, Bareilly</Link></li>
-                <li><Link to="/search?location=Rajendra+Nagar" style={{ color: '#64748B', textDecoration: 'none' }}>Home Tuition in Rajendra Nagar</Link></li>
-                <li><Link to="/search?location=Subhash+Nagar" style={{ color: '#64748B', textDecoration: 'none' }}>Private Tutors in Subhash Nagar</Link></li>
-                <li><Link to="/search?location=Model+Town" style={{ color: '#64748B', textDecoration: 'none' }}>CBSE Tutors in Model Town</Link></li>
-                <li><Link to="/search?location=Rampur+Garden" style={{ color: '#64748B', textDecoration: 'none' }}>Maths &amp; Science Tutors in Rampur Garden</Link></li>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12.5, lineHeight: 2 }}>
+                <li>
+                  <Link
+                    to="/search?location=Civil+Lines"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Home Tutors in Civil Lines, Bareilly
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/search?location=Rajendra+Nagar"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Home Tuition in Rajendra Nagar
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/search?location=Subhash+Nagar"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Private Tutors in Subhash Nagar
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/search?location=Model+Town"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    CBSE Tutors in Model Town
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/search?location=Rampur+Garden"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Maths &amp; Science Tutors in Rampur Garden
+                  </Link>
+                </li>
               </ul>
             </div>
 
             <div>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>
+              <h3
+                className="text-slate-700 dark:text-gray-200"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: isDarkMode ? '#E2E8F0' : '#334155',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: 10,
+                }}
+              >
                 Top Subjects &amp; Classes
               </h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 2 }}>
-                <li><Link to="/search?subject=Maths" style={{ color: '#64748B', textDecoration: 'none' }}>Class 10 Maths Home Tutor near me</Link></li>
-                <li><Link to="/search?subject=Physics" style={{ color: '#64748B', textDecoration: 'none' }}>Class 12 Physics &amp; Numerical Faculty</Link></li>
-                <li><Link to="/search?subject=Chemistry" style={{ color: '#64748B', textDecoration: 'none' }}>Class 11 &amp; 12 Chemistry Tutors</Link></li>
-                <li><Link to="/search?subject=Biology" style={{ color: '#64748B', textDecoration: 'none' }}>NEET Biology Mentors in Bareilly</Link></li>
-                <li><Link to="/search?subject=English" style={{ color: '#64748B', textDecoration: 'none' }}>Spoken English &amp; Grammar Classes</Link></li>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12.5, lineHeight: 2 }}>
+                <li>
+                  <Link
+                    to="/search?subject=Maths"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Class 10 Maths Home Tutor near me
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/search?subject=Physics"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Class 12 Physics &amp; Numerical Faculty
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/search?subject=Chemistry"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Class 11 &amp; 12 Chemistry Tutors
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/search?subject=Biology"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    NEET Biology Mentors in Bareilly
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/search?subject=English"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Spoken English &amp; Grammar Classes
+                  </Link>
+                </li>
               </ul>
             </div>
 
             <div>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>
+              <h3
+                className="text-slate-700 dark:text-gray-200"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: isDarkMode ? '#E2E8F0' : '#334155',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: 10,
+                }}
+              >
                 Quick Search Searches
               </h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 2 }}>
-                <li><Link to="/search" style={{ color: '#64748B', textDecoration: 'none' }}>Tuition near me within 5km</Link></li>
-                <li><Link to="/search" style={{ color: '#64748B', textDecoration: 'none' }}>Female Home Tutor in Bareilly</Link></li>
-                <li><Link to="/books" style={{ color: '#64748B', textDecoration: 'none' }}>Free NCERT Solutions PDF</Link></li>
-                <li><Link to="/study-resources" style={{ color: '#64748B', textDecoration: 'none' }}>Topper Notes &amp; Formula Sheets</Link></li>
-                <li><Link to="/become-tutor" style={{ color: '#64748B', textDecoration: 'none' }}>Join as Home Tutor (Earn ₹15k-₹40k/mo)</Link></li>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12.5, lineHeight: 2 }}>
+                <li>
+                  <Link
+                    to="/search"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Tuition near me within 5km
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/search"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Female Home Tutor in Bareilly
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/books"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Free NCERT Solutions PDF
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/study-resources"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Topper Notes &amp; Formula Sheets
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/become-tutor"
+                    className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B', textDecoration: 'none' }}
+                  >
+                    Join as Home Tutor (Earn ₹15k-₹40k/mo)
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

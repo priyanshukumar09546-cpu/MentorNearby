@@ -1,15 +1,8 @@
-// ============================================================
-// components/layout/Navbar.jsx
-// MentorNearby Global Navigation Bar (Matching Reference Design)
-// ============================================================
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { useNotifications } from '../../context/NotificationContext';
-import NotificationDropdown from '../notifications/NotificationDropdown';
 import ThemeSwitcher from './ThemeSwitcher';
 import './Navbar.css';
 
@@ -17,106 +10,11 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { isDark, darkMode } = useTheme();
   const isDarkMode = isDark ?? darkMode ?? true;
-  const {
-    unreadCount: contextUnreadCount,
-    dropdownOpen: notifDropdownOpen,
-    toggleDropdown: toggleNotifDropdown,
-    closeDropdown: closeNotifDropdown,
-  } = useNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const navRef = useRef(null);
-
-  // ── FORCE FIX: Notifications Direct State & Real-Time Polling ──
-  const [showNotif, setShowNotif] = useState(false);
-  const [notificationsList, setNotificationsList] = useState([]);
-  const [bellUnreadCount, setBellUnreadCount] = useState(0);
-  const notifDropdownRef = useRef(null);
-
-  const token =
-    localStorage.getItem('token') ||
-    localStorage.getItem('mn_token') ||
-    Cookies.get('token');
-
-  const fetchBellCount = async () => {
-    if (!token && !isAuthenticated) {
-      setBellUnreadCount(0);
-      return;
-    }
-    try {
-      console.log('🔔 Fetching unread count...');
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.mentornearby.com';
-      const res = await fetch(`${apiUrl}/api/notifications/unread-count`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const count =
-        typeof data.count === 'number'
-          ? data.count
-          : (data.unreadCount ?? data.data?.count ?? data.data?.unreadCount ?? 0);
-      console.log('🔔 Count:', count, data);
-      setBellUnreadCount(count);
-    } catch (err) {
-      console.error('Bell count error', err);
-    }
-  };
-
-  useEffect(() => {
-    console.log(
-      'Fetching notifications from',
-      (import.meta.env.VITE_API_URL || 'https://api.mentornearby.com') +
-        '/api/notifications/unread-count'
-    );
-    fetchBellCount();
-    const interval = setInterval(fetchBellCount, 10000);
-    return () => clearInterval(interval);
-  }, [token, isAuthenticated]);
-
-  const handleBellClick = async (e) => {
-    e.stopPropagation();
-    console.log('🔔 Bell clicked, current show:', showNotif);
-    const nextState = !showNotif;
-    setShowNotif(nextState);
-
-    if (nextState) {
-      try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://api.mentornearby.com';
-        const res = await fetch(`${apiUrl}/api/notifications`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const list = Array.isArray(data)
-            ? data
-            : (data.notifications || data.data?.notifications || data.data || []);
-          console.log('🔔 Notifications fetched:', list);
-          setNotificationsList(list);
-        }
-      } catch (err) {
-        console.error('Failed to load notifications:', err);
-      }
-    }
-  };
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleDocClick = (e) => {
-      if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target)) {
-        setShowNotif(false);
-      }
-    };
-    document.addEventListener('click', handleDocClick);
-    return () => document.removeEventListener('click', handleDocClick);
-  }, []);
 
   // Close dropdowns on outside click or route change
   useEffect(() => {
@@ -488,184 +386,6 @@ const Navbar = () => {
           {/* Theme Switcher Toggle */}
           <ThemeSwitcher />
 
-          {/* Notification Bell with Dropdown */}
-          <div
-            className="nav-notification-wrapper relative"
-            ref={notifDropdownRef}
-            style={{ position: 'relative' }}
-          >
-            <button
-              type="button"
-              className={`nav-notification-btn ${showNotif ? 'active' : ''}`}
-              onClick={handleBellClick}
-              aria-label={`Notifications ${bellUnreadCount > 0 ? `(${bellUnreadCount} unread)` : ''}`}
-              title="Notifications"
-              style={{ position: 'relative', cursor: 'pointer', zIndex: 50 }}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-              {bellUnreadCount > 0 && (
-                <span
-                  className="nav-notification-badge"
-                  style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    right: '-4px',
-                    background: '#EF4444',
-                    color: '#FFF',
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    minWidth: '18px',
-                    height: '18px',
-                    padding: '0 4px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 5px rgba(239, 68, 68, 0.4)',
-                  }}
-                >
-                  {bellUnreadCount > 99 ? '99+' : bellUnreadCount}
-                </span>
-              )}
-            </button>
-
-            {showNotif && (
-              <div
-                className="absolute right-0 top-12 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col text-left"
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '48px',
-                  width: '360px',
-                  maxWidth: 'calc(100vw - 32px)',
-                  zIndex: 99999,
-                  boxShadow: '0 20px 45px rgba(0,0,0,0.18)',
-                }}
-              >
-                <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-sm text-gray-900">Notifications</span>
-                    {bellUnreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {bellUnreadCount} new
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {bellUnreadCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const apiUrl =
-                            import.meta.env.VITE_API_URL || 'https://api.mentornearby.com';
-                          await fetch(`${apiUrl}/api/notifications/read-all`, {
-                            method: 'PUT',
-                            headers: { Authorization: `Bearer ${token}` },
-                          });
-                          setBellUnreadCount(0);
-                          setNotificationsList((prev) =>
-                            prev.map((n) => ({ ...n, isRead: true }))
-                          );
-                        }}
-                        className="text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-transparent border-none cursor-pointer"
-                      >
-                        Mark all read
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setShowNotif(false)}
-                      className="w-6 h-6 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 text-xs font-bold border-none bg-transparent cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-
-                <div className="max-h-[360px] overflow-y-auto divide-y divide-gray-100">
-                  {notificationsList.length === 0 ? (
-                    <div className="p-6 text-center text-gray-400">
-                      <span className="text-3xl block mb-2">🔔</span>
-                      <p className="text-xs font-medium text-gray-600">No new notifications</p>
-                      <p className="text-[11px] text-gray-400 mt-1">
-                        Try sending a message from another account to test alerts
-                      </p>
-                    </div>
-                  ) : (
-                    notificationsList.map((n) => (
-                      <div
-                        key={n._id}
-                        onClick={async () => {
-                          const apiUrl =
-                            import.meta.env.VITE_API_URL || 'https://api.mentornearby.com';
-                          fetch(`${apiUrl}/api/notifications/${n._id}/read`, {
-                            method: 'PUT',
-                            headers: { Authorization: `Bearer ${token}` },
-                          }).catch(() => {});
-                          setShowNotif(false);
-                          if (n.actionUrl) {
-                            navigate(n.actionUrl);
-                          } else if (n.conversationId) {
-                            navigate(`/messages?chat=${n.conversationId}`);
-                          } else {
-                            navigate('/notifications');
-                          }
-                        }}
-                        className={`p-3.5 hover:bg-gray-50 cursor-pointer transition flex items-start gap-3 ${
-                          !n.isRead ? 'bg-blue-50/60' : 'bg-white'
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                          {n.sender?.name ? n.sender.name.charAt(0).toUpperCase() : '🔔'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-xs text-gray-900 truncate">
-                            {n.title ||
-                              (n.sender?.name
-                                ? `${n.sender.name} sent a message`
-                                : 'Notification')}
-                          </p>
-                          <p className="text-xs text-gray-600 line-clamp-2 mt-0.5">{n.message}</p>
-                          <span className="text-[10px] text-gray-400 block mt-1">
-                            {new Date(n.createdAt || Date.now()).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
-                        {!n.isRead && (
-                          <span className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0 mt-1.5" />
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div className="p-2.5 bg-gray-50 border-t border-gray-100 text-center">
-                  <Link
-                    to="/notifications"
-                    onClick={() => setShowNotif(false)}
-                    className="text-xs font-bold text-blue-600 hover:underline"
-                  >
-                    View all notifications →
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
-
           {!isAuthenticated ? (
             <>
               <Link to="/login" className="navbar-btn-signin">
@@ -832,7 +552,7 @@ const Navbar = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className={isActive('/notifications') ? 'active' : ''}
               >
-                <span>🔔 Notifications {unreadCount > 0 ? `(${unreadCount})` : ''}</span>
+                <span>🔔 Notifications</span>
                 <span>→</span>
               </Link>
             </>

@@ -91,16 +91,17 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
           try {
             const tutorRes = await client.get(`/tutors/${tutorId}`);
             const tData = tutorRes.data?.data?.tutorProfile || tutorRes.data?.data;
+            const realPhone = tData?.phone || tData?.user?.phone || '';
             setContactInfo({
-              phone: tData?.phone || tData?.user?.phone || '9876543210',
-              whatsappNumber: tData?.whatsappNumber || tData?.phone || '9876543210',
-              email: tData?.user?.email || 'tutor@mentornearby.com',
+              phone: realPhone,
+              whatsappNumber: tData?.whatsappNumber || realPhone,
+              email: tData?.user?.email || tData?.email || '',
             });
           } catch (_) {
             setContactInfo({
-              phone: '9876543210',
-              whatsappNumber: '9876543210',
-              email: 'verified.tutor@mentornearby.com',
+              phone: '',
+              whatsappNumber: '',
+              email: '',
             });
           }
         }
@@ -134,7 +135,7 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
             });
 
             const contact = verifyRes.data?.contactInfo || verifyRes.data?.data?.contactInfo;
-            setContactInfo(contact || { phone: '9876543210', whatsappNumber: '9876543210' });
+            setContactInfo(contact || { phone: '', whatsappNumber: '' });
             setStep('success');
           } catch (err) {
             setError('Payment verification failed');

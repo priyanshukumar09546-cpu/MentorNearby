@@ -191,20 +191,21 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
       }).populate('user', 'name email phone');
 
       if (tutorDoc) {
+        const realPhone = tutorDoc.phone || tutorDoc.user?.phone || '';
         contactInfo = {
           name: tutorDoc.user?.name || tutorDoc.name || 'Tutor',
-          phone: tutorDoc.phone || tutorDoc.user?.phone || '9876543210',
-          email: tutorDoc.user?.email || 'tutor@mentornearby.com',
-          whatsappNumber: tutorDoc.whatsappNumber || tutorDoc.phone || tutorDoc.user?.phone || '9876543210',
+          phone: realPhone,
+          email: tutorDoc.user?.email || tutorDoc.email || '',
+          whatsappNumber: tutorDoc.whatsappNumber || realPhone,
         };
       } else {
         const targetUser = await User.findById(targetId);
         if (targetUser) {
           contactInfo = {
             name: targetUser.name,
-            phone: targetUser.phone || '9876543210',
-            email: targetUser.email,
-            whatsappNumber: targetUser.phone || '9876543210',
+            phone: targetUser.phone || '',
+            email: targetUser.email || '',
+            whatsappNumber: targetUser.whatsappNumber || targetUser.phone || '',
           };
         }
       }

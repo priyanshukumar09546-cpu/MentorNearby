@@ -92,18 +92,19 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
           try {
             const tutorRes = await client.get(`/tutors/${teacherId}`);
             const tData = tutorRes.data?.data?.tutorProfile || tutorRes.data?.data;
+            const realPhone = tData?.phone || tData?.user?.phone || '';
             setUnlockedContact({
               name: tData?.name || tData?.user?.name || teacherName || 'Teacher',
-              phone: tData?.phone || tData?.user?.phone || '9876543210',
-              whatsappNumber: tData?.whatsappNumber || tData?.phone || '9876543210',
-              email: tData?.user?.email || 'teacher@mentornearby.com',
+              phone: realPhone,
+              whatsappNumber: tData?.whatsappNumber || realPhone,
+              email: tData?.user?.email || tData?.email || '',
             });
           } catch (_) {
             setUnlockedContact({
               name: teacherName || 'Teacher',
-              phone: '9876543210',
-              whatsappNumber: '9876543210',
-              email: 'verified.tutor@mentornearby.com',
+              phone: '',
+              whatsappNumber: '',
+              email: '',
             });
           }
         }
@@ -138,7 +139,7 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
             });
 
             const contact = verifyRes.data?.contactInfo || verifyRes.data?.data?.contactInfo;
-            setUnlockedContact(contact || { phone: '9876543210', whatsappNumber: '9876543210' });
+            setUnlockedContact(contact || { phone: '', whatsappNumber: '' });
             showToast('🎉 Plan activated & contact unlocked!', 'success');
             if (onUnlockSuccess) onUnlockSuccess();
           } catch (err) {

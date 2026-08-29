@@ -145,6 +145,7 @@ const HomePage = () => {
   const [selectedTutorId, setSelectedTutorId] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchTutorsAndStats = async () => {
       try {
         setLoadingTutors(true);
@@ -153,36 +154,48 @@ const HomePage = () => {
           getPublicStats(),
         ]);
 
+        let list = [];
         if (tutorsRes.status === 'fulfilled') {
-          const list =
-            tutorsRes.value.data?.data?.tutors ||
-            tutorsRes.value.data?.tutors ||
-            tutorsRes.value.data?.data ||
-            (Array.isArray(tutorsRes.value.data) ? tutorsRes.value.data : []);
-          if (Array.isArray(list) && list.length > 0) {
-            setFeaturedTutors(list);
-          } else {
+          const d = tutorsRes.value?.data;
+          list = d?.data?.tutors || d?.tutors || d?.data || (Array.isArray(d) ? d : []);
+        }
+
+        // If featured API returned empty, fallback to active search
+        if (!Array.isArray(list) || list.length === 0) {
+          try {
             const fallbackRes = await searchTutors({ limit: 8 });
-            const fallbackList =
-              fallbackRes.data?.data?.tutors ||
-              fallbackRes.data?.tutors ||
-              fallbackRes.data?.data ||
-              [];
-            setFeaturedTutors(Array.isArray(fallbackList) ? fallbackList : []);
+            const fd = fallbackRes.data;
+            list = fd?.data?.tutors || fd?.tutors || fd?.data || (Array.isArray(fd) ? fd : []);
+          } catch (fbErr) {
+            console.warn('Fallback search tutors failed:', fbErr);
           }
         }
 
-        if (statsRes.status === 'fulfilled') {
-          setPublicStats(statsRes.value.data?.data || {});
+        if (isMounted) {
+          if (Array.isArray(list) && list.length > 0) {
+            setFeaturedTutors(list);
+          } else {
+            setFeaturedTutors([]);
+          }
+
+          if (statsRes.status === 'fulfilled') {
+            setPublicStats(statsRes.value?.data?.data || statsRes.value?.data || {});
+          }
         }
       } catch (err) {
         console.error('Error fetching homepage tutors:', err);
-        setFeaturedTutors([]);
+        if (isMounted) setFeaturedTutors([]);
       } finally {
-        setLoadingTutors(false);
+        if (isMounted) {
+          setLoadingTutors(false);
+        }
       }
     };
+
     fetchTutorsAndStats();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleSearch = (e) => {
@@ -544,23 +557,27 @@ const HomePage = () => {
                 <div className="mn-featured-tutors-grid">
                   {featuredTutors.slice(0, 3).map((tutor) => {
                     const tutorId = tutor._id || tutor.user?._id || tutor.userId || tutor.id || tutor.user;
-                    const name = tutor.user?.name || tutor.name || 'Tutor';
-                    const photo = tutor.profilePic || tutor.user?.avatar || tutor.user?.profilePic || tutor.profilePhoto?.url || tutor.profilePhoto || '';
-                    const subject = tutor.subjects?.join(', ') || tutor.subjects?.[0] || 'General Subjects';
-                    const classes = tutor.classes?.length ? `Class ${tutor.classes.join(', ')}` : (tutor.grades?.length ? `Class ${tutor.grades.join(', ')}` : 'All Classes');
-                    const exp = tutor.experience?.years ? `${tutor.experience.years}+ Years Exp.` : (tutor.experience ? `${tutor.experience} Exp.` : 'Experienced');
+                    const name = tutor.user?.name || tutor.name || 'Verified Tutor';
+                    const photo = tutor.profilePhoto?.url || tutor.profilePhoto || tutor.profilePic || tutor.user?.avatar || tutor.user?.profilePic || '';
+                    const subjectsList = Array.isArray(tutor.subjects) && tutor.subjects.length > 0
+                      ? tutor.subjects.join(', ')
+                      : (tutor.subject || 'General Subjects');
+                    const classes = tutor.grades?.length ? `Class ${tutor.grades.join(', ')}` : (tutor.classes?.length ? `Class ${tutor.classes.join(', ')}` : 'All Classes');
+                    const location = tutor.location?.city || tutor.location?.area || tutor.city || '';
+                    const expYears = tutor.experience?.years !== undefined ? tutor.experience.years : (typeof tutor.experience === 'number' ? tutor.experience : null);
+                    const exp = expYears !== null ? `${expYears}+ Years Exp.` : (tutor.experience?.description || 'Experienced');
                     const qual = tutor.qualifications?.[0]?.degree || tutor.qualifications?.[0]?.title || tutor.education?.[0]?.degree || '';
                     const hasReviews = tutor.totalReviews > 0 && tutor.averageRating;
                     const rating = hasReviews ? Number(tutor.averageRating).toFixed(1) : null;
                     const reviews = tutor.totalReviews || 0;
                     const feeAmount = tutor.fees?.amount || tutor.monthlyFees || tutor.monthly_fees || tutor.fees || tutor.hourlyRate || tutor.price || 0;
                     const fee = feeAmount > 0 ? `₹${Number(feeAmount).toLocaleString('en-IN')} / month` : 'Fee on request';
-                    const isVerified = tutor.kycStatus === 'VERIFIED' || tutor.verificationStatus === 'VERIFIED';
+                    const isVerified = tutor.kycStatus === 'VERIFIED' || tutor.verificationStatus === 'approved' || tutor.verificationStatus === 'VERIFIED' || tutor.isApproved === true || tutor.isVerified === true;
 
                     return (
                       <div key={tutorId} className="mn-featured-tutor-card">
                         {/* Tutor Image & Verified Badge */}
-                        <div className="mn-tutor-photo-wrap">
+                        <Link to={`/tutor/${tutorId}`} className="mn-tutor-photo-wrap block" style={{ textDecoration: 'none' }}>
                           {isVerified && <span className="mn-verified-badge">VERIFIED</span>}
                           {photo ? (
                             <img src={photo} alt={name} className="mn-tutor-photo-img" />
@@ -569,16 +586,18 @@ const HomePage = () => {
                               {name.charAt(0).toUpperCase()}
                             </div>
                           )}
-                        </div>
+                        </Link>
 
                         {/* Tutor Info */}
                         <div className="mn-tutor-card-body">
-                          <h4 className="mn-tutor-name">{name}</h4>
-                          <div className="mn-tutor-subject-classes" title={`${subject} • ${classes}`}>
-                            {subject} • {classes}
+                          <Link to={`/tutor/${tutorId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <h4 className="mn-tutor-name hover:text-blue-600 transition">{name}</h4>
+                          </Link>
+                          <div className="mn-tutor-subject-classes" title={`${subjectsList} • ${classes}`}>
+                            {subjectsList} • {classes}
                           </div>
-                          <div className="mn-tutor-exp-qual" title={`${exp}${qual ? ` • ${qual}` : ''}`}>
-                            {exp}{qual ? ` • ${qual}` : ''}
+                          <div className="mn-tutor-exp-qual" title={`${exp}${location ? ` • ${location}` : ''}${qual ? ` • ${qual}` : ''}`}>
+                            {exp}{location ? ` • ${location}` : ''}{qual ? ` • ${qual}` : ''}
                           </div>
 
                           <div className="mn-tutor-rating-rate-row">

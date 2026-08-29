@@ -161,10 +161,20 @@ const StudentDashboardPage = () => {
     navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
-  const handleContactClick = (tutor) => {
+  const handleContactClick = async (tutor) => {
     const id = tutor.user?._id || tutor._id;
-    setSelectedTutorId(id);
-    setUnlockModalOpen(true);
+    try {
+      const res = await client.post('/chat/initiate', { recipientId: id });
+      const convId = res.data?.data?.conversationId || res.data?.conversationId;
+      navigate(`/chat?recipient=${id}&conversation=${convId || ''}`);
+    } catch (err) {
+      if (err.response?.status === 403 && (err.response?.data?.needSubscription || err.response?.data?.code === 'SUBSCRIPTION_REQUIRED')) {
+        navigate(`/subscription?redirect=${encodeURIComponent(`/chat?recipient=${id}`)}`);
+      } else {
+        setSelectedTutorId(id);
+        setUnlockModalOpen(true);
+      }
+    }
   };
 
   const handleReferClick = () => {

@@ -97,6 +97,28 @@ const TutorProfilePage = () => {
   const tutorUserId = tutorUser._id || tutor?._id;
   const name = tutorUser.name || tutor?.name || 'Tutor';
   const photoUrl = tutor?.profilePhoto?.url || tutor?.profilePhoto || tutorUser.avatar || '';
+
+  // ── Contact / Chat with Tutor Handler ──────────────────────
+  const handleContactTutor = async () => {
+    const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
+    if (!token && !isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const targetId = tutorUserId || id;
+      const res = await client.post('/chat/initiate', { recipientId: targetId });
+      const convId = res.data?.data?.conversationId || res.data?.conversationId;
+      navigate(`/chat?recipient=${targetId}&conversation=${convId || ''}`);
+    } catch (err) {
+      if (err.response?.status === 403 && (err.response?.data?.needSubscription || err.response?.data?.code === 'SUBSCRIPTION_REQUIRED')) {
+        navigate(`/subscription?redirect=${encodeURIComponent(`/chat?recipient=${tutorUserId || id}`)}`);
+      } else {
+        navigate(`/chat?recipient=${tutorUserId || id}`);
+      }
+    }
+  };
   
   // Real Verification status from DB
   const isKycVerified = tutor?.kycStatus === 'VERIFIED';
@@ -405,21 +427,23 @@ const TutorProfilePage = () => {
 
                   {/* Big Action Buttons Row */}
                   <div className="tp-main-actions-row">
-                    <Link
-                      to={`/chat?recipient=${tutorUserId}`}
+                    <button
+                      type="button"
+                      onClick={handleContactTutor}
                       className="tp-btn-message-tutor"
                     >
                       <span>💬</span>
                       <span>Message Tutor</span>
-                    </Link>
+                    </button>
 
                     <button
-                      onClick={() => setUnlockModalOpen(true)}
+                      type="button"
+                      onClick={handleContactTutor}
                       className="tp-btn-unlock-contact"
                     >
                       <span>📞</span>
-                      <span>Unlock Contact</span>
-                      <span className="tp-unlock-subbadge">Starts from ₹100 🔒</span>
+                      <span>Unlock Contact &amp; Chat</span>
+                      <span className="tp-unlock-subbadge">From ₹99/mo (5 Unlocks) 🔒</span>
                     </button>
                   </div>
 

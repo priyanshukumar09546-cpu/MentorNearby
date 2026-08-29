@@ -1,9 +1,5 @@
-// ============================================================
-// pages/Chat/ChatPage.jsx
-// Chat UI with freemium counter + PaywallModal + message filter
-// ============================================================
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import { getSubscriptionStatus } from '../../api/subscription';
@@ -13,6 +9,11 @@ import PaywallModal from '../../components/subscription/PaywallModal';
 const ChatPage = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const recipientId = searchParams.get('recipient') || searchParams.get('recipientId') || searchParams.get('userId');
+  const conversationId = searchParams.get('conversation') || searchParams.get('conversationId');
 
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -55,6 +56,68 @@ const ChatPage = () => {
     fetchConversations();
     fetchSubStatus();
   }, [fetchConversations, fetchSubStatus]);
+
+  // ── Handle URL recipient query parameter ──────────────────
+  useEffect(() => {
+    if (!recipientId) return;
+
+    const matched = conversations.find(
+      (c) => String(c.otherUser?._id) === String(recipientId) || String(c._id) === String(conversationId)
+    );
+
+    if (matched) {
+      setActiveConversation(matched);
+    } else {
+      const loadRecipient = async () => {
+        try {
+          let name = 'Teacher';
+          let avatar = '';
+          let role = 'TUTOR';
+
+          try {
+            const userRes = await client.get(`/users/${recipientId}`);
+            if (userRes.data?.data?.user) {
+              name = userRes.data.data.user.name;
+              avatar = userRes.data.data.user.avatar;
+              role = userRes.data.data.user.role;
+            }
+          } catch (_) {
+            try {
+              const tutorRes = await client.get(`/tutors/${recipientId}`);
+              const tData = tutorRes.data?.data?.tutorProfile || tutorRes.data?.data;
+              if (tData) {
+                name = tData.name || tData.user?.name || 'Teacher';
+                avatar = tData.profilePhoto?.url || tData.user?.avatar || '';
+              }
+            } catch (__) {}
+          }
+
+          const placeholderConv = {
+            _id: conversationId || `conv_${recipientId}`,
+            otherUser: {
+              _id: recipientId,
+              name,
+              avatar,
+              role,
+            },
+            lastMessage: null,
+          };
+
+          setActiveConversation(placeholderConv);
+          setConversations((prev) => {
+            if (prev.some((c) => String(c.otherUser?._id) === String(recipientId))) {
+              return prev;
+            }
+            return [placeholderConv, ...prev];
+          });
+        } catch (e) {
+          console.warn('Could not auto-open recipient:', e);
+        }
+      };
+
+      loadRecipient();
+    }
+  }, [recipientId, conversationId, conversations]);
 
   // ── Fetch messages for active conversation ───────────────
   useEffect(() => {

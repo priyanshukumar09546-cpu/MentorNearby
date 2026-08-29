@@ -115,6 +115,25 @@ const UserSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  contactUnlocks: {
+    type: Number,
+    default: 0
+  },
+  subscription: {
+    plan: {
+      type: String,
+      default: 'free'
+    },
+    isActive: {
+      type: Boolean,
+      default: false
+    },
+    expiry: Date,
+    contactUnlocks: {
+      type: Number,
+      default: 0
+    }
+  },
   isSubscribed: {
     type: Boolean,
     default: false,
@@ -122,7 +141,7 @@ const UserSchema = new mongoose.Schema({
   },
   subscriptionType: {
     type: String,
-    enum: ['student', 'teacher', null],
+    enum: ['student', 'teacher', 'basic', 'premium', 'vip', null],
     default: null
   },
   subscriptionExpiry: {

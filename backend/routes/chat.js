@@ -9,6 +9,7 @@ const {
   getMessages,
   getConversations,
   getMyChatStatus,
+  initiateConversation,
 } = require('../controllers/chatController');
 
 const router = express.Router();
@@ -16,6 +17,10 @@ const { protect } = require('../middleware/auth');
 const checkChatLimit = require('../middleware/checkChatLimit');
 
 router.use(protect);
+
+// Initiate conversation and verify subscription / unlock limits
+router.post('/initiate', initiateConversation);
+router.post('/initiate/:userId', initiateConversation);
 
 // Get all conversations + subscription status
 router.get('/', getConversations);

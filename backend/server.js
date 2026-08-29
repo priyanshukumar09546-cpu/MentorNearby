@@ -238,6 +238,7 @@ app.use('/api/study-resources', studyResourceRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/notes', notesRoutes);
 
 // Static uploads serving (for local master study combo files & documents)

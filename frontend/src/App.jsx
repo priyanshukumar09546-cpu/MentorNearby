@@ -41,6 +41,7 @@ const FindStudentsPage = lazy(() => import('./pages/FindStudents/FindStudentsPag
 const StudentProfilePage = lazy(() => import('./pages/StudentProfile/StudentProfilePage'));
 const ChatPage = lazy(() => import('./pages/Chat/ChatPage'));
 const NotificationsPage = lazy(() => import('./pages/Notifications/NotificationsPage'));
+const SubscriptionPage = lazy(() => import('./pages/Subscription/SubscriptionPage'));
 
 // Admin Code-Split Routes
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
@@ -291,11 +292,19 @@ const AppContent = () => {
                             <Route path="/post-requirement" element={<ProtectedRoute roles={['student', 'parent']}><PostRequirementPage /></ProtectedRoute>} />
                             <Route path="/student/requirements" element={<ProtectedRoute roles={['student', 'parent']}><StudentRequirementsPage /></ProtectedRoute>} />
 
-                            {/* User Channels */}
+                            {/* User Channels & Chat */}
+                            <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+                            <Route path="/app/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
                             <Route path="/messages" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
                             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
                             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+
+                            {/* 💎 Subscription & Pricing Plans */}
+                            <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
+                            <Route path="/subscriptions" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
+                            <Route path="/pricing" element={<SubscriptionPage />} />
+                            <Route path="/plans" element={<SubscriptionPage />} />
 
                             {/* 404 Catch-All */}
                             <Route path="*" element={<NotFoundPage />} />

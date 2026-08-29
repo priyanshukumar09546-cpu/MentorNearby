@@ -196,27 +196,92 @@ exports.getConversations = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    Get subscription & chat limit status for current user
-// @route   GET /api/chat/my-status
+// @desc    Initiate conversation with teacher/student & verify eligibility
+// @route   POST /api/chat/initiate
 // @access  Private
-exports.getMyChatStatus = asyncHandler(async (req, res, next) => {
-  const currentUserId = req.user._id || req.user.id;
-  const currentUser = await User.findById(currentUserId).select(
-    'freeChatsUsed freeLeadsUsed isSubscribed subscriptionType subscriptionExpiry role'
-  );
+exports.initiateConversation = asyncHandler(async (req, res, next) => {
+  const senderId = req.user._id || req.user.id;
+  const recipientId = req.body.recipientId || req.params.userId || req.body.userId || req.body.teacherId;
 
-  const FREE_LIMIT = currentUser.role === 'TUTOR' ? 5 : 3;
-  const usedCount = currentUser.freeChatsUsed;
-  const active = isActiveSubscriber(currentUser);
+  if (!recipientId) {
+    return error(res, 'Please provide recipient ID', 400);
+  }
 
-  return success(res, 'Chat status retrieved', {
-    isSubscribed: active,
-    subscriptionType: currentUser.subscriptionType,
-    subscriptionExpiry: currentUser.subscriptionExpiry,
-    freeChatsUsed: usedCount,
-    freeChatsLimit: FREE_LIMIT,
-    chatsRemaining: active ? Infinity : Math.max(0, FREE_LIMIT - usedCount),
-    paywallPlan: currentUser.role === 'TUTOR' ? 149 : 99,
-    paywallPlanType: currentUser.role === 'TUTOR' ? 'teacher' : 'student',
+  if (String(senderId) === String(recipientId)) {
+    return error(res, 'You cannot initiate a chat with yourself', 400);
+  }
+
+  // Find target recipient (could be teacher user ID or tutor profile ID)
+  let recipient = await User.findById(recipientId);
+  if (!recipient) {
+    // Check if recipientId was a TutorProfile ID
+    try {
+      const Tutor = require('../models/Tutor');
+      const tutorProfile = await Tutor.findById(recipientId);
+      if (tutorProfile && tutorProfile.user) {
+        recipient = await User.findById(tutorProfile.user);
+      }
+    } catch (_) {}
+  }
+
+  if (!recipient) {
+    return error(res, 'Teacher / Recipient not found', 404);
+  }
+
+  const actualRecipientId = recipient._id;
+
+  // Check if they already have an existing conversation / messages
+  const existingMessage = await Message.findOne({
+    $or: [
+      { sender: senderId, receiver: actualRecipientId },
+      { sender: actualRecipientId, receiver: senderId },
+    ],
+  });
+
+  const currentUser = await User.findById(senderId);
+
+  // If new conversation between student and teacher, check subscription & unlock limits
+  if (!existingMessage) {
+    const isSubscribed = Boolean(
+      (currentUser.isSubscribed && currentUser.subscriptionExpiry && new Date(currentUser.subscriptionExpiry) > new Date()) ||
+      (currentUser.subscription?.isActive && (!currentUser.subscription?.expiry || new Date(currentUser.subscription?.expiry) > new Date()))
+    );
+
+    const hasFreeChats = (currentUser.freeChatsUsed || 0) < 3;
+    const hasUnlocks = (currentUser.contactUnlocks || 0) > 0 || (currentUser.subscription?.contactUnlocks || 0) > 0;
+
+    if (!isSubscribed && !hasFreeChats && !hasUnlocks) {
+      return res.status(403).json({
+        success: false,
+        message: 'Subscription required to unlock and chat with new teachers. Plan starting at Rs 99/month.',
+        needSubscription: true,
+        code: 'SUBSCRIPTION_REQUIRED',
+        freeChatsUsed: currentUser.freeChatsUsed || 0,
+        contactUnlocks: currentUser.contactUnlocks || 0,
+      });
+    }
+
+    // Decrement unlock if using unlock credits on non-subscribed plan
+    if (!isSubscribed && !hasFreeChats && hasUnlocks) {
+      if (currentUser.contactUnlocks > 0) currentUser.contactUnlocks -= 1;
+      if (currentUser.subscription?.contactUnlocks > 0) currentUser.subscription.contactUnlocks -= 1;
+      currentUser.unlocksUsed = (currentUser.unlocksUsed || 0) + 1;
+      await currentUser.save();
+    }
+  }
+
+  const conversationId = `${[senderId, actualRecipientId].sort().join('_')}`;
+
+  return res.status(200).json({
+    success: true,
+    message: 'Conversation initiated successfully',
+    data: {
+      conversationId,
+      recipientId: actualRecipientId,
+      recipientName: recipient.name,
+      recipientRole: recipient.role,
+      recipientAvatar: recipient.avatar,
+    },
+    conversationId,
   });
 });

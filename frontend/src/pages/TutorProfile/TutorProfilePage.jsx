@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import LocationMap from '../../components/common/LocationMap';
 import UnlockContactModal from '../../components/payment/UnlockContactModal';
+import SubscriptionPlansModal from '../../components/subscription/SubscriptionPlansModal';
 import { calculateDistanceKm, formatDistance } from '../../utils/locationUtils';
 import client from '../../api/client';
 import './TutorProfilePage.css';
@@ -33,6 +34,7 @@ const TutorProfilePage = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [savingAction, setSavingAction] = useState(false);
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+  const [showSubPlanModal, setShowSubPlanModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -98,8 +100,8 @@ const TutorProfilePage = () => {
   const name = tutorUser.name || tutor?.name || 'Tutor';
   const photoUrl = tutor?.profilePhoto?.url || tutor?.profilePhoto || tutorUser.avatar || '';
 
-  // ── Contact / Chat with Tutor Handler ──────────────────────
-  const handleContactTutor = async () => {
+  // ── 1. Message Tutor Handler (Opens Chat directly) ────────
+  const handleMessageTutor = async () => {
     const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
     if (!token && !isAuthenticated) {
       navigate('/login');
@@ -110,14 +112,27 @@ const TutorProfilePage = () => {
       const targetId = tutorUserId || id;
       const res = await client.post('/chat/initiate', { recipientId: targetId });
       const convId = res.data?.data?.conversationId || res.data?.conversationId;
-      navigate(`/chat?recipient=${targetId}&conversation=${convId || ''}`);
+      navigate(`/messages?chat=${convId || ''}&user=${targetId}&recipient=${targetId}`);
     } catch (err) {
-      if (err.response?.status === 403 && (err.response?.data?.needSubscription || err.response?.data?.code === 'SUBSCRIPTION_REQUIRED')) {
-        navigate(`/subscription?redirect=${encodeURIComponent(`/chat?recipient=${tutorUserId || id}`)}`);
+      if (
+        err.response?.status === 403 &&
+        (err.response?.data?.needSubscription || err.response?.data?.code === 'SUBSCRIPTION_REQUIRED')
+      ) {
+        setShowSubPlanModal(true);
       } else {
-        navigate(`/chat?recipient=${tutorUserId || id}`);
+        navigate(`/messages?user=${tutorUserId || id}&recipient=${tutorUserId || id}`);
       }
     }
+  };
+
+  // ── 2. Unlock Contact Handler (Opens Subscription Plans Modal) ──
+  const handleUnlockContactClick = () => {
+    const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
+    if (!token && !isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    setShowSubPlanModal(true);
   };
   
   // Real Verification status from DB
@@ -429,7 +444,7 @@ const TutorProfilePage = () => {
                   <div className="tp-main-actions-row">
                     <button
                       type="button"
-                      onClick={handleContactTutor}
+                      onClick={handleMessageTutor}
                       className="tp-btn-message-tutor"
                     >
                       <span>💬</span>
@@ -438,7 +453,7 @@ const TutorProfilePage = () => {
 
                     <button
                       type="button"
-                      onClick={handleContactTutor}
+                      onClick={handleUnlockContactClick}
                       className="tp-btn-unlock-contact"
                     >
                       <span>📞</span>
@@ -900,6 +915,17 @@ const TutorProfilePage = () => {
         </div>
 
       </div>
+
+      {/* Subscription Plans Modal */}
+      {showSubPlanModal && (
+        <SubscriptionPlansModal
+          isOpen={showSubPlanModal}
+          onClose={() => setShowSubPlanModal(false)}
+          teacherId={tutorUserId || id}
+          teacherName={name}
+          onUnlockSuccess={() => {}}
+        />
+      )}
 
       {/* Unlock Contact Modal */}
       {unlockModalOpen && (

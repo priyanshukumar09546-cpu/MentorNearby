@@ -575,6 +575,27 @@ const Navbar = () => {
             <span>→</span>
           </Link>
 
+          {isAuthenticated && (
+            <>
+              <Link
+                to="/messages"
+                onClick={() => setMobileMenuOpen(false)}
+                className={isActive('/messages') || isActive('/chat') ? 'active' : ''}
+              >
+                <span>💬 Messages</span>
+                <span>→</span>
+              </Link>
+              <Link
+                to="/notifications"
+                onClick={() => setMobileMenuOpen(false)}
+                className={isActive('/notifications') ? 'active' : ''}
+              >
+                <span>🔔 Notifications {unreadCount > 0 ? `(${unreadCount})` : ''}</span>
+                <span>→</span>
+              </Link>
+            </>
+          )}
+
           {!isAuthenticated ? (
             <div className="mobile-drawer-auth-actions">
               <Link

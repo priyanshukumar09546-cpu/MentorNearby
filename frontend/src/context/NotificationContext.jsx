@@ -118,10 +118,10 @@ export const NotificationProvider = ({ children }) => {
       fetchUnreadCount();
       fetchRecentNotifications();
 
-      // Poll every 20 seconds for instant notification delivery
+      // Poll every 10 seconds for real-time notification delivery
       pollingRef.current = setInterval(() => {
         fetchUnreadCount();
-      }, 20000);
+      }, 10000);
 
       // Listen for window focus to update immediately
       const handleFocus = () => fetchUnreadCount();

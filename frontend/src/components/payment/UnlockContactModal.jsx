@@ -33,19 +33,55 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
   const checkEligibility = async () => {
     try {
       setStep('checking');
-      const res = await checkUnlockEligibility(tutorId);
-      setEligibility(res.data?.data || { price: 99, unlockNumber: 1 });
 
-      if (res.data?.data?.alreadyUnlocked) {
+      const isUserSubscribed = Boolean(
+        user?.isSubscribed ||
+        user?.subscriptionActive ||
+        user?.plan === 'active' ||
+        user?.role === 'ADMIN' ||
+        (user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date())
+      );
+
+      // 1. If subscribed, automatically fetch contact and display
+      if (isUserSubscribed) {
+        try {
+          const tutorRes = await client.get(`/tutors/${tutorId}`);
+          const tData = tutorRes.data?.data?.tutorProfile || tutorRes.data?.tutorProfile || tutorRes.data?.tutor || tutorRes.data?.data;
+          const realPhone = tData?.phone || tData?.user?.phone || '';
+          setContactInfo({
+            phone: realPhone,
+            whatsappNumber: tData?.whatsappNumber || realPhone,
+            email: tData?.user?.email || tData?.email || '',
+          });
+          setStep('success');
+          return;
+        } catch (e) {
+          // fallback to checkUnlockEligibility
+        }
+      }
+
+      const res = await checkUnlockEligibility(tutorId);
+      const isAlreadyUnlocked = res.data?.data?.alreadyUnlocked || res.data?.data?.isSubscribed;
+
+      if (isAlreadyUnlocked && res.data?.data?.contactInfo) {
         setContactInfo(res.data.data.contactInfo);
         setStep('success');
+      } else if (isUserSubscribed) {
+        // Fetch directly from tutor profile
+        const tutorRes = await client.get(`/tutors/${tutorId}`);
+        const tData = tutorRes.data?.data?.tutorProfile || tutorRes.data?.tutorProfile || tutorRes.data?.tutor || tutorRes.data?.data;
+        const realPhone = tData?.phone || tData?.user?.phone || '';
+        setContactInfo({
+          phone: realPhone,
+          whatsappNumber: tData?.whatsappNumber || realPhone,
+          email: tData?.user?.email || tData?.email || '',
+        });
+        setStep('success');
       } else {
-        setStep('decision');
+        setStep('subscription-required');
       }
     } catch (err) {
-      // Fallback to active decision state with ₹99 plan
-      setEligibility({ price: 99, unlockNumber: 1 });
-      setStep('decision');
+      setStep('subscription-required');
     }
   };
 
@@ -201,37 +237,42 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
           </div>
         )}
 
-        {step === 'decision' && (
+        {(step === 'subscription-required' || step === 'decision') && (
           <div className="space-y-4">
-            <div className="text-5xl">🔓</div>
-            <h4 className="text-2xl font-extrabold text-gray-900 tracking-tight">Unlock Direct Teacher Contact</h4>
-            <p className="text-xs text-gray-600">
-              Get direct access to phone number &amp; WhatsApp, plus <strong>5 contact unlocks</strong> for 30 days.
+            <div className="text-5xl">🔒</div>
+            <h4 className="text-2xl font-extrabold text-gray-900 tracking-tight">Direct Contact Details are Locked</h4>
+            <p className="text-sm text-gray-600 max-w-md mx-auto">
+              To protect educator privacy, verified phone numbers and WhatsApp details are unlocked for active <strong>MentorNearby</strong> members.
             </p>
 
-            <div className="bg-[#f8faff] border border-blue-100 rounded-2xl p-5 text-left shadow-xs">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-extrabold uppercase tracking-wider bg-blue-100 text-blue-800 px-3 py-1 rounded-full border border-blue-200">
-                  ⭐ 5 Phone Unlocks Included
-                </span>
-                <span className="text-2xl font-black text-gray-900">₹99</span>
+            <div className="bg-[#f8faff] border border-blue-100 rounded-2xl p-5 text-left shadow-xs space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-900">
+                <span>✨</span> <span>Choose a plan to start connecting directly:</span>
               </div>
-              <p className="text-xs text-gray-500 mb-5">
-                Zero brokerage. Call and chat directly with verified local teachers.
-              </p>
+              <ul className="text-xs text-gray-600 space-y-1.5 list-none p-0 m-0">
+                <li className="flex items-center gap-2">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span>100% Verified Direct Phone Numbers &amp; WhatsApp</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span>Zero Commission &amp; Zero Middleman Brokerage</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span>Unlimited Direct In-App Chat with Tutors</span>
+                </li>
+              </ul>
 
-              {/* Active, Non-Disabled Pay Button */}
               <button
                 type="button"
-                onClick={handlePay}
-                disabled={isProcessing}
-                className="w-full bg-black hover:bg-gray-800 text-white font-extrabold py-3.5 px-6 rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm cursor-pointer border-none"
+                onClick={() => {
+                  onClose();
+                  navigate('/subscription');
+                }}
+                className="w-full mt-3 bg-red-600 hover:bg-red-700 text-white font-extrabold py-3.5 px-6 rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm cursor-pointer border-none"
               >
-                {isProcessing ? (
-                  <span>Processing Test Unlock...</span>
-                ) : (
-                  <span>💳 Pay ₹99 &amp; Unlock Contact Instantly</span>
-                )}
+                <span>👑 View Subscription Plans →</span>
               </button>
             </div>
           </div>

@@ -71,14 +71,20 @@ const resolveContactInfo = async (targetId) => {
 exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
   const targetId = req.params.tutorId || req.params.id;
   const currentUserId = req.user.id;
-  const isAdmin = (req.user.role || '').toString().trim().toUpperCase() === 'ADMIN';
+  const userDoc = await User.findById(currentUserId);
+  const isSubscribed = Boolean(
+    userDoc?.isSubscribed &&
+    userDoc?.subscriptionExpiry &&
+    new Date(userDoc.subscriptionExpiry) > new Date()
+  );
 
-  // Admin has instant, free universal access to any tutor/student contact
-  if (isAdmin) {
+  // Admin or Subscribed user has instant, free universal access to any tutor/student contact
+  if (isAdmin || isSubscribed) {
     const contact = await resolveContactInfo(targetId);
-    return success(res, 'Admin instant contact access', {
+    return success(res, 'Instant contact access for subscribed user', {
       alreadyUnlocked: true,
-      isAdmin: true,
+      isSubscribed: true,
+      isAdmin,
       contactInfo: contact || {
         phone: 'N/A',
         email: 'N/A',
@@ -105,33 +111,31 @@ exports.checkUnlockEligibility = asyncHandler(async (req, res, next) => {
     });
   }
 
-  const contact = await resolveContactInfo(targetId);
-  const isStudentLead = contact?.type === 'STUDENT' || contact?.type === 'STUDENT_REQUIREMENT';
-  const price = isStudentLead ? 49 : 99;
-
-  const previousUnlocksCount = await ContactUnlock.countDocuments({
-    user: currentUserId,
-    paymentStatus: 'COMPLETED'
-  });
-
-  const nextUnlockNumber = previousUnlocksCount + 1;
-
-  return success(res, 'Unlock eligibility', {
+  return success(res, 'Unlock eligibility - requires subscription', {
     alreadyUnlocked: false,
-    isFree: false,
-    price,
-    unlockNumber: nextUnlockNumber,
+    requiresSubscription: true,
+    isSubscribed: false,
+    price: 99,
+    unlockNumber: 1,
     freeRemaining: 0
   });
 });
 
 exports.createFreeUnlock = asyncHandler(async (req, res, next) => {
   const targetId = req.params.tutorId || req.params.id;
+  const currentUserId = req.user.id;
   const isAdmin = (req.user.role || '').toString().trim().toUpperCase() === 'ADMIN';
 
-  if (isAdmin) {
+  const userDoc = await User.findById(currentUserId);
+  const isSubscribed = Boolean(
+    userDoc?.isSubscribed &&
+    userDoc?.subscriptionExpiry &&
+    new Date(userDoc.subscriptionExpiry) > new Date()
+  );
+
+  if (isAdmin || isSubscribed) {
     const contact = await resolveContactInfo(targetId);
-    return success(res, 'Admin unlocked contact', {
+    return success(res, 'Unlocked contact successfully', {
       contactInfo: contact || {
         phone: 'N/A',
         email: 'N/A',
@@ -140,11 +144,7 @@ exports.createFreeUnlock = asyncHandler(async (req, res, next) => {
     });
   }
 
-  const contact = await resolveContactInfo(targetId);
-  const isStudentLead = contact?.type === 'STUDENT' || contact?.type === 'STUDENT_REQUIREMENT';
-  const price = isStudentLead ? 49 : 99;
-
-  return error(res, `Free contact unlocks are disabled. Payment of ₹${price} is required.`, 402);
+  return error(res, 'Active MentorNearby subscription required to unlock direct contact details.', 402);
 });
 
 exports.createPaymentOrder = asyncHandler(async (req, res, next) => {

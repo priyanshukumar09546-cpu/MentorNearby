@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { searchTutors } from '../../api/search';
-import UnlockContactModal from '../../components/payment/UnlockContactModal';
+import { useAuth } from '../../context/AuthContext';
 import './SearchPage.css';
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || searchParams.get('subject') || '');
@@ -151,8 +153,22 @@ const SearchPage = () => {
   };
 
   const handleUnlock = (tutorId) => {
-    setSelectedTutorId(tutorId);
-    setUnlockModalOpen(true);
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    const isSubscribed = Boolean(
+      user?.isSubscribed ||
+      user?.subscriptionActive ||
+      user?.role === 'ADMIN' ||
+      (user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date())
+    );
+
+    if (isSubscribed) {
+      navigate(`/tutor/${tutorId}`);
+    } else {
+      navigate('/subscription');
+    }
   };
 
   return (
@@ -764,17 +780,7 @@ const SearchPage = () => {
             <span className="mn-cta-arrow">→</span>
           </Link>
         </div>
-
       </div>
-
-      {/* Unlock Contact Modal */}
-      {unlockModalOpen && (
-        <UnlockContactModal
-          isOpen={unlockModalOpen}
-          onClose={() => setUnlockModalOpen(false)}
-          tutorId={selectedTutorId}
-        />
-      )}
     </div>
   );
 };

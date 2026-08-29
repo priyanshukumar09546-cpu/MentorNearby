@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { searchTutors, getPublicStats } from '../../api/search';
 import { getFeaturedTutors } from '../../api/tutors';
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import UnlockContactModal from '../../components/payment/UnlockContactModal';
 import './HomePage.css';
 
 const POPULAR_SUBJECTS = [
@@ -86,6 +86,7 @@ const HERO_PHRASES = [
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const { isDark, darkMode } = useTheme();
   const isDarkMode = isDark ?? darkMode ?? false;
   const [search, setSearch] = useState({ location: '', subject: '' });
@@ -197,8 +198,22 @@ const HomePage = () => {
   };
 
   const handleUnlock = (tutorId) => {
-    setSelectedTutorId(tutorId);
-    setUnlockModalOpen(true);
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    const isSubscribed = Boolean(
+      user?.isSubscribed ||
+      user?.subscriptionActive ||
+      user?.role === 'ADMIN' ||
+      (user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date())
+    );
+
+    if (isSubscribed) {
+      navigate(`/tutor/${tutorId}`);
+    } else {
+      navigate('/subscription');
+    }
   };
 
   return (
@@ -948,15 +963,6 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-
-      {/* Unlock Contact Modal */}
-      {unlockModalOpen && (
-        <UnlockContactModal
-          isOpen={unlockModalOpen}
-          onClose={() => setUnlockModalOpen(false)}
-          tutorId={selectedTutorId}
-        />
-      )}
     </main>
   );
 };

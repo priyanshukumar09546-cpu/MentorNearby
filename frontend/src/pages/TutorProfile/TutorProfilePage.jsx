@@ -12,7 +12,6 @@ import { createReport } from '../../api/reports';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import LocationMap from '../../components/common/LocationMap';
-import UnlockContactModal from '../../components/payment/UnlockContactModal';
 import SubscriptionPlansModal from '../../components/subscription/SubscriptionPlansModal';
 import { calculateDistanceKm, formatDistance } from '../../utils/locationUtils';
 import client from '../../api/client';
@@ -128,14 +127,31 @@ const TutorProfilePage = () => {
     }
   };
 
-  // ── 2. Unlock Contact Handler (Opens Subscription Plans Modal) ──
+  // ── 2. Unlock Contact Handler (Checks Subscription / Direct Call) ──
   const handleUnlockContactClick = () => {
     const token = localStorage.getItem('token') || localStorage.getItem('mn_token');
     if (!token && !isAuthenticated) {
       navigate('/login');
       return;
     }
-    setShowSubPlanModal(true);
+
+    const isSubscribed = Boolean(
+      currentUser?.isSubscribed ||
+      currentUser?.subscriptionActive ||
+      currentUser?.role === 'ADMIN' ||
+      (currentUser?.subscriptionExpiry && new Date(currentUser.subscriptionExpiry) > new Date())
+    );
+
+    if (isSubscribed) {
+      const realPhone = tutor?.phone || tutorUser?.phone || '';
+      if (realPhone) {
+        window.location.href = `tel:${realPhone}`;
+      } else {
+        showToast('Teacher contact unlocked: ' + (tutor?.phone || tutorUser?.phone || 'Available in chat'));
+      }
+    } else {
+      navigate('/subscription');
+    }
   };
   
   // Real Verification status from DB
@@ -454,15 +470,27 @@ const TutorProfilePage = () => {
                       <span>Message Tutor</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={handleUnlockContactClick}
-                      className="tp-btn-unlock-contact"
-                    >
-                      <span>📞</span>
-                      <span>Unlock Contact &amp; Chat</span>
-                      <span className="tp-unlock-subbadge">From ₹99/mo (5 Unlocks) 🔒</span>
-                    </button>
+                    {currentUser?.isSubscribed || currentUser?.role === 'ADMIN' ? (
+                      <a
+                        href={`tel:${tutor?.phone || tutorUser?.phone || ''}`}
+                        className="tp-btn-unlock-contact"
+                        style={{ textDecoration: 'none', background: '#16A34A', borderColor: '#15803D' }}
+                      >
+                        <span>📞</span>
+                        <span>Call {tutor?.phone || tutorUser?.phone || 'Teacher'}</span>
+                        <span className="tp-unlock-subbadge" style={{ background: 'rgba(255,255,255,0.25)', color: '#fff' }}>Direct Access ✓</span>
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleUnlockContactClick}
+                        className="tp-btn-unlock-contact"
+                      >
+                        <span>📞</span>
+                        <span>Unlock Contact &amp; Chat</span>
+                        <span className="tp-unlock-subbadge">👑 Get Subscription Plan</span>
+                      </button>
+                    )}
                   </div>
 
                 </div>
@@ -961,15 +989,6 @@ const TutorProfilePage = () => {
           teacherId={tutorUserId || id}
           teacherName={name}
           onUnlockSuccess={() => {}}
-        />
-      )}
-
-      {/* Unlock Contact Modal */}
-      {unlockModalOpen && (
-        <UnlockContactModal
-          isOpen={unlockModalOpen}
-          onClose={() => setUnlockModalOpen(false)}
-          tutorId={tutorUserId}
         />
       )}
 

@@ -228,6 +228,8 @@ const AppContent = () => {
                             <Route path="/tutor/register" element={<BecomeTutorPage />} />
                             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+                            <Route path="/reset-password" element={<ResetPasswordPage />} />
+                            <Route path="/update-password" element={<ResetPasswordPage />} />
                             <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
                             
                             {/* 🧑‍🏫 Tutor Protected Routes */}

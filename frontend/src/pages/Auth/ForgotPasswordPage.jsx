@@ -27,10 +27,17 @@ const ForgotPasswordPage = () => {
     setMessage('');
 
     try {
-      await forgotPassword({ email: email.trim().toLowerCase() });
-      setMessage('Password reset instructions have been sent to your email.');
+      const res = await forgotPassword({ email: email.trim().toLowerCase() });
+      setMessage(
+        res?.data?.message ||
+        `If ${email.trim()} is registered with MentorNearby, a secure password reset link has been dispatched. Please check your Inbox and Spam/Junk folders.`
+      );
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || 'Failed to send reset link. Please try again.');
+      console.error('Password reset request failed:', err);
+      setErrorMsg(
+        err?.response?.data?.message ||
+        'Unable to send reset email at this moment. Please check your internet connection or try again shortly.'
+      );
     } finally {
       setLoading(false);
     }
@@ -87,20 +94,35 @@ const ForgotPasswordPage = () => {
             </div>
 
             {errorMsg && (
-              <div className="auth-alert-error" role="alert">
+              <div className="auth-alert-error mb-4" role="alert">
                 <span className="auth-alert-icon">⚠️</span>
                 <span>{errorMsg}</span>
               </div>
             )}
 
             {message ? (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-sm mb-6">
-                <p className="font-bold text-base mb-1">✉️ Email Sent!</p>
-                {message}
-                <div className="mt-4">
-                  <Link to="/login" className="auth-primary-btn" style={{ textDecoration: 'none' }}>
+              <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950 text-sm mb-6 text-left shadow-sm">
+                <div className="flex items-center gap-2 font-bold text-base text-emerald-900 mb-2">
+                  <span className="text-xl">✉️</span> <span>Check Your Inbox!</span>
+                </div>
+                <p className="leading-relaxed mb-3 text-emerald-800">
+                  {message}
+                </p>
+                <div className="bg-white/80 border border-emerald-200/80 rounded-xl p-3 text-xs text-slate-600 mb-4 space-y-1">
+                  <div>⏰ <strong>Link Expiry:</strong> Valid for 10 minutes.</div>
+                  <div>📁 <strong>Can't find it?</strong> Check your <em>Spam / Junk</em> and <em>Promotions</em> tabs.</div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Link to="/login" className="auth-primary-btn text-center" style={{ textDecoration: 'none' }}>
                     Return to Login
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => { setMessage(''); setEmail(''); }}
+                    className="text-xs text-slate-500 hover:text-slate-800 bg-transparent border-none cursor-pointer py-1 text-center font-semibold"
+                  >
+                    Try a different email address
+                  </button>
                 </div>
               </div>
             ) : (

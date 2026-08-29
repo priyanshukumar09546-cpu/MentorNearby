@@ -75,6 +75,13 @@ const LIVE_ACTIVITIES = [
   { name: 'Rohan', city: 'Mahanagar', action: 'chatted with Mathematics faculty', time: 'Just now', icon: '💬' },
 ];
 
+const HERO_PHRASES = [
+  'Find The Best Home Tutors Near You',
+  'Within 5 Kilometers',
+  'Verified & Trusted Tutors',
+  'Learn Better, Closer to Home',
+];
+
 const HomePage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState({ location: '', subject: '' });
@@ -82,6 +89,37 @@ const HomePage = () => {
   const [featuredTutors, setFeaturedTutors] = useState([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
   const [activeActivityIndex, setActiveActivityIndex] = useState(0);
+
+  // Typewriter effect state
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [displayText, setDisplayText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Typewriter effect loop (70ms type, 35ms delete, 2000ms pause, 600ms delete pause)
+  useEffect(() => {
+    const currentPhrase = HERO_PHRASES[phraseIndex];
+    let timer;
+
+    if (!isDeleting && displayText === currentPhrase) {
+      timer = setTimeout(() => setIsDeleting(true), 2000);
+    } else if (isDeleting && displayText === '') {
+      timer = setTimeout(() => {
+        setIsDeleting(false);
+        setPhraseIndex((prev) => (prev + 1) % HERO_PHRASES.length);
+      }, 600);
+    } else {
+      const speed = isDeleting ? 35 : 70;
+      timer = setTimeout(() => {
+        setDisplayText((prev) =>
+          isDeleting
+            ? currentPhrase.substring(0, prev.length - 1)
+            : currentPhrase.substring(0, prev.length + 1)
+        );
+      }, speed);
+    }
+
+    return () => clearTimeout(timer);
+  }, [displayText, isDeleting, phraseIndex]);
 
   // Live Activity rotation every 5 seconds
   useEffect(() => {
@@ -160,20 +198,22 @@ const HomePage = () => {
             {/* LEFT COLUMN: BADGE, HEADLINE, SEARCH BAR, 2 ACTION CARDS, 4 TRUST BADGES */}
             <div className="mn-hero-left-col">
               {/* Eyebrow Pill */}
-              <div className="mn-hero-eyebrow-pill">
+              <div className="mn-hero-eyebrow-pill mn-hero-badge-animated">
                 <span className="mn-eyebrow-icon">📍</span>
-                <span>5km Ke Andar Verified Home Tutors</span>
+                <span>5km Radius • 100% Verified Tutors</span>
               </div>
 
-              {/* Main Headline */}
-              <h1 className="mn-hero-main-title" id="mn-hero-heading" style={{ fontSize: 'clamp(28px, 4vw, 44px)', lineHeight: 1.15 }}>
-                Apne Mohalle Ka Best<br />
-                Home Tutor Dhoondhe <span className="mn-gold-highlight">- 5km Ke Andar</span>
-              </h1>
+              {/* Main Headline with Typewriter Animation */}
+              <div className="mn-hero-headline-wrap">
+                <h1 className="mn-hero-main-title" id="mn-hero-heading">
+                  <span className="mn-typewriter-gradient">{displayText}</span>
+                  <span className="mn-typewriter-cursor">|</span>
+                </h1>
+              </div>
 
               {/* Subtitle */}
               <p className="mn-hero-sub-text">
-                Apne area ke verified home tutors se direct baat karein. Zero commission, affordable fees, aur pehle free chat!
+                Connect directly with KYC-verified tutors in your neighborhood. Zero commission, affordable fees, and free chat before you start.
               </p>
 
               {/* Unified Quick Search Bar (Location + Subject) */}
@@ -227,9 +267,9 @@ const HomePage = () => {
               >
                 {[
                   { icon: '🛡️', title: 'Verified Teachers', desc: '100% ID & Degree Checked' },
-                  { icon: '💬', title: 'Free Chat Pehle', desc: 'Direct Message & Talk' },
+                  { icon: '💬', title: 'Free Chat First', desc: 'Direct Message & Talk' },
                   { icon: '💰', title: 'Affordable Fees', desc: 'Transparent & Low Cost' },
-                  { icon: '📍', title: 'Nearby Only', desc: '5km Ke Andar Local Tutors' },
+                  { icon: '📍', title: 'Nearby Only', desc: 'Within 5km Radius' },
                 ].map((box, i) => (
                   <div
                     key={i}

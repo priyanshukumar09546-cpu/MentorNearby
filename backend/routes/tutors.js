@@ -16,7 +16,7 @@ const {
   updateSafetyPreferences,
   toggleProfileVisibility,
 } = require('../controllers/tutorController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, optionalProtect } = require('../middleware/auth');
 const { uploadPhoto, uploadVideo, uploadDocument } = require('../middleware/upload');
 const { uploadKycDocument, uploadTutorId } = require('../controllers/uploadController');
 
@@ -54,7 +54,7 @@ router.post('/:id/approve', protect, authorize('ADMIN'), approveTutor);
 router.put('/:id/unapprove', protect, authorize('ADMIN'), unapproveTutor);
 router.post('/:id/unapprove', protect, authorize('ADMIN'), unapproveTutor);
 
-// Public route for tutor profile by ID or slug
-router.get('/:id', getTutorProfile);
+// Public route for tutor profile by ID or slug (optional auth attaches user if logged in)
+router.get('/:id', optionalProtect, getTutorProfile);
 
 module.exports = router;

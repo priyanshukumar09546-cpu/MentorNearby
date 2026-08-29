@@ -17,7 +17,8 @@ const ContactUnlockSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['FREE', 'PAID'],
+    enum: ['FREE', 'PAID', 'CREDIT', 'PRO_UNLIMITED'],
+    default: 'PAID',
     required: true
   },
   amount: {

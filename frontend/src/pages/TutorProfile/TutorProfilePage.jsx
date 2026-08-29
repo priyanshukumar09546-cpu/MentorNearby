@@ -232,26 +232,16 @@ const TutorProfilePage = () => {
       const res = await client.post(`/contact-unlocks/unlock/${target}`);
       
       const contact = res.data?.data?.contactInfo || res.data?.contactInfo;
-      if (contact && contact.phone) {
+      if (contact && contact.phone && !contact.phone.includes('*')) {
         setUnlockedContact(contact);
         showToast(`Teacher contact unlocked! Phone: ${contact.phone}`, 'success');
-        if (contact.phone && !contact.phone.includes('*')) {
-          window.location.href = `tel:${contact.phone}`;
-        }
       } else {
-        showToast('Contact unlocked! Details available below.', 'success');
-      }
-    } catch (err) {
-      if (
-        err.response?.status === 403 ||
-        err.response?.data?.needSubscription ||
-        err.response?.data?.code === 'SUBSCRIPTION_REQUIRED'
-      ) {
         showToast('Please choose a plan to unlock teacher contact details.', 'info');
         navigate(`/subscription?redirect=${encodeURIComponent(location.pathname)}`);
-      } else {
-        showToast(err.response?.data?.message || 'Failed to unlock contact', 'error');
       }
+    } catch (err) {
+      showToast('Please choose a plan to unlock teacher contact details.', 'info');
+      navigate(`/subscription?redirect=${encodeURIComponent(location.pathname)}`);
     } finally {
       setUnlocking(false);
     }
@@ -573,42 +563,65 @@ const TutorProfilePage = () => {
                       <span>Message Tutor</span>
                     </button>
 
-                    {unlockedContact || tutor?.isUnlocked || currentUser?.isSubscribed || currentUser?.role === 'ADMIN' ? (
-                      <div className="flex flex-col gap-2 w-full">
-                        <a
-                          href={`tel:${unlockedContact?.phone || tutor?.phone || tutorUser?.phone || ''}`}
-                          className="tp-btn-unlock-contact"
-                          style={{ textDecoration: 'none', background: '#16A34A', borderColor: '#15803D' }}
-                        >
-                          <span>📞</span>
-                          <span>Call {unlockedContact?.phone || tutor?.phone || 'Teacher'}</span>
-                          <span className="tp-unlock-subbadge" style={{ background: 'rgba(255,255,255,0.25)', color: '#fff' }}>Unlocked ✓</span>
-                        </a>
-                        {(unlockedContact?.whatsappNumber || tutor?.whatsappNumber || unlockedContact?.phone || tutor?.phone) && (
-                          <a
-                            href={`https://wa.me/${(unlockedContact?.whatsappNumber || tutor?.whatsappNumber || unlockedContact?.phone || tutor?.phone || '').replace(/[^0-9]/g, '')}`}
-                            target="_blank"
-                            rel="noreferrer"
+                    {/* Contact Unlock Section */}
+                    {(() => {
+                      const realUnlockedPhone =
+                        (unlockedContact?.phone && !unlockedContact.phone.includes('*'))
+                          ? unlockedContact.phone
+                          : (tutor?.phone && !tutor.phone.includes('*') && tutor?.isUnlocked)
+                            ? tutor.phone
+                            : null;
+
+                      const realWhatsAppNumber =
+                        (unlockedContact?.whatsappNumber && !unlockedContact.whatsappNumber.includes('*'))
+                          ? unlockedContact.whatsappNumber
+                          : (tutor?.whatsappNumber && !tutor.whatsappNumber.includes('*') && tutor?.isUnlocked)
+                            ? tutor.whatsappNumber
+                            : realUnlockedPhone;
+
+                      if (realUnlockedPhone) {
+                        return (
+                          <div className="flex flex-col gap-2 w-full">
+                            <a
+                              href={`tel:${realUnlockedPhone}`}
+                              className="tp-btn-unlock-contact"
+                              style={{ textDecoration: 'none', background: '#16A34A', borderColor: '#15803D' }}
+                            >
+                              <span>📞</span>
+                              <span>Call {realUnlockedPhone}</span>
+                              <span className="tp-unlock-subbadge" style={{ background: 'rgba(255,255,255,0.25)', color: '#fff' }}>Unlocked ✓</span>
+                            </a>
+                            {realWhatsAppNumber && (
+                              <a
+                                href={`https://wa.me/${realWhatsAppNumber.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="tp-btn-unlock-contact"
+                                style={{ textDecoration: 'none', background: '#25D366', borderColor: '#1EBE5D' }}
+                              >
+                                <span>💬</span>
+                                <span>Direct WhatsApp Chat</span>
+                              </a>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="flex flex-col gap-1.5 w-full">
+                          <button
+                            type="button"
+                            onClick={handleUnlockContactClick}
+                            disabled={unlocking}
                             className="tp-btn-unlock-contact"
-                            style={{ textDecoration: 'none', background: '#25D366', borderColor: '#1EBE5D' }}
                           >
-                            <span>💬</span>
-                            <span>Direct WhatsApp Chat</span>
-                          </a>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleUnlockContactClick}
-                        disabled={unlocking}
-                        className="tp-btn-unlock-contact"
-                      >
-                        <span>📞</span>
-                        <span>{unlocking ? 'Verifying Entitlement...' : 'Unlock Contact Details'}</span>
-                        <span className="tp-unlock-subbadge">👑 2 Credits / Plan Required</span>
-                      </button>
-                    )}
+                            <span>📞</span>
+                            <span>{unlocking ? 'Verifying Entitlement...' : 'Unlock Contact'}</span>
+                            <span className="tp-unlock-subbadge">👑 Plan / Credits Required</span>
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                 </div>

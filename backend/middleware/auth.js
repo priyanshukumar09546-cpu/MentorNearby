@@ -55,4 +55,27 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { protect, authorize };
+const optionalProtect = asyncHandler(async (req, res, next) => {
+  let token;
+
+  if (req.cookies && (req.cookies.token || req.cookies.jwt)) {
+    token = req.cookies.token || req.cookies.jwt;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded && decoded.id) {
+        req.user = await User.findById(decoded.id).select('+role +isSuspended +subscriptionType +subscriptionExpiry +contactUnlocks');
+      }
+    } catch (_) {
+      // Optional token failure is ignored on public endpoints
+    }
+  }
+
+  next();
+});
+
+module.exports = { protect, authorize, optionalProtect };

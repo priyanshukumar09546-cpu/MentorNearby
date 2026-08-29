@@ -85,15 +85,22 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
   const currentUserId = req.user?._id || req.user?.id;
   if (currentUserId) {
     const viewer = await User.findById(currentUserId);
-    const isAdmin = viewer?.role === 'ADMIN';
+    const isAdmin = (viewer?.role || '').toString().trim().toUpperCase() === 'ADMIN';
     const isPro = viewer?.subscriptionType === 'pro' && viewer?.subscriptionExpiry && new Date(viewer.subscriptionExpiry) > new Date();
 
-    if (isAdmin || isPro || String(viewer?._id) === String(tutorProfile.user?._id)) {
+    if (isAdmin || isPro || String(viewer?._id) === String(tutorProfile.user?._id || tutorProfile.user)) {
       isUnlocked = true;
     } else {
+      const tutorProfileId = tutorProfile._id;
+      const tutorUserId = tutorProfile.user?._id || tutorProfile.user;
+      const queryOr = [{ tutor: tutorProfileId }, { 'paymentDetails.targetId': tutorProfileId }];
+      if (tutorUserId) {
+        queryOr.push({ tutor: tutorUserId });
+        queryOr.push({ 'paymentDetails.targetId': tutorUserId });
+      }
       const existingUnlock = await ContactUnlock.findOne({
         user: currentUserId,
-        $or: [{ tutor: tutorProfile._id }, { 'paymentDetails.targetId': tutorProfile._id }],
+        $or: queryOr,
         paymentStatus: 'COMPLETED'
       });
       if (existingUnlock) isUnlocked = true;
@@ -101,16 +108,19 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
   }
 
   const rawPhone = tutorProfile.phone || tutorProfile.user?.phone || '';
-  const maskedPhone = rawPhone && rawPhone.length > 4 
-    ? `${rawPhone.slice(0, 3)}****${rawPhone.slice(-3)}`
-    : '**********';
-
   const profileObj = tutorProfile.toObject ? tutorProfile.toObject() : { ...tutorProfile };
+
   if (!isUnlocked) {
-    profileObj.phone = maskedPhone;
+    profileObj.phone = '**********';
     profileObj.whatsappNumber = null;
-    if (profileObj.user) {
-      profileObj.user.phone = maskedPhone;
+    if (profileObj.user && typeof profileObj.user === 'object') {
+      profileObj.user.phone = '**********';
+    }
+  } else {
+    profileObj.phone = rawPhone;
+    profileObj.whatsappNumber = tutorProfile.whatsappNumber || rawPhone;
+    if (profileObj.user && typeof profileObj.user === 'object') {
+      profileObj.user.phone = rawPhone;
     }
   }
   profileObj.isUnlocked = isUnlocked;

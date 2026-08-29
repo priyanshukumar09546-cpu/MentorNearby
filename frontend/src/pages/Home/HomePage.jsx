@@ -517,6 +517,11 @@ const HomePage = () => {
                     const photo = tutor.profilePic || tutor.user?.avatar || tutor.user?.profilePic || tutor.profilePhoto?.url || tutor.profilePhoto || '';
                     const subject = tutor.subjects?.join(', ') || tutor.subjects?.[0] || 'General Subjects';
                     const classes = tutor.classes?.length ? `Class ${tutor.classes.join(', ')}` : (tutor.grades?.length ? `Class ${tutor.grades.join(', ')}` : 'All Classes');
+                    const exp = tutor.experience?.years ? `${tutor.experience.years}+ Years Exp.` : (tutor.experience ? `${tutor.experience} Exp.` : 'Experienced');
+                    const qual = tutor.qualifications?.[0]?.degree || tutor.qualifications?.[0]?.title || tutor.education?.[0]?.degree || '';
+                    const hasReviews = tutor.totalReviews > 0 && tutor.averageRating;
+                    const rating = hasReviews ? Number(tutor.averageRating).toFixed(1) : null;
+                    const reviews = tutor.totalReviews || 0;
                     const feeAmount = tutor.fees?.amount || tutor.monthlyFees || tutor.monthly_fees || tutor.fees || tutor.hourlyRate || tutor.price || 0;
                     const fee = feeAmount > 0 ? `₹${Number(feeAmount).toLocaleString('en-IN')} / month` : 'Fee on request';
                     const isVerified = tutor.kycStatus === 'VERIFIED' || tutor.verificationStatus === 'VERIFIED';

@@ -522,11 +522,12 @@ const SearchPage = () => {
                     const loc = tutor.location?.city || tutor.location?.area || 'Local Area';
                     const modeStr = Array.isArray(tutor.teachingModes) ? tutor.teachingModes.join(' & ') : (tutor.teachingModes || 'Online & Offline');
                     const ratingVal = tutor.averageRating && tutor.averageRating > 0 ? Number(tutor.averageRating).toFixed(1) : (tutor.totalReviews > 0 ? '5.0' : 'New');
+                    const reviewsVal = tutor.totalReviews || 0;
                     const feeAmount = tutor.fees?.amount || tutor.monthlyFees || tutor.monthly_fees || tutor.fees || tutor.hourlyRate || tutor.price || 0;
                     const priceVal = feeAmount > 0 ? `₹${Number(feeAmount).toLocaleString('en-IN')} / month` : 'Fee on request';
                     const isVerified = tutor.kycStatus === 'VERIFIED' || tutor.verificationStatus?.identity;
                     const isOnline = Array.isArray(tutor.teachingModes)
-                      ? tutor.teachingModes.some(m => m.toUpperCase().includes('ONLINE'))
+                      ? tutor.teachingModes.some(m => typeof m === 'string' && m.toUpperCase().includes('ONLINE'))
                       : true;
 
                     return (

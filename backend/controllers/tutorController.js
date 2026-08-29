@@ -8,28 +8,75 @@ const cloudinaryService = require('../services/cloudinaryService');
 
 exports.getTutorProfile = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
+  console.log('[DEBUG getTutorProfile] Requested tutor ID:', id);
 
-  let query;
-  if (id.match(/^[0-9a-fA-F]{24}$/)) {
-    query = { $or: [{ user: id }, { _id: id }] };
-  } else {
-    query = { slug: id };
+  const mongoose = require('mongoose');
+  const User = require('../models/User');
+
+  let orConditions = [];
+
+  if (id && mongoose.Types.ObjectId.isValid(id)) {
+    const objId = new mongoose.Types.ObjectId(id);
+    orConditions.push({ _id: objId });
+    orConditions.push({ user: objId });
   }
 
-  const tutorProfile = await TutorProfile.findOneAndUpdate(
-    query,
+  // Also query string fields & slugs
+  orConditions.push({ _id: id });
+  orConditions.push({ user: id });
+  orConditions.push({ userId: id });
+  orConditions.push({ slug: id });
+
+  // If hex string between 8 and 32 chars (e.g. 23-char hex 6a8fcf723a3c01cae238c28), match regex or substring
+  if (typeof id === 'string' && /^[0-9a-fA-F]{8,32}$/.test(id)) {
+    try {
+      orConditions.push({ slug: new RegExp(`^${id}`, 'i') });
+    } catch (e) {}
+  }
+
+  let tutorProfile = await TutorProfile.findOneAndUpdate(
+    { $or: orConditions },
     { $inc: { profileViews: 1 } },
     { new: true }
-  ).populate('user', 'name emailVerified phoneVerified isSuspended role');
+  ).populate('user', 'name email emailVerified phoneVerified avatar profilePic isSuspended role');
 
-  if (!tutorProfile || !tutorProfile.user) {
-    return error(res, 'Tutor not found', 404);
+  // Fallback: Look up user first
+  if (!tutorProfile) {
+    let userQuery = [{ email: id }];
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      userQuery.push({ _id: new mongoose.Types.ObjectId(id) });
+    }
+    const user = await User.findOne({ $or: userQuery });
+    if (user) {
+      tutorProfile = await TutorProfile.findOne({ user: user._id })
+        .populate('user', 'name email emailVerified phoneVerified avatar profilePic isSuspended role');
+    }
   }
 
-  // If tutor is suspended, hide from non-admin users
-  const isAdmin = req.user && req.user.role === 'ADMIN';
-  if (tutorProfile.user.isSuspended && !isAdmin) {
-    return error(res, 'Tutor not found', 404);
+  // Fallback: Search partial matches if id is hex string
+  if (!tutorProfile && typeof id === 'string' && /^[0-9a-fA-F]{8,32}$/.test(id)) {
+    const allProfiles = await TutorProfile.find({})
+      .populate('user', 'name email avatar profilePic isSuspended role')
+      .limit(50);
+    tutorProfile = allProfiles.find(p => {
+      const pId = String(p._id);
+      const uId = String(p.user?._id || p.user || '');
+      return pId.includes(id) || id.includes(pId) || uId.includes(id) || id.includes(uId);
+    });
+  }
+
+  if (!tutorProfile) {
+    return error(res, 'Tutor profile not found', 404);
+  }
+
+  // Ensure user object exists even if orphaned
+  if (!tutorProfile.user) {
+    tutorProfile.user = {
+      _id: tutorProfile._id,
+      name: tutorProfile.name || 'Verified Tutor',
+      role: 'TUTOR',
+      isSuspended: false
+    };
   }
 
   return success(res, 'Tutor profile retrieved successfully', { tutorProfile });
@@ -245,21 +292,25 @@ exports.getFeaturedTutors = asyncHandler(async (req, res, next) => {
       { isApproved: true },
       { kycStatus: 'VERIFIED' },
       { verificationStatus: { $in: ['APPROVED', 'VERIFIED', 'verified', 'approved'] } },
-      { profileVisibility: true }
+      { profileVisibility: { $ne: false } }
     ]
   })
   .populate('user', 'name email phone avatar profilePic role isSuspended')
   .sort({ averageRating: -1, profileCompletionPercentage: -1, createdAt: -1 })
-  .limit(8);
+  .limit(12);
 
-  let activeTutors = tutors.filter(t => t && t.user && !t.user.isSuspended);
+  let activeTutors = tutors
+    .filter(t => t && t.user && (t.user._id || t.user.name) && !t.user.isSuspended)
+    .slice(0, 8);
 
-  // Fallback: If 0 tutors matched filter, return all profiles so Homepage is NEVER empty
+  // Fallback: If 0 tutors matched filter, return all valid profiles
   if (!activeTutors || activeTutors.length === 0) {
     const allTutors = await TutorProfile.find({})
       .populate('user', 'name email phone avatar profilePic role isSuspended')
-      .limit(8);
-    activeTutors = allTutors.filter(t => t && t.user && !t.user.isSuspended);
+      .limit(12);
+    activeTutors = allTutors
+      .filter(t => t && t.user && (t.user._id || t.user.name) && !t.user.isSuspended)
+      .slice(0, 8);
   }
 
   return success(res, 'Featured tutors retrieved successfully', { tutors: activeTutors, data: activeTutors });

@@ -12,9 +12,15 @@ const Navbar = () => {
   const isDarkMode = isDark ?? darkMode ?? true;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const unreadCount = 0;
   const location = useLocation();
   const navigate = useNavigate();
   const navRef = useRef(null);
+
+  const toggleNotifDropdown = () => {
+    navigate('/notifications');
+  };
 
   // Close dropdowns on outside click or route change
   useEffect(() => {

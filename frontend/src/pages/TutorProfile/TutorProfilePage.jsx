@@ -56,7 +56,10 @@ const TutorProfilePage = () => {
       try {
         setLoading(true);
         const res = await getTutorProfile(id);
-        const tutorData = res.data.data?.tutorProfile || res.data.data;
+        const tutorData = res.data?.data?.tutorProfile || res.data?.tutorProfile || res.data?.tutor || res.data?.data || res.data;
+        if (!tutorData || typeof tutorData !== 'object') {
+          throw new Error('Tutor profile not found.');
+        }
         setTutor(tutorData);
 
         const tutorUserId = tutorData?.user?._id || tutorData?.user || tutorData?._id;

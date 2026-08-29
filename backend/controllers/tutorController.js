@@ -79,7 +79,13 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
     };
   }
 
-  return success(res, 'Tutor profile retrieved successfully', { tutorProfile });
+  return res.status(200).json({
+    success: true,
+    message: 'Tutor profile retrieved successfully',
+    data: { tutorProfile },
+    tutorProfile,
+    tutor: tutorProfile
+  });
 });
 
 exports.updateTutorProfile = asyncHandler(async (req, res, next) => {

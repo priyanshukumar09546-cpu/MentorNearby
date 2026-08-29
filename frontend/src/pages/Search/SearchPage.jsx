@@ -59,11 +59,11 @@ const SearchPage = () => {
       cleanParams.limit = 8; // 4 cards x 2 rows on desktop
 
       const res = await searchTutors(cleanParams);
-      const list = res.data?.data?.tutors || res.data?.data || [];
-      const total = res.data?.data?.total ?? list.length;
-      const pages = res.data?.data?.pages || Math.ceil(total / 8) || 1;
+      const list = res.data?.data?.tutors || res.data?.tutors || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      const total = res.data?.data?.total ?? res.data?.total ?? (Array.isArray(list) ? list.length : 0);
+      const pages = res.data?.data?.pages || res.data?.pages || Math.ceil(total / 8) || 1;
 
-      setTutors(list);
+      setTutors(Array.isArray(list) ? list : []);
       setTotalCount(total);
       setTotalPages(pages);
     } catch (err) {
@@ -81,8 +81,8 @@ const SearchPage = () => {
   const fetchTopTutors = async () => {
     try {
       const res = await searchTutors({ sort: 'rating', limit: 5, verified: 'true' });
-      const topList = res.data?.data?.tutors || res.data?.data || [];
-      setTopTutors(topList);
+      const topList = res.data?.data?.tutors || res.data?.tutors || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      setTopTutors(Array.isArray(topList) ? topList : []);
     } catch (_) {
       setTopTutors([]);
     }

@@ -245,6 +245,7 @@ const AppContent = () => {
                             <Route path="/tutor/profile/edit" element={<ProtectedRoute roles={['tutor']}><EditTutorProfilePage /></ProtectedRoute>} />
                             <Route path="/tutor/kyc" element={<ProtectedRoute roles={['tutor']}><KYCPage /></ProtectedRoute>} />
                             <Route path="/tutor/:id" element={<TutorProfilePage />} />
+                            <Route path="/tutors/:id" element={<TutorProfilePage />} />
                             <Route path="/teacher/:id" element={<TutorProfilePage />} />
                             <Route path="/teachers/:id" element={<TutorProfilePage />} />
                             <Route path="/teacher-profile/:id" element={<TutorProfilePage />} />

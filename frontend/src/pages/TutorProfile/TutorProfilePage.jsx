@@ -51,50 +51,73 @@ const TutorProfilePage = () => {
   const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchTutorData = async () => {
       try {
         setLoading(true);
+        setError(null);
         const res = await getTutorProfile(id);
-        const tutorData = res.data?.data?.tutorProfile || res.data?.tutorProfile || res.data?.tutor || res.data?.data || res.data;
-        if (!tutorData || typeof tutorData !== 'object') {
+        const tutorData =
+          res.data?.data?.tutorProfile ||
+          res.data?.tutorProfile ||
+          res.data?.data?.tutor ||
+          res.data?.tutor ||
+          res.data?.data ||
+          res.data;
+        if (!tutorData || typeof tutorData !== 'object' || Array.isArray(tutorData)) {
           throw new Error('Tutor profile not found.');
         }
-        setTutor(tutorData);
+        if (isMounted) {
+          setTutor(tutorData);
+        }
 
         const tutorUserId = tutorData?.user?._id || tutorData?.user || tutorData?._id;
 
-        // Fetch Reviews
-        try {
-          const revRes = await getTutorReviews(tutorUserId);
-          setReviews(revRes.data.data?.reviews || []);
-        } catch (e) {
-          // Non-critical
+        // Fetch Reviews (non-blocking)
+        if (tutorUserId) {
+          getTutorReviews(tutorUserId)
+            .then((revRes) => {
+              if (isMounted) {
+                setReviews(revRes.data?.data?.reviews || revRes.data?.reviews || []);
+              }
+            })
+            .catch(() => {});
         }
 
-        // Fetch Saved Status if authenticated
+        // Fetch Saved Status if authenticated (non-blocking)
         if (currentUser && tutorUserId) {
-          try {
-            const saveRes = await checkIsSaved(tutorUserId);
-            setIsSaved(saveRes.data?.data?.isSaved || false);
-          } catch (e) {
-            // Non-critical
-          }
+          checkIsSaved(tutorUserId)
+            .then((saveRes) => {
+              if (isMounted) {
+                setIsSaved(saveRes.data?.data?.isSaved || false);
+              }
+            })
+            .catch(() => {});
 
-          try {
-            const userRes = await client.get('/users/profile');
-            setCurrentUserProfile(userRes.data.data?.profile);
-          } catch (e) {
-            // Non-critical
-          }
+          client.get('/users/profile')
+            .then((userRes) => {
+              if (isMounted) {
+                setCurrentUserProfile(userRes.data?.data?.profile || userRes.data?.profile);
+              }
+            })
+            .catch(() => {});
         }
       } catch (err) {
-        setError('Failed to load tutor profile.');
+        console.error('Error loading tutor profile for ID:', id, err);
+        if (isMounted) {
+          setError('Failed to load tutor profile.');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     if (id) fetchTutorData();
+    return () => {
+      isMounted = false;
+    };
   }, [id, currentUser]);
 
   const tutorUser = tutor?.user && typeof tutor.user === 'object' ? tutor.user : {};

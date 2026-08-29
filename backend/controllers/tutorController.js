@@ -25,21 +25,17 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
   }
 
   // 2. Try finding by slug
-  if (!tutorProfile && typeof id === 'string') {
+  if (!tutorProfile && typeof id === 'string' && id.trim()) {
     tutorProfile = await TutorProfile.findOneAndUpdate(
-      { slug: id },
+      { slug: new RegExp(`^${id.trim()}$`, 'i') },
       { $inc: { profileViews: 1 } },
       { new: true }
     ).populate('user', 'name email emailVerified phoneVerified avatar profilePic isSuspended role subscriptionType subscriptionExpiry contactUnlocks').catch(() => null);
   }
 
-  // 3. Fallback: Look up user by email or ID first
-  if (!tutorProfile) {
-    let userQuery = [{ email: id }];
-    if (isValidObjId) {
-      userQuery.push({ _id: new mongoose.Types.ObjectId(id) });
-    }
-    const user = await User.findOne({ $or: userQuery }).catch(() => null);
+  // 3. Fallback: Look up user by email
+  if (!tutorProfile && typeof id === 'string' && id.includes('@')) {
+    const user = await User.findOne({ email: id.trim().toLowerCase() }).catch(() => null);
     if (user) {
       tutorProfile = await TutorProfile.findOneAndUpdate(
         { user: user._id },
@@ -49,35 +45,24 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
     }
   }
 
-  // 4. Fallback: Search partial matches across all tutors (for 23-char hex strings / typos)
-  if (!tutorProfile && typeof id === 'string') {
+  // 4. Fallback: Search prefix/typo match (minimum 8 hex chars)
+  if (!tutorProfile && typeof id === 'string' && /^[0-9a-fA-F]{8,32}$/.test(id)) {
+    const prefix = id.slice(0, 8);
     const allProfiles = await TutorProfile.find({})
       .populate('user', 'name email avatar profilePic isSuspended role subscriptionType subscriptionExpiry contactUnlocks')
       .limit(50)
       .catch(() => []);
-    tutorProfile = allProfiles.find(p => {
+    const match = allProfiles.find(p => {
       const pId = String(p._id);
       const uId = String(p.user?._id || p.user || '');
-      const slug = String(p.slug || '');
-      return (
-        pId === id ||
-        uId === id ||
-        slug === id ||
-        (pId.length >= 6 && id.includes(pId)) ||
-        (id.length >= 6 && pId.includes(id)) ||
-        (uId.length >= 6 && id.includes(uId)) ||
-        (id.length >= 6 && uId.includes(id)) ||
-        (pId.slice(0, 10) === id.slice(0, 10))
-      );
+      return pId.startsWith(prefix) || uId.startsWith(prefix);
     });
-  }
-
-  // 5. Ultimate fallback: If only one tutor in database
-  if (!tutorProfile) {
-    const count = await TutorProfile.countDocuments().catch(() => 0);
-    if (count === 1) {
-      tutorProfile = await TutorProfile.findOne({})
-        .populate('user', 'name email avatar profilePic isSuspended role subscriptionType subscriptionExpiry contactUnlocks').catch(() => null);
+    if (match) {
+      tutorProfile = await TutorProfile.findByIdAndUpdate(
+        match._id,
+        { $inc: { profileViews: 1 } },
+        { new: true }
+      ).populate('user', 'name email emailVerified phoneVerified avatar profilePic isSuspended role subscriptionType subscriptionExpiry contactUnlocks').catch(() => null);
     }
   }
 

@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import { getSubscriptionStatus } from '../../api/subscription';
 import { useToast } from '../../context/ToastContext';
+import { containsContactInfo } from '../../utils/chatFilter';
 import PaywallModal from '../../components/subscription/PaywallModal';
 
 const ChatPage = () => {
@@ -17,8 +18,15 @@ const ChatPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const recipientId = searchParams.get('recipient') || searchParams.get('recipientId') || searchParams.get('userId');
-  const conversationId = searchParams.get('conversation') || searchParams.get('conversationId');
+  const recipientId =
+    searchParams.get('recipient') ||
+    searchParams.get('recipientId') ||
+    searchParams.get('user') ||
+    searchParams.get('userId');
+  const conversationId =
+    searchParams.get('chat') ||
+    searchParams.get('conversation') ||
+    searchParams.get('conversationId');
 
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -150,6 +158,14 @@ const ChatPage = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeConversation || sending) return;
+
+    if (containsContactInfo(newMessage.trim())) {
+      showToast(
+        '⚠️ Contact info share karna allowed nahi hai. Number, email, ya number words likhna block hai. Subscription se unlock karein.',
+        'error'
+      );
+      return;
+    }
 
     const receiverId = activeConversation.otherUser?._id;
     setSending(true);
@@ -429,27 +445,39 @@ const ChatPage = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSendMessage} className="flex items-center gap-2 max-w-4xl mx-auto">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder={
-                    !isSubscribed && chatsRemaining === 0
-                      ? '🔒 Subscribe to send more messages'
-                      : 'Type a message...'
-                  }
-                  disabled={!isSubscribed && chatsRemaining === 0}
-                  className="flex-1 bg-gray-100 hover:bg-gray-50 focus:bg-white text-gray-900 border border-gray-200 focus:border-blue-500 rounded-full px-4 py-3 text-sm outline-none transition disabled:opacity-60"
-                />
-                <button
-                  type="submit"
-                  disabled={!newMessage.trim() || sending || (!isSubscribed && chatsRemaining === 0)}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white w-11 h-11 rounded-full flex items-center justify-center font-bold flex-shrink-0 shadow-sm transition cursor-pointer border-none"
-                  aria-label="Send message"
-                >
-                  {sending ? '...' : '➤'}
-                </button>
+              <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder={
+                      !isSubscribed && chatsRemaining === 0
+                        ? '🔒 Subscribe to send more messages'
+                        : 'Type a message... (numbers/email blocked)'
+                    }
+                    disabled={!isSubscribed && chatsRemaining === 0}
+                    className="flex-1 bg-gray-100 hover:bg-gray-50 focus:bg-white text-gray-900 border border-gray-200 focus:border-blue-500 rounded-full px-4 py-3 text-sm outline-none transition disabled:opacity-60"
+                  />
+                  <button
+                    type="submit"
+                    disabled={
+                      !newMessage.trim() ||
+                      sending ||
+                      (!isSubscribed && chatsRemaining === 0) ||
+                      containsContactInfo(newMessage.trim())
+                    }
+                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white w-11 h-11 rounded-full flex items-center justify-center font-bold flex-shrink-0 shadow-sm transition cursor-pointer border-none"
+                    aria-label="Send message"
+                  >
+                    {sending ? '...' : '➤'}
+                  </button>
+                </div>
+                {containsContactInfo(newMessage) && (
+                  <p className="text-rose-600 font-bold text-[11px] mt-1.5 px-3 flex items-center gap-1 animate-pulse">
+                    ❌ Number / email / contact info share karna block hai (Subscription se Unlock karein)
+                  </p>
+                )}
               </form>
             </div>
           </>

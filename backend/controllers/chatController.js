@@ -7,7 +7,7 @@ const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const Message = require('../models/Message');
 const User = require('../models/User');
-const { filterMessage } = require('../utils/messageFilter');
+const { filterMessage, hasContactInfo } = require('../utils/messageFilter');
 const { createNotification } = require('./notificationController');
 
 // ── Helper: check if subscription is still active ─────────
@@ -25,9 +25,10 @@ const { sendLeadWhatsAppAlert } = require('../services/whatsappService');
 exports.sendMessage = asyncHandler(async (req, res, next) => {
   const receiverId = req.params.userId;
   const senderId = req.user._id || req.user.id;
-  const { content } = req.body;
+  const { content, text } = req.body;
+  const rawContent = (content || text || '').trim();
 
-  if (!content || !content.trim()) {
+  if (!rawContent) {
     return error(res, 'Please provide message content', 400);
   }
 
@@ -38,6 +39,16 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
   const receiver = await User.findById(receiverId);
   if (!receiver) {
     return error(res, 'Receiver not found', 404);
+  }
+
+  // ── Anti-Bypass Check: Reject phone numbers, emails, and word numbers ──
+  if (hasContactInfo(rawContent)) {
+    return error(
+      res,
+      'Contact sharing is blocked in chat. Please use the Contact Unlock / Subscription feature to get direct phone numbers.',
+      400,
+      'CONTACT_SHARING_BLOCKED'
+    );
   }
 
   // ── Spam Control 1: Rate limit 1 message per 10 seconds ──────
@@ -61,13 +72,13 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 
   if (
     previousMessage &&
-    previousMessage.content.trim().toLowerCase() === content.trim().toLowerCase()
+    previousMessage.content.trim().toLowerCase() === rawContent.toLowerCase()
   ) {
     return error(res, 'Please do not repeat the exact same message.', 400, 'DUPLICATE_MESSAGE');
   }
 
   // Filter message content before saving
-  const filteredContent = filterMessage(content.trim());
+  const filteredContent = filterMessage(rawContent);
 
   const message = await Message.create({
     sender: senderId,

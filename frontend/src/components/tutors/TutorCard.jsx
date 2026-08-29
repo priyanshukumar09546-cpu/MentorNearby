@@ -1,13 +1,61 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import client from '../../api/client';
 import { calculateDistanceKm, formatDistance } from '../../utils/locationUtils';
 import './TutorCard.css';
 
 const TutorCard = ({ tutor, userCoordinates, onUnlock }) => {
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const tutorUser = tutor.user || {};
   const photoUrl = tutor.profilePhoto?.url || tutor.profilePhoto || tutorUser.avatar || '';
   const name = tutorUser.name || tutor.name || 'Tutor';
   const isVerified = tutor.kycStatus === 'VERIFIED';
+
+  const handleChatClick = async (e) => {
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setIsChatLoading(true);
+      const recipientId = tutor.user?._id || tutor._id || tutor.id;
+      const res = await client.post('/chat/initiate', { recipientId });
+      const data = res.data?.data || res.data || {};
+
+      if (data.needSubscription || res.data?.needSubscription) {
+        if (onUnlock) {
+          onUnlock(recipientId);
+        } else {
+          navigate(`/subscription?redirect=${encodeURIComponent(`/chat?recipient=${recipientId}`)}`);
+        }
+        return;
+      }
+
+      const convId = data.conversationId || res.data?.conversationId;
+      navigate(`/messages?chat=${convId || ''}&user=${recipientId}&recipient=${recipientId}`);
+    } catch (err) {
+      if (
+        err.response?.status === 403 &&
+        (err.response?.data?.needSubscription || err.response?.data?.code === 'SUBSCRIPTION_REQUIRED')
+      ) {
+        if (onUnlock) {
+          onUnlock(tutor.user?._id || tutor._id || tutor.id);
+        } else {
+          navigate(`/subscription?redirect=${encodeURIComponent(`/chat?recipient=${tutor.user?._id || tutor._id || tutor.id}`)}`);
+        }
+      } else {
+        navigate(`/messages?recipient=${tutor.user?._id || tutor._id || tutor.id}`);
+      }
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   const feeAmount = tutor.fees?.amount || tutor.hourlyRate || 0;
   const rawFreq = (tutor.fees?.frequency || (tutor.hourlyRate ? 'Hour' : 'Month')).toString().toUpperCase();
@@ -141,7 +189,32 @@ const TutorCard = ({ tutor, userCoordinates, onUnlock }) => {
           <p className="mn-tutor-fee-amount">{feeDisplay}</p>
         </div>
 
-        <div className="mn-tutor-actions-group">
+        <div className="mn-tutor-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={handleChatClick}
+            disabled={isChatLoading}
+            title="Chat with tutor"
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              background: '#000000',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px',
+              border: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'transform 0.15s ease, background 0.15s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.08)')}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            {isChatLoading ? '...' : '💬'}
+          </button>
           <Link
             to={`/tutor/${tutor._id || tutor.user?._id || tutor.id}`}
             className="mn-tutor-btn-outline"

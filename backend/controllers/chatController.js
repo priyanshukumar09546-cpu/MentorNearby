@@ -285,3 +285,28 @@ exports.initiateConversation = asyncHandler(async (req, res, next) => {
     conversationId,
   });
 });
+
+// @desc    Get subscription & chat limit status for current user
+// @route   GET /api/chat/my-status
+// @access  Private
+exports.getMyChatStatus = asyncHandler(async (req, res, next) => {
+  const currentUserId = req.user._id || req.user.id;
+  const currentUser = await User.findById(currentUserId).select(
+    'freeChatsUsed freeLeadsUsed isSubscribed subscriptionType subscriptionExpiry role'
+  );
+
+  const FREE_LIMIT = currentUser.role === 'TUTOR' ? 5 : 3;
+  const usedCount = currentUser.freeChatsUsed || 0;
+  const active = isActiveSubscriber(currentUser);
+
+  return success(res, 'Chat status retrieved', {
+    isSubscribed: active,
+    subscriptionType: currentUser.subscriptionType,
+    subscriptionExpiry: currentUser.subscriptionExpiry,
+    freeChatsUsed: usedCount,
+    freeChatsLimit: FREE_LIMIT,
+    chatsRemaining: active ? Infinity : Math.max(0, FREE_LIMIT - usedCount),
+    paywallPlan: currentUser.role === 'TUTOR' ? 149 : 99,
+    paywallPlanType: currentUser.role === 'TUTOR' ? 'teacher' : 'student',
+  });
+});

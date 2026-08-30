@@ -1,11 +1,73 @@
 // ============================================================
 // utils/chatFilter.js
-// Leak-Proof Anti-Bypass Filter: Blocks digits, number words, roman numerals,
-// contact handles, emails, social media, addresses & obfuscated patterns
+// Frontend Context-Aware Contact Detection & Message Filter
+// Allows educational content (Maths, Physics, Class 10, ₹500/hr)
+// Detects phone numbers, emails, WhatsApp handles, and bypasses
 // ============================================================
 
 /**
- * Strict check if a message is allowed to be sent in Introduction Chat
+ * Normalizes text to catch leet-speak and symbol-injected bypasses
+ */
+const normalizeText = (text) => {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .toLowerCase()
+    .replace(/[@]/g, 'a')
+    .replace(/[\$]/g, 's')
+    .replace(/[!|]/g, 'i')
+    .replace(/[()]/g, '')
+    .trim();
+};
+
+/**
+ * Extracts pure consecutive or spaced digit sequences from text
+ */
+const extractDigitSequences = (text) => {
+  let cleaned = text
+    .replace(/₹\s*\d+/g, '')
+    .replace(/rs\.?\s*\d+/gi, '')
+    .replace(/inr\s*\d+/gi, '')
+    .replace(/\bclass\s*\d+/gi, '')
+    .replace(/\bgrade\s*\d+/gi, '')
+    .replace(/\bchapter\s*\d+/gi, '')
+    .replace(/\bpage\s*\d+/gi, '')
+    .replace(/\bexercise\s*\d+(\.\d+)?/gi, '')
+    .replace(/\bquestion\s*\d+/gi, '')
+    .replace(/\d+\s*%/g, '')
+    .replace(/\d+\s*\/\s*\d+/g, '')
+    .replace(/\b\d{1,2}(st|nd|rd|th)\b/gi, '');
+
+  const potentialNumberMatches = cleaned.match(/(?:\+?\d[\d\s\-_.,;]{6,}\d)/g);
+  if (!potentialNumberMatches) return [];
+
+  return potentialNumberMatches.map((m) => m.replace(/\D/g, '')).filter((digits) => digits.length >= 7);
+};
+
+/**
+ * Checks for spelled out number sequences
+ */
+const containsSpelledOutPhone = (text) => {
+  const lower = text.toLowerCase();
+  const enDigits = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  const hiDigits = ['shunya', 'ek', 'do', 'teen', 'tin', 'char', 'chaar', 'paanch', 'panch', 'cheh', 'chheh', 'saat', 'sath', 'aath', 'ath', 'nau'];
+
+  const allDigitWords = new Set([...enDigits, ...hiDigits]);
+  const words = lower.replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+
+  let consecutiveDigitWords = 0;
+  for (const w of words) {
+    if (allDigitWords.has(w)) {
+      consecutiveDigitWords++;
+      if (consecutiveDigitWords >= 6) return true;
+    } else {
+      consecutiveDigitWords = 0;
+    }
+  }
+  return false;
+};
+
+/**
+ * Checks if message is allowed to be sent
  * @param {string} text
  * @returns {{ allowed: boolean, reason: string }}
  */
@@ -16,129 +78,70 @@ export const canSendMessage = (text) => {
 
   const raw = text.trim();
   const lower = raw.toLowerCase();
+  const normalized = normalizeText(raw);
 
-  // ── 0. Leet normalization before checking ───────────────────
-  let normalized = lower
-    .replace(/@/g, 'a')
-    .replace(/0/g, 'o')
-    .replace(/1/g, 'i')
-    .replace(/3/g, 'e')
-    .replace(/\$/g, 's')
-    .replace(/5/g, 's')
-    .replace(/7/g, 't')
-    .replace(/8/g, 'b')
-    .replace(/[\s\-_.,;:\/\\+]+/g, ' '); // collapse repeated symbols into spaces
-
-  // ── 1. Digits: Strict check - ANY digit 0-9 ─────────────────
-  if (/\d/.test(raw)) {
+  // 1. Check for valid Email addresses
+  const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
+  const obfuscatedEmailRegex = /\b[A-Z0-9._%+-]+\s*(?:@|\[at\]|\(at\)|at)\s*[A-Z0-9.-]+\s*(?:\.|\[dot\]|\(dot\)|dot)\s*(?:com|in|org|net|co|io|edu|gov)\b/i;
+  if (emailRegex.test(raw) || obfuscatedEmailRegex.test(lower)) {
     return {
       allowed: false,
-      reason: 'Phone numbers and digits are strictly blocked in introduction chat. Please keep conversation about subjects and timing.',
+      reason: 'Sharing email addresses is not permitted in MentorNearby chat.',
     };
   }
 
-  // ── 2. Number words in English ──────────────────────────────
-  const enNumberWords = [
-    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
-    'nineteen', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety',
-    'hundred', 'thousand', 'million',
-  ];
-  for (const w of enNumberWords) {
-    const reg = new RegExp(`\\b${w}\\b`, 'i');
-    if (reg.test(lower) || reg.test(normalized)) {
+  // 2. Check for Phone numbers
+  const digitSequences = extractDigitSequences(raw);
+  for (const seq of digitSequences) {
+    if (/^[6-9]\d{9}$/.test(seq) || /^91[6-9]\d{9}$/.test(seq) || /^0[6-9]\d{9}$/.test(seq) || seq.length >= 8) {
       return {
         allowed: false,
-        reason: 'Number words are not allowed in introduction chat to prevent contact leaks.',
+        reason: 'Sharing phone numbers is not permitted in MentorNearby chat.',
       };
     }
   }
 
-  // ── 3. Number words in Hindi & variations ───────────────────
-  const hiNumberWords = [
-    'shunya', 'ek', 'ekk', '1k', 'do', 'doo', 'teen', 'teenn', 'tin', 'char', 'chaar',
-    'paanch', 'panch', 'cheh', 'chheh', 'chhah', 'saat', 'sath', 'aath', 'ath', 'nau',
-    'dus', 'das', 'gyarah', 'barah', 'terah', 'chaudah', 'pandrah', 'solah', 'satrah',
-    'atharah', 'unnis', 'bees', 'tees', 'chalis', 'pachas', 'saath', 'sattar', 'assi',
-    'nabbe', 'sau', 'hazaar',
-  ];
-  for (const w of hiNumberWords) {
-    const reg = new RegExp(`\\b${w}\\b`, 'i');
-    if (reg.test(lower) || reg.test(normalized)) {
-      return {
-        allowed: false,
-        reason: 'Spelled-out numbers are not allowed in introduction chat.',
-      };
-    }
-  }
-
-  // ── 4. Roman numerals ───────────────────────────────────────
-  const romanPattern = /\b(i{1,4}|v|vi{0,3}|ix|x{1,3}|xi{0,3}|xiv|xv|xvi{0,3}|xix|xx|l|c|d|m)\b/i;
-  if (romanPattern.test(lower)) {
+  // 3. Spelled out phone numbers
+  if (containsSpelledOutPhone(raw)) {
     return {
       allowed: false,
-      reason: 'Roman numerals are restricted to prevent sharing phone numbers.',
+      reason: 'Sharing contact numbers using spelled-out words is not allowed in chat.',
     };
   }
 
-  // ── 5. Phone / Email / Social / Contact bypass keywords ─────
-  const contactPatterns = [
-    'phone', 'mobile', 'mob', 'cell', 'number', 'no', 'num', 'whatsapp', 'wa', 'watsapp',
-    'call', 'contact', 'email', 'gmail', 'mail', 'yahoo', 'outlook', 'hotmail',
-    'insta', 'instagram', 'telegram', 'tg', 'fb', 'facebook', 'twitter', 'snapchat', 'snap',
-    'address', 'ghar', 'house', 'flat', 'colony', 'nagar', 'street', 'road', 'location',
-    'near', 'paas', 'pin', 'pincode', 'code', '@', '.com', '.in', '.org', '.net', '.co',
-    '.io', '+91', '91', 'dm', 'd-m',
+  // 4. Social media bypass handles & direct contact requests
+  const contactKeywords = [
+    'whatsapp', 'watsapp', 'whatsap', 'whatapp',
+    'telegram', 'telegrame',
+    'instagram', 'insta id', 'snapchat', 'snap id',
+    'call me at', 'contact me at', 'my phone is', 'my number is',
+    'my mobile is', 'ping me on wa', 'msg on whatsapp', 'dm on insta',
+    'connect on telegram', 'share your number', 'send your number',
+    'give me your number', 'call on this no', 'whats app me'
   ];
-  for (const p of contactPatterns) {
-    if (p.startsWith('.') || p.startsWith('+') || p.startsWith('@')) {
-      if (lower.includes(p) || normalized.includes(p)) {
+
+  for (const kw of contactKeywords) {
+    if (lower.includes(kw) || normalized.includes(kw)) {
+      const hasFollowUp = /\d/.test(raw) || /@\w+/.test(raw) || containsSpelledOutPhone(raw) || /(num|no|mob|wa|tg)/i.test(lower);
+      if (hasFollowUp || kw.includes('at') || kw.includes('is') || kw.includes('on')) {
         return {
           allowed: false,
-          reason: `Sharing contact methods (${p}) is not permitted in introduction chat.`,
-        };
-      }
-    } else {
-      const reg = new RegExp(`\\b${p}\\b`, 'i');
-      if (reg.test(lower) || reg.test(normalized)) {
-        return {
-          allowed: false,
-          reason: `Contact keyword "${p}" detected. Please use MentorNearby contact unlocks to exchange details.`,
+          reason: 'External contact channels (WhatsApp/Telegram/Instagram) are not permitted in chat.',
         };
       }
     }
   }
 
-  // ── 6. Repeated symbols / separators ────────────────────────
-  if (/[-_\.\+\/\\:;]{3,}/.test(raw)) {
+  // 5. External URLs sharing contact links
+  const externalLinkRegex = /\b(?:https?:\/\/)?(?:www\.)?(?:wa\.me|t\.me|chat\.whatsapp\.com|instagram\.com|facebook\.com)\/[A-Za-z0-9_.-]+/i;
+  if (externalLinkRegex.test(raw)) {
     return {
       allowed: false,
-      reason: 'Excessive punctuation or repeated symbols are not allowed.',
+      reason: 'External contact links are not allowed in chat.',
     };
-  }
-
-  // ── 7. Address attempts ─────────────────────────────────────
-  const addressWords = [
-    'sector', 'house', 'flat', 'plot', 'block', 'lane', 'gali', 'ward', 'phase', 'floor', 'building',
-  ];
-  for (const aw of addressWords) {
-    const reg = new RegExp(`\\b${aw}\\b`, 'i');
-    if (reg.test(lower) || reg.test(normalized)) {
-      return {
-        allowed: false,
-        reason: 'Address details are not allowed in introduction chat. Keep conversations focused on tuition needs.',
-      };
-    }
   }
 
   return { allowed: true, reason: '' };
 };
 
-/**
- * Legacy compatibility helper
- */
-export const containsContactInfo = (text) => {
-  return !canSendMessage(text).allowed;
-};
-
-export default canSendMessage;
+export const hasContactInfo = (text) => !canSendMessage(text).allowed;

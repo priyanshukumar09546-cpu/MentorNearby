@@ -1,127 +1,149 @@
 // ============================================================
 // utils/messageFilter.js
-// Anti-Bypass Contact Detection & Leak-Proof Message Filter
+// Context-Aware Anti-Bypass Contact Detection & Leak-Proof Filter
+// Permits educational content (Maths, Chemistry, Class 10, ₹500/hr)
+// Strictly blocks phone numbers, emails, WhatsApp IDs, and contact leaks
 // ============================================================
 
 /**
- * Checks if message contains direct or obfuscated contact information
- * @param {string} text - Message text
- * @returns {boolean} true if contact info / restricted content is detected
+ * Normalizes text to catch leet-speak and symbol-injected bypasses
+ */
+const normalizeText = (text) => {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .toLowerCase()
+    .replace(/[@]/g, 'a')
+    .replace(/[\$]/g, 's')
+    .replace(/[!|]/g, 'i')
+    .replace(/[()]/g, '')
+    .trim();
+};
+
+/**
+ * Extracts pure consecutive or spaced digit sequences from text
+ */
+const extractDigitSequences = (text) => {
+  // Remove currency signs, class/grade indicators, percentages, and math expressions first
+  let cleaned = text
+    .replace(/₹\s*\d+/g, '')
+    .replace(/rs\.?\s*\d+/gi, '')
+    .replace(/inr\s*\d+/gi, '')
+    .replace(/\bclass\s*\d+/gi, '')
+    .replace(/\bgrade\s*\d+/gi, '')
+    .replace(/\bchapter\s*\d+/gi, '')
+    .replace(/\bpage\s*\d+/gi, '')
+    .replace(/\bexercise\s*\d+(\.\d+)?/gi, '')
+    .replace(/\bquestion\s*\d+/gi, '')
+    .replace(/\d+\s*%/g, '')
+    .replace(/\d+\s*\/\s*\d+/g, '') // e.g. 80/100
+    .replace(/\b\d{1,2}(st|nd|rd|th)\b/gi, ''); // e.g. 15th
+
+  // Find all sequences of digits that might be spaced/punct-separated
+  // e.g. "98765 43210", "98765-43210", "9 8 7 6 5 4 3 2 1 0"
+  const potentialNumberMatches = cleaned.match(/(?:\+?\d[\d\s\-_.,;]{6,}\d)/g);
+  if (!potentialNumberMatches) return [];
+
+  return potentialNumberMatches.map((m) => m.replace(/\D/g, '')).filter((digits) => digits.length >= 7);
+};
+
+/**
+ * Checks for spelled out number sequences (e.g. "nine eight seven six five four...")
+ */
+const containsSpelledOutPhone = (text) => {
+  const lower = text.toLowerCase();
+  const enDigits = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  const hiDigits = ['shunya', 'ek', 'do', 'teen', 'tin', 'char', 'chaar', 'paanch', 'panch', 'cheh', 'chheh', 'saat', 'sath', 'aath', 'ath', 'nau'];
+
+  const allDigitWords = new Set([...enDigits, ...hiDigits]);
+  const words = lower.replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+
+  let consecutiveDigitWords = 0;
+  for (const w of words) {
+    if (allDigitWords.has(w)) {
+      consecutiveDigitWords++;
+      if (consecutiveDigitWords >= 6) return true;
+    } else {
+      consecutiveDigitWords = 0;
+    }
+  }
+  return false;
+};
+
+/**
+ * Checks if message contains prohibited contact sharing
+ * @param {string} text
+ * @returns {boolean} true if contact sharing is detected
  */
 const hasContactInfo = (text) => {
   if (!text || typeof text !== 'string' || !text.trim()) return false;
   const raw = text.trim();
   const lower = raw.toLowerCase();
+  const normalized = normalizeText(raw);
 
-  // 0. Leet normalization
-  const normalized = lower
-    .replace(/@/g, 'a')
-    .replace(/0/g, 'o')
-    .replace(/1/g, 'i')
-    .replace(/3/g, 'e')
-    .replace(/\$/g, 's')
-    .replace(/5/g, 's')
-    .replace(/7/g, 't')
-    .replace(/8/g, 'b')
-    .replace(/[\s\-_.,;:\/\\+]+/g, ' ');
-
-  // 1. Any digits 0-9
-  if (/\d/.test(raw)) return true;
-
-  // 2. English number words
-  const enNumberWords = [
-    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
-    'nineteen', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety',
-    'hundred', 'thousand',
-  ];
-  for (const w of enNumberWords) {
-    if (new RegExp(`\\b${w}\\b`, 'i').test(lower) || new RegExp(`\\b${w}\\b`, 'i').test(normalized)) {
-      return true;
-    }
-  }
-
-  // 3. Hindi number words
-  const hiNumberWords = [
-    'shunya', 'ek', 'ekk', '1k', 'do', 'doo', 'teen', 'teenn', 'tin', 'char', 'chaar',
-    'paanch', 'panch', 'cheh', 'chheh', 'chhah', 'saat', 'sath', 'aath', 'ath', 'nau',
-    'dus', 'das', 'gyarah', 'barah', 'terah', 'chaudah', 'pandrah', 'solah', 'satrah',
-    'atharah', 'unnis', 'bees', 'tees', 'chalis', 'pachas', 'saath', 'sattar', 'assi',
-    'nabbe', 'sau', 'hazaar',
-  ];
-  for (const w of hiNumberWords) {
-    if (new RegExp(`\\b${w}\\b`, 'i').test(lower) || new RegExp(`\\b${w}\\b`, 'i').test(normalized)) {
-      return true;
-    }
-  }
-
-  // 4. Roman numerals
-  if (/\b(i{1,4}|v|vi{0,3}|ix|x{1,3}|xi{0,3}|xiv|xv|xvi{0,3}|xix|xx|l|c|d|m)\b/i.test(lower)) {
+  // 1. Check for valid Email addresses (standard or obfuscated)
+  const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
+  const obfuscatedEmailRegex = /\b[A-Z0-9._%+-]+\s*(?:@|\[at\]|\(at\)|at)\s*[A-Z0-9.-]+\s*(?:\.|\[dot\]|\(dot\)|dot)\s*(?:com|in|org|net|co|io|edu|gov)\b/i;
+  if (emailRegex.test(raw) || obfuscatedEmailRegex.test(lower)) {
     return true;
   }
 
-  // 5. Contact keywords
-  const contactPatterns = [
-    'phone', 'mobile', 'mob', 'cell', 'number', 'no', 'num', 'whatsapp', 'wa', 'watsapp',
-    'call', 'contact', 'email', 'gmail', 'mail', 'yahoo', 'outlook', 'hotmail',
-    'insta', 'instagram', 'telegram', 'tg', 'fb', 'facebook', 'twitter', 'snapchat', 'snap',
-    'address', 'ghar', 'house', 'flat', 'colony', 'nagar', 'street', 'road', 'location',
-    'near', 'paas', 'pin', 'pincode', 'code', '@', '.com', '.in', '.org', '.net', '.co',
-    '.io', '+91', '91', 'dm', 'd-m',
+  // 2. Check for Phone numbers (Indian 10-digit / international 7-15 digits)
+  const digitSequences = extractDigitSequences(raw);
+  for (const seq of digitSequences) {
+    // 10-digit Indian mobile format (starting with 6, 7, 8, 9)
+    if (/^[6-9]\d{9}$/.test(seq)) return true;
+    // 12-digit with country code +91
+    if (/^91[6-9]\d{9}$/.test(seq)) return true;
+    // 11-digit with leading 0
+    if (/^0[6-9]\d{9}$/.test(seq)) return true;
+    // Generic long digit sequence (>= 8 digits)
+    if (seq.length >= 8) return true;
+  }
+
+  // 3. Spelled out phone numbers
+  if (containsSpelledOutPhone(raw)) {
+    return true;
+  }
+
+  // 4. Social media bypass handles & direct contact requests
+  const contactKeywords = [
+    'whatsapp', 'watsapp', 'whatsap', 'whatapp',
+    'telegram', 'telegrame',
+    'instagram', 'insta id', 'snapchat', 'snap id',
+    'call me at', 'contact me at', 'my phone is', 'my number is',
+    'my mobile is', 'ping me on wa', 'msg on whatsapp', 'dm on insta',
+    'connect on telegram', 'share your number', 'send your number',
+    'give me your number', 'call on this no', 'whats app me'
   ];
-  for (const p of contactPatterns) {
-    if (p.startsWith('.') || p.startsWith('+') || p.startsWith('@')) {
-      if (lower.includes(p) || normalized.includes(p)) return true;
-    } else {
-      if (new RegExp(`\\b${p}\\b`, 'i').test(lower) || new RegExp(`\\b${p}\\b`, 'i').test(normalized)) {
+
+  for (const kw of contactKeywords) {
+    if (lower.includes(kw) || normalized.includes(kw)) {
+      // Check if it's accompanied by any numbers or handles
+      const hasFollowUp = /\d/.test(raw) || /@\w+/.test(raw) || containsSpelledOutPhone(raw) || /(num|no|mob|wa|tg)/i.test(lower);
+      if (hasFollowUp || kw.includes('at') || kw.includes('is') || kw.includes('on')) {
         return true;
       }
     }
   }
 
-  // 6. Excessive punctuation
-  if (/[-_\.\+\/\\:;]{3,}/.test(raw)) return true;
-
-  // 7. Address words
-  const addressWords = ['sector', 'house', 'flat', 'plot', 'block', 'lane', 'gali', 'ward', 'phase', 'floor', 'building'];
-  for (const aw of addressWords) {
-    if (new RegExp(`\\b${aw}\\b`, 'i').test(lower) || new RegExp(`\\b${aw}\\b`, 'i').test(normalized)) {
-      return true;
-    }
+  // 5. External URLs sharing contact links (wa.me, t.me, etc.)
+  const externalLinkRegex = /\b(?:https?:\/\/)?(?:www\.)?(?:wa\.me|t\.me|chat\.whatsapp\.com|instagram\.com|facebook\.com)\/[A-Za-z0-9_.-]+/i;
+  if (externalLinkRegex.test(raw)) {
+    return true;
   }
 
   return false;
 };
 
 /**
- * Filters message text replacing any sensitive substrings
+ * Sanitizes prohibited text for safe preview
  */
 const filterMessage = (text) => {
-  if (!text || typeof text !== 'string') return text;
-  let filtered = text;
-
-  // Phone numbers
-  filtered = filtered.replace(/\+91[\s\-]?\d{10}/g, '***');
-  filtered = filtered.replace(/\b\d{5}\s\d{5}\b/g, '***');
-  filtered = filtered.replace(/\b\d{10}\b/g, '***');
-  filtered = filtered.replace(/\d+/g, '***');
-
-  // Emails
-  filtered = filtered.replace(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g, '***');
-
-  // Keywords
-  const blockedKeywords = [
-    'instagram', 'insta', 'facebook', '\\bfb\\b', 'telegram', 'whatsapp', 'gmail',
-    '\\bemail\\b', 'house no', 'house number', '\\bgali\\b', 'mohalla', 'colony',
-    '\\bsector\\b', '\\bnear\\b', 'pincode', 'pin code', '\\baddress\\b', 'ghar pe',
-    '\\blocation\\b', 'map link', 'call me',
-  ];
-
-  blockedKeywords.forEach((keyword) => {
-    filtered = filtered.replace(new RegExp(keyword, 'gi'), '***');
-  });
-
-  return filtered;
+  if (!hasContactInfo(text)) return text;
+  return '[Contact details hidden for security. Please use Contact Unlock to get direct contact info.]';
 };
 
-module.exports = { hasContactInfo, filterMessage };
+module.exports = {
+  hasContactInfo,
+  filterMessage,
+};

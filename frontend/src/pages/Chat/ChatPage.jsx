@@ -544,11 +544,21 @@ const ChatPage = () => {
           {/* ─────────────────────────────────────────────────────────── */}
           {/* COLUMN 2: ACTIVE CONVERSATION                               */}
           {/* ─────────────────────────────────────────────────────────── */}
-          <main className="mn-chat-panel mn-chat-convo-panel">
+          <main className={`mn-chat-panel mn-chat-convo-panel ${activePartner ? 'has-partner' : ''}`}>
             {activePartner ? (
               <>
                 {/* Conversation Header */}
                 <div className="mn-chat-convo-header">
+                  {/* Mobile Back to List Button */}
+                  <button
+                    type="button"
+                    className="mn-chat-mobile-back-btn"
+                    onClick={() => setActivePartner(null)}
+                    aria-label="Back to conversations"
+                  >
+                    ‹
+                  </button>
+
                   <div className="mn-chat-convo-user">
                     <div className="mn-chat-convo-avatar-wrap">
                       {activePartner?.avatar ? (
@@ -561,25 +571,22 @@ const ChatPage = () => {
                     <div>
                       <div className="mn-chat-convo-name">
                         {activePartner?.name || 'User'}
-                        <span style={{ color: '#F59E0B', fontSize: 11 }}>✓</span>
+                        <span className="mn-gold-check">✓</span>
                       </div>
                       <div className="mn-chat-convo-status">
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }}></span>
+                        <span className="mn-status-dot"></span>
                         Online
                       </div>
                     </div>
                   </div>
 
                   <div className="mn-chat-convo-actions">
-                    <button type="button" className="mn-chat-icon-btn" title="Voice Call (In-App)">
+                    <button type="button" className="mn-chat-icon-btn call-btn" title="Voice Call">
                       📞
-                    </button>
-                    <button type="button" className="mn-chat-icon-btn" title="Video Call (In-App)">
-                      📹
                     </button>
                     <button
                       type="button"
-                      className="mn-chat-icon-btn"
+                      className="mn-chat-icon-btn more-btn"
                       onClick={() => setShowDropdown(!showDropdown)}
                       title="More Options"
                     >
@@ -591,10 +598,10 @@ const ChatPage = () => {
                 {/* Safe Chat Banner */}
                 <div className="mn-chat-safe-banner">
                   <div className="mn-chat-safe-title">
-                    <span>🛡️</span>
+                    <span className="safe-shield-icon">🛡️</span>
                     <span>MentorNearby Safe Chat</span>
                   </div>
-                  <span className="mn-chat-safe-sub">Keep your conversations and payments on MentorNearby.</span>
+                  <span className="mn-chat-safe-sub">Keep your conversations and payments safe.</span>
                 </div>
 
                 {/* Messages Stage */}
@@ -614,13 +621,13 @@ const ChatPage = () => {
                                 minute: '2-digit',
                               })}
                             </span>
-                            {isSentByMe && <span>✓✓</span>}
+                            {isSentByMe && <span className="mn-check-double">✓✓</span>}
                           </div>
                         </div>
                       );
                     })
                   ) : (
-                    <div style={{ color: '#64748B', fontSize: 12, textAlign: 'center', margin: 'auto', padding: 20 }}>
+                    <div className="mn-chat-start-prompt">
                       Say hello to start the conversation!
                     </div>
                   )}
@@ -628,28 +635,21 @@ const ChatPage = () => {
                   {/* ⚠️ BLOCKED CONTACT DETAILS WARNING CARD */}
                   {blockedAttempt && (
                     <div className="mn-msg-blocked-card">
-                      <div className="mn-msg-blocked-top">
-                        <span>{blockedAttempt.text}</span>
-                        <span className="mn-msg-blocked-status">
-                          <span>Not sent</span> 🚫
-                        </span>
-                      </div>
-
                       <div className="mn-msg-blocked-warning-title">
-                        <span>🔒</span>
-                        <span>Contact details & social media aren't allowed</span>
+                        <span className="blocked-warn-icon">⚠️</span>
+                        <span>Contact details aren't allowed</span>
                       </div>
 
                       <p className="mn-msg-blocked-warning-text">
-                        {blockedAttempt.reason || "🔒 For your safety, contact details and social-media information can't be shared in MentorNearby chat. Please keep communication within MentorNearby."}
+                        For your safety, sharing phone numbers or other contact information isn't permitted in MentorNearby chat.
                       </p>
 
                       <button
                         type="button"
                         onClick={handleEditBlockedMessage}
-                        className="mn-msg-blocked-edit-btn"
+                        className="mn-msg-blocked-learn-btn"
                       >
-                        Edit Message
+                        Learn More
                       </button>
                     </div>
                   )}
@@ -665,8 +665,11 @@ const ChatPage = () => {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Bar */}
+                {/* Message Input Composer */}
                 <form onSubmit={handleSendMessage} className="mn-chat-input-bar">
+                  <button type="button" className="mn-chat-icon-btn attach-btn" title="Attach file">
+                    📎
+                  </button>
                   <input
                     type="text"
                     placeholder="Type your message..."
@@ -674,22 +677,101 @@ const ChatPage = () => {
                     onChange={(e) => setNewMessage(e.target.value)}
                     className="mn-chat-input-field"
                   />
-                  <button type="button" className="mn-chat-icon-btn" title="Attach file">
-                    📎
-                  </button>
-                  <button type="button" className="mn-chat-icon-btn" title="Add emoji">
+                  <button type="button" className="mn-chat-icon-btn emoji-btn" title="Add emoji">
                     😊
                   </button>
                   <button type="submit" disabled={sending} className="mn-chat-send-btn" title="Send message">
                     ➤
                   </button>
                 </form>
+
+                {/* 📱 MOBILE IN-LINE ABOUT PROFILE CARD (Renders right below message composer on mobile) */}
+                <div className="mn-chat-mobile-profile-sheet">
+                  <div className="mn-mobile-sheet-handle"></div>
+                  
+                  <h3 className="mn-mobile-sheet-title">
+                    About {activePartner.name?.split(' ')[0] || 'User'}
+                  </h3>
+
+                  <div className="mn-mobile-profile-center">
+                    <div className="mn-mobile-avatar-ring">
+                      {activePartner.avatar ? (
+                        <img src={activePartner.avatar} alt={activePartner.name} className="mn-mobile-avatar-img" />
+                      ) : (
+                        <div className="mn-mobile-avatar-fallback">
+                          {activePartner.name?.charAt(0) || 'U'}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mn-mobile-profile-name">
+                      {activePartner.name}
+                      <span className="mn-gold-check">✓</span>
+                    </div>
+
+                    <div className="mn-mobile-profile-role">{partnerRoleLabel}</div>
+
+                    <div className="mn-mobile-profile-rating">
+                      ⭐ {partnerRating || '4.9'} ({partnerReviewsCount || 120})
+                    </div>
+                  </div>
+
+                  {/* About Bio */}
+                  <div className="mn-mobile-profile-section">
+                    <span className="mn-mobile-section-heading">About</span>
+                    <p className="mn-mobile-section-text">
+                      {partnerBio || 'With 5+ years of experience, I specialize in making Maths & Science simple and scoring. My approach focuses on concept clarity, daily practice, and regular doubt sessions.'}
+                    </p>
+                  </div>
+
+                  {/* Subjects */}
+                  <div className="mn-mobile-profile-section">
+                    <span className="mn-mobile-section-heading">
+                      {activePartner.role === 'TUTOR' ? 'Subjects Taught' : 'Subjects Needed'}
+                    </span>
+                    <div className="mn-mobile-chips-grid">
+                      {(partnerSubjects.length > 0 ? partnerSubjects : ['Mathematics', 'Physics', 'Chemistry']).map((s, idx) => (
+                        <span key={idx} className="mn-mobile-chip">
+                          {typeof s === 'string' ? s : s.name || s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Budget */}
+                  <div className="mn-mobile-profile-section">
+                    <span className="mn-mobile-section-heading">Budget</span>
+                    <span className="mn-mobile-section-text font-bold">
+                      {partnerBudget || '₹500 - ₹800 /hr'}
+                    </span>
+                  </div>
+
+                  {/* Location */}
+                  <div className="mn-mobile-profile-section">
+                    <span className="mn-mobile-section-heading">Location</span>
+                    <span className="mn-mobile-section-text">
+                      {partnerLocation || 'Hapur, Uttar Pradesh'}
+                    </span>
+                  </div>
+
+                  {/* View Full Profile CTA */}
+                  <Link
+                    to={
+                      activePartner.role === 'TUTOR'
+                        ? `/tutor/${partnerProfile?._id || activePartner.tutorProfile?._id || activePartner._id}`
+                        : `/student/${partnerProfile?._id || activePartner.studentProfile?._id || activePartner._id}`
+                    }
+                    className="mn-mobile-view-profile-btn"
+                  >
+                    View Full Profile
+                  </Link>
+                </div>
               </>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#94A3B8', padding: 24, textAlign: 'center' }}>
+              <div className="mn-chat-no-active-empty">
                 <span style={{ fontSize: 44, opacity: 0.8 }}>💬</span>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#FFFFFF', margin: 0 }}>Select a conversation</h2>
-                <p style={{ fontSize: 13, color: '#94A3B8', margin: 0, maxWidth: 340, lineHeight: 1.5 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Select a conversation</h2>
+                <p style={{ fontSize: 13, margin: 0, maxWidth: 340, lineHeight: 1.5 }}>
                   Choose a student or tutor from the list to start chatting.
                 </p>
               </div>

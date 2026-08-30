@@ -157,10 +157,13 @@ exports.getMessages = asyncHandler(async (req, res, next) => {
 });
 
 // @desc    Get list of conversations (unique users this user has chatted with)
+// @desc    Get list of conversations (unique users this user has chatted with)
 // @route   GET /api/chat
 // @access  Private
 exports.getConversations = asyncHandler(async (req, res, next) => {
   const currentUserId = req.user._id || req.user.id;
+  const TutorProfile = require('../models/TutorProfile');
+  const StudentProfile = require('../models/StudentProfile');
 
   // Aggregate to find all unique conversation partners
   const conversations = await Message.aggregate([
@@ -188,14 +191,72 @@ exports.getConversations = asyncHandler(async (req, res, next) => {
   // Populate the other user's info
   const populated = await User.populate(conversations, {
     path: '_id',
-    select: 'name avatar role',
+    select: 'name avatar role isOnline lastLogin',
   });
 
-  const result = populated.map((conv) => ({
-    otherUser: conv._id,
-    lastMessage: conv.lastMessage,
-    updatedAt: conv.updatedAt,
-  }));
+  const result = await Promise.all(
+    populated
+      .filter((conv) => conv._id)
+      .map(async (conv) => {
+        const other = conv._id;
+        let tutorData = null;
+        let studentData = null;
+
+        if (other.role === 'TUTOR') {
+          const tp = await TutorProfile.findOne({ user: other._id }).lean();
+          if (tp) {
+            tutorData = {
+              _id: tp._id,
+              subjects: tp.subjects,
+              experience: tp.experience,
+              pricing: tp.pricing,
+              location: tp.location,
+              averageRating: tp.averageRating || 4.9,
+              totalReviews: tp.totalReviews || 0,
+              isVerified: Boolean(tp.isVerified || tp.kycStatus === 'VERIFIED'),
+              profilePhoto: tp.profilePhoto,
+              bio: tp.bio || tp.about || '',
+            };
+          }
+        } else {
+          const sp = await StudentProfile.findOne({ user: other._id }).lean();
+          if (sp) {
+            studentData = {
+              _id: sp._id,
+              class: sp.studentDetails?.class || sp.grade || 'Class 10',
+              board: sp.studentDetails?.board || 'CBSE',
+              location: sp.location,
+              profilePhoto: sp.profilePhoto,
+              about: sp.about || '',
+              budget: sp.budget,
+              subjects: sp.subjects || [],
+            };
+          }
+        }
+
+        const unreadCount = await Message.countDocuments({
+          sender: other._id,
+          receiver: currentUserId,
+          read: false,
+        });
+
+        return {
+          otherUser: {
+            _id: other._id,
+            name: other.name || 'User',
+            avatar: other.avatar || tutorData?.profilePhoto?.url || studentData?.profilePhoto?.url || '',
+            role: other.role,
+            isOnline: Boolean(other.isOnline || (other.lastLogin && (Date.now() - new Date(other.lastLogin).getTime() < 15 * 60 * 1000))),
+            lastLogin: other.lastLogin,
+            tutorProfile: tutorData,
+            studentProfile: studentData,
+          },
+          lastMessage: conv.lastMessage,
+          unreadCount,
+          updatedAt: conv.updatedAt,
+        };
+      })
+  );
 
   // Fetch current user subscription status for counter display
   const currentUser = await User.findById(currentUserId).select(

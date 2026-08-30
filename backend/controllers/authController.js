@@ -215,8 +215,14 @@ exports.register = asyncHandler(async (req, res, next) => {
   } else {
     // STUDENT or PARENT
     const {
-      whatsappNumber, location, studentDetails, academicDetails, tuitionRequirements, parentDetails
+      profilePhoto, avatar, whatsappNumber, location, studentDetails, academicDetails, tuitionRequirements, parentDetails, learningGoals, bio, aboutMe
     } = req.body;
+
+    const photoUrl = profilePhoto?.url || avatar || (typeof profilePhoto === 'string' ? profilePhoto : '');
+    if (photoUrl) {
+      user.avatar = photoUrl;
+      await user.save({ validateBeforeSave: false });
+    }
 
     if (studentDetails && !studentDetails.medium) {
       delete studentDetails.medium;
@@ -225,7 +231,16 @@ exports.register = asyncHandler(async (req, res, next) => {
     const StudentProfile = require('../models/StudentProfile');
     await StudentProfile.create({
       user: user._id,
-      whatsappNumber, location, studentDetails, academicDetails, tuitionRequirements, parentDetails
+      profilePhoto: { url: photoUrl, publicId: profilePhoto?.publicId || '' },
+      whatsappNumber: whatsappNumber || phone,
+      location: typeof location === 'string' ? { city: location, area: location } : location,
+      studentDetails,
+      academicDetails,
+      tuitionRequirements,
+      parentDetails,
+      learningGoals: Array.isArray(learningGoals) ? learningGoals : (learningGoals ? [learningGoals] : []),
+      bio: bio || aboutMe || '',
+      aboutMe: aboutMe || bio || ''
     });
   }
 

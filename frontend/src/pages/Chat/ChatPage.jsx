@@ -103,7 +103,7 @@ const ChatPage = () => {
     fetchSubStatus();
   }, [fetchConversations, fetchSubStatus]);
 
-  // ── 2. Handle Target Partner from URL or default to first real conversation ──
+  // ── 2. Handle Target Partner from URL only when explicitly provided ──
   useEffect(() => {
     let isMounted = true;
 
@@ -134,7 +134,7 @@ const ChatPage = () => {
                   const tData = res.data.data;
                   setActivePartner({
                     _id: tData.user?._id || tData._id,
-                    name: tData.user?.name || tData.name || 'Tutor',
+                    name: tData.user?.name || tData.name || '',
                     avatar: tData.profilePhoto?.url || tData.user?.avatar || '',
                     role: 'TUTOR',
                     tutorProfile: tData,
@@ -144,15 +144,24 @@ const ChatPage = () => {
               .catch(() => {});
           });
       }
-    } else if (conversations.length > 0 && !activePartner) {
-      const firstPartner = conversations[0]?.otherUser;
-      if (firstPartner) setActivePartner(firstPartner);
     }
 
     return () => {
       isMounted = false;
     };
-  }, [targetId, conversations, activePartner]);
+  }, [targetId, conversations]);
+
+  // Tab change resets active conversation selection
+  const handleTabChange = (tab) => {
+    setChatTab(tab);
+    setActivePartner(null);
+    setPartnerProfile(null);
+    setMessages([]);
+    setBlockedAttempt(null);
+    if (targetId) {
+      navigate('/chat', { replace: true });
+    }
+  };
 
   // ── 3. Fetch Real Partner Full Profile (Tutor or Student) for Right Sidebar ──
   useEffect(() => {
@@ -421,21 +430,21 @@ const ChatPage = () => {
               <button
                 type="button"
                 className={`mn-chat-tab-btn ${chatTab === 'ALL' ? 'active' : ''}`}
-                onClick={() => setChatTab('ALL')}
+                onClick={() => handleTabChange('ALL')}
               >
                 All
               </button>
               <button
                 type="button"
                 className={`mn-chat-tab-btn ${chatTab === 'STUDENTS' ? 'active' : ''}`}
-                onClick={() => setChatTab('STUDENTS')}
+                onClick={() => handleTabChange('STUDENTS')}
               >
                 Students
               </button>
               <button
                 type="button"
                 className={`mn-chat-tab-btn ${chatTab === 'TUTORS' ? 'active' : ''}`}
-                onClick={() => setChatTab('TUTORS')}
+                onClick={() => handleTabChange('TUTORS')}
               >
                 Tutors
               </button>
@@ -658,18 +667,12 @@ const ChatPage = () => {
                 </form>
               </>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#94A3B8', padding: 24, textAlign: 'center' }}>
-                <span style={{ fontSize: 42 }}>💬</span>
-                <span style={{ fontSize: 16, fontWeight: 800, color: '#FFFFFF' }}>No Conversation Selected</span>
-                <span style={{ fontSize: 12, maxWidth: 320 }}>
-                  Select a contact from the left list or browse verified tutors to start chatting.
-                </span>
-                <Link
-                  to="/tutors"
-                  style={{ background: '#F59E0B', color: '#000', padding: '8px 18px', borderRadius: 10, fontSize: 12, fontWeight: 800, textDecoration: 'none', marginTop: 6 }}
-                >
-                  Browse Tutors
-                </Link>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#94A3B8', padding: 24, textAlign: 'center' }}>
+                <span style={{ fontSize: 44, opacity: 0.8 }}>💬</span>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#FFFFFF', margin: 0 }}>Select a conversation</h2>
+                <p style={{ fontSize: 13, color: '#94A3B8', margin: 0, maxWidth: 340, lineHeight: 1.5 }}>
+                  Choose a student or tutor from the list to start chatting.
+                </p>
               </div>
             )}
           </main>
@@ -780,10 +783,11 @@ const ChatPage = () => {
                 </div>
               </>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8, color: '#64748B', textAlign: 'center', padding: 16 }}>
-                <span>👤</span>
-                <span style={{ fontSize: 12, fontWeight: 700 }}>Profile Information</span>
-                <span style={{ fontSize: 11 }}>Select a conversation to see the user's verified details.</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#64748B', textAlign: 'center', padding: 20 }}>
+                <span style={{ fontSize: 36, opacity: 0.5 }}>👤</span>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: '#94A3B8', margin: 0, maxWidth: 220, lineHeight: 1.4 }}>
+                  Select a conversation to view profile
+                </h3>
               </div>
             )}
           </aside>

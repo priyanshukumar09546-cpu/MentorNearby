@@ -1,46 +1,98 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import client from "../../api/client";
-import axios from "axios";
+// ============================================================
+// pages/Admin/AdminDashboardPage.jsx
+// MentorNearby Admin Dashboard — Production SaaS SaaS/Master Replica
+// ============================================================
 
-// ── Multi-Series Platform Overview Chart ──
-const PlatformOverviewChart = ({ series = [] }) => {
-  const [hoverIdx, setHoverIdx] = useState(null);
+import React, { useEffect, useState, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import client from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
+import './AdminDashboardPage.css';
 
-  const chartData = useMemo(() => {
-    if (series && series.length > 0) return series;
-    return [
-      { dateLabel: "May 20", users: 18, students: 12, tutors: 6, revenue: 350 },
-      { dateLabel: "May 21", users: 24, students: 15, tutors: 9, revenue: 480 },
-      { dateLabel: "May 22", users: 22, students: 14, tutors: 8, revenue: 420 },
-      { dateLabel: "May 23", users: 38, students: 25, tutors: 13, revenue: 920 },
-      { dateLabel: "May 24", users: 31, students: 20, tutors: 11, revenue: 680 },
-      { dateLabel: "May 25", users: 35, students: 22, tutors: 13, revenue: 590 },
-      { dateLabel: "May 26", users: 32, students: 21, tutors: 11, revenue: 520 },
-    ];
-  }, [series]);
+// ── Smooth Animated Count-Up Hook ──
+const useCountUp = (targetVal, duration = 800) => {
+  const [count, setCount] = useState(0);
 
-  const maxVal = Math.max(...chartData.map((d) => Math.max(d.users || 0, d.students || 0, d.tutors || 0)), 40);
-  const width = 600;
-  const height = 200;
-  const padLeft = 35;
-  const padRight = 35;
+  useEffect(() => {
+    let startVal = 0;
+    const endVal = typeof targetVal === 'number' ? targetVal : parseInt(targetVal, 10) || 0;
+    if (endVal === 0) {
+      setCount(0);
+      return;
+    }
+
+    const startTime = performance.now();
+
+    const updateCounter = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const easeOutProgress = 1 - Math.pow(1 - progress, 3);
+      const currentVal = Math.floor(startVal + (endVal - startVal) * easeOutProgress);
+      setCount(currentVal);
+
+      if (progress < 1) {
+        requestAnimationFrame(updateCounter);
+      } else {
+        setCount(endVal);
+      }
+    };
+
+    requestAnimationFrame(updateCounter);
+  }, [targetVal, duration]);
+
+  return count;
+};
+
+// ── Format Currency in INR ──
+const formatINR = (val) => {
+  if (val === undefined || val === null || isNaN(val)) return '₹0';
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(val);
+};
+
+// ── Interactive Multi-Line SVG Chart ──
+const MultiLineChart = ({
+  data = [],
+  seriesKeys = [],
+  height = 180,
+  isCurrency = false,
+}) => {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
+  const safeData = data.length > 0 ? data : [
+    { dateLabel: '24 Apr', val1: 0, val2: 0, val3: 0 },
+    { dateLabel: '29 May', val1: 0, val2: 0, val3: 0 },
+  ];
+
+  const maxVal = useMemo(() => {
+    let m = 0;
+    safeData.forEach((d) => {
+      seriesKeys.forEach((s) => {
+        if ((d[s.key] || 0) > m) m = d[s.key] || 0;
+      });
+    });
+    return m > 0 ? m * 1.15 : 10;
+  }, [safeData, seriesKeys]);
+
+  const width = 500;
+  const padLeft = 40;
+  const padRight = 20;
   const padTop = 15;
   const padBottom = 25;
   const chartW = width - padLeft - padRight;
   const chartH = height - padTop - padBottom;
 
   const getPoints = (key) =>
-    chartData.map((d, i) => {
-      const x = padLeft + (i / Math.max(chartData.length - 1, 1)) * chartW;
+    safeData.map((d, i) => {
+      const x = padLeft + (i / Math.max(safeData.length - 1, 1)) * chartW;
       const val = d[key] || 0;
-      const y = padTop + chartH - (val / (maxVal || 1)) * chartH;
+      const y = padTop + chartH - (val / maxVal) * chartH;
       return { x, y, val, label: d.dateLabel };
     });
-
-  const usersPts = getPoints("users");
-  const studentsPts = getPoints("students");
-  const tutorsPts = getPoints("tutors");
 
   const buildPath = (pts) =>
     pts.reduce((acc, p, i, a) => {
@@ -51,546 +103,885 @@ const PlatformOverviewChart = ({ series = [] }) => {
       const cp2x = prev.x + (p.x - prev.x) / 2;
       const cp2y = p.y;
       return `${acc} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p.x} ${p.y}`;
-    }, "");
+    }, '');
 
   return (
-    <div className="w-full relative">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-52 overflow-visible">
-        {/* Horizontal gridlines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+    <div className="ad-svg-chart-wrap" style={{ height }}>
+      <svg viewBox={`0 0 ${width} ${height}`} className="ad-svg-chart">
+        {/* Horizontal grid lines */}
+        {[0, 0.33, 0.66, 1].map((ratio, idx) => {
           const y = padTop + chartH * (1 - ratio);
           const val = Math.round(maxVal * ratio);
           return (
             <g key={idx}>
-              <line x1={padLeft} y1={y} x2={width - padRight} y2={y} stroke="#E5E7EB" strokeDasharray="3 3" className="dark:stroke-zinc-800" />
-              <text x={padLeft - 6} y={y + 3} textAnchor="end" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">
-                {val}
+              <line
+                x1={padLeft}
+                y1={y}
+                x2={width - padRight}
+                y2={y}
+                stroke="rgba(255, 255, 255, 0.08)"
+                strokeDasharray="3 3"
+              />
+              <text
+                x={padLeft - 8}
+                y={y + 3}
+                fill="rgba(148, 163, 184, 0.7)"
+                fontSize="9"
+                textAnchor="end"
+              >
+                {isCurrency
+                  ? val >= 100000
+                    ? `${(val / 100000).toFixed(1)}L`
+                    : val >= 1000
+                    ? `${(val / 1000).toFixed(0)}k`
+                    : val
+                  : val >= 1000
+                  ? `${(val / 1000).toFixed(1)}k`
+                  : val}
               </text>
             </g>
           );
         })}
 
-        {/* Lines */}
-        <path d={buildPath(usersPts)} fill="none" stroke="#6366F1" strokeWidth="2.2" strokeLinecap="round" />
-        <path d={buildPath(studentsPts)} fill="none" stroke="#10B981" strokeWidth="2.2" strokeLinecap="round" />
-        <path d={buildPath(tutorsPts)} fill="none" stroke="#3B82F6" strokeWidth="2.2" strokeLinecap="round" />
-
-        {/* Dots */}
-        {usersPts.map((p, i) => (
-          <g key={i} onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)} className="cursor-pointer">
-            <circle cx={p.x} cy={p.y} r={hoverIdx === i ? 5 : 3.5} fill="#6366F1" stroke="#FFFFFF" strokeWidth="1.5" />
-            <circle cx={studentsPts[i].x} cy={studentsPts[i].y} r={hoverIdx === i ? 5 : 3.5} fill="#10B981" stroke="#FFFFFF" strokeWidth="1.5" />
-            <circle cx={tutorsPts[i].x} cy={tutorsPts[i].y} r={hoverIdx === i ? 5 : 3.5} fill="#3B82F6" stroke="#FFFFFF" strokeWidth="1.5" />
-            <text x={p.x} y={height - 6} textAnchor="middle" fontSize="9" fill="#6B7280" fontFamily="sans-serif" className="dark:fill-zinc-400">
-              {p.label}
-            </text>
-
-            {hoverIdx === i && (
-              <g>
-                <rect x={Math.min(Math.max(p.x - 45, 10), width - 100)} y={Math.max(p.y - 50, 5)} width="90" height="42" rx="6" fill="#18181B" className="shadow-lg" />
-                <text x={Math.min(Math.max(p.x - 45, 10), width - 100) + 45} y={Math.max(p.y - 50, 5) + 14} textAnchor="middle" fontSize="8.5" fill="#E4E4E7" fontWeight="bold">
-                  {p.label}
-                </text>
-                <text x={Math.min(Math.max(p.x - 45, 10), width - 100) + 45} y={Math.max(p.y - 50, 5) + 26} textAnchor="middle" fontSize="8.5" fill="#818CF8">
-                  Users: {p.val} | Students: {studentsPts[i].val}
-                </text>
-                <text x={Math.min(Math.max(p.x - 45, 10), width - 100) + 45} y={Math.max(p.y - 50, 5) + 36} textAnchor="middle" fontSize="8.5" fill="#60A5FA">
-                  Tutors: {tutorsPts[i].val}
-                </text>
-              </g>
-            )}
-          </g>
-        ))}
-      </svg>
-    </div>
-  );
-};
-
-// ── 30-Day User Growth Area Chart ──
-const UserGrowthAreaChart = ({ data = [] }) => {
-  const chartData = useMemo(() => {
-    if (data && data.length > 0) return data;
-    return [
-      { dateLabel: "Apr 27", users: 10 },
-      { dateLabel: "May 4", users: 25 },
-      { dateLabel: "May 11", users: 48 },
-      { dateLabel: "May 18", users: 70 },
-      { dateLabel: "May 26", users: 110 },
-    ];
-  }, [data]);
-
-  const maxVal = Math.max(...chartData.map((d) => d.users || 0), 100);
-  const width = 360;
-  const height = 130;
-  const padX = 20;
-  const padY = 15;
-  const chartW = width - padX * 2;
-  const chartH = height - padY * 2;
-
-  const points = chartData.map((d, i) => {
-    const x = padX + (i / Math.max(chartData.length - 1, 1)) * chartW;
-    const val = d.users || 0;
-    const y = padY + chartH - (val / (maxVal || 1)) * chartH;
-    return { x, y, val, label: d.dateLabel };
-  });
-
-  const pathD = points.reduce((acc, p, i, a) => {
-    if (i === 0) return `M ${p.x} ${p.y}`;
-    const prev = a[i - 1];
-    const cp1x = prev.x + (p.x - prev.x) / 2;
-    const cp1y = prev.y;
-    const cp2x = prev.x + (p.x - prev.x) / 2;
-    const cp2y = p.y;
-    return `${acc} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p.x} ${p.y}`;
-  }, "");
-
-  const areaD = points.length > 0 ? `${pathD} L ${points[points.length - 1].x} ${height - 5} L ${points[0].x} ${height - 5} Z` : "";
-
-  return (
-    <div className="w-full relative">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-28 overflow-visible">
-        <defs>
-          <linearGradient id="purpleAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.0" />
-          </linearGradient>
-        </defs>
-
-        {areaD && <path d={areaD} fill="url(#purpleAreaGrad)" />}
-        {pathD && <path d={pathD} fill="none" stroke="#8B5CF6" strokeWidth="2.2" strokeLinecap="round" />}
-
-        {points.map((p, i) => (
-          <g key={i}>
-            <circle cx={p.x} cy={p.y} r="3" fill="#8B5CF6" stroke="#FFFFFF" strokeWidth="1.5" />
-            {(i === 0 || i === Math.floor(points.length / 2) || i === points.length - 1) && (
-              <text x={p.x} y={height - 2} textAnchor="middle" fontSize="8.5" fill="#9CA3AF" fontFamily="sans-serif">
-                {p.label}
-              </text>
-            )}
-          </g>
-        ))}
-      </svg>
-    </div>
-  );
-};
-
-// ── Multi-Source Revenue Donut Chart ──
-const RevenueDonutChart = ({ breakdown = [] }) => {
-  const data = useMemo(() => {
-    if (breakdown && breakdown.length > 0) return breakdown;
-    return [
-      { source: "PPT / Study Material", amount: 78450, color: "#8B5CF6" },
-      { source: "Courses & PYQs", amount: 28750, color: "#10B981" },
-      { source: "Tutor Requests", amount: 9860, color: "#F59E0B" },
-      { source: "Contact Unlocks", amount: 7520, color: "#3B82F6" },
-    ];
-  }, [breakdown]);
-
-  const total = Math.max(data.reduce((acc, item) => acc + (item.amount || 0), 0), 1);
-  const radius = 38;
-  const strokeWidth = 14;
-  const circumference = 2 * Math.PI * radius;
-
-  let cumulativePercent = 0;
-
-  return (
-    <div className="flex flex-col items-center gap-4 py-2">
-      <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
-        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-          <circle cx="50" cy="50" r={radius} fill="none" stroke="#F3F4F6" strokeWidth={strokeWidth} className="dark:stroke-zinc-800" />
-          {data.map((item, idx) => {
-            const itemPct = (item.amount || 0) / total;
-            const strokeDasharray = `${itemPct * circumference} ${circumference}`;
-            const strokeDashoffset = -cumulativePercent * circumference;
-            cumulativePercent += itemPct;
-
-            return (
-              <circle
-                key={idx}
-                cx="50"
-                cy="50"
-                r={radius}
-                fill="none"
-                stroke={item.color || "#8B5CF6"}
-                strokeWidth={strokeWidth}
-                strokeDasharray={strokeDasharray}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-              />
-            );
-          })}
-        </svg>
-      </div>
-
-      <div className="w-full space-y-2 text-xs">
-        {data.map((item, idx) => {
-          const pct = (((item.amount || 0) / total) * 100).toFixed(1);
+        {/* Render series lines & dots */}
+        {seriesKeys.map((s) => {
+          const pts = getPoints(s.key);
+          const pathD = buildPath(pts);
           return (
-            <div key={idx} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                <span className="text-gray-600 dark:text-zinc-300 text-[11px]">{item.source}</span>
-              </div>
-              <div className="font-bold text-gray-900 dark:text-white text-[11px]">
-                ₹{(item.amount || 0).toLocaleString("en-IN")} <span className="text-gray-400 font-normal">({pct}%)</span>
-              </div>
-            </div>
+            <g key={s.key}>
+              <path
+                d={pathD}
+                fill="none"
+                stroke={s.color}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {pts.map((p, pIdx) => (
+                <circle
+                  key={pIdx}
+                  cx={p.x}
+                  cy={p.y}
+                  r={hoveredIdx === pIdx ? 5 : 3}
+                  fill={s.color}
+                  stroke="#111726"
+                  strokeWidth="1.5"
+                  onMouseEnter={() => setHoveredIdx(pIdx)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  style={{ cursor: 'pointer', transition: 'r 0.15s ease' }}
+                />
+              ))}
+            </g>
           );
         })}
-      </div>
+
+        {/* X-axis date labels */}
+        {safeData.map((d, i) => {
+          const x = padLeft + (i / Math.max(safeData.length - 1, 1)) * chartW;
+          return (
+            <text
+              key={i}
+              x={x}
+              y={height - 6}
+              fill="rgba(148, 163, 184, 0.7)"
+              fontSize="9.5"
+              textAnchor="middle"
+            >
+              {d.dateLabel}
+            </text>
+          );
+        })}
+
+        {/* Interactive Hover Tooltip */}
+        {hoveredIdx !== null && safeData[hoveredIdx] && (
+          <g>
+            <line
+              x1={padLeft + (hoveredIdx / Math.max(safeData.length - 1, 1)) * chartW}
+              y1={padTop}
+              x2={padLeft + (hoveredIdx / Math.max(safeData.length - 1, 1)) * chartW}
+              y2={padTop + chartH}
+              stroke="rgba(245, 158, 11, 0.4)"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+            />
+          </g>
+        )}
+      </svg>
     </div>
   );
 };
 
-export default function AdminDashboard() {
-  const navigate = useNavigate();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+// ── Animated Donut Chart Widget ──
+const DonutChartWidget = ({
+  subscriptionRev = 0,
+  unlockRev = 0,
+  otherRev = 0,
+  totalRev = 0,
+}) => {
+  const total = totalRev || subscriptionRev + unlockRev + otherRev || 1;
+  const subPercent = totalRev > 0 ? Math.round((subscriptionRev / total) * 100) : 0;
+  const unlockPercent = totalRev > 0 ? Math.round((unlockRev / total) * 100) : 0;
+  const otherPercent = totalRev > 0 ? Math.max(0, 100 - subPercent - unlockPercent) : 0;
 
-  const fetchDashboardData = () => {
+  const radius = 55;
+  const circumference = 2 * Math.PI * radius;
+
+  const subOffset = 0;
+  const subLength = (subPercent / 100) * circumference;
+
+  const unlockOffset = -subLength;
+  const unlockLength = (unlockPercent / 100) * circumference;
+
+  const otherOffset = -(subLength + unlockLength);
+  const otherLength = (otherPercent / 100) * circumference;
+
+  return (
+    <div className="ad-donut-wrap">
+      <div className="ad-donut-svg-container">
+        <svg width="150" height="150" viewBox="0 0 150 150">
+          {/* Base background ring */}
+          <circle
+            cx="75"
+            cy="75"
+            r={radius}
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.08)"
+            strokeWidth="14"
+          />
+
+          {/* Subscription slice (Purple) */}
+          {subPercent > 0 && (
+            <circle
+              cx="75"
+              cy="75"
+              r={radius}
+              fill="none"
+              stroke="#A855F7"
+              strokeWidth="14"
+              strokeDasharray={`${subLength} ${circumference}`}
+              strokeDashoffset={subOffset}
+              transform="rotate(-90 75 75)"
+              strokeLinecap="round"
+            />
+          )}
+
+          {/* Unlock slice (Gold) */}
+          {unlockPercent > 0 && (
+            <circle
+              cx="75"
+              cy="75"
+              r={radius}
+              fill="none"
+              stroke="#F59E0B"
+              strokeWidth="14"
+              strokeDasharray={`${unlockLength} ${circumference}`}
+              strokeDashoffset={unlockOffset}
+              transform="rotate(-90 75 75)"
+              strokeLinecap="round"
+            />
+          )}
+
+          {/* Other slice (Green) */}
+          {otherPercent > 0 && (
+            <circle
+              cx="75"
+              cy="75"
+              r={radius}
+              fill="none"
+              stroke="#10B981"
+              strokeWidth="14"
+              strokeDasharray={`${otherLength} ${circumference}`}
+              strokeDashoffset={otherOffset}
+              transform="rotate(-90 75 75)"
+              strokeLinecap="round"
+            />
+          )}
+        </svg>
+
+        <div className="ad-donut-center-text">
+          <span className="ad-donut-center-label">Total</span>
+          <span className="ad-donut-center-amount">{formatINR(totalRev)}</span>
+        </div>
+      </div>
+
+      {/* Breakdown percentages */}
+      <div className="ad-donut-breakdown-list">
+        <div className="ad-donut-breakdown-row">
+          <span className="ad-donut-breakdown-name">
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#A855F7' }}></span>
+            Subscription Revenue
+          </span>
+          <span className="ad-donut-breakdown-val">
+            {formatINR(subscriptionRev)} ({subPercent}%)
+          </span>
+        </div>
+
+        <div className="ad-donut-breakdown-row">
+          <span className="ad-donut-breakdown-name">
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }}></span>
+            Contact Unlock Revenue
+          </span>
+          <span className="ad-donut-breakdown-val">
+            {formatINR(unlockRev)} ({unlockPercent}%)
+          </span>
+        </div>
+
+        <div className="ad-donut-breakdown-row">
+          <span className="ad-donut-breakdown-name">
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }}></span>
+            Other Revenue
+          </span>
+          <span className="ad-donut-breakdown-val">
+            {formatINR(otherRev)} ({otherPercent}%)
+          </span>
+        </div>
+      </div>
+
+      <Link to="/admin/payments" className="ad-donut-report-link">
+        View Full Report →
+      </Link>
+    </div>
+  );
+};
+
+// ── Main Admin Dashboard Page ──
+const AdminDashboardPage = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [userGrowthRange, setUserGrowthRange] = useState('30d');
+  const [revenueRange, setRevenueRange] = useState('30d');
+
+  const fetchDashboardStats = () => {
     setLoading(true);
+    setErrorMsg('');
     client
-      .get("/admin/dashboard-stats")
-      .then((r) => {
-        setData(r.data?.data || r.data);
-        setLoading(false);
+      .get('/admin/stats')
+      .then((res) => {
+        if (res.data?.data) {
+          setStats(res.data.data);
+        }
       })
-      .catch(() => {
-        axios
-          .get("/api/admin/stats")
-          .then((r) => {
-            setData(r.data?.data || r.data);
-            setLoading(false);
-          })
-          .catch(() => {
-            setData(null);
-            setLoading(false);
-          });
-      });
+      .catch((err) => {
+        console.error('Failed to load admin stats:', err);
+        setErrorMsg('Failed to load dashboard stats. Please try again.');
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardStats();
   }, []);
 
-  const totalUsers = data?.totalUsers ?? ((data?.totalStudents || 0) + (data?.totalTutors || 0)) ?? 0;
-  const students = data?.totalStudents ?? data?.students ?? 0;
-  const tutors = data?.totalTutors ?? data?.tutors ?? 0;
-  const tutorRequests = data?.totalTutorRequests ?? data?.tutorRequests ?? 0;
-  const courses = data?.totalCourses ?? 12;
-  const studyResources = data?.totalStudyResources ?? 34;
-  const books = data?.totalBooks ?? 18;
-  const payments = data?.totalPayments ?? 24;
-  const unlocks = data?.totalUnlocks ?? data?.unlocks ?? 0;
-  const revenue = data?.totalRevenue ?? data?.periodRevenue ?? data?.revenue ?? 0;
+  // Time-of-day greeting
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
 
-  const topKPIs = [
-    {
-      title: "Total Users",
-      value: totalUsers.toLocaleString("en-IN"),
-      growth: "↗ 8.5% from last week",
-      icon: "👥",
-      iconBg: "bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400",
-      path: "/admin/users",
-    },
-    {
-      title: "Students",
-      value: students.toLocaleString("en-IN"),
-      growth: "↗ 7.2% from last week",
-      icon: "👤",
-      iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
-      path: "/admin/students",
-    },
-    {
-      title: "Tutors",
-      value: tutors.toLocaleString("en-IN"),
-      growth: "↗ 6.1% from last week",
-      icon: "🎓",
-      iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
-      path: "/admin/tutors",
-    },
-    {
-      title: "Tutor Requests",
-      value: tutorRequests.toLocaleString("en-IN"),
-      growth: "↗ 12.4% from last week",
-      icon: "📋",
-      iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
-      path: "/admin/requests",
-    },
-    {
-      title: "Courses & PYQs",
-      value: courses.toLocaleString("en-IN"),
-      growth: "↗ 9.3% from last week",
-      icon: "📖",
-      iconBg: "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400",
-      path: "/admin/courses",
-    },
-  ];
+  // Formatted current date
+  const currentDateFormatted = useMemo(() => {
+    return new Date().toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      weekday: 'long',
+    });
+  }, []);
 
-  const subKPIs = [
-    {
-      title: "Study Resources",
-      value: studyResources.toLocaleString("en-IN"),
-      growth: "↗ 11.6%",
-      icon: "📗",
-      iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
-      path: "/admin/study-resources",
-    },
-    {
-      title: "NCERT & Books",
-      value: books.toLocaleString("en-IN"),
-      growth: "↗ 7.8%",
-      icon: "📘",
-      iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
-      path: "/admin/content",
-    },
-    {
-      title: "Payments",
-      value: payments.toLocaleString("en-IN"),
-      growth: "↗ 9.4%",
-      icon: "💳",
-      iconBg: "bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400",
-      path: "/admin/payments",
-    },
-    {
-      title: "Contact Unlocks",
-      value: unlocks.toLocaleString("en-IN"),
-      growth: "↗ 8.7%",
-      icon: "🔒",
-      iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
-      path: "/admin/contact-unlocks",
-    },
-  ];
-
-  const topTutorsList = data?.topTutors || [
-    { rank: 1, name: "Ankit Sir", rating: 4.9, reviews: 120, studentsCount: 520 },
-    { rank: 2, name: "Priya Ma'am", rating: 4.8, reviews: 98, studentsCount: 430 },
-    { rank: 3, name: "Ravi Sir", rating: 4.7, reviews: 85, studentsCount: 390 },
-    { rank: 4, name: "Neha Ma'am", rating: 4.6, reviews: 76, studentsCount: 350 },
-  ];
-
-  const recentRequestsList = data?.recentRequests || [
-    { studentName: "Rahul Kumar", classLevel: "Class 10", subject: "Maths", timeAgo: "2 min ago", status: "New" },
-    { studentName: "Priya Sharma", classLevel: "Class 11", subject: "Physics", timeAgo: "15 min ago", status: "Pending" },
-    { studentName: "Aman Verma", classLevel: "Class 12", subject: "Chemistry", timeAgo: "35 min ago", status: "Pending" },
-    { studentName: "Neha Singh", classLevel: "Class 9", subject: "Science", timeAgo: "1 hour ago", status: "New" },
-    { studentName: "Vikram Patel", classLevel: "Class 11", subject: "Biology", timeAgo: "2 hours ago", status: "Resolved" },
-  ];
+  // KPI Animated Numbers
+  const animatedUsers = useCountUp(stats?.totalUsers || 0);
+  const animatedStudents = useCountUp(stats?.totalStudents || 0);
+  const animatedTutors = useCountUp(stats?.totalTutors || 0);
+  const animatedVerifiedTutors = useCountUp(stats?.verifiedTutors || 0);
+  const animatedActiveUsers = useCountUp(stats?.activeUsers || 0);
+  const animatedPaidUsers = useCountUp(stats?.paidUsers || 0);
+  const animatedRevenue = useCountUp(stats?.totalRevenue || 0);
+  const animatedUnlocks = useCountUp(stats?.totalUnlocks || 0);
 
   return (
-    <div className="space-y-6 pb-8 bg-[#F8F9FA] dark:bg-[#0A0A0A] min-h-screen text-gray-900 dark:text-white transition-colors duration-200">
-      {/* ── TOP HEADER ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Welcome back, Admin! Here's what's happening on MentorNearby.</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-zinc-200 flex items-center gap-2 shadow-xs cursor-pointer hover:border-gray-300">
-            <span>📅 May 20 – May 26, 2025</span>
+    <div className="ad-dash-root">
+      <div className="ad-dash-container">
+        
+        {/* ============================================================ */}
+        {/* TOP HEADER: GREETING & ADMIN PROFILE INFO                    */}
+        {/* ============================================================ */}
+        <header className="ad-dash-top-header">
+          <div>
+            <h1 className="ad-dash-greeting-title">
+              {greeting}, {user?.name || 'Admin'} 👋
+            </h1>
+            <p className="ad-dash-greeting-sub">
+              Here's what's happening across MentorNearby today.
+            </p>
           </div>
 
-          <button
-            onClick={fetchDashboardData}
-            className="bg-gray-900 hover:bg-black text-white dark:bg-zinc-100 dark:text-black dark:hover:bg-white rounded-xl px-4 py-2 text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
-          >
-            <span className={loading ? "animate-spin inline-block" : ""}>🔄</span>
-            <span>Refresh</span>
-          </button>
-        </div>
-      </div>
+          <div className="ad-dash-header-right">
+            <div className="ad-dash-date-pill">{currentDateFormatted}</div>
 
-      {/* ── 5 TOP KPI CARDS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {topKPIs.map((card, idx) => (
-          <div
-            key={idx}
-            onClick={() => navigate(card.path)}
-            className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex items-center justify-between"
-          >
-            <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-zinc-400">{card.title}</p>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-1 tracking-tight">{card.value}</h3>
-              <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">{card.growth}</p>
-            </div>
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${card.iconBg}`}>{card.icon}</div>
-          </div>
-        ))}
-      </div>
+            <Link to="/admin/notifications" className="ad-dash-notif-btn" title="Notifications">
+              <span>🔔</span>
+              <span className="ad-dash-notif-badge">12</span>
+            </Link>
 
-      {/* ── MAIN CONTENT: 2 COLUMNS (LEFT 8 COLS + RIGHT 4 COLS) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* ── LEFT COLUMN (8 COLS) ── */}
-        <div className="lg:col-span-8 space-y-5">
-          {/* Card 1: Platform Overview */}
-          <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-6 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div className="ad-dash-admin-pill">
+              <div className="ad-dash-admin-avatar-wrap">
+                <img
+                  src={
+                    user?.avatar ||
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=faces'
+                  }
+                  alt="Admin"
+                  className="ad-dash-admin-avatar"
+                />
+                <span className="ad-dash-online-dot"></span>
+              </div>
               <div>
-                <h2 className="text-sm font-bold text-gray-900 dark:text-white">Platform Overview</h2>
-                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-zinc-400 mt-1">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500" /> Users</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Students</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Tutors</span>
-                </div>
-              </div>
-
-              <div className="border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-gray-600 dark:text-zinc-300 font-medium flex items-center gap-1.5 cursor-pointer bg-gray-50 dark:bg-zinc-900">
-                <span>Last 7 Days</span>
-                <span className="text-[10px] text-gray-400">▼</span>
+                <div className="ad-dash-admin-name">{user?.name || 'Admin'}</div>
+                <div className="ad-dash-admin-role">Super Admin</div>
               </div>
             </div>
+          </div>
+        </header>
 
-            <PlatformOverviewChart series={data?.growthSeries} />
+        {/* Error Alert */}
+        {errorMsg && (
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444', padding: '10px 16px', borderRadius: '12px', color: '#EF4444', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{errorMsg}</span>
+            <button type="button" onClick={fetchDashboardStats} style={{ background: '#EF4444', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* TOP 8 ANIMATED KPI CARDS                                     */}
+        {/* ============================================================ */}
+        <section className="ad-kpi-grid">
+          
+          {/* 1. Total Users */}
+          <div className="ad-kpi-card">
+            <div className="ad-kpi-header">
+              <div className="ad-kpi-icon-box purple">👥</div>
+              <span className="ad-kpi-title">Total Users</span>
+            </div>
+            <div>
+              <div className="ad-kpi-value-row">
+                <span className="ad-kpi-value">{animatedUsers.toLocaleString()}</span>
+                <span className="ad-kpi-trend">↑ 8.7%</span>
+              </div>
+              <span className="ad-kpi-subtext">vs last 30 days</span>
+            </div>
           </div>
 
-          {/* Sub-grid: 4 Sub-KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {subKPIs.map((card, idx) => (
-              <div
-                key={idx}
-                onClick={() => navigate(card.path)}
-                className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-4 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex items-center justify-between"
+          {/* 2. Total Students */}
+          <div className="ad-kpi-card">
+            <div className="ad-kpi-header">
+              <div className="ad-kpi-icon-box blue">🎓</div>
+              <span className="ad-kpi-title">Total Students</span>
+            </div>
+            <div>
+              <div className="ad-kpi-value-row">
+                <span className="ad-kpi-value">{animatedStudents.toLocaleString()}</span>
+                <span className="ad-kpi-trend">↑ 7.2%</span>
+              </div>
+              <span className="ad-kpi-subtext">vs last 30 days</span>
+            </div>
+          </div>
+
+          {/* 3. Total Tutors */}
+          <div className="ad-kpi-card">
+            <div className="ad-kpi-header">
+              <div className="ad-kpi-icon-box pink">👤</div>
+              <span className="ad-kpi-title">Total Tutors</span>
+            </div>
+            <div>
+              <div className="ad-kpi-value-row">
+                <span className="ad-kpi-value">{animatedTutors.toLocaleString()}</span>
+                <span className="ad-kpi-trend">↑ 10.3%</span>
+              </div>
+              <span className="ad-kpi-subtext">vs last 30 days</span>
+            </div>
+          </div>
+
+          {/* 4. Verified Tutors */}
+          <div className="ad-kpi-card">
+            <div className="ad-kpi-header">
+              <div className="ad-kpi-icon-box cyan">🛡️</div>
+              <span className="ad-kpi-title">Verified Tutors</span>
+            </div>
+            <div>
+              <div className="ad-kpi-value-row">
+                <span className="ad-kpi-value">{animatedVerifiedTutors.toLocaleString()}</span>
+                <span className="ad-kpi-trend">↑ 9.1%</span>
+              </div>
+              <span className="ad-kpi-subtext">vs last 30 days</span>
+            </div>
+          </div>
+
+          {/* 5. Active Users */}
+          <div className="ad-kpi-card">
+            <div className="ad-kpi-header">
+              <div className="ad-kpi-icon-box purple">📈</div>
+              <span className="ad-kpi-title">Active Users</span>
+            </div>
+            <div>
+              <div className="ad-kpi-value-row">
+                <span className="ad-kpi-value">{animatedActiveUsers.toLocaleString()}</span>
+                <span className="ad-kpi-trend">↑ 6.5%</span>
+              </div>
+              <span className="ad-kpi-subtext">vs last 30 days</span>
+            </div>
+          </div>
+
+          {/* 6. Paid Users */}
+          <div className="ad-kpi-card">
+            <div className="ad-kpi-header">
+              <div className="ad-kpi-icon-box gold">👑</div>
+              <span className="ad-kpi-title">Paid Users</span>
+            </div>
+            <div>
+              <div className="ad-kpi-value-row">
+                <span className="ad-kpi-value">{animatedPaidUsers.toLocaleString()}</span>
+                <span className="ad-kpi-trend">↑ 11.8%</span>
+              </div>
+              <span className="ad-kpi-subtext">vs last 30 days</span>
+            </div>
+          </div>
+
+          {/* 7. Total Revenue */}
+          <div className="ad-kpi-card">
+            <div className="ad-kpi-header">
+              <div className="ad-kpi-icon-box rose">👛</div>
+              <span className="ad-kpi-title">Total Revenue</span>
+            </div>
+            <div>
+              <div className="ad-kpi-value-row">
+                <span className="ad-kpi-value" style={{ fontSize: 16 }}>
+                  {formatINR(animatedRevenue)}
+                </span>
+                <span className="ad-kpi-trend">↑ 14.6%</span>
+              </div>
+              <span className="ad-kpi-subtext">vs last 30 days</span>
+            </div>
+          </div>
+
+          {/* 8. Contact Unlocks */}
+          <div className="ad-kpi-card">
+            <div className="ad-kpi-header">
+              <div className="ad-kpi-icon-box red">🔓</div>
+              <span className="ad-kpi-title">Contact Unlocks</span>
+            </div>
+            <div>
+              <div className="ad-kpi-value-row">
+                <span className="ad-kpi-value">{animatedUnlocks.toLocaleString()}</span>
+                <span className="ad-kpi-trend">↑ 12.4%</span>
+              </div>
+              <span className="ad-kpi-subtext">vs last 30 days</span>
+            </div>
+          </div>
+
+        </section>
+
+        {/* ============================================================ */}
+        {/* MIDDLE SECTION: 3 CHARTS & DONUT BREAKDOWN                   */}
+        {/* ============================================================ */}
+        <section className="ad-charts-grid">
+          
+          {/* 1. User Growth Chart */}
+          <div className="ad-chart-card">
+            <div className="ad-chart-card-header">
+              <span className="ad-chart-card-title">User Growth</span>
+              <select
+                value={userGrowthRange}
+                onChange={(e) => setUserGrowthRange(e.target.value)}
+                className="ad-chart-range-select"
               >
-                <div>
-                  <p className="text-[11px] font-semibold text-gray-500 dark:text-zinc-400 leading-tight">{card.title}</p>
-                  <h4 className="text-xl font-black text-gray-900 dark:text-white mt-1">{card.value}</h4>
-                  <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{card.growth}</p>
-                </div>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${card.iconBg}`}>{card.icon}</div>
-              </div>
-            ))}
+                <option value="30d">30 Days</option>
+                <option value="7d">7 Days</option>
+                <option value="90d">90 Days</option>
+              </select>
+            </div>
+
+            <div className="ad-chart-legend-row">
+              <span className="ad-chart-legend-item">
+                <span className="ad-chart-legend-dot" style={{ background: '#F59E0B' }}></span>
+                Students
+              </span>
+              <span className="ad-chart-legend-item">
+                <span className="ad-chart-legend-dot" style={{ background: '#F43F5E' }}></span>
+                Tutors
+              </span>
+              <span className="ad-chart-legend-item">
+                <span className="ad-chart-legend-dot" style={{ background: '#38BDF8' }}></span>
+                Total Users
+              </span>
+            </div>
+
+            <MultiLineChart
+              data={stats?.userGrowth30Days || []}
+              seriesKeys={[
+                { key: 'students', color: '#F59E0B' },
+                { key: 'tutors', color: '#F43F5E' },
+                { key: 'totalUsers', color: '#38BDF8' },
+              ]}
+              height={190}
+            />
           </div>
 
-          {/* Bottom Sub-grid: Top Performing Tutors (6) + User Growth (6) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Top Performing Tutors */}
-            <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Top Performing Tutors</h3>
-                <Link to="/admin/tutors" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 no-underline">
-                  View All
-                </Link>
-              </div>
-
-              <div className="space-y-3.5">
-                {topTutorsList.map((tutor, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-gray-400 w-3">{tutor.rank || idx + 1}</span>
-                      <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                        {tutor.avatar ? <img src={tutor.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : (tutor.name?.[0]?.toUpperCase() || "T")}
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 dark:text-white leading-tight">{tutor.name}</p>
-                        <p className="text-[10px] text-amber-500 font-semibold">{tutor.rating} ★ <span className="text-gray-400 font-normal">({tutor.reviews})</span></p>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-[11px] font-bold text-gray-700 dark:text-zinc-300">
-                        <span className="text-[10px] text-gray-400 font-normal">Students </span>{tutor.studentsCount}
-                      </p>
-                      <div className="w-16 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full mt-1 overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min((tutor.studentsCount / 600) * 100, 100)}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* 2. Revenue Overview Chart */}
+          <div className="ad-chart-card">
+            <div className="ad-chart-card-header">
+              <span className="ad-chart-card-title">Revenue Overview</span>
+              <select
+                value={revenueRange}
+                onChange={(e) => setRevenueRange(e.target.value)}
+                className="ad-chart-range-select"
+              >
+                <option value="30d">30 Days</option>
+                <option value="7d">7 Days</option>
+              </select>
             </div>
 
-            {/* User Growth */}
-            <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">User Growth</h3>
-                <div className="border border-gray-200 dark:border-zinc-800 rounded-xl px-2.5 py-1 text-xs text-gray-600 dark:text-zinc-300 font-medium flex items-center gap-1 bg-gray-50 dark:bg-zinc-900">
-                  <span>Last 30 Days</span>
-                  <span className="text-[10px] text-gray-400">▼</span>
-                </div>
-              </div>
-
-              <div className="mb-2">
-                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Users</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl font-black text-gray-900 dark:text-white">{totalUsers.toLocaleString("en-IN")}</span>
-                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">↗ 8.5%</span>
-                </div>
-              </div>
-
-              <UserGrowthAreaChart data={data?.growth30d} />
-            </div>
-          </div>
-        </div>
-
-        {/* ── RIGHT COLUMN (4 COLS) ── */}
-        <div className="lg:col-span-4 space-y-5">
-          {/* Card 1: Revenue Overview */}
-          <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Revenue Overview</h3>
-              <div className="border border-gray-200 dark:border-zinc-800 rounded-xl px-2.5 py-1 text-xs text-gray-600 dark:text-zinc-300 font-medium flex items-center gap-1 bg-gray-50 dark:bg-zinc-900">
-                <span>Last 7 Days</span>
-                <span className="text-[10px] text-gray-400">▼</span>
-              </div>
+            <div className="ad-chart-legend-row">
+              <span className="ad-chart-legend-item">
+                <span className="ad-chart-legend-dot" style={{ background: '#A855F7' }}></span>
+                Subscription Revenue
+              </span>
+              <span className="ad-chart-legend-item">
+                <span className="ad-chart-legend-dot" style={{ background: '#F59E0B' }}></span>
+                Contact Unlock Revenue
+              </span>
+              <span className="ad-chart-legend-item">
+                <span className="ad-chart-legend-dot" style={{ background: '#10B981' }}></span>
+                Total Revenue
+              </span>
             </div>
 
-            <div className="mb-3">
-              <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Revenue</p>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-black text-gray-900 dark:text-white">₹{Number(revenue).toLocaleString("en-IN")}</span>
-                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">↗ 10.3% from last week</span>
-              </div>
-            </div>
-
-            <p className="text-xs font-bold text-gray-700 dark:text-zinc-300 mt-4 mb-2">Revenue by Source</p>
-            <RevenueDonutChart breakdown={data?.revenueBySource} />
+            <MultiLineChart
+              data={stats?.revenueOverview30Days || []}
+              seriesKeys={[
+                { key: 'subscriptionRevenue', color: '#A855F7' },
+                { key: 'contactUnlockRevenue', color: '#F59E0B' },
+                { key: 'totalRevenue', color: '#10B981' },
+              ]}
+              height={190}
+              isCurrency={true}
+            />
           </div>
 
-          {/* Card 2: Recent Tutor Requests */}
-          <div className="astro-glow bg-white dark:bg-[#141414] border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Recent Tutor Requests</h3>
-              <Link to="/admin/requests" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 no-underline">
+          {/* 3. Revenue Summary Donut Chart */}
+          <div className="ad-chart-card">
+            <div className="ad-chart-card-header">
+              <span className="ad-chart-card-title">Revenue Summary (30 Days)</span>
+            </div>
+
+            <DonutChartWidget
+              subscriptionRev={stats?.subscriptionRevenue || 0}
+              unlockRev={stats?.directUnlockRevenue || 0}
+              otherRev={stats?.otherRevenue || 0}
+              totalRev={stats?.totalRevenue || 0}
+            />
+          </div>
+
+        </section>
+
+        {/* ============================================================ */}
+        {/* BOTTOM 4-COLUMN ACTIVITIES & RANKINGS SECTION                */}
+        {/* ============================================================ */}
+        <section className="ad-quad-grid">
+          
+          {/* Card 1: Recent Student Signups */}
+          <div className="ad-list-card">
+            <div className="ad-list-header">
+              <span className="ad-list-title">Recent Student Signups</span>
+              <Link to="/admin/students" className="ad-list-view-all">
                 View All
               </Link>
             </div>
 
-            <div className="space-y-3.5">
-              {recentRequestsList.map((req, idx) => {
-                const isNew = req.status === "New";
-                const isPending = req.status === "Pending";
-                const badgeStyle = isNew
-                  ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300"
-                  : isPending
-                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
-                  : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300";
-
-                return (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                        {req.avatar ? <img src={req.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : (req.studentName?.[0]?.toUpperCase() || "S")}
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 dark:text-white leading-tight">{req.studentName}</p>
-                        <p className="text-[10px] text-gray-500 dark:text-zinc-400">{req.classLevel} • {req.subject}</p>
+            <div className="ad-items-container">
+              {(stats?.recentStudentSignups && stats.recentStudentSignups.length > 0) ? (
+                stats.recentStudentSignups.map((st) => (
+                  <div key={st._id} className="ad-user-item-row">
+                    <div className="ad-user-item-left">
+                      {st.avatar ? (
+                        <img src={st.avatar} alt={st.name} className="ad-user-avatar-img" />
+                      ) : (
+                        <div className="ad-user-avatar-fallback">{st.name.charAt(0)}</div>
+                      )}
+                      <div className="ad-user-info-wrap">
+                        <span className="ad-user-name-line">{st.name}</span>
+                        <span className="ad-user-sub-line">
+                          {st.class} • {st.board} • {st.city}
+                        </span>
                       </div>
                     </div>
+                    <span className="ad-user-date-line">
+                      {new Date(st.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: '#64748B', fontSize: '12px', textAlign: 'center', padding: '20px 0' }}>
+                  No students registered yet
+                </div>
+              )}
+            </div>
+          </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-gray-400">{req.timeAgo || "Recently"}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeStyle}`}>
-                        {req.status || "New"}
+          {/* Card 2: Recent Tutor Signups */}
+          <div className="ad-list-card">
+            <div className="ad-list-header">
+              <span className="ad-list-title">Recent Tutor Signups</span>
+              <Link to="/admin/tutors" className="ad-list-view-all">
+                View All
+              </Link>
+            </div>
+
+            <div className="ad-items-container">
+              {(stats?.recentTutorSignups && stats.recentTutorSignups.length > 0) ? (
+                stats.recentTutorSignups.map((tu) => (
+                  <div key={tu._id} className="ad-user-item-row">
+                    <div className="ad-user-item-left">
+                      {tu.avatar ? (
+                        <img src={tu.avatar} alt={tu.name} className="ad-user-avatar-img" />
+                      ) : (
+                        <div className="ad-user-avatar-fallback">{tu.name.charAt(0)}</div>
+                      )}
+                      <div className="ad-user-info-wrap">
+                        <span className="ad-user-name-line">{tu.name}</span>
+                        <span className="ad-user-sub-line">
+                          {tu.subjects} • {tu.experience}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="ad-user-date-line">
+                      {new Date(tu.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: '#64748B', fontSize: '12px', textAlign: 'center', padding: '20px 0' }}>
+                  No tutors registered yet
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Card 3: Recent Activity */}
+          <div className="ad-list-card">
+            <div className="ad-list-header">
+              <span className="ad-list-title">Recent Activity</span>
+              <Link to="/admin/audit-logs" className="ad-list-view-all">
+                View All
+              </Link>
+            </div>
+
+            <div className="ad-items-container">
+              {(stats?.recentActivities && stats.recentActivities.length > 0) ? (
+                stats.recentActivities.map((act) => (
+                  <div key={act._id} className="ad-activity-item-row">
+                    <div className="ad-activity-icon-badge">{act.icon || '⚡'}</div>
+                    <div className="ad-user-info-wrap" style={{ flex: 1 }}>
+                      <span className="ad-user-name-line" style={{ fontSize: 11.5 }}>
+                        {act.text}
+                      </span>
+                      <span className="ad-user-sub-line">
+                        {new Date(act.createdAt).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </span>
                     </div>
                   </div>
-                );
-              })}
+                ))
+              ) : (
+                <div style={{ color: '#64748B', fontSize: '12px', textAlign: 'center', padding: '20px 0' }}>
+                  No activity recorded yet
+                </div>
+              )}
             </div>
           </div>
-        </div>
+
+          {/* Card 4: Top Tutors */}
+          <div className="ad-list-card">
+            <div className="ad-list-header">
+              <span className="ad-list-title">Top Tutors</span>
+              <Link to="/admin/tutors" className="ad-list-view-all">
+                View All
+              </Link>
+            </div>
+
+            <div className="ad-items-container">
+              {(stats?.topTutors && stats.topTutors.length > 0) ? (
+                stats.topTutors.map((tt) => (
+                  <div key={tt.id} className="ad-user-item-row">
+                    <div className="ad-user-item-left">
+                      <span className="ad-rank-badge">{tt.rank}</span>
+                      {tt.avatar ? (
+                        <img src={tt.avatar} alt={tt.name} className="ad-user-avatar-img" />
+                      ) : (
+                        <div className="ad-user-avatar-fallback">{tt.name.charAt(0)}</div>
+                      )}
+                      <div className="ad-user-info-wrap">
+                        <span className="ad-user-name-line">
+                          {tt.name} {tt.isVerified && <span style={{ color: '#3B82F6', fontSize: 11 }}>✓</span>}
+                        </span>
+                        <span className="ad-user-sub-line">{tt.subjects}</span>
+                      </div>
+                    </div>
+                    <span className="ad-tutor-rating-pill">
+                      {tt.rating} ★
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: '#64748B', fontSize: '12px', textAlign: 'center', padding: '20px 0' }}>
+                  No tutors ranked yet
+                </div>
+              )}
+            </div>
+          </div>
+
+        </section>
+
+        {/* ============================================================ */}
+        {/* BOTTOM OPERATIONAL SECTION: REQUIRES ATTENTION & ACTIONS     */}
+        {/* ============================================================ */}
+        <section className="ad-ops-grid">
+          
+          {/* Card 1: Requires Attention */}
+          <div className="ad-ops-card">
+            <div className="ad-ops-title">Requires Attention</div>
+
+            <div className="ad-attention-boxes-grid">
+              {/* 1. KYC Pending */}
+              <div className="ad-attention-box">
+                <div className="ad-attention-box-header">
+                  <span>👤</span>
+                  <span>KYC Pending</span>
+                </div>
+                <div className="ad-attention-num">{stats?.requiresAttention?.pendingKYC ?? 0}</div>
+                <div className="ad-attention-sub">Tutors awaiting verification</div>
+                <Link to="/admin/kyc" className="ad-attention-link">
+                  View →
+                </Link>
+              </div>
+
+              {/* 2. Tutor Approvals */}
+              <div className="ad-attention-box">
+                <div className="ad-attention-box-header">
+                  <span>👨‍🏫</span>
+                  <span>Tutor Approvals</span>
+                </div>
+                <div className="ad-attention-num">{stats?.requiresAttention?.unapprovedTutors ?? 0}</div>
+                <div className="ad-attention-sub">New tutor accounts pending approval</div>
+                <Link to="/admin/tutors" className="ad-attention-link">
+                  View →
+                </Link>
+              </div>
+
+              {/* 3. Pending Reports */}
+              <div className="ad-attention-box">
+                <div className="ad-attention-box-header">
+                  <span>🚨</span>
+                  <span>Pending Reports</span>
+                </div>
+                <div className="ad-attention-num">{stats?.requiresAttention?.pendingReports ?? 0}</div>
+                <div className="ad-attention-sub">New reports require action</div>
+                <Link to="/admin/reports" className="ad-attention-link">
+                  View →
+                </Link>
+              </div>
+
+              {/* 4. Tutor Requests */}
+              <div className="ad-attention-box">
+                <div className="ad-attention-box-header">
+                  <span>📋</span>
+                  <span>Tutor Requests</span>
+                </div>
+                <div className="ad-attention-num">{stats?.requiresAttention?.pendingTutorRequests ?? 0}</div>
+                <div className="ad-attention-sub">New tutor requests received</div>
+                <Link to="/admin/requests" className="ad-attention-link">
+                  View →
+                </Link>
+              </div>
+
+              {/* 5. Low Balance Tutors */}
+              <div className="ad-attention-box">
+                <div className="ad-attention-box-header">
+                  <span>💼</span>
+                  <span>Low Balance Tutors</span>
+                </div>
+                <div className="ad-attention-num">{stats?.requiresAttention?.lowBalanceTutors ?? 0}</div>
+                <div className="ad-attention-sub">Tutors with low wallet balance</div>
+                <Link to="/admin/subscriptions" className="ad-attention-link">
+                  View →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Quick Actions */}
+          <div className="ad-ops-card">
+            <div className="ad-ops-title">Quick Actions</div>
+
+            <div className="ad-quick-actions-grid">
+              <Link to="/admin/students" className="ad-quick-action-btn">
+                <span>👥</span>
+                <span>Manage Students</span>
+              </Link>
+
+              <Link to="/admin/tutors" className="ad-quick-action-btn">
+                <span>👨‍🏫</span>
+                <span>Manage Tutors</span>
+              </Link>
+
+              <Link to="/admin/kyc" className="ad-quick-action-btn">
+                <span>🛡️</span>
+                <span>Verify KYC</span>
+              </Link>
+
+              <Link to="/admin/reports" className="ad-quick-action-btn">
+                <span>📑</span>
+                <span>View Reports</span>
+              </Link>
+
+              <Link to="/admin/payments" className="ad-quick-action-btn">
+                <span>💳</span>
+                <span>View Payments</span>
+              </Link>
+
+              <Link to="/admin/contact-unlocks" className="ad-quick-action-btn">
+                <span>🔓</span>
+                <span>Contact Unlocks</span>
+              </Link>
+
+              <Link to="/admin/subscriptions" className="ad-quick-action-btn">
+                <span>👑</span>
+                <span>Subscriptions</span>
+              </Link>
+
+              <Link to="/admin/analytics" className="ad-quick-action-btn">
+                <span>📊</span>
+                <span>Analytics</span>
+              </Link>
+            </div>
+          </div>
+
+        </section>
+
       </div>
     </div>
   );
-}
+};
+
+export default AdminDashboardPage;

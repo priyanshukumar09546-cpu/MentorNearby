@@ -567,9 +567,12 @@ const TutorDashboardPage = () => {
               {studentRequests.length > 0 ? (
                 <div className="td-requests-list">
                   {studentRequests.map((unlock) => {
-                    const studentUser = unlock.user;
-                    const studentName = studentUser?.name || 'Student Parent';
+                    const studentUser = unlock.user && typeof unlock.user === 'object' ? unlock.user : {};
+                    const studentUserId = studentUser._id || unlock.user;
+                    const studentName = studentUser.name || 'Student / Parent';
                     const sp = unlock.studentProfile;
+                    const studentProfileId = sp?._id || studentUserId;
+                    const studentAvatar = studentUser.avatar || sp?.profilePhoto?.url || '';
                     const subjectClass = sp?.studentDetails
                       ? `Class ${sp.studentDetails.class} • ${sp.studentDetails.board || 'CBSE'}`
                       : 'Home & Online Tuition';
@@ -578,7 +581,15 @@ const TutorDashboardPage = () => {
                       <div key={unlock._id} className="td-request-item">
                         <div className="td-request-left">
                           <div className="td-request-avatar">
-                            {studentName.charAt(0).toUpperCase()}
+                            {studentAvatar ? (
+                              <img
+                                src={studentAvatar}
+                                alt={studentName}
+                                style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              studentName.charAt(0).toUpperCase()
+                            )}
                           </div>
                           <div className="td-request-info">
                             <div className="td-request-name-row">
@@ -593,19 +604,21 @@ const TutorDashboardPage = () => {
                         </div>
 
                         <div className="td-request-actions">
-                          <Link to="/tutor/requests" className="td-btn-sm-outline">
+                          {/* VIEW BUTTON: Opens student's real MentorNearby profile */}
+                          <Link
+                            to={`/student/${studentProfileId || studentUserId}`}
+                            className="td-btn-sm-outline"
+                          >
                             View
                           </Link>
-                          {studentUser?.phone && (
-                            <a
-                              href={`https://wa.me/${studentUser.phone.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="td-btn-sm-primary"
-                            >
-                              Reply
-                            </a>
-                          )}
+
+                          {/* REPLY BUTTON: Opens in-app MentorNearby Chat with this real student */}
+                          <Link
+                            to={`/messages?user=${studentUserId}&recipient=${studentUserId}`}
+                            className="td-btn-sm-primary"
+                          >
+                            Reply
+                          </Link>
                         </div>
                       </div>
                     );

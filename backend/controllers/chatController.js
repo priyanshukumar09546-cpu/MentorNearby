@@ -134,6 +134,7 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 
   return success(res, 'Message sent successfully', {
     message,
+    data: message,
     wasFiltered: filteredContent !== content?.trim(),
     freeChatsUsed: req.user.freeChatsUsed,
     isSubscribed: isActiveSubscriber(req.user),
@@ -177,6 +178,7 @@ exports.getMessages = asyncHandler(async (req, res, next) => {
   return success(res, 'Messages retrieved successfully', {
     count: messages.length,
     data: messages,
+    messages: messages,
   });
 });
 

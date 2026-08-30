@@ -27,6 +27,7 @@ const ChatPage = () => {
   // Target recipient or conversation parameter from URL
   const targetId = useMemo(() => {
     return (
+      routeParams.id ||
       routeParams.userId ||
       routeParams.recipientId ||
       routeParams.conversationId ||
@@ -34,6 +35,10 @@ const ChatPage = () => {
       searchParams.get('recipientId') ||
       searchParams.get('user') ||
       searchParams.get('userId') ||
+      searchParams.get('tutor') ||
+      searchParams.get('tutorId') ||
+      searchParams.get('student') ||
+      searchParams.get('studentId') ||
       searchParams.get('chat') ||
       searchParams.get('conversation') ||
       searchParams.get('conversationId')
@@ -70,12 +75,12 @@ const ChatPage = () => {
     activePartnerIdRef.current = activePartner?._id || null;
   }, [activePartner?._id]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom('smooth');
   }, [messages, blockedAttempt]);
 
   // ── 1. Fetch Real Conversations List from MongoDB ──
@@ -84,13 +89,18 @@ const ChatPage = () => {
       const res = await client.get('/chat');
       const data = res.data?.data || {};
       const list = data.data || (Array.isArray(res.data?.data) ? res.data.data : []);
-      setConversations(list);
+      const myId = String(user?._id || user?.id || '');
+      // Filter out self conversations
+      const filtered = list.filter(
+        (c) => c.otherUser && String(c.otherUser._id) !== myId
+      );
+      setConversations(filtered);
       if (data.subscription) setSubStatus(data.subscription);
     } catch (_) {
     } finally {
       setLoadingConv(false);
     }
-  }, []);
+  }, [user]);
 
   const fetchSubStatus = useCallback(async () => {
     try {
@@ -107,38 +117,53 @@ const ChatPage = () => {
   // ── 2. Handle Initial Selection & Target Partner from URL ──
   useEffect(() => {
     let isMounted = true;
+    const myId = String(user?._id || user?.id || '');
 
-    if (targetId) {
+    if (targetId && String(targetId) !== myId) {
       const match = conversations.find(
         (c) =>
-          String(c.otherUser?._id) === String(targetId) ||
+          (c.otherUser && String(c.otherUser._id) === String(targetId)) ||
+          (c.otherUser?.tutorProfile && String(c.otherUser.tutorProfile._id) === String(targetId)) ||
           String(c._id) === String(targetId) ||
           String(c.conversationId) === String(targetId)
       );
 
-      if (match && match.otherUser) {
+      if (match && match.otherUser && String(match.otherUser._id) !== myId) {
         setActivePartner(match.otherUser);
       } else {
-        // Fetch real public user or tutor details directly from MongoDB
+        // Fetch real public tutor details directly from MongoDB
         client
-          .get(`/users/${targetId}`)
+          .get(`/tutors/${targetId}`)
           .then((res) => {
             if (isMounted && res.data?.data) {
-              setActivePartner(res.data.data);
+              const tData = res.data.data?.tutorProfile || res.data.data?.tutor || res.data.data;
+              const uObj = tData.user || {};
+              setActivePartner({
+                _id: uObj._id || tData.user || tData._id,
+                name: uObj.name || tData.name || 'Tutor',
+                avatar: tData.profilePhoto?.url || uObj.avatar || '',
+                role: 'TUTOR',
+                isOnline: uObj.isOnline !== undefined ? uObj.isOnline : true,
+                isVerified: Boolean(tData.isVerified || tData.kycStatus === 'VERIFIED'),
+                tutorProfile: tData,
+              });
             }
           })
           .catch(() => {
             client
-              .get(`/tutors/${targetId}`)
+              .get(`/users/${targetId}`)
               .then((res) => {
                 if (isMounted && res.data?.data) {
-                  const tData = res.data.data;
+                  const uData = res.data.data?.user || res.data.data;
                   setActivePartner({
-                    _id: tData.user?._id || tData._id,
-                    name: tData.user?.name || tData.name || '',
-                    avatar: tData.profilePhoto?.url || tData.user?.avatar || '',
-                    role: 'TUTOR',
-                    tutorProfile: tData,
+                    _id: uData._id || uData.id,
+                    name: uData.name || 'User',
+                    avatar: uData.avatar || '',
+                    role: (uData.role || 'TUTOR').toUpperCase(),
+                    isOnline: uData.isOnline !== undefined ? uData.isOnline : true,
+                    isVerified: Boolean(uData.isVerified),
+                    tutorProfile: uData.tutorProfile || null,
+                    studentProfile: uData.studentProfile || null,
                   });
                 }
               })
@@ -146,17 +171,19 @@ const ChatPage = () => {
           });
       }
     } else if (conversations.length > 0 && !activePartner) {
-      // On initial load without targetId, open the first real MongoDB conversation
-      const firstRealConv = conversations[0]?.otherUser;
+      // On initial load without targetId, open the first other user
+      const firstRealConv = conversations.find(
+        (c) => c.otherUser && String(c.otherUser._id) !== myId
+      )?.otherUser;
       if (firstRealConv) setActivePartner(firstRealConv);
     }
 
     return () => {
       isMounted = false;
     };
-  }, [targetId, conversations, activePartner]);
+  }, [targetId, conversations, activePartner, user]);
 
-  // Tab change handler: keeps existing conversation if still in tab filter, otherwise selects first in filtered tab
+  // Tab change handler
   const handleTabChange = (newTab) => {
     setChatTab(newTab);
     setBlockedAttempt(null);
@@ -183,7 +210,7 @@ const ChatPage = () => {
     }
   };
 
-  // ── 3. Fetch Real Partner Full Profile (Tutor or Student) for Right Sidebar ──
+  // ── 3. Fetch Real Partner Full Profile (Tutor or Student) for Header & Sidebar ──
   useEffect(() => {
     if (!activePartner?._id) {
       setPartnerProfile(null);
@@ -197,7 +224,9 @@ const ChatPage = () => {
       client
         .get(`/tutors/${partnerId}`)
         .then((res) => {
-          if (isMounted && res.data?.data) setPartnerProfile(res.data.data);
+          if (isMounted && res.data?.data) {
+            setPartnerProfile(res.data.data?.tutorProfile || res.data.data);
+          }
         })
         .catch(() => {
           if (isMounted) setPartnerProfile(activePartner.tutorProfile || activePartner);
@@ -206,7 +235,9 @@ const ChatPage = () => {
       client
         .get(`/users/${partnerId}`)
         .then((res) => {
-          if (isMounted && res.data?.data) setPartnerProfile(res.data.data);
+          if (isMounted && res.data?.data) {
+            setPartnerProfile(res.data.data?.user || res.data.data);
+          }
         })
         .catch(() => {
           if (isMounted) setPartnerProfile(activePartner.studentProfile || activePartner);
@@ -224,8 +255,15 @@ const ChatPage = () => {
     if (!silent) setLoadingMessages(true);
     try {
       const res = await client.get(`/chat/${partnerId}`);
-      const data = res.data?.data || res.data || {};
-      const msgs = Array.isArray(data) ? data : data.messages || [];
+      const payload = res.data?.data || res.data || {};
+      let msgs = [];
+      if (Array.isArray(payload)) {
+        msgs = payload;
+      } else if (Array.isArray(payload.data)) {
+        msgs = payload.data;
+      } else if (Array.isArray(payload.messages)) {
+        msgs = payload.messages;
+      }
       const formattedMsgs = msgs.map((m) => {
         if (m.message && typeof m.message === 'object') return m.message;
         return m;
@@ -279,9 +317,10 @@ const ChatPage = () => {
 
     // 🌟 1. OPTIMISTIC UPDATE: Instantly render message on sender screen
     const tempId = `temp_${Date.now()}`;
+    const myId = user?._id || user?.id;
     const optimisticMsg = {
       _id: tempId,
-      sender: user?._id || user?.id || user,
+      sender: myId,
       receiver: activePartner._id,
       content: rawText,
       createdAt: new Date().toISOString(),
@@ -299,11 +338,11 @@ const ChatPage = () => {
       });
 
       const responsePayload = res.data?.data || res.data;
-      const realMsg = responsePayload?.message || responsePayload;
+      const realMsg = responsePayload?.message || responsePayload?.data || responsePayload;
 
       if (realMsg && (realMsg.content || realMsg._id)) {
         setMessages((prev) =>
-          prev.map((m) => (m._id === tempId ? { ...realMsg, sender: user?._id || user?.id || user } : m))
+          prev.map((m) => (m._id === tempId ? { ...realMsg, sender: myId } : m))
         );
         fetchConversations();
       }
@@ -325,7 +364,7 @@ const ChatPage = () => {
       }
     } finally {
       setSending(false);
-      setTimeout(() => scrollToBottom(), 50);
+      setTimeout(() => scrollToBottom('smooth'), 50);
     }
   };
 
@@ -336,6 +375,19 @@ const ChatPage = () => {
       setBlockedAttempt(null);
     }
   };
+
+  // Helper to check if a message was sent by the current user
+  const isMessageFromMe = useCallback(
+    (m) => {
+      if (!m || !user) return false;
+      const myId = String(user._id || user.id || '');
+      const senderId = String(
+        (typeof m.sender === 'object' ? (m.sender?._id || m.sender?.id) : m.sender) || ''
+      );
+      return senderId === myId;
+    },
+    [user]
+  );
 
   // Filtered Conversations by Search & Role Tab
   const filteredConversations = useMemo(() => {
@@ -354,16 +406,57 @@ const ChatPage = () => {
     });
   }, [conversations, searchQuery, chatTab]);
 
-  // Derived Partner Profile Info
+  // Derived Partner Profile Info (Guaranteed to represent the OTHER participant)
+  const partnerDisplayName = useMemo(() => {
+    if (!activePartner) return 'Select Conversation';
+    const myId = String(user?._id || user?.id || '');
+    if (String(activePartner._id) === myId) return 'Tutor';
+    return (
+      activePartner.name ||
+      partnerProfile?.name ||
+      partnerProfile?.user?.name ||
+      activePartner.tutorProfile?.name ||
+      'Tutor'
+    );
+  }, [activePartner, partnerProfile, user]);
+
+  const partnerAvatarUrl = useMemo(() => {
+    if (!activePartner) return '';
+    return (
+      activePartner.avatar ||
+      partnerProfile?.profilePhoto?.url ||
+      partnerProfile?.avatar ||
+      partnerProfile?.user?.avatar ||
+      activePartner.tutorProfile?.profilePhoto?.url ||
+      ''
+    );
+  }, [activePartner, partnerProfile]);
+
+  const isPartnerVerified = useMemo(() => {
+    if (!activePartner) return false;
+    return Boolean(
+      activePartner.isVerified ||
+      partnerProfile?.isVerified ||
+      partnerProfile?.kycStatus === 'VERIFIED' ||
+      activePartner.tutorProfile?.isVerified ||
+      activePartner.tutorProfile?.kycStatus === 'VERIFIED'
+    );
+  }, [activePartner, partnerProfile]);
+
+  const isPartnerOnline = useMemo(() => {
+    if (!activePartner) return false;
+    return activePartner.isOnline !== undefined ? Boolean(activePartner.isOnline) : true;
+  }, [activePartner]);
+
   const partnerRoleLabel = useMemo(() => {
     if (!activePartner) return '';
     if (activePartner.role === 'TUTOR') {
-      const isVer = Boolean(partnerProfile?.isVerified || activePartner.tutorProfile?.isVerified);
+      const isVer = isPartnerVerified;
       return isVer ? 'Verified Tutor' : 'Tutor';
     }
     const cls = partnerProfile?.studentDetails?.class || partnerProfile?.class;
     return cls ? `Student • ${cls}` : 'Student';
-  }, [activePartner, partnerProfile]);
+  }, [activePartner, partnerProfile, isPartnerVerified]);
 
   const partnerSubjects = useMemo(() => {
     if (!activePartner) return [];
@@ -496,23 +589,39 @@ const ChatPage = () => {
               </button>
             </div>
 
-            {/* Scrollable Real Conversations List */}
+            {/* Conversation List Stream */}
             <div className="mn-chat-convs-scroll">
-              {filteredConversations.length > 0 ? (
-                filteredConversations.map((c) => {
-                  const other = c.otherUser || {};
-                  const isSelected = activePartner?._id === other._id;
+              {loadingConv ? (
+                <div style={{ textAlign: 'center', padding: 24, color: '#94A3B8', fontSize: 13 }}>
+                  Loading conversations...
+                </div>
+              ) : filteredConversations.length > 0 ? (
+                filteredConversations.map((conv) => {
+                  const other = conv.otherUser || {};
+                  const isSelected = String(other._id) === String(activePartner?._id);
+                  const isVerified = Boolean(
+                    other.isVerified ||
+                    other.tutorProfile?.isVerified ||
+                    other.tutorProfile?.kycStatus === 'VERIFIED'
+                  );
+                  const avatarUrl = other.avatar || other.tutorProfile?.profilePhoto?.url || '';
+
                   return (
                     <div
-                      key={c._id || other._id}
-                      onClick={() => setActivePartner(other)}
+                      key={other._id || conv._id}
+                      onClick={() => {
+                        setActivePartner(other);
+                        setBlockedAttempt(null);
+                      }}
                       className={`mn-chat-item-card ${isSelected ? 'active' : ''}`}
                     >
                       <div className="mn-chat-item-avatar-wrap">
-                        {other.avatar ? (
-                          <img src={other.avatar} alt={other.name} className="mn-chat-item-avatar" />
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt={other.name} className="mn-chat-item-avatar" />
                         ) : (
-                          <div className="mn-chat-item-avatar-fallback">{other.name?.charAt(0) || 'U'}</div>
+                          <div className="mn-chat-item-avatar-fallback">
+                            {other.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
                         )}
                         <span className="mn-chat-online-dot"></span>
                       </div>
@@ -521,32 +630,39 @@ const ChatPage = () => {
                         <div className="mn-chat-item-top-line">
                           <span className="mn-chat-item-name">
                             {other.name || 'User'}
-                            <span style={{ color: '#F59E0B', fontSize: 10 }}>✓</span>
+                            {isVerified && (
+                              <span style={{ color: '#F59E0B', fontSize: 11 }}>✓</span>
+                            )}
                           </span>
                           <span className="mn-chat-item-time">
-                            {c.lastMessage?.createdAt
-                              ? new Date(c.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            {conv.updatedAt
+                              ? new Date(conv.updatedAt).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
                               : ''}
                           </span>
                         </div>
 
                         <div className="mn-chat-item-snippet-line">
                           <span className="mn-chat-item-snippet">
-                            {c.lastMessage?.content || 'Click to view conversation'}
+                            {conv.lastMessage?.content || 'Say hello...'}
                           </span>
-                          {c.unreadCount > 0 && <span className="mn-chat-item-badge">{c.unreadCount}</span>}
+                          {Boolean(conv.unreadCount > 0) && (
+                            <span className="mn-chat-item-badge">{conv.unreadCount}</span>
+                          )}
                         </div>
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <div style={{ color: '#64748B', fontSize: 12, textAlign: 'center', padding: '30px 10px', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-                  <span>{loadingConv ? 'Loading conversations...' : 'No conversations yet'}</span>
-                  {!loadingConv && (
+                <div style={{ textAlign: 'center', padding: 24, color: '#94A3B8', fontSize: 13 }}>
+                  <p style={{ margin: '0 0 10px 0' }}>No {chatTab.toLowerCase()} conversations found.</p>
+                  {!searchQuery && (
                     <Link
                       to={isTutor ? '/find-students' : '/tutors'}
-                      style={{ background: '#F59E0B', color: '#000', padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, textDecoration: 'none' }}
+                      style={{ color: '#F59E0B', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}
                     >
                       {isTutor ? 'Find Students' : 'Browse Verified Tutors'}
                     </Link>
@@ -574,13 +690,16 @@ const ChatPage = () => {
           <main className={`mn-chat-panel mn-chat-convo-panel ${activePartner ? 'has-partner' : ''}`}>
             {activePartner ? (
               <>
-                {/* Conversation Header */}
+                {/* Conversation Header (ALWAYS VISIBLE, STICKY TOP-0, Z-50) */}
                 <div className="mn-chat-convo-header">
                   {/* Mobile Back to List Button */}
                   <button
                     type="button"
                     className="mn-chat-mobile-back-btn"
-                    onClick={() => setActivePartner(null)}
+                    onClick={() => {
+                      setActivePartner(null);
+                      navigate('/chat', { replace: true });
+                    }}
                     aria-label="Back to conversations"
                   >
                     ‹
@@ -594,21 +713,31 @@ const ChatPage = () => {
                     title="Tap to view tutor profile"
                   >
                     <div className="mn-chat-convo-avatar-wrap">
-                      {activePartner?.avatar ? (
-                        <img src={activePartner.avatar} alt={activePartner.name} className="mn-chat-item-avatar" />
+                      {partnerAvatarUrl ? (
+                        <img
+                          src={partnerAvatarUrl}
+                          alt={partnerDisplayName}
+                          className="mn-chat-item-avatar"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.style.display = 'none';
+                          }}
+                        />
                       ) : (
-                        <div className="mn-chat-item-avatar-fallback">{activePartner?.name?.charAt(0) || 'U'}</div>
+                        <div className="mn-chat-item-avatar-fallback">
+                          {partnerDisplayName.charAt(0).toUpperCase()}
+                        </div>
                       )}
-                      <span className="mn-chat-online-dot"></span>
+                      <span className={`mn-chat-online-dot ${isPartnerOnline ? 'online' : 'offline'}`}></span>
                     </div>
                     <div>
                       <div className="mn-chat-convo-name">
-                        {activePartner?.name || 'User'}
-                        <span className="mn-gold-check">✓</span>
+                        <span>{partnerDisplayName}</span>
+                        {isPartnerVerified && <span className="mn-gold-check" title="Verified">✓</span>}
                       </div>
                       <div className="mn-chat-convo-status">
-                        <span className="mn-status-dot"></span>
-                        Online
+                        <span className={`mn-status-dot ${isPartnerOnline ? 'online' : 'offline'}`}></span>
+                        {isPartnerOnline ? 'Online' : 'Offline'}
                       </div>
                     </div>
                   </div>
@@ -684,7 +813,7 @@ const ChatPage = () => {
 
                   {messages.length > 0 ? (
                     messages.map((m, idx) => {
-                      const isSentByMe = String(m.sender?._id || m.sender) === String(user?._id || user?.id);
+                      const isSentByMe = isMessageFromMe(m);
                       return (
                         <div key={m._id || idx} className={isSentByMe ? 'mn-msg-sent' : 'mn-msg-received'}>
                           <div className="mn-msg-text">{m.content}</div>
@@ -732,7 +861,7 @@ const ChatPage = () => {
                   {isTyping && (
                     <div className="mn-chat-typing-indicator">
                       <span>•••</span>
-                      <span>{activePartner?.name || 'Partner'} is typing...</span>
+                      <span>{partnerDisplayName} is typing...</span>
                     </div>
                   )}
 
@@ -776,23 +905,23 @@ const ChatPage = () => {
                       </div>
                       
                       <h3 className="mn-mobile-sheet-title">
-                        About {activePartner.name?.split(' ')[0] || 'User'}
+                        About {partnerDisplayName.split(' ')[0] || 'User'}
                       </h3>
 
                       <div className="mn-mobile-profile-center">
                         <div className="mn-mobile-avatar-ring">
-                          {activePartner.avatar ? (
-                            <img src={activePartner.avatar} alt={activePartner.name} className="mn-mobile-avatar-img" />
+                          {partnerAvatarUrl ? (
+                            <img src={partnerAvatarUrl} alt={partnerDisplayName} className="mn-mobile-avatar-img" />
                           ) : (
                             <div className="mn-mobile-avatar-fallback">
-                              {activePartner.name?.charAt(0) || 'U'}
+                              {partnerDisplayName.charAt(0).toUpperCase()}
                             </div>
                           )}
                         </div>
 
                         <div className="mn-mobile-profile-name">
-                          {activePartner.name}
-                          <span className="mn-gold-check">✓</span>
+                          {partnerDisplayName}
+                          {isPartnerVerified && <span className="mn-gold-check">✓</span>}
                         </div>
 
                         <div className="mn-mobile-profile-role">{partnerRoleLabel}</div>
@@ -873,11 +1002,11 @@ const ChatPage = () => {
           <aside className="mn-chat-panel mn-chat-profile-panel">
             {activePartner ? (
               <>
-                <h2 className="mn-chat-profile-title">About {activePartner.name?.split(' ')[0] || 'User'}</h2>
+                <h2 className="mn-chat-profile-title">About {partnerDisplayName.split(' ')[0] || 'User'}</h2>
 
                 <div className="mn-chat-profile-center">
-                  {activePartner.avatar ? (
-                    <img src={activePartner.avatar} alt={activePartner.name} className="mn-chat-profile-lg-avatar" />
+                  {partnerAvatarUrl ? (
+                    <img src={partnerAvatarUrl} alt={partnerDisplayName} className="mn-chat-profile-lg-avatar" />
                   ) : (
                     <div
                       className="mn-chat-profile-lg-avatar"
@@ -891,13 +1020,13 @@ const ChatPage = () => {
                         color: '#FFF',
                       }}
                     >
-                      {activePartner.name?.charAt(0) || 'U'}
+                      {partnerDisplayName.charAt(0).toUpperCase()}
                     </div>
                   )}
 
                   <div className="mn-chat-profile-lg-name">
-                    {activePartner.name}
-                    {Boolean(partnerProfile?.isVerified || activePartner.tutorProfile?.isVerified) && (
+                    {partnerDisplayName}
+                    {isPartnerVerified && (
                       <span style={{ color: '#F59E0B', fontSize: 12 }}>✓</span>
                     )}
                   </div>
@@ -985,50 +1114,39 @@ const ChatPage = () => {
         </div>
 
         {/* ============================================================ */}
-        {/* BOTTOM TRUST & SAFETY STRIP                                  */}
+        {/* BOTTOM TRUST STRIP                                           */}
         {/* ============================================================ */}
         <footer className="mn-chat-trust-bar">
           <div className="mn-chat-trust-pill">
-            <span className="mn-chat-trust-icon" style={{ color: '#10B981' }}>🛡️</span>
+            <span className="mn-chat-trust-icon">🛡️</span>
             <div className="mn-chat-trust-text-wrap">
-              <span className="mn-chat-trust-main">100% Safe & Secure</span>
-              <span className="mn-chat-trust-sub">Your safety is our priority</span>
+              <span className="mn-chat-trust-main">100% Safe Payments</span>
+              <span className="mn-chat-trust-sub">Payments are secure and held in escrow</span>
             </div>
           </div>
-
           <div className="mn-chat-trust-pill">
-            <span className="mn-chat-trust-icon" style={{ color: '#F59E0B' }}>🚫</span>
+            <span className="mn-chat-trust-icon">🔒</span>
             <div className="mn-chat-trust-text-wrap">
-              <span className="mn-chat-trust-main">No Contact Sharing</span>
-              <span className="mn-chat-trust-sub">Contact details are not allowed</span>
+              <span className="mn-chat-trust-main">Privacy Protected</span>
+              <span className="mn-chat-trust-sub">No personal contact details shared</span>
             </div>
           </div>
-
           <div className="mn-chat-trust-pill">
-            <span className="mn-chat-trust-icon" style={{ color: '#E11D48' }}>🚨</span>
+            <span className="mn-chat-trust-icon">⚡</span>
             <div className="mn-chat-trust-text-wrap">
-              <span className="mn-chat-trust-main">Report & Block</span>
-              <span className="mn-chat-trust-sub">Report or block any user</span>
-            </div>
-          </div>
-
-          <div className="mn-chat-trust-pill">
-            <span className="mn-chat-trust-icon" style={{ color: '#3B82F6' }}>🛡️</span>
-            <div className="mn-chat-trust-text-wrap">
-              <span className="mn-chat-trust-main">Verified Tutors</span>
-              <span className="mn-chat-trust-sub">Only verified tutors</span>
+              <span className="mn-chat-trust-main">Instant Response</span>
+              <span className="mn-chat-trust-sub">Connect with verified tutors in minutes</span>
             </div>
           </div>
         </footer>
 
       </div>
 
-      {/* Subscription Modal if required */}
+      {/* Subscription Plans Modal if paywall triggers */}
       {showPlansModal && (
         <SubscriptionPlansModal
           isOpen={showPlansModal}
           onClose={() => setShowPlansModal(false)}
-          feature="contact"
         />
       )}
     </div>

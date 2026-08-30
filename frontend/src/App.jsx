@@ -339,8 +339,11 @@ const AppContent = () => {
 
                             {/* User Channels & Chat */}
                             <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+                            <Route path="/chat/:userId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
                             <Route path="/app/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+                            <Route path="/app/chat/:userId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
                             <Route path="/messages" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+                            <Route path="/messages/:userId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
                             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
                             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

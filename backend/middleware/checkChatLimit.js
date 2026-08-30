@@ -38,22 +38,36 @@ const checkChatLimit = (type = 'chat') =>
     // ── ADMIN: always allowed ──────────────────────────────────
     if (role === 'ADMIN') return next();
 
-    // ── STUDENT / PARENT: 3 free chats ────────────────────────
+    const Message = require('../models/Message');
+    const receiverId = req.params.userId || req.body.recipientId || req.body.receiverId || req.body.userId;
+
+    // If already in conversation with this person, allow communication
+    if (receiverId) {
+      const hasExistingHistory = await Message.exists({
+        $or: [
+          { sender: userId, receiver: receiverId },
+          { sender: receiverId, receiver: userId },
+        ],
+      });
+      if (hasExistingHistory) {
+        return next();
+      }
+    }
+
+    // ── STUDENT / PARENT: 3 free conversations ────────────────────────
     if (role === 'STUDENT' || role === 'PARENT') {
-      if (user.freeChatsUsed >= 3) {
+      const distinctPartners = await Message.distinct('receiver', { sender: userId });
+      if (distinctPartners.length >= 3) {
         return res.status(403).json({
           success: false,
           paywall: true,
           plan: 99,
           planType: 'student',
-          message: '3 free chats khatam! ₹99/month subscription lo unlimited chats ke liye.',
-          freeChatsUsed: user.freeChatsUsed,
+          message: 'You have reached your 3 free tutor conversations limit. Upgrade your plan for unlimited chats.',
+          freeChatsUsed: distinctPartners.length,
           freeChatsLimit: 3,
         });
       }
-      // Increment counter
-      await User.findByIdAndUpdate(userId, { $inc: { freeChatsUsed: 1 } });
-      req.user.freeChatsUsed = user.freeChatsUsed + 1;
       return next();
     }
 
@@ -66,29 +80,29 @@ const checkChatLimit = (type = 'chat') =>
             paywall: true,
             plan: 149,
             planType: 'teacher',
-            message: '5 free leads khatam! ₹149/month subscription lo unlimited leads ke liye.',
+            message: '5 free leads limit reached. Upgrade to Pro for unlimited student leads.',
             freeLeadsUsed: user.freeLeadsUsed,
             freeLeadsLimit: 5,
           });
         }
         await User.findByIdAndUpdate(userId, { $inc: { freeLeadsUsed: 1 } });
-        req.user.freeLeadsUsed = user.freeLeadsUsed + 1;
+        req.user.freeLeadsUsed = (user.freeLeadsUsed || 0) + 1;
         return next();
       }
-      // Tutor sending a chat message — use chat counter too
-      if (user.freeChatsUsed >= 5) {
+
+      // Tutor sending chat message to a student
+      const distinctPartners = await Message.distinct('receiver', { sender: userId });
+      if (distinctPartners.length >= 10) {
         return res.status(403).json({
           success: false,
           paywall: true,
           plan: 149,
           planType: 'teacher',
-          message: '5 free chats khatam! ₹149/month subscription lo unlimited access ke liye.',
-          freeChatsUsed: user.freeChatsUsed,
-          freeChatsLimit: 5,
+          message: 'Free chat limit reached. Upgrade to Pro for unlimited student connections.',
+          freeChatsUsed: distinctPartners.length,
+          freeChatsLimit: 10,
         });
       }
-      await User.findByIdAndUpdate(userId, { $inc: { freeChatsUsed: 1 } });
-      req.user.freeChatsUsed = user.freeChatsUsed + 1;
       return next();
     }
 

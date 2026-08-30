@@ -159,6 +159,34 @@ const UserSchema = new mongoose.Schema({
   lastViewDate: {
     type: Date,
     default: null
+  },
+  // ── Refer & Earn Coins System ──────────────────────────────
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+    index: true
+  },
+  coins: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  pendingCoins: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  totalCoinsEarned: {
+    type: Number,
+    default: 0,
+    min: 0
   }
 }, {
   timestamps: true

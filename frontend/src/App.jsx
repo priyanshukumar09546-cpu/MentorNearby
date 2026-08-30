@@ -92,6 +92,7 @@ const ReportIssuePage = lazy(() => import('./pages/Legal/ReportIssuePage'));
 const ContactPage = lazy(() => import('./pages/Contact/ContactPage'));
 const ProfilePage = lazy(() => import('./pages/Profile/ProfilePage'));
 const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
+const ReferAndEarnPage = lazy(() => import('./pages/ReferAndEarn/ReferAndEarnPage'));
 
 // Suspense Fallback
 const RouteLoadingFallback = () => (
@@ -349,6 +350,13 @@ const AppContent = () => {
                             <Route path="/subscriptions" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
                             <Route path="/pricing" element={<SubscriptionPage />} />
                             <Route path="/plans" element={<SubscriptionPage />} />
+
+                            {/* 🪙 Refer & Earn Coins Routes */}
+                            <Route path="/refer" element={<ReferAndEarnPage />} />
+                            <Route path="/refer-and-earn" element={<ReferAndEarnPage />} />
+                            <Route path="/refer-earn" element={<ReferAndEarnPage />} />
+                            <Route path="/tutor/refer" element={<ReferAndEarnPage />} />
+                            <Route path="/tutor/refer-and-earn" element={<ReferAndEarnPage />} />
 
                             {/* 404 Catch-All */}
                             <Route path="*" element={<NotFoundPage />} />

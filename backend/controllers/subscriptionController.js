@@ -361,9 +361,16 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
           whatsappNumber: tutorDoc.whatsappNumber || realPhone,
         };
       }
-    } catch (unlockErr) {
-      console.warn('Unlock record creation warning:', unlockErr.message);
-    }
+  // Trigger Refer & Earn 100-Coin Reward for referrer if this user was referred
+  try {
+    const { processReferralReward } = require('./referralController');
+    await processReferralReward(
+      user._id,
+      selectedPlan,
+      { orderId: actualOrderId, paymentId: actualPaymentId }
+    );
+  } catch (refErr) {
+    console.warn('Referral reward processing note:', refErr.message);
   }
 
   return res.status(200).json({

@@ -1,0 +1,1407 @@
+/* ============================================================
+   pages/ReferAndEarn/ReferAndEarnPage.css
+   MentorNearby Refer & Earn Coins — Master Pixel-Perfect Styles
+   ============================================================ */
+
+.mn-refer-page {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  overflow-x: hidden;
+}
+
+/* ── Light Mode Base ────────────────────────────────────────── */
+.mn-refer-page.light {
+  background-color: #F8FAFC;
+  color: #0F172A;
+}
+
+/* ── Dark Mode Base ─────────────────────────────────────────── */
+.mn-refer-page.dark {
+  background-color: #030712;
+  color: #F8FAFC;
+}
+
+.mn-refer-container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 36px 20px 80px 20px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* ============================================================
+   1. HERO SECTION
+   ============================================================ */
+.mn-refer-hero {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  align-items: center;
+  gap: 36px;
+  padding-bottom: 8px;
+}
+
+.mn-refer-hero-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mn-refer-hero-title {
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.mn-refer-page.light .mn-refer-hero-title {
+  color: #0F172A;
+}
+
+.mn-refer-page.dark .mn-refer-hero-title {
+  color: #FFFFFF;
+}
+
+.mn-gold-highlight {
+  color: #F59E0B;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mn-refer-hero-subtitle {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mn-refer-page.light .mn-refer-hero-subtitle {
+  color: #475569;
+}
+
+.mn-refer-page.dark .mn-refer-hero-subtitle {
+  color: #94A3B8;
+}
+
+/* Hero Reward Highlight Card */
+.mn-refer-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  margin-top: 6px;
+  transition: transform 0.2s ease;
+}
+
+.mn-refer-page.light .mn-refer-hero-card {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border: 1.5px solid #FDE68A;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
+}
+
+.mn-refer-page.dark .mn-refer-hero-card {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.08) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.mn-refer-coin-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #F59E0B;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  flex-shrink: 0;
+}
+
+.mn-3d-coin {
+  font-size: 26px;
+}
+
+.mn-refer-hero-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mn-refer-hero-card-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #B45309;
+  margin: 0;
+}
+
+.mn-refer-page.dark .mn-refer-hero-card-title {
+  color: #FBBF24;
+}
+
+.mn-refer-hero-card-desc {
+  font-size: 13.5px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.mn-refer-page.light .mn-refer-hero-card-desc {
+  color: #78350F;
+}
+
+.mn-refer-page.dark .mn-refer-hero-card-desc {
+  color: #E2E8F0;
+}
+
+.mn-refer-hero-card-note {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.mn-refer-page.light .mn-refer-hero-card-note {
+  color: #92400E;
+}
+
+.mn-refer-page.dark .mn-refer-hero-card-note {
+  color: #94A3B8;
+}
+
+/* Primary Refer Now CTA */
+.mn-refer-hero-cta {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 13px 26px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+.mn-refer-hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.45);
+}
+
+.mn-cta-gift {
+  font-size: 18px;
+}
+
+.mn-cta-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  font-size: 11px;
+}
+
+/* Hero Right Illustration */
+.mn-refer-hero-right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mn-refer-illustration-wrap {
+  position: relative;
+  width: 320px;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mn-refer-chest {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mn-chest-box {
+  width: 140px;
+  height: 110px;
+  background: linear-gradient(145deg, #7C3AED 0%, #5B21B6 100%);
+  border-radius: 20px;
+  position: relative;
+  box-shadow: 0 16px 36px rgba(124, 58, 237, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #8B5CF6;
+}
+
+.mn-chest-lid {
+  position: absolute;
+  top: -16px;
+  width: 150px;
+  height: 36px;
+  background: linear-gradient(145deg, #8B5CF6 0%, #6D28D9 100%);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.chest-star-icon {
+  font-size: 20px;
+  color: #FBBF24;
+}
+
+.mn-chest-coins-burst {
+  position: absolute;
+  top: -40px;
+  display: flex;
+  gap: 6px;
+}
+
+.burst-coin {
+  font-size: 24px;
+  filter: drop-shadow(0 4px 8px rgba(245, 158, 11, 0.4));
+  animation: floatCoin 3s ease-in-out infinite alternate;
+}
+
+.burst-coin.c1 { animation-delay: 0s; }
+.burst-coin.c2 { animation-delay: 0.4s; font-size: 28px; }
+.burst-coin.c3 { animation-delay: 0.8s; font-size: 26px; }
+.burst-coin.c4 { animation-delay: 1.2s; }
+
+@keyframes floatCoin {
+  0% { transform: translateY(0px) rotate(0deg); }
+  100% { transform: translateY(-10px) rotate(8deg); }
+}
+
+.mn-chest-stars .star {
+  position: absolute;
+  font-size: 16px;
+  animation: twinkleStar 2s infinite ease-in-out alternate;
+}
+
+.mn-chest-stars .s1 { top: 10px; left: 20px; animation-delay: 0.2s; }
+.mn-chest-stars .s2 { top: 20px; right: 30px; animation-delay: 0.7s; color: #F59E0B; }
+.mn-chest-stars .s3 { bottom: 30px; left: 10px; animation-delay: 1.1s; }
+.mn-chest-stars .s4 { bottom: 20px; right: 10px; animation-delay: 0.4s; }
+
+@keyframes twinkleStar {
+  0% { opacity: 0.4; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
+.mn-hero-avatar-pair {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mn-avatar-char {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.char-left {
+  left: 0;
+  bottom: 20px;
+}
+
+.char-right {
+  right: 0;
+  bottom: 20px;
+}
+
+.char-head {
+  position: relative;
+  font-size: 38px;
+}
+
+.char-megaphone {
+  position: absolute;
+  top: -12px;
+  right: -18px;
+  font-size: 22px;
+}
+
+.char-thumbs {
+  position: absolute;
+  top: 8px;
+  left: -14px;
+  font-size: 20px;
+}
+
+.char-body {
+  width: 44px;
+  height: 48px;
+  border-radius: 12px 12px 6px 6px;
+  margin-top: -6px;
+}
+
+.yellow-tshirt {
+  background: #F59E0B;
+}
+
+.purple-tshirt {
+  background: #6366F1;
+}
+
+/* ============================================================
+   2. HOW IT WORKS (4 STEPS)
+   ============================================================ */
+.mn-refer-how-it-works {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.mn-section-heading-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mn-section-heading-wrap .dash {
+  color: #F59E0B;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.mn-section-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.mn-refer-page.light .mn-section-title {
+  color: #0F172A;
+}
+
+.mn-refer-page.dark .mn-section-title {
+  color: #FFFFFF;
+}
+
+.mn-how-steps-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.mn-how-step-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 16px 20px 16px;
+  border-radius: 20px;
+  position: relative;
+  min-height: 190px;
+  transition: all 0.2s ease;
+}
+
+.mn-refer-page.light .mn-how-step-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.mn-refer-page.dark .mn-how-step-card {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.mn-how-step-card:hover {
+  transform: translateY(-3px);
+}
+
+.mn-step-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.mn-step-badge.step-1 { background: #F59E0B; }
+.mn-step-badge.step-2 { background: #10B981; }
+.mn-step-badge.step-3 { background: #8B5CF6; }
+.mn-step-badge.step-4 { background: #F59E0B; }
+
+.mn-step-icon-circle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  font-size: 22px;
+}
+
+.bg-yellow { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+.bg-green { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+.bg-purple { background: rgba(139, 92, 246, 0.15); color: #8B5CF6; }
+.bg-gold { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
+
+.mn-step-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+}
+
+.mn-refer-page.light .mn-step-title { color: #0F172A; }
+.mn-refer-page.dark .mn-step-title { color: #FFFFFF; }
+
+.mn-step-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+  font-weight: 500;
+}
+
+.mn-refer-page.light .mn-step-desc { color: #64748B; }
+.mn-refer-page.dark .mn-step-desc { color: #94A3B8; }
+
+.mn-step-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mn-refer-page.light .mn-step-connector {
+  background: #F1F5F9;
+  color: #94A3B8;
+  border: 1px dashed #CBD5E1;
+}
+
+.mn-refer-page.dark .mn-step-connector {
+  background: #1E293B;
+  color: #64748B;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================================
+   3. 3-COLUMN MAIN DASHBOARD SECTION
+   ============================================================ */
+.mn-refer-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 22px;
+  align-items: stretch;
+}
+
+.mn-refer-card {
+  border-radius: 22px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: all 0.25s ease;
+}
+
+.mn-refer-page.light .mn-refer-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.mn-refer-page.dark .mn-refer-card {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.mn-card-title {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.mn-refer-page.light .mn-card-title { color: #0F172A; }
+.mn-refer-page.dark .mn-card-title { color: #FFFFFF; }
+
+/* ── Column 1: Your Referral ────────────────────────────────── */
+.mn-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mn-field-label {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.mn-refer-page.light .mn-field-label { color: #334155; }
+.mn-refer-page.dark .mn-field-label { color: #CBD5E1; }
+
+.mn-input-copy-box {
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.mn-refer-page.light .mn-input-copy-box {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+}
+
+.mn-refer-page.dark .mn-input-copy-box {
+  background: #1E293B;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+}
+
+.mn-copy-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  font-family: inherit;
+}
+
+.mn-refer-page.light .mn-copy-input { color: #334155; }
+.mn-refer-page.dark .mn-copy-input { color: #E2E8F0; }
+
+.mn-copy-input.code-style {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+}
+
+.mn-copy-btn {
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.mn-copy-btn:hover {
+  transform: scale(1.15);
+}
+
+.mn-copy-btn.copied {
+  color: #10B981;
+}
+
+/* Share via Row */
+.mn-share-row-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mn-share-label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mn-refer-page.light .mn-share-label { color: #475569; }
+.mn-refer-page.dark .mn-share-label { color: #94A3B8; }
+
+.mn-share-icons-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mn-share-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  color: #FFFFFF;
+}
+
+.mn-share-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.mn-share-btn.whatsapp { background: #25D366; }
+.mn-share-btn.telegram { background: #0088CC; }
+.mn-share-btn.facebook { background: #1877F2; }
+.mn-share-btn.twitter { background: #000000; }
+.mn-share-btn.more {
+  background: #E2E8F0;
+  color: #475569;
+}
+.mn-refer-page.dark .mn-share-btn.more {
+  background: #334155;
+  color: #CBD5E1;
+}
+
+.mn-share-more-caption {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #94A3B8;
+  margin-left: 200px;
+  margin-top: -4px;
+}
+
+/* Important Notes Card */
+.mn-important-notes-box {
+  padding: 14px 16px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.mn-refer-page.light .mn-important-notes-box {
+  background: #FFFBEB;
+  border: 1px solid #FEF3C7;
+}
+
+.mn-refer-page.dark .mn-important-notes-box {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.mn-notes-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.mn-refer-page.light .mn-notes-header { color: #B45309; }
+.mn-refer-page.dark .mn-notes-header { color: #FBBF24; }
+
+.notes-check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #F59E0B;
+  color: #FFF;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.mn-notes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mn-notes-list li {
+  font-size: 11px;
+  line-height: 1.45;
+  font-weight: 500;
+  position: relative;
+  padding-left: 10px;
+}
+
+.mn-notes-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #F59E0B;
+}
+
+.mn-refer-page.light .mn-notes-list li { color: #78350F; }
+.mn-refer-page.dark .mn-notes-list li { color: #E2E8F0; }
+
+/* ── Column 2: Your Earnings ────────────────────────────────── */
+.mn-total-coins-hero-box {
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mn-refer-page.light .mn-total-coins-hero-box {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+}
+
+.mn-refer-page.dark .mn-total-coins-hero-box {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.mn-total-coins-lbl {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mn-refer-page.light .mn-total-coins-lbl { color: #92400E; }
+.mn-refer-page.dark .mn-total-coins-lbl { color: #FCD34D; }
+
+.mn-total-coins-num-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coin-icon-lg {
+  font-size: 26px;
+}
+
+.coin-amount-lg {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.mn-refer-page.light .coin-amount-lg { color: #78350F; }
+.mn-refer-page.dark .coin-amount-lg { color: #FFFFFF; }
+
+/* Split Pending / Available Tiles */
+.mn-coins-split-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mn-coin-mini-tile {
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mn-refer-page.light .mn-coin-mini-tile {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+}
+
+.mn-refer-page.dark .mn-coin-mini-tile {
+  background: #1E293B;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mini-tile-lbl {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mn-refer-page.light .mini-tile-lbl { color: #64748B; }
+.mn-refer-page.dark .mini-tile-lbl { color: #94A3B8; }
+
+.mini-tile-val {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.coin-sm {
+  font-size: 16px;
+}
+
+/* Earning Status */
+.mn-earning-status-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mn-earning-status-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.mn-refer-page.light .mn-earning-status-title { color: #334155; }
+.mn-refer-page.dark .mn-earning-status-title { color: #CBD5E1; }
+
+.mn-status-metrics-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mn-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.metric-dot {
+  color: #94A3B8;
+  margin-right: 6px;
+}
+
+.metric-name {
+  flex: 1;
+}
+
+.mn-refer-page.light .metric-name { color: #475569; }
+.mn-refer-page.dark .metric-name { color: #CBD5E1; }
+
+.metric-num {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.purple-highlight { color: #8B5CF6; }
+.green-highlight { color: #10B981; }
+.blue-highlight { color: #3B82F6; }
+.gold-highlight { color: #F59E0B; }
+
+/* View Earnings History Button */
+.mn-view-history-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: auto;
+}
+
+.mn-refer-page.light .mn-view-history-btn {
+  background: #F5F3FF;
+  color: #7C3AED;
+  border: 1.5px solid #DDD6FE;
+}
+
+.mn-refer-page.light .mn-view-history-btn:hover {
+  background: #EDE9FE;
+}
+
+.mn-refer-page.dark .mn-view-history-btn {
+  background: rgba(139, 92, 246, 0.15);
+  color: #A78BFA;
+  border: 1.5px solid rgba(139, 92, 246, 0.3);
+}
+
+.mn-refer-page.dark .mn-view-history-btn:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+/* ── Column 3: Rewards Information ──────────────────────────── */
+.mn-rewards-promo-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+}
+
+.mn-refer-page.light .mn-rewards-promo-card {
+  background: #F0FDF4;
+  border: 1px solid #DCFCE7;
+}
+
+.mn-refer-page.dark .mn-rewards-promo-card {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.mn-rewards-coin-stack {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coin-layer {
+  position: absolute;
+  font-size: 24px;
+}
+
+.coin-layer.c-top { top: 0px; left: 6px; z-index: 3; }
+.coin-layer.c-mid { top: 6px; left: 0px; z-index: 2; opacity: 0.85; }
+.coin-layer.c-bot { top: 12px; left: 10px; z-index: 1; opacity: 0.65; }
+
+.mn-rewards-promo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mn-rewards-promo-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.mn-refer-page.light .mn-rewards-promo-title { color: #166534; }
+.mn-refer-page.dark .mn-rewards-promo-title { color: #4ADE80; }
+
+.mn-rewards-promo-sub {
+  font-size: 11.5px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.mn-refer-page.light .mn-rewards-promo-sub { color: #15803D; }
+.mn-refer-page.dark .mn-rewards-promo-sub { color: #CBD5E1; }
+
+/* Coins Utility Block */
+.mn-coins-utility-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mn-utility-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.mn-refer-page.light .mn-utility-title { color: #0F172A; }
+.mn-refer-page.dark .mn-utility-title { color: #FFFFFF; }
+
+.mn-utility-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mn-utility-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mn-utility-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.purple-bg { background: rgba(139, 92, 246, 0.15); color: #8B5CF6; }
+.green-bg { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+.orange-bg { background: rgba(249, 115, 22, 0.15); color: #F97316; }
+.pink-bg { background: rgba(236, 72, 153, 0.15); color: #EC4899; }
+
+.mn-utility-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.utility-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mn-refer-page.light .utility-name { color: #0F172A; }
+.mn-refer-page.dark .utility-name { color: #FFFFFF; }
+
+.utility-desc {
+  font-size: 11.5px;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.mn-refer-page.light .utility-desc { color: #64748B; }
+.mn-refer-page.dark .utility-desc { color: #94A3B8; }
+
+/* ============================================================
+   4. BOTTOM TRUST BANNER
+   ============================================================ */
+.mn-refer-trust-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-radius: 18px;
+  transition: all 0.2s ease;
+}
+
+.mn-refer-page.light .mn-refer-trust-banner {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.mn-refer-page.dark .mn-refer-trust-banner {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mn-trust-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mn-trust-shield-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #2563EB;
+}
+
+.mn-trust-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mn-trust-main-heading {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.mn-refer-page.light .mn-trust-main-heading { color: #0F172A; }
+.mn-refer-page.dark .mn-trust-main-heading { color: #FFFFFF; }
+
+.mn-trust-sub-heading {
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.mn-refer-page.light .mn-trust-sub-heading { color: #64748B; }
+.mn-refer-page.dark .mn-trust-sub-heading { color: #94A3B8; }
+
+.mn-trust-avatar-pair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 26px;
+}
+
+.trust-badge-center {
+  font-size: 22px;
+}
+
+/* ============================================================
+   5. REAL EARNINGS HISTORY MODAL
+   ============================================================ */
+.mn-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.mn-history-modal {
+  width: 100%;
+  max-width: 600px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+
+.mn-refer-page.light .mn-history-modal {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+}
+
+.mn-refer-page.dark .mn-history-modal {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.mn-history-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.mn-refer-page.dark .mn-history-modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.mn-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 2px 0;
+}
+
+.mn-refer-page.light .mn-modal-title { color: #0F172A; }
+.mn-refer-page.dark .mn-modal-title { color: #FFFFFF; }
+
+.mn-modal-sub {
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0;
+  color: #94A3B8;
+}
+
+.mn-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #94A3B8;
+  padding: 4px 8px;
+}
+
+.mn-history-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+.mn-history-table-wrap {
+  overflow-x: auto;
+}
+
+.mn-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.mn-history-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 700;
+  color: #94A3B8;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.08);
+}
+
+.mn-refer-page.dark .mn-history-table th {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.mn-history-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.mn-refer-page.dark .mn-history-table td {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.mn-table-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.table-avatar-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #3B82F6;
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.table-user-name {
+  font-weight: 700;
+  display: block;
+}
+
+.table-ver-badge {
+  font-size: 10px;
+  color: #10B981;
+  font-weight: 700;
+}
+
+.mn-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mn-status-pill.step-1 { background: rgba(148, 163, 184, 0.15); color: #64748B; }
+.mn-status-pill.step-2 { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+.mn-status-pill.step-3 { background: rgba(59, 130, 246, 0.15); color: #3B82F6; }
+.mn-status-pill.step-4 { background: rgba(245, 158, 11, 0.18); color: #F59E0B; }
+
+.table-coin-val {
+  font-weight: 800;
+  color: #F59E0B;
+}
+
+.mn-modal-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 36px 16px;
+  gap: 12px;
+}
+
+.mn-modal-empty-state h4 {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.mn-modal-empty-state p {
+  font-size: 13px;
+  color: #94A3B8;
+  max-width: 360px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mn-modal-cta-btn {
+  background: #F59E0B;
+  color: #000;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+/* ============================================================
+   RESPONSIVENESS (MOBILE / TABLET)
+   ============================================================ */
+@media (max-width: 980px) {
+  .mn-refer-hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .mn-refer-hero-left {
+    align-items: center;
+  }
+
+  .mn-refer-hero-cta {
+    align-self: center;
+  }
+
+  .mn-how-steps-grid {
+    flex-wrap: wrap;
+  }
+
+  .mn-step-connector {
+    display: none;
+  }
+
+  .mn-how-step-card {
+    flex: 1 1 calc(50% - 12px);
+    min-width: 220px;
+  }
+
+  .mn-refer-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .mn-refer-container {
+    padding: 24px 14px 60px 14px;
+    gap: 32px;
+  }
+
+  .mn-refer-hero-title {
+    font-size: 30px;
+  }
+
+  .mn-how-step-card {
+    flex: 1 1 100%;
+  }
+
+  .mn-refer-trust-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .mn-trust-banner-left {
+    flex-direction: column;
+  }
+}

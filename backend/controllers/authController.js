@@ -117,13 +117,44 @@ exports.register = asyncHandler(async (req, res, next) => {
     return error(res, 'Email already exists. Please log in.', 409);
   }
 
+  // Resolve referrer if ref code/link was provided
+  const incomingRef = req.body.ref || req.body.referralCode || req.query?.ref;
+  let referrerUser = null;
+  if (incomingRef && typeof incomingRef === 'string') {
+    const cleanRef = incomingRef.trim();
+    const mongoose = require('mongoose');
+    if (mongoose.Types.ObjectId.isValid(cleanRef)) {
+      referrerUser = await User.findById(cleanRef);
+    }
+    if (!referrerUser) {
+      referrerUser = await User.findOne({ referralCode: cleanRef.toUpperCase() });
+    }
+    if (!referrerUser) {
+      referrerUser = await User.findOne({ referralCode: cleanRef });
+    }
+  }
+
   const user = await User.create({
     name,
     email: normalizedEmail,
     password,
     role,
-    phone
+    phone,
+    referredBy: referrerUser ? referrerUser._id : null,
   });
+
+  // Track initial Referral record if referred by a tutor
+  if (referrerUser && String(referrerUser._id) !== String(user._id)) {
+    try {
+      const Referral = require('../models/Referral');
+      await Referral.create({
+        referrer: referrerUser._id,
+        referredUser: user._id,
+        referredUserRole: role || 'TUTOR',
+        status: 'JOINED',
+      });
+    } catch (_) {}
+  }
 
   if (role === 'TUTOR') {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + crypto.randomBytes(4).toString('hex');

@@ -138,13 +138,7 @@ const TutorDashboardPage = () => {
   };
 
   const handleReferClick = () => {
-    const refLink = `${window.location.origin}/register?role=TUTOR&ref=${user?._id || ''}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(refLink);
-      showToast('Referral link copied to clipboard! Invite fellow tutors to MentorNearby.', 'success');
-    } else {
-      showToast('Invite fellow tutors to MentorNearby and earn reward unlocks!', 'info');
-    }
+    navigate('/refer-and-earn');
   };
 
   const handleLogout = async () => {

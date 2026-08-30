@@ -396,6 +396,7 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  min-height: 0;
 }
 
 /* Conversation Top Header */
@@ -407,6 +408,8 @@
   justify-content: space-between;
   background: #111827;
   flex-shrink: 0;
+  position: relative;
+  z-index: 15;
 }
 
 .mn-chat-root.light .mn-chat-convo-header {
@@ -434,6 +437,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
+  user-select: none;
 }
 
 .mn-chat-convo-avatar-wrap {
@@ -488,6 +493,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .mn-chat-icon-btn {
@@ -513,6 +519,55 @@
 
 .mn-chat-icon-btn:hover {
   border-color: #F59E0B;
+  color: #F59E0B;
+}
+
+/* Header Dropdown Menu */
+.mn-chat-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #111827;
+  border: 1px solid #1E293B;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  min-width: 190px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mn-chat-root.light .mn-chat-dropdown-menu {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.mn-chat-dropdown-item {
+  background: transparent;
+  border: none;
+  color: #E2E8F0;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.mn-chat-root.light .mn-chat-dropdown-item {
+  color: #0F172A;
+}
+
+.mn-chat-dropdown-item:hover {
+  background: rgba(245, 158, 11, 0.15);
   color: #F59E0B;
 }
 
@@ -560,11 +615,15 @@
 /* Messages Stage & Date Separator */
 .mn-chat-messages-stage {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  position: relative;
+  z-index: 1;
 }
 
 .mn-chat-date-separator {
@@ -732,6 +791,8 @@
   gap: 8px;
   background: #111827;
   flex-shrink: 0;
+  position: relative;
+  z-index: 20;
 }
 
 .mn-chat-root.light .mn-chat-input-bar {
@@ -791,36 +852,91 @@
 }
 
 /* ============================================================ */
-/* 📱 MOBILE IN-LINE ABOUT PROFILE SHEET (Matches Mobile Ref)    */
+/* 📱 MOBILE BOTTOM SHEET PROFILE MODAL (Opens only on tap)      */
 /* ============================================================ */
+.mn-mobile-profile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: mnFadeIn 0.2s ease-out;
+}
+
 .mn-chat-mobile-profile-sheet {
-  display: none; /* Hidden on Desktop */
+  width: 100%;
+  max-width: 520px;
+  max-height: 85dvh;
+  overflow-y: auto;
   background: #111827;
-  border-top: 1px solid #1E293B;
-  border-radius: 22px 22px 0 0;
-  padding: 16px 18px 28px 18px;
+  border: 1px solid #1E293B;
+  border-radius: 24px 24px 0 0;
+  padding: 16px 20px 32px 20px;
+  display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+  animation: mnSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
 .mn-chat-root.light .mn-chat-mobile-profile-sheet {
   background: #FFFFFF;
-  border-top-color: #E2E8F0;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.05);
+  border-color: #E2E8F0;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.mn-mobile-sheet-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 2px;
 }
 
 .mn-mobile-sheet-handle {
-  width: 40px;
-  height: 4px;
+  width: 44px;
+  height: 5px;
   border-radius: 99px;
   background: #334155;
-  align-self: center;
-  margin-bottom: 4px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .mn-chat-root.light .mn-mobile-sheet-handle {
   background: #CBD5E1;
+}
+
+.mn-mobile-sheet-close-btn {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.mn-chat-root.light .mn-mobile-sheet-close-btn {
+  background: #F1F5F9;
+  color: #64748B;
+}
+
+.mn-mobile-sheet-close-btn:hover {
+  background: #EF4444;
+  color: #FFFFFF;
 }
 
 .mn-mobile-sheet-title {
@@ -970,10 +1086,21 @@
   text-decoration: none;
   margin-top: 4px;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .mn-mobile-view-profile-btn:hover {
   background: rgba(245, 158, 11, 0.12);
+}
+
+@keyframes mnFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mnSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 /* ============================================================ */
@@ -1210,30 +1337,48 @@
 
 @media (max-width: 768px) {
   .mn-chat-root {
-    padding: 10px 8px 30px 8px;
-    min-height: 100vh;
+    padding: 0;
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
 
   .mn-chat-top-banner,
   .mn-chat-trust-bar {
-    display: none; /* Clean mobile native look matching reference */
+    display: none; /* Clean mobile native look */
+  }
+
+  .mn-chat-container {
+    height: 100%;
+    max-height: 100dvh;
+    flex: 1;
+    gap: 0;
+    padding: 0;
   }
 
   .mn-chat-stage {
     grid-template-columns: 1fr;
-    height: auto;
-    min-height: calc(100vh - 40px);
+    height: 100%;
+    min-height: 0;
+    flex: 1;
     gap: 0;
   }
 
   .mn-chat-panel {
-    border-radius: 16px;
-    min-height: calc(100vh - 40px);
+    border-radius: 0;
+    border: none;
+    height: 100%;
+    min-height: 0;
+    box-shadow: none;
   }
 
-  /* When activePartner is selected on mobile: hide left list and show convo + profile sheet */
+  /* When activePartner is selected on mobile: hide left list and show convo */
   .mn-chat-list-panel {
     display: flex;
+    height: 100%;
+    min-height: 0;
+    padding: 12px;
   }
 
   .mn-chat-convo-panel.has-partner ~ .mn-chat-list-panel,
@@ -1241,19 +1386,52 @@
     display: none;
   }
 
+  .mn-chat-convo-panel {
+    height: 100%;
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .mn-chat-convo-header {
+    flex-shrink: 0;
+    padding: 10px 14px;
+  }
+
+  .mn-chat-safe-banner {
+    flex-shrink: 0;
+  }
+
+  .mn-chat-messages-stage {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 14px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mn-chat-input-bar {
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    padding: 8px 12px 12px;
+    background: #111827;
+  }
+
+  .mn-chat-root.light .mn-chat-input-bar {
+    background: #FFFFFF;
+  }
+
   .mn-chat-mobile-back-btn {
     display: inline-block;
   }
 
-  .mn-chat-mobile-profile-sheet {
-    display: flex; /* Shown immediately below message composer */
-  }
-
   .mn-chat-profile-panel {
     display: none;
-  }
-
-  .mn-chat-messages-stage {
-    min-height: 260px;
   }
 }

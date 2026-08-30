@@ -54,6 +54,7 @@ const ChatPage = () => {
   const [showPlansModal, setShowPlansModal] = useState(false);
   const [blockedAttempt, setBlockedAttempt] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showMobileProfile, setShowMobileProfile] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
   const messagesEndRef = useRef(null);
@@ -559,7 +560,13 @@ const ChatPage = () => {
                     ‹
                   </button>
 
-                  <div className="mn-chat-convo-user">
+                  <div
+                    className="mn-chat-convo-user"
+                    onClick={() => setShowMobileProfile(true)}
+                    role="button"
+                    tabIndex={0}
+                    title="Tap to view tutor profile"
+                  >
                     <div className="mn-chat-convo-avatar-wrap">
                       {activePartner?.avatar ? (
                         <img src={activePartner.avatar} alt={activePartner.name} className="mn-chat-item-avatar" />
@@ -581,8 +588,13 @@ const ChatPage = () => {
                   </div>
 
                   <div className="mn-chat-convo-actions">
-                    <button type="button" className="mn-chat-icon-btn call-btn" title="Voice Call">
-                      📞
+                    <button
+                      type="button"
+                      className="mn-chat-icon-btn profile-info-btn"
+                      onClick={() => setShowMobileProfile(true)}
+                      title="About Profile"
+                    >
+                      👤
                     </button>
                     <button
                       type="button"
@@ -592,6 +604,42 @@ const ChatPage = () => {
                     >
                       ⋮
                     </button>
+
+                    {showDropdown && (
+                      <div className="mn-chat-dropdown-menu">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowMobileProfile(true);
+                            setShowDropdown(false);
+                          }}
+                          className="mn-chat-dropdown-item"
+                        >
+                          👤 View Profile Sheet
+                        </button>
+                        <Link
+                          to={
+                            activePartner.role === 'TUTOR'
+                              ? `/tutor/${partnerProfile?._id || activePartner.tutorProfile?._id || activePartner._id}`
+                              : `/student/${partnerProfile?._id || activePartner.studentProfile?._id || activePartner._id}`
+                          }
+                          className="mn-chat-dropdown-item"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          🔗 Full Profile Page
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            showToast('Voice calling will be available in next update', 'info');
+                            setShowDropdown(false);
+                          }}
+                          className="mn-chat-dropdown-item"
+                        >
+                          📞 Voice Call
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -665,7 +713,7 @@ const ChatPage = () => {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Message Input Composer */}
+                {/* Message Input Composer (Fixed at Bottom of Chat View) */}
                 <form onSubmit={handleSendMessage} className="mn-chat-input-bar">
                   <button type="button" className="mn-chat-icon-btn attach-btn" title="Attach file">
                     📎
@@ -685,87 +733,102 @@ const ChatPage = () => {
                   </button>
                 </form>
 
-                {/* 📱 MOBILE IN-LINE ABOUT PROFILE CARD (Renders right below message composer on mobile) */}
-                <div className="mn-chat-mobile-profile-sheet">
-                  <div className="mn-mobile-sheet-handle"></div>
-                  
-                  <h3 className="mn-mobile-sheet-title">
-                    About {activePartner.name?.split(' ')[0] || 'User'}
-                  </h3>
+                {/* 📱 MOBILE BOTTOM SHEET PROFILE MODAL (Hidden by default, opens only on 'View Full Profile' / Avatar tap) */}
+                {showMobileProfile && (
+                  <div className="mn-mobile-profile-overlay" onClick={() => setShowMobileProfile(false)}>
+                    <div className="mn-chat-mobile-profile-sheet" onClick={(e) => e.stopPropagation()}>
+                      <div className="mn-mobile-sheet-top-bar">
+                        <div className="mn-mobile-sheet-handle"></div>
+                        <button
+                          type="button"
+                          className="mn-mobile-sheet-close-btn"
+                          onClick={() => setShowMobileProfile(false)}
+                          aria-label="Close"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      
+                      <h3 className="mn-mobile-sheet-title">
+                        About {activePartner.name?.split(' ')[0] || 'User'}
+                      </h3>
 
-                  <div className="mn-mobile-profile-center">
-                    <div className="mn-mobile-avatar-ring">
-                      {activePartner.avatar ? (
-                        <img src={activePartner.avatar} alt={activePartner.name} className="mn-mobile-avatar-img" />
-                      ) : (
-                        <div className="mn-mobile-avatar-fallback">
-                          {activePartner.name?.charAt(0) || 'U'}
+                      <div className="mn-mobile-profile-center">
+                        <div className="mn-mobile-avatar-ring">
+                          {activePartner.avatar ? (
+                            <img src={activePartner.avatar} alt={activePartner.name} className="mn-mobile-avatar-img" />
+                          ) : (
+                            <div className="mn-mobile-avatar-fallback">
+                              {activePartner.name?.charAt(0) || 'U'}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <div className="mn-mobile-profile-name">
-                      {activePartner.name}
-                      <span className="mn-gold-check">✓</span>
-                    </div>
+                        <div className="mn-mobile-profile-name">
+                          {activePartner.name}
+                          <span className="mn-gold-check">✓</span>
+                        </div>
 
-                    <div className="mn-mobile-profile-role">{partnerRoleLabel}</div>
+                        <div className="mn-mobile-profile-role">{partnerRoleLabel}</div>
 
-                    <div className="mn-mobile-profile-rating">
-                      ⭐ {partnerRating || '4.9'} ({partnerReviewsCount || 120})
-                    </div>
-                  </div>
+                        <div className="mn-mobile-profile-rating">
+                          ⭐ {partnerRating || '4.9'} ({partnerReviewsCount || 120})
+                        </div>
+                      </div>
 
-                  {/* About Bio */}
-                  <div className="mn-mobile-profile-section">
-                    <span className="mn-mobile-section-heading">About</span>
-                    <p className="mn-mobile-section-text">
-                      {partnerBio || 'With 5+ years of experience, I specialize in making Maths & Science simple and scoring. My approach focuses on concept clarity, daily practice, and regular doubt sessions.'}
-                    </p>
-                  </div>
+                      {/* About Bio */}
+                      <div className="mn-mobile-profile-section">
+                        <span className="mn-mobile-section-heading">About</span>
+                        <p className="mn-mobile-section-text">
+                          {partnerBio || 'With 5+ years of experience, I specialize in making Maths & Science simple and scoring. My approach focuses on concept clarity, daily practice, and regular doubt sessions.'}
+                        </p>
+                      </div>
 
-                  {/* Subjects */}
-                  <div className="mn-mobile-profile-section">
-                    <span className="mn-mobile-section-heading">
-                      {activePartner.role === 'TUTOR' ? 'Subjects Taught' : 'Subjects Needed'}
-                    </span>
-                    <div className="mn-mobile-chips-grid">
-                      {(partnerSubjects.length > 0 ? partnerSubjects : ['Mathematics', 'Physics', 'Chemistry']).map((s, idx) => (
-                        <span key={idx} className="mn-mobile-chip">
-                          {typeof s === 'string' ? s : s.name || s}
+                      {/* Subjects */}
+                      <div className="mn-mobile-profile-section">
+                        <span className="mn-mobile-section-heading">
+                          {activePartner.role === 'TUTOR' ? 'Subjects Taught' : 'Subjects Needed'}
                         </span>
-                      ))}
+                        <div className="mn-mobile-chips-grid">
+                          {(partnerSubjects.length > 0 ? partnerSubjects : ['Mathematics', 'Physics', 'Chemistry']).map((s, idx) => (
+                            <span key={idx} className="mn-mobile-chip">
+                              {typeof s === 'string' ? s : s.name || s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Budget */}
+                      <div className="mn-mobile-profile-section">
+                        <span className="mn-mobile-section-heading">Budget</span>
+                        <span className="mn-mobile-section-text font-bold">
+                          {partnerBudget || '₹500 - ₹800 /hr'}
+                        </span>
+                      </div>
+
+                      {/* Location */}
+                      <div className="mn-mobile-profile-section">
+                        <span className="mn-mobile-section-heading">Location</span>
+                        <span className="mn-mobile-section-text">
+                          {partnerLocation || 'Hapur, Uttar Pradesh'}
+                        </span>
+                      </div>
+
+                      {/* View Full Profile CTA */}
+                      <Link
+                        to={
+                          activePartner.role === 'TUTOR'
+                            ? `/tutor/${partnerProfile?._id || activePartner.tutorProfile?._id || activePartner._id}`
+                            : `/student/${partnerProfile?._id || activePartner.studentProfile?._id || activePartner._id}`
+                        }
+                        className="mn-mobile-view-profile-btn"
+                        onClick={() => setShowMobileProfile(false)}
+                      >
+                        View Full Profile
+                      </Link>
                     </div>
                   </div>
-
-                  {/* Budget */}
-                  <div className="mn-mobile-profile-section">
-                    <span className="mn-mobile-section-heading">Budget</span>
-                    <span className="mn-mobile-section-text font-bold">
-                      {partnerBudget || '₹500 - ₹800 /hr'}
-                    </span>
-                  </div>
-
-                  {/* Location */}
-                  <div className="mn-mobile-profile-section">
-                    <span className="mn-mobile-section-heading">Location</span>
-                    <span className="mn-mobile-section-text">
-                      {partnerLocation || 'Hapur, Uttar Pradesh'}
-                    </span>
-                  </div>
-
-                  {/* View Full Profile CTA */}
-                  <Link
-                    to={
-                      activePartner.role === 'TUTOR'
-                        ? `/tutor/${partnerProfile?._id || activePartner.tutorProfile?._id || activePartner._id}`
-                        : `/student/${partnerProfile?._id || activePartner.studentProfile?._id || activePartner._id}`
-                    }
-                    className="mn-mobile-view-profile-btn"
-                  >
-                    View Full Profile
-                  </Link>
-                </div>
+                )}
               </>
             ) : (
               <div className="mn-chat-no-active-empty">

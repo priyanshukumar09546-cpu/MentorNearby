@@ -379,3 +379,72 @@ exports.getPublicStudentProfile = asyncHandler(async (req, res, next) => {
     }
   });
 });
+
+// @desc    Get user profile by User ID or Tutor/Student profile ID
+// @route   GET /api/users/:id
+// @access  Public
+exports.getUserById = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    return error(res, 'Invalid user ID', 400);
+  }
+
+  let user = await User.findById(id).select('name email avatar role isVerified createdAt isOnline lastLogin');
+  let tutorProfile = null;
+  let studentProfile = null;
+
+  if (user) {
+    if (user.role === 'TUTOR') {
+      tutorProfile = await TutorProfile.findOne({ user: user._id }).lean();
+    } else {
+      studentProfile = await StudentProfile.findOne({ user: user._id }).lean();
+    }
+  } else {
+    // Check if ID is a TutorProfile ID
+    tutorProfile = await TutorProfile.findById(id).populate('user', 'name email avatar role isVerified createdAt isOnline lastLogin').lean();
+    if (tutorProfile && tutorProfile.user) {
+      user = tutorProfile.user;
+    } else {
+      // Check if ID is a StudentProfile ID
+      studentProfile = await StudentProfile.findById(id).populate('user', 'name email avatar role isVerified createdAt isOnline lastLogin').lean();
+      if (studentProfile && studentProfile.user) {
+        user = studentProfile.user;
+      }
+    }
+  }
+
+  if (!user) {
+    return error(res, 'User not found', 404);
+  }
+
+  return success(res, 'User fetched successfully', {
+    _id: user._id,
+    name: user.name,
+    avatar: user.avatar || tutorProfile?.profilePhoto?.url || studentProfile?.profilePhoto?.url || '',
+    role: user.role,
+    isVerified: Boolean(user.isVerified || tutorProfile?.isVerified || tutorProfile?.kycStatus === 'VERIFIED'),
+    isOnline: Boolean(user.isOnline || (user.lastLogin && (Date.now() - new Date(user.lastLogin).getTime() < 15 * 60 * 1000))),
+    lastLogin: user.lastLogin,
+    tutorProfile: tutorProfile ? {
+      _id: tutorProfile._id,
+      subjects: tutorProfile.subjects,
+      experience: tutorProfile.experience,
+      pricing: tutorProfile.pricing,
+      location: tutorProfile.location,
+      averageRating: tutorProfile.averageRating || 4.9,
+      totalReviews: tutorProfile.totalReviews || 0,
+      isVerified: Boolean(tutorProfile.isVerified || tutorProfile.kycStatus === 'VERIFIED'),
+      bio: tutorProfile.bio || tutorProfile.about || '',
+    } : null,
+    studentProfile: studentProfile ? {
+      _id: studentProfile._id,
+      class: studentProfile.studentDetails?.class || studentProfile.grade,
+      board: studentProfile.studentDetails?.board,
+      location: studentProfile.location,
+      about: studentProfile.about || '',
+      budget: studentProfile.budget,
+      subjects: studentProfile.subjects,
+    } : null,
+  });
+});

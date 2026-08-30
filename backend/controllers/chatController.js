@@ -24,7 +24,8 @@ const { sendLeadWhatsAppAlert } = require('../services/whatsappService');
 // @route   POST /api/chat/:userId
 // @access  Private (limit enforced by checkChatLimit middleware in route)
 exports.sendMessage = asyncHandler(async (req, res, next) => {
-  const receiverId = req.params.userId;
+  const TutorProfile = require('../models/TutorProfile');
+  let receiverId = req.params.userId;
   const senderId = req.user._id || req.user.id;
   const { content, text } = req.body;
   const rawContent = (content || text || '').trim();
@@ -33,14 +34,26 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     return error(res, 'Please provide message content', 400);
   }
 
-  if (String(senderId) === String(receiverId)) {
-    return error(res, 'You cannot send a message to yourself', 400);
+  let receiver = await User.findById(receiverId);
+  if (!receiver) {
+    const tutorProfile = await TutorProfile.findById(receiverId);
+    if (tutorProfile && tutorProfile.user) {
+      receiver = await User.findById(tutorProfile.user);
+      if (receiver) {
+        receiverId = receiver._id;
+      }
+    }
   }
 
-  const receiver = await User.findById(receiverId);
   if (!receiver) {
     return error(res, 'Receiver not found', 404);
   }
+
+  if (String(senderId) === String(receiver._id)) {
+    return error(res, 'You cannot send a message to yourself', 400);
+  }
+
+  const actualReceiverId = receiver._id;
 
   // ── Anti-Bypass Check: Reject phone numbers, emails, and word numbers ──
   if (hasContactInfo(rawContent)) {
@@ -132,8 +145,20 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 // @route   GET /api/chat/:userId
 // @access  Private
 exports.getMessages = asyncHandler(async (req, res, next) => {
-  const otherUserId = req.params.userId;
+  const TutorProfile = require('../models/TutorProfile');
+  let otherUserId = req.params.userId;
   const currentUserId = req.user._id || req.user.id;
+
+  let otherUser = await User.findById(otherUserId);
+  if (!otherUser) {
+    const tutorProfile = await TutorProfile.findById(otherUserId);
+    if (tutorProfile && tutorProfile.user) {
+      otherUser = await User.findById(tutorProfile.user);
+      if (otherUser) {
+        otherUserId = otherUser._id;
+      }
+    }
+  }
 
   const messages = await Message.find({
     $or: [
@@ -156,7 +181,6 @@ exports.getMessages = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    Get list of conversations (unique users this user has chatted with)
 // @desc    Get list of conversations (unique users this user has chatted with)
 // @route   GET /api/chat
 // @access  Private
@@ -293,28 +317,25 @@ exports.initiateConversation = asyncHandler(async (req, res, next) => {
     return error(res, 'Please provide recipient ID', 400);
   }
 
-  if (String(senderId) === String(recipientId)) {
-    return error(res, 'You cannot initiate a chat with yourself', 400);
-  }
-
   // Find target recipient (could be teacher user ID or tutor profile ID)
   let recipient = await User.findById(recipientId);
   if (!recipient) {
-    // Check if recipientId was a TutorProfile ID
-    try {
-      const Tutor = require('../models/Tutor');
-      const tutorProfile = await Tutor.findById(recipientId);
-      if (tutorProfile && tutorProfile.user) {
-        recipient = await User.findById(tutorProfile.user);
-      }
-    } catch (_) {}
+    const TutorProfile = require('../models/TutorProfile');
+    const tutorProfile = await TutorProfile.findById(recipientId);
+    if (tutorProfile && tutorProfile.user) {
+      recipient = await User.findById(tutorProfile.user);
+    }
   }
 
   if (!recipient) {
-    return error(res, 'Teacher / Recipient not found', 404);
+    return error(res, 'Tutor / Recipient not found', 404);
   }
 
   const actualRecipientId = recipient._id;
+
+  if (String(senderId) === String(actualRecipientId)) {
+    return error(res, 'You cannot initiate a chat with yourself', 400);
+  }
 
   // Check if they already have an existing conversation / messages
   const existingMessage = await Message.findOne({

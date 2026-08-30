@@ -14,6 +14,7 @@ const {
   markAllNotificationsRead,
   getFeaturedStudents,
   getPublicStudentProfile,
+  getUserById,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 
@@ -24,6 +25,7 @@ router.get('/students/:id', getPublicStudentProfile);
 router.get('/student/:id', getPublicStudentProfile);
 router.get('/students/:id/public', getPublicStudentProfile);
 router.get('/public/students/:id', getPublicStudentProfile);
+router.get('/:id', getUserById);
 
 // Protected routes
 router.use(protect);

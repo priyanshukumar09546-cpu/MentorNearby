@@ -302,9 +302,12 @@ const ChatPage = () => {
   // Derived Partner Profile Info
   const partnerRoleLabel = useMemo(() => {
     if (!activePartner) return '';
-    if (activePartner.role === 'TUTOR') return 'Tutor • Certified';
-    const cls = partnerProfile?.studentDetails?.class || partnerProfile?.class || 'Class 11';
-    return `Student • ${cls}`;
+    if (activePartner.role === 'TUTOR') {
+      const isVer = Boolean(partnerProfile?.isVerified || activePartner.tutorProfile?.isVerified);
+      return isVer ? 'Verified Tutor' : 'Tutor';
+    }
+    const cls = partnerProfile?.studentDetails?.class || partnerProfile?.class;
+    return cls ? `Student • ${cls}` : 'Student';
   }, [activePartner, partnerProfile]);
 
   const partnerSubjects = useMemo(() => {
@@ -325,27 +328,31 @@ const ChatPage = () => {
       partnerProfile?.about ||
       activePartner.tutorProfile?.bio ||
       activePartner.studentProfile?.about ||
-      'No bio added yet.'
+      ''
     );
   }, [activePartner, partnerProfile]);
 
   const partnerBudget = useMemo(() => {
-    if (!activePartner) return 'Fees on request';
+    if (!activePartner) return '';
     if (activePartner.role === 'TUTOR') {
       const rate = partnerProfile?.pricing?.hourlyRate || activePartner.tutorProfile?.pricing?.hourlyRate;
-      return rate ? `₹${rate} /hr` : '₹500 - ₹800 /hr';
+      if (rate) return `₹${rate} /hr`;
+      const mRate = partnerProfile?.pricing?.monthlyRate || activePartner.tutorProfile?.pricing?.monthlyRate;
+      if (mRate) return `₹${mRate} /mo`;
+      return 'Contact for fees';
     }
     const b = partnerProfile?.budget || partnerProfile?.tuitionPreferences?.budget;
-    return b ? `₹${b} /mo` : '₹500 - ₹800 /hr';
+    return b ? `₹${b}` : 'As per requirement';
   }, [activePartner, partnerProfile]);
 
   const partnerLocation = useMemo(() => {
-    if (!activePartner) return 'Location on profile';
+    if (!activePartner) return '';
     return (
       partnerProfile?.location?.city ||
       activePartner.tutorProfile?.location?.city ||
       activePartner.studentProfile?.location?.city ||
-      'Delhi, India'
+      partnerProfile?.city ||
+      ''
     );
   }, [activePartner, partnerProfile]);
 
@@ -353,7 +360,7 @@ const ChatPage = () => {
     return (
       partnerProfile?.averageRating ||
       activePartner?.tutorProfile?.averageRating ||
-      4.9
+      null
     );
   }, [partnerProfile, activePartner]);
 
@@ -696,22 +703,28 @@ const ChatPage = () => {
                   )}
 
                   <div className="mn-chat-profile-lg-name">
-                    {activePartner.name || 'User'}
-                    <span style={{ color: '#F59E0B', fontSize: 12 }}>✓</span>
+                    {activePartner.name}
+                    {Boolean(partnerProfile?.isVerified || activePartner.tutorProfile?.isVerified) && (
+                      <span style={{ color: '#F59E0B', fontSize: 12 }}>✓</span>
+                    )}
                   </div>
 
                   <div className="mn-chat-profile-role-line">{partnerRoleLabel}</div>
 
-                  <div className="mn-chat-profile-rating-line">
-                    ★ {partnerRating} ({partnerReviewsCount})
-                  </div>
+                  {partnerRating && (
+                    <div className="mn-chat-profile-rating-line">
+                      ★ {partnerRating} {partnerReviewsCount > 0 ? `(${partnerReviewsCount})` : ''}
+                    </div>
+                  )}
                 </div>
 
                 {/* About text */}
-                <div className="mn-chat-profile-info-block">
-                  <span className="mn-chat-profile-info-heading">About</span>
-                  <p className="mn-chat-profile-info-body">{partnerBio}</p>
-                </div>
+                {partnerBio && (
+                  <div className="mn-chat-profile-info-block">
+                    <span className="mn-chat-profile-info-heading">About</span>
+                    <p className="mn-chat-profile-info-body">{partnerBio}</p>
+                  </div>
+                )}
 
                 {/* Subjects Chips */}
                 {partnerSubjects.length > 0 && (
@@ -730,18 +743,22 @@ const ChatPage = () => {
                 )}
 
                 {/* Budget / Hourly Rate */}
-                <div className="mn-chat-profile-info-block">
-                  <span className="mn-chat-profile-info-heading">Budget</span>
-                  <span className="mn-chat-profile-info-body" style={{ fontWeight: 700, color: '#FFFFFF' }}>
-                    {partnerBudget}
-                  </span>
-                </div>
+                {partnerBudget && (
+                  <div className="mn-chat-profile-info-block">
+                    <span className="mn-chat-profile-info-heading">Budget</span>
+                    <span className="mn-chat-profile-info-body" style={{ fontWeight: 700, color: '#FFFFFF' }}>
+                      {partnerBudget}
+                    </span>
+                  </div>
+                )}
 
                 {/* Location */}
-                <div className="mn-chat-profile-info-block">
-                  <span className="mn-chat-profile-info-heading">Location</span>
-                  <span className="mn-chat-profile-info-body">{partnerLocation}</span>
-                </div>
+                {partnerLocation && (
+                  <div className="mn-chat-profile-info-block">
+                    <span className="mn-chat-profile-info-heading">Location</span>
+                    <span className="mn-chat-profile-info-body">{partnerLocation}</span>
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>

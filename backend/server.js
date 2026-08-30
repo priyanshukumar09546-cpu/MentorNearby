@@ -74,11 +74,12 @@ function safeRoute(mountPath, routePath) {
     app.use(mountPath, routeModule);
     console.log(`✅ Loaded route: ${mountPath} -> ${routePath}`);
   } catch (e) {
-    console.warn(`⚠️ SKIPPED route ${mountPath} (${routePath}): ${e.message}`);
+    console.error(`❌ CRITICAL: Failed to load route ${mountPath} (${routePath}):`, e.message, e.stack);
     app.use(mountPath, (req, res) => {
-      res.status(200).json({
-        success: true,
-        message: `${mountPath} fallback active`,
+      res.status(503).json({
+        success: false,
+        message: 'Subscription & payment service is updating. Please try again shortly.',
+        errorCode: 'SERVICE_UNAVAILABLE',
         path: req.originalUrl,
       });
     });

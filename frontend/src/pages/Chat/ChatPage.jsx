@@ -259,10 +259,10 @@ const ChatPage = () => {
       const errMsg = err.response?.data?.message || 'Failed to send message';
       const errCode = err.response?.data?.code;
 
-      if (errCode === 'CONTACT_SHARING_BLOCKED' || errMsg.includes('Contact')) {
+      if (errCode === 'CONTACT_SHARING_BLOCKED' || errMsg.includes('Contact') || errMsg.includes('safety')) {
         setBlockedAttempt({
           text: rawText,
-          reason: 'For your safety, sharing phone numbers or other contact information isn\'t permitted in MentorNearby chat.',
+          reason: errMsg || "🔒 For your safety, contact details and social-media information can't be shared in MentorNearby chat. Please keep communication within MentorNearby.",
           timestamp: new Date(),
         });
         setNewMessage('');
@@ -608,12 +608,12 @@ const ChatPage = () => {
                       </div>
 
                       <div className="mn-msg-blocked-warning-title">
-                        <span>⚠️</span>
-                        <span>Contact details aren't allowed</span>
+                        <span>🔒</span>
+                        <span>Contact details & social media aren't allowed</span>
                       </div>
 
                       <p className="mn-msg-blocked-warning-text">
-                        For your safety, sharing phone numbers or other contact information isn't permitted in MentorNearby chat.
+                        {blockedAttempt.reason || "🔒 For your safety, contact details and social-media information can't be shared in MentorNearby chat. Please keep communication within MentorNearby."}
                       </p>
 
                       <button

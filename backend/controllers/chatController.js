@@ -57,9 +57,10 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 
   // ── Anti-Bypass Check: Reject phone numbers, emails, and word numbers ──
   if (hasContactInfo(rawContent)) {
+    const { SECURITY_BLOCKED_MESSAGE } = require('../utils/messageFilter');
     return error(
       res,
-      'Contact sharing is blocked in chat. Please use the Contact Unlock / Subscription feature to get direct phone numbers.',
+      SECURITY_BLOCKED_MESSAGE || "🔒 For your safety, contact details and social-media information can't be shared in MentorNearby chat. Please keep communication within MentorNearby.",
       400,
       'CONTACT_SHARING_BLOCKED'
     );

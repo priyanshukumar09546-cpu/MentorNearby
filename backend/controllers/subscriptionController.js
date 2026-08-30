@@ -34,6 +34,79 @@ const PLANS = {
     isSubscription: false,
     badge: null,
   },
+  starter: {
+    amount: 9900,
+    currency: 'INR',
+    label: 'Starter Plan – 3 Contacts (₹99/mo)',
+    interval: 30,
+    unlocks: 3,
+    isSubscription: true,
+    badge: 'Starter',
+  },
+  starter_yearly: {
+    amount: 89100,
+    currency: 'INR',
+    label: 'Starter Plan Yearly – 36 Contacts (₹891/yr)',
+    interval: 365,
+    unlocks: 36,
+    isSubscription: true,
+    badge: 'Starter',
+  },
+  growth: {
+    amount: 19900,
+    currency: 'INR',
+    label: 'Growth Plan – 10 Contacts (₹199/mo)',
+    interval: 30,
+    unlocks: 10,
+    isSubscription: true,
+    badge: 'Most Popular',
+  },
+  growth_yearly: {
+    amount: 179100,
+    currency: 'INR',
+    label: 'Growth Plan Yearly – 120 Contacts (₹1791/yr)',
+    interval: 365,
+    unlocks: 120,
+    isSubscription: true,
+    badge: 'Most Popular',
+  },
+  pro: {
+    amount: 39900,
+    currency: 'INR',
+    label: 'Pro Plan – 25 Contacts (₹399/mo)',
+    interval: 30,
+    unlocks: 25,
+    isSubscription: true,
+    badge: 'Pro',
+  },
+  pro_yearly: {
+    amount: 359100,
+    currency: 'INR',
+    label: 'Pro Plan Yearly – 300 Contacts (₹3591/yr)',
+    interval: 365,
+    unlocks: 300,
+    isSubscription: true,
+    badge: 'Pro',
+  },
+  premium: {
+    amount: 69900,
+    currency: 'INR',
+    label: 'Premium Plan – Unlimited Contacts (₹699/mo)',
+    interval: 30,
+    unlocks: 999999,
+    isSubscription: true,
+    badge: 'Premium',
+  },
+  premium_yearly: {
+    amount: 629100,
+    currency: 'INR',
+    label: 'Premium Plan Yearly – Unlimited Contacts (₹6291/yr)',
+    interval: 365,
+    unlocks: 999999,
+    isSubscription: true,
+    badge: 'Premium',
+  },
+  // Backward compatibility aliases
   single: {
     amount: 9900,
     currency: 'INR',
@@ -43,60 +116,32 @@ const PLANS = {
     isSubscription: false,
     badge: 'One-Time',
   },
-  starter: {
-    amount: 19900,
-    currency: 'INR',
-    label: 'Starter Plan – 20 Contacts (₹199/mo)',
-    interval: 30,
-    unlocks: 20,
-    isSubscription: true,
-    badge: 'Most Popular for Students',
-  },
-  pro: {
-    amount: 49900,
-    currency: 'INR',
-    label: 'Pro Plan – Unlimited Contacts (₹499/mo)',
-    interval: 30,
-    unlocks: 999999,
-    isSubscription: true,
-    badge: 'Best for Tutors',
-  },
-  // Backward compatibility aliases
   basic: {
     amount: 9900,
     currency: 'INR',
-    label: 'Single Unlock – 2 Contacts (₹99)',
-    interval: 0,
-    unlocks: 2,
-    isSubscription: false,
-    badge: 'One-Time',
+    label: 'Starter Plan (₹99)',
+    interval: 30,
+    unlocks: 3,
+    isSubscription: true,
+    badge: 'Starter',
   },
   student: {
     amount: 19900,
     currency: 'INR',
-    label: 'Starter Plan – 20 Contacts (₹199/mo)',
+    label: 'Growth Plan (₹199)',
     interval: 30,
-    unlocks: 20,
+    unlocks: 10,
     isSubscription: true,
-    badge: 'Most Popular for Students',
+    badge: 'Most Popular',
   },
   teacher: {
     amount: 49900,
     currency: 'INR',
-    label: 'Pro Plan – Unlimited Contacts (₹499/mo)',
+    label: 'Pro Plan (₹499)',
     interval: 30,
     unlocks: 999999,
     isSubscription: true,
     badge: 'Best for Tutors',
-  },
-  premium: {
-    amount: 19900,
-    currency: 'INR',
-    label: 'Starter Plan – 20 Contacts (₹199/mo)',
-    interval: 30,
-    unlocks: 20,
-    isSubscription: true,
-    badge: 'Most Popular for Students',
   },
 };
 
@@ -237,50 +282,48 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
 
   if (isMonthlySubscription) {
     expiry = new Date();
-    expiry.setDate(expiry.getDate() + 30);
+    const daysToAdd = selectedPlan.interval || 30;
+    expiry.setDate(expiry.getDate() + daysToAdd);
     user.isSubscribed = true;
     user.subscriptionExpiry = expiry;
     user.isPremium = true;
     user.premiumExpiresAt = expiry;
   }
 
-  // 1. Single Unlock (₹99) -> EXACTLY 2 unlock credits
-  if (planKey === 'single' || planKey === 'basic') {
+  // Assign plan unlocks & subscription type
+  if (planKey === 'single') {
     user.contactUnlocks = (user.contactUnlocks || 0) + 2;
     user.subscriptionType = 'single';
-    user.subscription = {
-      plan: 'single',
-      isActive: true,
-      expiry: user.subscriptionExpiry || null,
-      contactUnlocks: user.contactUnlocks,
-    };
-  } else if (planKey === 'starter' || planKey === 'student' || planKey === 'premium') {
-    // 2. Starter (₹199) -> 20 unlock credits + 30 days validity
-    user.contactUnlocks = (user.contactUnlocks || 0) + 20;
+  } else if (planKey === 'starter' || planKey === 'starter_yearly' || planKey === 'basic') {
+    const addUnlocks = planKey.includes('yearly') ? 36 : 3;
+    user.contactUnlocks = (user.contactUnlocks || 0) + addUnlocks;
     user.subscriptionType = 'starter';
-    user.subscription = {
-      plan: 'starter',
-      isActive: true,
-      expiry,
-      contactUnlocks: user.contactUnlocks,
-    };
-  } else if (planKey === 'pro' || planKey === 'teacher') {
-    // 3. Pro (₹499) -> Unlimited unlocks + Top Featured Listing + Verified
-    user.contactUnlocks = 999999;
+  } else if (planKey === 'growth' || planKey === 'growth_yearly' || planKey === 'student') {
+    const addUnlocks = planKey.includes('yearly') ? 120 : 10;
+    user.contactUnlocks = (user.contactUnlocks || 0) + addUnlocks;
+    user.subscriptionType = 'growth';
+  } else if (planKey === 'pro' || planKey === 'pro_yearly') {
+    const addUnlocks = planKey.includes('yearly') ? 300 : 25;
+    user.contactUnlocks = (user.contactUnlocks || 0) + addUnlocks;
     user.subscriptionType = 'pro';
-    user.subscription = {
-      plan: 'pro',
-      isActive: true,
-      expiry,
-      contactUnlocks: 999999,
-    };
-
-    // If user is a tutor, mark verified and profile completion
+  } else if (planKey === 'premium' || planKey === 'premium_yearly' || planKey === 'teacher') {
+    user.contactUnlocks = 999999;
+    user.subscriptionType = 'premium';
     await TutorProfile.findOneAndUpdate(
       { user: user._id },
       { isVerified: true, isApproved: true }
     ).catch(() => {});
+  } else {
+    user.contactUnlocks = (user.contactUnlocks || 0) + (selectedPlan.unlocks || 0);
+    user.subscriptionType = planKey;
   }
+
+  user.subscription = {
+    plan: user.subscriptionType,
+    isActive: true,
+    expiry,
+    contactUnlocks: user.contactUnlocks,
+  };
 
   user.razorpaySubscriptionId = actualPaymentId;
   await user.save();

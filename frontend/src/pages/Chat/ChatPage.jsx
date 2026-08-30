@@ -103,7 +103,7 @@ const ChatPage = () => {
     fetchSubStatus();
   }, [fetchConversations, fetchSubStatus]);
 
-  // ── 2. Handle Target Partner from URL only when explicitly provided ──
+  // ── 2. Handle Initial Selection & Target Partner from URL ──
   useEffect(() => {
     let isMounted = true;
 
@@ -144,22 +144,41 @@ const ChatPage = () => {
               .catch(() => {});
           });
       }
+    } else if (conversations.length > 0 && !activePartner) {
+      // On initial load without targetId, open the first real MongoDB conversation
+      const firstRealConv = conversations[0]?.otherUser;
+      if (firstRealConv) setActivePartner(firstRealConv);
     }
 
     return () => {
       isMounted = false;
     };
-  }, [targetId, conversations]);
+  }, [targetId, conversations, activePartner]);
 
-  // Tab change resets active conversation selection
-  const handleTabChange = (tab) => {
-    setChatTab(tab);
-    setActivePartner(null);
-    setPartnerProfile(null);
-    setMessages([]);
+  // Tab change handler: keeps existing conversation if still in tab filter, otherwise selects first in filtered tab
+  const handleTabChange = (newTab) => {
+    setChatTab(newTab);
     setBlockedAttempt(null);
-    if (targetId) {
-      navigate('/chat', { replace: true });
+
+    const nextFiltered = conversations.filter((c) => {
+      const other = c.otherUser || {};
+      if (newTab === 'STUDENTS') return other.role === 'STUDENT' || other.role === 'PARENT';
+      if (newTab === 'TUTORS') return other.role === 'TUTOR';
+      return true;
+    });
+
+    const stillInList = nextFiltered.find(
+      (c) => String(c.otherUser?._id) === String(activePartner?._id)
+    );
+
+    if (!stillInList) {
+      if (nextFiltered.length > 0) {
+        setActivePartner(nextFiltered[0]?.otherUser);
+      } else {
+        setActivePartner(null);
+        setPartnerProfile(null);
+        setMessages([]);
+      }
     }
   };
 

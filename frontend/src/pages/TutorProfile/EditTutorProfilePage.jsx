@@ -77,14 +77,41 @@ const EditTutorProfilePage = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await getUserProfile();
-      const pData = res.data.data;
-      setProfileData(pData);
+      let pData = null;
 
-      const tUser = pData.user || user;
-      const tProfile = pData.profile || {};
+      try {
+        const res = await getUserProfile();
+        pData = res.data?.data || res.data || null;
+      } catch (e) {
+        console.warn('getUserProfile fetch notice:', e.message);
+      }
 
-      if (tUser?.role === 'TUTOR') {
+      if (!pData || !pData.profile) {
+        try {
+          const meRes = await client.get('/auth/me');
+          const mePayload = meRes.data?.data || meRes.data || {};
+          pData = {
+            user: mePayload.user || mePayload,
+            profile: mePayload.tutorProfile || mePayload.profile || {},
+            stats: mePayload.stats || {},
+          };
+        } catch (_) {}
+      }
+
+      const activeUser = pData?.user || user || {};
+      const tProfile = pData?.profile || pData?.tutorProfile || user?.tutorProfile || {};
+
+      setProfileData({
+        user: activeUser,
+        profile: tProfile,
+        stats: pData?.stats || {},
+        reviewsGiven: pData?.reviewsGiven || [],
+      });
+
+      const roleStr = (activeUser.role || user?.role || '').toString().trim().toUpperCase();
+      const isTutorRole = roleStr === 'TUTOR' || roleStr === 'TEACHER' || roleStr === 'ADMIN';
+
+      if (isTutorRole) {
         // Hydrate forms with real data
         setAboutForm({
           headline: tProfile.professionalHeadline || '',
@@ -93,12 +120,22 @@ const EditTutorProfilePage = () => {
           gender: tProfile.gender || '',
           age: tProfile.age || '',
           city: tProfile.location?.city || '',
-          state: tProfile.location?.state || ''
+          state: tProfile.location?.state || '',
         });
 
-        setLanguagesList(Array.isArray(tProfile.languages) && tProfile.languages.length > 0 ? tProfile.languages : (tProfile.languages ? [tProfile.languages] : []));
-        setModesList(Array.isArray(tProfile.teachingModes) && tProfile.teachingModes.length > 0 ? tProfile.teachingModes : []);
-        
+        setLanguagesList(
+          Array.isArray(tProfile.languages) && tProfile.languages.length > 0
+            ? tProfile.languages
+            : tProfile.languages
+            ? [tProfile.languages]
+            : []
+        );
+        setModesList(
+          Array.isArray(tProfile.teachingModes) && tProfile.teachingModes.length > 0
+            ? tProfile.teachingModes
+            : []
+        );
+
         const exp = tProfile.experience || {};
         const edu = (tProfile.education && tProfile.education[0]) || {};
         const cert = (tProfile.certificates && tProfile.certificates[0]) || {};
@@ -109,7 +146,7 @@ const EditTutorProfilePage = () => {
           institution: edu.institution || '',
           eduYears: edu.year ? `${edu.year - 4} - ${edu.year}` : '',
           certification: cert.name || '',
-          certYear: cert.year ? String(cert.year) : ''
+          certYear: cert.year ? String(cert.year) : '',
         });
 
         setSubjectsList(
@@ -125,7 +162,7 @@ const EditTutorProfilePage = () => {
         );
       }
     } catch (err) {
-      showToast('Failed to load profile details', 'error');
+      console.warn('Failed to load profile details:', err);
     } finally {
       setLoading(false);
     }
@@ -309,6 +346,9 @@ const EditTutorProfilePage = () => {
     navigate('/login');
   };
 
+  const userRole = (user?.role || profileData?.user?.role || '').toString().trim().toUpperCase();
+  const isAuthorizedTutor = userRole === 'TUTOR' || userRole === 'TEACHER' || userRole === 'ADMIN';
+
   if (loading) {
     return (
       <div className="tpm-loader-screen">
@@ -318,7 +358,7 @@ const EditTutorProfilePage = () => {
     );
   }
 
-  if (!profileData || profileData.user?.role !== 'TUTOR') {
+  if (!isAuthorizedTutor) {
     return (
       <div className="tpm-loader-screen">
         <p>Access denied. Please log in as a Tutor.</p>

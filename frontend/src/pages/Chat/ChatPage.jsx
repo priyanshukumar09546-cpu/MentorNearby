@@ -224,10 +224,15 @@ const ChatPage = () => {
     if (!silent) setLoadingMessages(true);
     try {
       const res = await client.get(`/chat/${partnerId}`);
-      const data = res.data?.data || {};
+      const data = res.data?.data || res.data || {};
       const msgs = Array.isArray(data) ? data : data.messages || [];
-      setMessages(msgs);
-    } catch (_) {
+      const formattedMsgs = msgs.map((m) => {
+        if (m.message && typeof m.message === 'object') return m.message;
+        return m;
+      });
+      setMessages(formattedMsgs);
+    } catch (fetchErr) {
+      console.warn('Fetch messages notice:', fetchErr.message);
     } finally {
       if (!silent) setLoadingMessages(false);
     }
@@ -252,7 +257,7 @@ const ChatPage = () => {
     };
   }, [activePartner?._id, fetchMessages]);
 
-  // ── 5. Send Real Message with Real-Time Security Protection ──
+  // ── 5. Send Real Message with Instant Optimistic UI + Security Protection ──
   const handleSendMessage = async (e) => {
     if (e) e.preventDefault();
     if (!newMessage.trim() || !activePartner?._id || sending) return;
@@ -272,20 +277,40 @@ const ChatPage = () => {
       return;
     }
 
+    // 🌟 1. OPTIMISTIC UPDATE: Instantly render message on sender screen
+    const tempId = `temp_${Date.now()}`;
+    const optimisticMsg = {
+      _id: tempId,
+      sender: user?._id || user?.id || user,
+      receiver: activePartner._id,
+      content: rawText,
+      createdAt: new Date().toISOString(),
+      isOptimistic: true,
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setNewMessage('');
+    setBlockedAttempt(null);
     setSending(true);
+
     try {
       const res = await client.post(`/chat/${activePartner._id}`, {
         content: rawText,
       });
 
-      if (res.data?.data) {
-        setMessages((prev) => [...prev, res.data.data]);
-        setNewMessage('');
-        setBlockedAttempt(null);
+      const responsePayload = res.data?.data || res.data;
+      const realMsg = responsePayload?.message || responsePayload;
+
+      if (realMsg && (realMsg.content || realMsg._id)) {
+        setMessages((prev) =>
+          prev.map((m) => (m._id === tempId ? { ...realMsg, sender: user?._id || user?.id || user } : m))
+        );
         fetchConversations();
       }
     } catch (err) {
-      const errMsg = err.response?.data?.message || 'Failed to send message';
+      // On failure, remove optimistic message & show toast error
+      setMessages((prev) => prev.filter((m) => m._id !== tempId));
+      const errMsg = err.response?.data?.message || err.message || 'Failed to send message';
       const errCode = err.response?.data?.code;
 
       if (errCode === 'CONTACT_SHARING_BLOCKED' || errMsg.includes('Contact') || errMsg.includes('safety')) {
@@ -294,12 +319,13 @@ const ChatPage = () => {
           reason: errMsg || "🔒 For your safety, contact details and social-media information can't be shared in MentorNearby chat. Please keep communication within MentorNearby.",
           timestamp: new Date(),
         });
-        setNewMessage('');
       } else {
         showToast(errMsg, 'error');
+        setNewMessage(rawText); // restore text so user doesn't lose it
       }
     } finally {
       setSending(false);
+      setTimeout(() => scrollToBottom(), 50);
     }
   };
 

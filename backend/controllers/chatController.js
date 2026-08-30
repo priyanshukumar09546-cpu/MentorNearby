@@ -66,30 +66,28 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // ── Spam Control 1: Rate limit 1 message per 10 seconds ──────
-  const tenSecondsAgo = new Date(Date.now() - 10 * 1000);
+  // ── Spam Control 1: Rate limit 1 message per second ──────
+  const oneSecondAgo = new Date(Date.now() - 1000);
   const lastMessage = await Message.findOne({
     sender: senderId,
-    createdAt: { $gte: tenSecondsAgo },
+    createdAt: { $gte: oneSecondAgo },
   }).sort({ createdAt: -1 });
 
   if (lastMessage) {
-    const elapsedMs = Date.now() - new Date(lastMessage.createdAt).getTime();
-    const waitSec = Math.max(1, Math.ceil((10000 - elapsedMs) / 1000));
-    return error(res, `Please wait ${waitSec}s before sending another message.`, 429, 'RATE_LIMITED');
+    return error(res, 'Please wait a moment before sending another message.', 429, 'RATE_LIMITED');
   }
 
-  // ── Spam Control 2: Prevent consecutive duplicate messages ───
-  const previousMessage = await Message.findOne({
+  // ── Spam Control 2: Prevent rapid identical duplicate spam within 3s ───
+  const threeSecondsAgo = new Date(Date.now() - 3000);
+  const recentDuplicate = await Message.findOne({
     sender: senderId,
-    receiver: receiverId,
-  }).sort({ createdAt: -1 });
+    receiver: actualReceiverId,
+    content: rawContent,
+    createdAt: { $gte: threeSecondsAgo },
+  });
 
-  if (
-    previousMessage &&
-    previousMessage.content.trim().toLowerCase() === rawContent.toLowerCase()
-  ) {
-    return error(res, 'Please do not repeat the exact same message.', 400, 'DUPLICATE_MESSAGE');
+  if (recentDuplicate) {
+    return error(res, 'Please do not repeat the exact same message so quickly.', 400, 'DUPLICATE_MESSAGE');
   }
 
   // Filter message content before saving
@@ -97,7 +95,7 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 
   const message = await Message.create({
     sender: senderId,
-    receiver: receiverId,
+    receiver: actualReceiverId,
     content: filteredContent,
     originalBlocked: filteredContent !== content?.trim(),
   });

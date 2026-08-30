@@ -1,15 +1,18 @@
 // ============================================================
 // controllers/chatController.js
-// Chat with freemium limits + message filtering
+// Chat with freemium limits + message filtering + robust ObjectIds
 // ============================================================
 
+const mongoose = require('mongoose');
 const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const Message = require('../models/Message');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const TutorProfile = require('../models/TutorProfile');
+const StudentProfile = require('../models/StudentProfile');
 const { filterMessage, hasContactInfo } = require('../utils/messageFilter');
-const { createNotification } = require('./notificationController');
+const { sendLeadWhatsAppAlert } = require('../services/whatsappService');
 
 // ── Helper: check if subscription is still active ─────────
 const isActiveSubscriber = (user) => {
@@ -18,13 +21,10 @@ const isActiveSubscriber = (user) => {
   return new Date(user.subscriptionExpiry) > new Date();
 };
 
-const { sendLeadWhatsAppAlert } = require('../services/whatsappService');
-
 // @desc    Send a message (filtered, with freemium gate & spam protection)
 // @route   POST /api/chat/:userId
 // @access  Private (limit enforced by checkChatLimit middleware in route)
 exports.sendMessage = asyncHandler(async (req, res, next) => {
-  const TutorProfile = require('../models/TutorProfile');
   let receiverId = req.params.userId;
   const senderId = req.user._id || req.user.id;
   const { content, text } = req.body;
@@ -34,14 +34,23 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     return error(res, 'Please provide message content', 400);
   }
 
-  let receiver = await User.findById(receiverId);
+  let receiver = null;
+  if (mongoose.Types.ObjectId.isValid(receiverId)) {
+    receiver = await User.findById(receiverId);
+    if (!receiver) {
+      const tutorProfile = await TutorProfile.findById(receiverId);
+      if (tutorProfile && tutorProfile.user) {
+        receiver = await User.findById(tutorProfile.user);
+      }
+    }
+  }
+
   if (!receiver) {
-    const tutorProfile = await TutorProfile.findById(receiverId);
+    const tutorProfile = await TutorProfile.findOne({
+      $or: [{ slug: receiverId }, { user: receiverId }],
+    });
     if (tutorProfile && tutorProfile.user) {
       receiver = await User.findById(tutorProfile.user);
-      if (receiver) {
-        receiverId = receiver._id;
-      }
     }
   }
 
@@ -49,11 +58,12 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     return error(res, 'Receiver not found', 404);
   }
 
-  if (String(senderId) === String(receiver._id)) {
+  const actualSenderId = new mongoose.Types.ObjectId(String(senderId));
+  const actualReceiverId = new mongoose.Types.ObjectId(String(receiver._id));
+
+  if (String(actualSenderId) === String(actualReceiverId)) {
     return error(res, 'You cannot send a message to yourself', 400);
   }
-
-  const actualReceiverId = receiver._id;
 
   // ── Anti-Bypass Check: Reject phone numbers, emails, and word numbers ──
   if (hasContactInfo(rawContent)) {
@@ -69,7 +79,7 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
   // ── Spam Control 1: Rate limit 1 message per second ──────
   const oneSecondAgo = new Date(Date.now() - 1000);
   const lastMessage = await Message.findOne({
-    sender: senderId,
+    sender: actualSenderId,
     createdAt: { $gte: oneSecondAgo },
   }).sort({ createdAt: -1 });
 
@@ -80,7 +90,7 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
   // ── Spam Control 2: Prevent rapid identical duplicate spam within 3s ───
   const threeSecondsAgo = new Date(Date.now() - 3000);
   const recentDuplicate = await Message.findOne({
-    sender: senderId,
+    sender: actualSenderId,
     receiver: actualReceiverId,
     content: rawContent,
     createdAt: { $gte: threeSecondsAgo },
@@ -94,30 +104,29 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
   const filteredContent = filterMessage(rawContent);
 
   const message = await Message.create({
-    sender: senderId,
+    sender: actualSenderId,
     receiver: actualReceiverId,
     content: filteredContent,
-    originalBlocked: filteredContent !== content?.trim(),
+    originalBlocked: filteredContent !== (content || '').trim(),
   });
 
   // ── Guaranteed In-App Notification Creation ──
   try {
-    const convId = [String(senderId), String(receiverId)].sort().join('_');
+    const convId = [String(actualSenderId), String(actualReceiverId)].sort().join('_');
     await Notification.create({
-      user: receiverId,
-      recipient: receiverId,
-      sender: senderId,
+      user: actualReceiverId,
+      recipient: actualReceiverId,
+      sender: actualSenderId,
       title: `New message from ${req.user.name}`,
       message: filteredContent || 'Sent you a new message',
       conversationId: convId,
       type: 'MESSAGE',
-      actionUrl: `/messages?user=${senderId}&chat=${convId}&recipient=${senderId}`,
+      actionUrl: `/messages?user=${actualSenderId}&chat=${convId}&recipient=${actualSenderId}`,
       actionText: 'Reply in Chat',
       isRead: false,
       status: 'DELIVERED',
       sentAt: new Date(),
     });
-    console.log('🔔 Notification created for', receiverId);
   } catch (notifErr) {
     console.error('Error creating notification on chat:', notifErr);
   }
@@ -135,7 +144,7 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
   return success(res, 'Message sent successfully', {
     message,
     data: message,
-    wasFiltered: filteredContent !== content?.trim(),
+    wasFiltered: filteredContent !== (content || '').trim(),
     freeChatsUsed: req.user.freeChatsUsed,
     isSubscribed: isActiveSubscriber(req.user),
   }, 201);
@@ -145,13 +154,31 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 // @route   GET /api/chat/:userId
 // @access  Private
 exports.getMessages = asyncHandler(async (req, res, next) => {
-  const TutorProfile = require('../models/TutorProfile');
   let otherUserId = req.params.userId;
   const currentUserId = req.user._id || req.user.id;
 
-  let otherUser = await User.findById(otherUserId);
+  if (!otherUserId || otherUserId === 'undefined' || otherUserId === 'null') {
+    return success(res, 'No user specified', { count: 0, data: [], messages: [] });
+  }
+
+  let otherUser = null;
+  if (mongoose.Types.ObjectId.isValid(otherUserId)) {
+    otherUser = await User.findById(otherUserId);
+    if (!otherUser) {
+      const tutorProfile = await TutorProfile.findById(otherUserId);
+      if (tutorProfile && tutorProfile.user) {
+        otherUser = await User.findById(tutorProfile.user);
+        if (otherUser) {
+          otherUserId = otherUser._id;
+        }
+      }
+    }
+  }
+
   if (!otherUser) {
-    const tutorProfile = await TutorProfile.findById(otherUserId);
+    const tutorProfile = await TutorProfile.findOne({
+      $or: [{ slug: otherUserId }, { user: otherUserId }],
+    });
     if (tutorProfile && tutorProfile.user) {
       otherUser = await User.findById(tutorProfile.user);
       if (otherUser) {
@@ -160,10 +187,17 @@ exports.getMessages = asyncHandler(async (req, res, next) => {
     }
   }
 
+  const sId = new mongoose.Types.ObjectId(String(currentUserId));
+  const oId = otherUser ? otherUser._id : (mongoose.Types.ObjectId.isValid(otherUserId) ? new mongoose.Types.ObjectId(String(otherUserId)) : null);
+
+  if (!oId) {
+    return success(res, 'Messages retrieved', { count: 0, data: [], messages: [] });
+  }
+
   const messages = await Message.find({
     $or: [
-      { sender: currentUserId, receiver: otherUserId },
-      { sender: otherUserId, receiver: currentUserId },
+      { sender: sId, receiver: oId },
+      { sender: oId, receiver: sId },
     ],
   })
     .sort({ createdAt: 1 })
@@ -171,7 +205,7 @@ exports.getMessages = asyncHandler(async (req, res, next) => {
 
   // Mark unread messages as read
   await Message.updateMany(
-    { sender: otherUserId, receiver: currentUserId, read: false },
+    { sender: oId, receiver: sId, read: false },
     { read: true }
   );
 
@@ -179,6 +213,13 @@ exports.getMessages = asyncHandler(async (req, res, next) => {
     count: messages.length,
     data: messages,
     messages: messages,
+    otherUser: otherUser ? {
+      _id: otherUser._id,
+      name: otherUser.name,
+      avatar: otherUser.avatar,
+      role: otherUser.role,
+      isOnline: otherUser.isOnline !== undefined ? otherUser.isOnline : true,
+    } : null,
   });
 });
 
@@ -187,21 +228,23 @@ exports.getMessages = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.getConversations = asyncHandler(async (req, res, next) => {
   const currentUserId = req.user._id || req.user.id;
-  const TutorProfile = require('../models/TutorProfile');
-  const StudentProfile = require('../models/StudentProfile');
+  const userObjectId = new mongoose.Types.ObjectId(String(currentUserId));
 
   // Aggregate to find all unique conversation partners
   const conversations = await Message.aggregate([
     {
       $match: {
-        $or: [{ sender: currentUserId }, { receiver: currentUserId }],
+        $or: [
+          { sender: userObjectId },
+          { receiver: userObjectId },
+        ],
       },
     },
     {
       $group: {
         _id: {
           $cond: [
-            { $eq: ['$sender', currentUserId] },
+            { $eq: ['$sender', userObjectId] },
             '$receiver',
             '$sender',
           ],
@@ -261,7 +304,7 @@ exports.getConversations = asyncHandler(async (req, res, next) => {
 
         const unreadCount = await Message.countDocuments({
           sender: other._id,
-          receiver: currentUserId,
+          receiver: userObjectId,
           read: false,
         });
 
@@ -271,150 +314,67 @@ exports.getConversations = asyncHandler(async (req, res, next) => {
             name: other.name || 'User',
             avatar: other.avatar || tutorData?.profilePhoto?.url || studentData?.profilePhoto?.url || '',
             role: other.role,
-            isOnline: Boolean(other.isOnline || (other.lastLogin && (Date.now() - new Date(other.lastLogin).getTime() < 15 * 60 * 1000))),
-            lastLogin: other.lastLogin,
+            isOnline: other.isOnline !== undefined ? other.isOnline : true,
+            isVerified: Boolean(tutorData?.isVerified),
             tutorProfile: tutorData,
             studentProfile: studentData,
           },
           lastMessage: conv.lastMessage,
-          unreadCount,
           updatedAt: conv.updatedAt,
+          unreadCount,
         };
       })
   );
 
-  // Fetch current user subscription status for counter display
-  const currentUser = await User.findById(currentUserId).select(
-    'freeChatsUsed freeLeadsUsed isSubscribed subscriptionType subscriptionExpiry role'
-  );
-
-  const FREE_LIMIT = currentUser.role === 'TUTOR' ? 5 : 3;
-  const usedCount = currentUser.role === 'TUTOR'
-    ? currentUser.freeChatsUsed
-    : currentUser.freeChatsUsed;
-
   return success(res, 'Conversations retrieved successfully', {
     count: result.length,
     data: result,
-    subscription: {
-      isSubscribed: isActiveSubscriber(currentUser),
-      subscriptionType: currentUser.subscriptionType,
-      subscriptionExpiry: currentUser.subscriptionExpiry,
-      freeChatsUsed: usedCount,
-      freeChatsLimit: FREE_LIMIT,
-      chatsRemaining: Math.max(0, FREE_LIMIT - usedCount),
-    },
+    conversations: result,
   });
 });
 
-// @desc    Initiate conversation with teacher/student & verify eligibility
-// @route   POST /api/chat/initiate
-// @access  Private
-exports.initiateConversation = asyncHandler(async (req, res, next) => {
-  const senderId = req.user._id || req.user.id;
-  const recipientId = req.body.recipientId || req.params.userId || req.body.userId || req.body.teacherId;
-
-  if (!recipientId) {
-    return error(res, 'Please provide recipient ID', 400);
-  }
-
-  // Find target recipient (could be teacher user ID or tutor profile ID)
-  let recipient = await User.findById(recipientId);
-  if (!recipient) {
-    const TutorProfile = require('../models/TutorProfile');
-    const tutorProfile = await TutorProfile.findById(recipientId);
-    if (tutorProfile && tutorProfile.user) {
-      recipient = await User.findById(tutorProfile.user);
-    }
-  }
-
-  if (!recipient) {
-    return error(res, 'Tutor / Recipient not found', 404);
-  }
-
-  const actualRecipientId = recipient._id;
-
-  if (String(senderId) === String(actualRecipientId)) {
-    return error(res, 'You cannot initiate a chat with yourself', 400);
-  }
-
-  // Check if they already have an existing conversation / messages
-  const existingMessage = await Message.findOne({
-    $or: [
-      { sender: senderId, receiver: actualRecipientId },
-      { sender: actualRecipientId, receiver: senderId },
-    ],
-  });
-
-  const currentUser = await User.findById(senderId);
-
-  // If new conversation between student and teacher, check subscription & unlock limits
-  if (!existingMessage) {
-    const isSubscribed = Boolean(
-      (currentUser.isSubscribed && currentUser.subscriptionExpiry && new Date(currentUser.subscriptionExpiry) > new Date()) ||
-      (currentUser.subscription?.isActive && (!currentUser.subscription?.expiry || new Date(currentUser.subscription?.expiry) > new Date()))
-    );
-
-    const hasFreeChats = (currentUser.freeChatsUsed || 0) < 3;
-    const hasUnlocks = (currentUser.contactUnlocks || 0) > 0 || (currentUser.subscription?.contactUnlocks || 0) > 0;
-
-    if (!isSubscribed && !hasFreeChats && !hasUnlocks) {
-      return res.status(403).json({
-        success: false,
-        message: 'Subscription required to unlock and chat with new teachers. Plan starting at Rs 99/month.',
-        needSubscription: true,
-        code: 'SUBSCRIPTION_REQUIRED',
-        freeChatsUsed: currentUser.freeChatsUsed || 0,
-        contactUnlocks: currentUser.contactUnlocks || 0,
-      });
-    }
-
-    // Decrement unlock if using unlock credits on non-subscribed plan
-    if (!isSubscribed && !hasFreeChats && hasUnlocks) {
-      if (currentUser.contactUnlocks > 0) currentUser.contactUnlocks -= 1;
-      if (currentUser.subscription?.contactUnlocks > 0) currentUser.subscription.contactUnlocks -= 1;
-      currentUser.unlocksUsed = (currentUser.unlocksUsed || 0) + 1;
-      await currentUser.save();
-    }
-  }
-
-  const conversationId = `${[senderId, actualRecipientId].sort().join('_')}`;
-
-  return res.status(200).json({
-    success: true,
-    message: 'Conversation initiated successfully',
-    data: {
-      conversationId,
-      recipientId: actualRecipientId,
-      recipientName: recipient.name,
-      recipientRole: recipient.role,
-      recipientAvatar: recipient.avatar,
-    },
-    conversationId,
-  });
-});
-
-// @desc    Get subscription & chat limit status for current user
+// @desc    Get user's chat limit status
 // @route   GET /api/chat/my-status
 // @access  Private
 exports.getMyChatStatus = asyncHandler(async (req, res, next) => {
-  const currentUserId = req.user._id || req.user.id;
-  const currentUser = await User.findById(currentUserId).select(
-    'freeChatsUsed freeLeadsUsed isSubscribed subscriptionType subscriptionExpiry role'
-  );
-
-  const FREE_LIMIT = currentUser.role === 'TUTOR' ? 5 : 3;
-  const usedCount = currentUser.freeChatsUsed || 0;
-  const active = isActiveSubscriber(currentUser);
+  const user = req.user;
+  const userObjectId = new mongoose.Types.ObjectId(String(user._id));
+  const distinctPartners = await Message.distinct('receiver', { sender: userObjectId });
 
   return success(res, 'Chat status retrieved', {
-    isSubscribed: active,
-    subscriptionType: currentUser.subscriptionType,
-    subscriptionExpiry: currentUser.subscriptionExpiry,
-    freeChatsUsed: usedCount,
-    freeChatsLimit: FREE_LIMIT,
-    chatsRemaining: active ? Infinity : Math.max(0, FREE_LIMIT - usedCount),
-    paywallPlan: currentUser.role === 'TUTOR' ? 149 : 99,
-    paywallPlanType: currentUser.role === 'TUTOR' ? 'teacher' : 'student',
+    freeChatsUsed: distinctPartners.length,
+    freeChatsLimit: user.role === 'TUTOR' ? 10 : 3,
+    isSubscribed: isActiveSubscriber(user),
+    subscriptionExpiry: user.subscriptionExpiry,
+  });
+});
+
+// @desc    Initiate conversation
+// @route   POST /api/chat/initiate
+// @access  Private
+exports.initiateConversation = asyncHandler(async (req, res, next) => {
+  const receiverId = req.params.userId || req.body.recipientId || req.body.receiverId;
+  const senderId = req.user._id || req.user.id;
+
+  let receiver = null;
+  if (mongoose.Types.ObjectId.isValid(receiverId)) {
+    receiver = await User.findById(receiverId);
+    if (!receiver) {
+      const tp = await TutorProfile.findById(receiverId);
+      if (tp && tp.user) receiver = await User.findById(tp.user);
+    }
+  }
+
+  if (!receiver) {
+    return error(res, 'Receiver not found', 404);
+  }
+
+  return success(res, 'Conversation initiated successfully', {
+    receiver: {
+      _id: receiver._id,
+      name: receiver.name,
+      avatar: receiver.avatar,
+      role: receiver.role,
+    },
   });
 });

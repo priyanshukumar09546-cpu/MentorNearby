@@ -1,10 +1,11 @@
 // ============================================================
 // middleware/checkChatLimit.js
-// Freemium gate: 3 free chats for students, 5 free leads for tutors
+// Freemium gate: 3 free conversation partners for students, 5 free leads for tutors
 // ============================================================
 
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
+const mongoose = require('mongoose');
 
 /**
  * Helper: check if subscription is still active
@@ -33,20 +34,36 @@ const checkChatLimit = (type = 'chat') =>
       return next();
     }
 
-    const role = user.role; // 'STUDENT' | 'PARENT' | 'TUTOR' | 'ADMIN'
+    const role = (user.role || '').toUpperCase(); // 'STUDENT' | 'PARENT' | 'TUTOR' | 'ADMIN'
 
     // ── ADMIN: always allowed ──────────────────────────────────
     if (role === 'ADMIN') return next();
 
     const Message = require('../models/Message');
-    const receiverId = req.params.userId || req.body.recipientId || req.body.receiverId || req.body.userId;
+    const TutorProfile = require('../models/TutorProfile');
+    let rawReceiverId = req.params.userId || req.body.recipientId || req.body.receiverId || req.body.userId;
 
-    // If already in conversation with this person, allow communication
-    if (receiverId) {
+    let receiverUserObjId = null;
+    if (rawReceiverId && mongoose.Types.ObjectId.isValid(rawReceiverId)) {
+      const isUser = await User.exists({ _id: rawReceiverId });
+      if (isUser) {
+        receiverUserObjId = new mongoose.Types.ObjectId(String(rawReceiverId));
+      } else {
+        const tp = await TutorProfile.findById(rawReceiverId);
+        if (tp && tp.user) {
+          receiverUserObjId = new mongoose.Types.ObjectId(String(tp.user));
+        }
+      }
+    }
+
+    const senderUserObjId = new mongoose.Types.ObjectId(String(userId));
+
+    // If conversation already exists between these 2 users, allow them to continue chatting!
+    if (receiverUserObjId) {
       const hasExistingHistory = await Message.exists({
         $or: [
-          { sender: userId, receiver: receiverId },
-          { sender: receiverId, receiver: userId },
+          { sender: senderUserObjId, receiver: receiverUserObjId },
+          { sender: receiverUserObjId, receiver: senderUserObjId },
         ],
       });
       if (hasExistingHistory) {
@@ -56,7 +73,7 @@ const checkChatLimit = (type = 'chat') =>
 
     // ── STUDENT / PARENT: 3 free conversations ────────────────────────
     if (role === 'STUDENT' || role === 'PARENT') {
-      const distinctPartners = await Message.distinct('receiver', { sender: userId });
+      const distinctPartners = await Message.distinct('receiver', { sender: senderUserObjId });
       if (distinctPartners.length >= 3) {
         return res.status(403).json({
           success: false,
@@ -91,7 +108,7 @@ const checkChatLimit = (type = 'chat') =>
       }
 
       // Tutor sending chat message to a student
-      const distinctPartners = await Message.distinct('receiver', { sender: userId });
+      const distinctPartners = await Message.distinct('receiver', { sender: senderUserObjId });
       if (distinctPartners.length >= 10) {
         return res.status(403).json({
           success: false,
@@ -106,7 +123,6 @@ const checkChatLimit = (type = 'chat') =>
       return next();
     }
 
-    // Fallback: allow
     return next();
   });
 

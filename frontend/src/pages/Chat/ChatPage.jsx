@@ -90,6 +90,7 @@ const ChatPage = () => {
       const data = res.data?.data || {};
       const list = data.data || (Array.isArray(res.data?.data) ? res.data.data : []);
       const myId = String(user?._id || user?.id || '');
+      
       // Filter out self conversations
       const filtered = list.filter(
         (c) => c.otherUser && String(c.otherUser._id) !== myId
@@ -131,7 +132,7 @@ const ChatPage = () => {
       if (match && match.otherUser && String(match.otherUser._id) !== myId) {
         setActivePartner(match.otherUser);
       } else {
-        // Fetch real public tutor details directly from MongoDB
+        // Fetch real public tutor or user details directly from MongoDB
         client
           .get(`/tutors/${targetId}`)
           .then((res) => {
@@ -269,6 +270,20 @@ const ChatPage = () => {
         return m;
       });
       setMessages(formattedMsgs);
+
+      // If backend returned otherUser info, reinforce active partner details
+      if (payload.otherUser && payload.otherUser.name) {
+        setActivePartner((prev) => {
+          if (!prev) return payload.otherUser;
+          return {
+            ...prev,
+            name: payload.otherUser.name || prev.name,
+            avatar: payload.otherUser.avatar || prev.avatar,
+            role: payload.otherUser.role || prev.role,
+            isOnline: payload.otherUser.isOnline !== undefined ? payload.otherUser.isOnline : prev.isOnline,
+          };
+        });
+      }
     } catch (fetchErr) {
       console.warn('Fetch messages notice:', fetchErr.message);
     } finally {

@@ -55,29 +55,35 @@ const ComboPreviewModal = ({
     return matchClass && matchSubject && matchType;
   });
 
+  const handleDownloadSingle = async (item) => {
+    try {
+      const targetUrl = item.fileUrl || item.fileReference?.url || `/api/study-resources/stream/${item.id || item._id}?download=true`;
+      const cleanTitle = (item.title || `${item.chapter}_${item.chapterTitle}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = item.fileName || `MentorNearby_Class_${classLevel}_${subject}_${cleanTitle}.pdf`;
+
+      const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
+        ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
+        : (typeof window !== 'undefined' ? window.location.origin : 'https://api.mentornearby.com');
+      const streamUrl = targetUrl.startsWith('http') ? targetUrl : `${backendBase}${targetUrl}`;
+
+      const link = document.createElement('a');
+      link.href = streamUrl;
+      link.download = fileName;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Error downloading sheet:', err);
+    }
+  };
+
   const handleDownloadAll = async () => {
     setDownloadingAll(true);
     try {
       if (includedResources.length > 0) {
         for (let i = 0; i < includedResources.length; i++) {
-          const item = includedResources[i];
-          const targetUrl = item.fileUrl || item.fileReference?.url || `/api/study-resources/stream/${item.id || item._id}?download=true`;
-          const cleanTitle = (item.title || `${item.chapter}_${item.chapterTitle}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-          const fileName = item.fileName || `MentorNearby_Class_${classLevel}_${subject}_${cleanTitle}.pdf`;
-
-          const backendBase = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim())
-            ? import.meta.env.VITE_API_URL.trim().replace(/\/api$/, '')
-            : (typeof window !== 'undefined' ? window.location.origin : 'https://api.mentornearby.com');
-          const streamUrl = targetUrl.startsWith('http') ? targetUrl : `${backendBase}${targetUrl}`;
-
-          const link = document.createElement('a');
-          link.href = streamUrl;
-          link.download = fileName;
-          link.target = '_blank';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
+          await handleDownloadSingle(includedResources[i]);
           // Small stagger delay for browser download queue
           await new Promise((res) => setTimeout(res, 400));
         }
@@ -117,7 +123,7 @@ const ComboPreviewModal = ({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '92%',
-          maxWidth: 520,
+          maxWidth: 540,
           maxHeight: '90vh',
           maxHeight: '90dvh',
           display: 'flex',
@@ -162,7 +168,7 @@ const ComboPreviewModal = ({
               {isFormula ? '📐 Formula Sheets Combo' : '📚 Notes Combo'}
             </span>
             <h3 style={{ fontSize: 16, fontWeight: 900, color: 'var(--text-primary, #0F172A)', margin: 0 }}>
-              {combo.title || combo.name}
+              {combo.title || combo.name} — Preview
             </h3>
           </div>
           <button
@@ -204,7 +210,7 @@ const ComboPreviewModal = ({
             }}
           >
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary, #1E293B)' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-primary, #1E293B)' }}>
                 Complete {subject} Pack • Class {classLevel}
               </div>
               <div style={{ fontSize: 11.5, fontWeight: 600, color: '#16A34A', marginTop: 3 }}>
@@ -221,14 +227,14 @@ const ComboPreviewModal = ({
             </div>
           </div>
 
-          {/* Included Resources List */}
+          {/* Included Resources Mini Cards Grid/List */}
           <div>
             <div
               style={{
                 fontSize: 12.5,
                 fontWeight: 800,
                 color: 'var(--text-primary, #0F172A)',
-                marginBottom: 8,
+                marginBottom: 10,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -236,18 +242,21 @@ const ComboPreviewModal = ({
             >
               <span>Included Chapter PDFs ({includedResources.length})</span>
               <span style={{ fontSize: 11, color: '#16A34A', fontWeight: 700 }}>
-                {isUnlocked ? '✓ Unlocked' : '✓ Preview Mode Active'}
+                {isUnlocked ? '✓ All Sheets Unlocked' : '✓ 100% Free Online Preview'}
               </span>
             </div>
 
             <div
               style={{
-                maxHeight: 240,
+                maxHeight: 260,
                 overflowY: 'auto',
                 border: '1px solid var(--border-color, #E2E8F0)',
                 borderRadius: 10,
-                padding: '6px 10px',
+                padding: '8px 10px',
                 background: 'var(--surface, #FFFFFF)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
               }}
             >
               {includedResources.length > 0 ? (
@@ -258,14 +267,17 @@ const ComboPreviewModal = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: 8,
-                      padding: '8px 4px',
-                      borderBottom: idx < includedResources.length - 1 ? '1px solid var(--border-color, #F1F5F9)' : 'none',
+                      gap: 10,
+                      padding: '8px 10px',
+                      background: 'var(--bg-card, #F8FAFC)',
+                      border: '1px solid var(--border-color, #E2E8F0)',
+                      borderRadius: 8,
                       fontSize: 12,
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: 15, flexShrink: 0 }}>📄</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 18, flexShrink: 0 }}>📄</span>
                       <div style={{ minWidth: 0 }}>
                         <div
                           style={{
@@ -277,40 +289,89 @@ const ComboPreviewModal = ({
                           }}
                           title={item.title || `${item.chapter} – ${item.chapterTitle}`}
                         >
-                          {item.chapter || `Chapter ${idx + 1}`}: {item.chapterTitle || item.title || 'Key Concepts'}
+                          {item.chapter || `Chapter ${idx + 1}`} {isFormula ? 'Formula Sheet' : 'Notes'} — {item.chapterTitle || item.title || 'Key Concepts'}
                         </div>
                         <div style={{ fontSize: 10.5, color: 'var(--text-muted, #64748B)' }}>
-                          PDF • {isFormula ? 'Formula Sheet' : 'Notes'}
+                          PDF • {isFormula ? 'Formula Sheet' : 'Revision Notes'}
                         </div>
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (onViewPdf) {
-                          onViewPdf(item);
-                        }
-                      }}
-                      style={{
-                        flexShrink: 0,
-                        height: 28,
-                        padding: '0 10px',
-                        background: 'rgba(234, 88, 12, 0.08)',
-                        border: '1px solid rgba(234, 88, 12, 0.3)',
-                        borderRadius: 6,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: '#EA580C',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <span>👁️</span> View PDF
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onViewPdf) {
+                            onViewPdf(item);
+                          }
+                        }}
+                        style={{
+                          height: 28,
+                          padding: '0 10px',
+                          background: 'var(--surface, #FFFFFF)',
+                          border: '1px solid var(--border-color, #CBD5E1)',
+                          borderRadius: 6,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: 'var(--text-primary, #0F172A)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span>👁️</span> View PDF
+                      </button>
+
+                      {isUnlocked ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadSingle(item)}
+                          style={{
+                            height: 28,
+                            padding: '0 10px',
+                            background: '#16A34A',
+                            border: 'none',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: '#FFFFFF',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          <span>⬇️</span> Download
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            if (onBuyCombo) onBuyCombo(combo);
+                          }}
+                          style={{
+                            height: 28,
+                            padding: '0 8px',
+                            background: 'var(--bg-card, #F1F5F9)',
+                            border: '1px solid var(--border-color, #CBD5E1)',
+                            borderRadius: 6,
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: 'var(--text-muted, #64748B)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                          title="Download locked until combo purchased"
+                        >
+                          <span>🔒</span> Download
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))
               ) : (
@@ -355,7 +416,7 @@ const ComboPreviewModal = ({
                   gap: 6,
                 }}
               >
-                <span>⬇️</span> {downloadingAll ? 'Downloading All...' : 'Download All PDFs'}
+                <span>⬇️</span> {downloadingAll ? 'Downloading All...' : `Download All ${includedResources.length || ''} PDFs`}
               </button>
             </div>
           ) : (
@@ -406,7 +467,7 @@ const ComboPreviewModal = ({
                   gap: 6,
                 }}
               >
-                <span>⚡</span> Pay ₹{combo.price} &amp; Unlock Combo
+                <span>⚡</span> Unlock all {includedResources.length || 6} sheets for ₹{combo.price}
               </button>
             </div>
           )}

@@ -802,8 +802,38 @@ const NotesAndPdfsPage = () => {
                         Class {combo.classLevel} • {combo.subject}
                       </div>
 
-                      <div className="mn-np-combo-price-row">
-                        <span className="mn-np-combo-price">₹{combo.price}</span>
+                      <div className="mn-np-combo-count" style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginBottom: 8 }}>
+                        Includes all Chapter {combo.type === 'FORMULA' ? 'Formula Sheets' : 'Notes'}
+                      </div>
+
+                      <div
+                        className="mn-np-combo-actions"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 6,
+                          marginTop: 'auto',
+                          paddingTop: 8,
+                          borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="mn-np-btn-view"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setComboPreviewData({ isOpen: true, combo });
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <span>👁️</span> View Preview
+                        </button>
+
                         <button
                           type="button"
                           className="mn-np-btn-buy-combo"
@@ -811,8 +841,16 @@ const NotesAndPdfsPage = () => {
                             e.stopPropagation();
                             handleBuyCombo(combo);
                           }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            height: 30,
+                            fontSize: 11.5,
+                          }}
                         >
-                          Buy Combo – ₹{combo.price}
+                          <span>⚡</span> Buy Combo – ₹{combo.price}
                         </button>
                       </div>
                     </div>

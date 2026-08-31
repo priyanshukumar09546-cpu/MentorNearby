@@ -120,6 +120,70 @@ const findStudyResourceByIdOrSlug = async (id) => {
   };
 };
 
+// Helper: Find study resource bundle by MongoDB ObjectId, slug, bundleId, or synthetic ID
+const findStudyResourceBundleByIdOrSlug = async (id, filter = {}) => {
+  if (!id && Object.keys(filter).length === 0) return null;
+  const cleanId = id ? String(id).trim() : '';
+
+  // 1. If valid 24-hex ObjectId, try findById
+  if (cleanId && mongoose.Types.ObjectId.isValid(cleanId) && /^[0-9a-fA-F]{24}$/.test(cleanId)) {
+    try {
+      const res = await StudyResourceBundle.findById(cleanId);
+      if (res) return res;
+    } catch (_) {}
+  }
+
+  // 2. Try findOne by slug, bundleId, or _id
+  if (cleanId) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(cleanId) && /^[0-9a-fA-F]{24}$/.test(cleanId);
+      const res = await StudyResourceBundle.findOne({
+        $or: [
+          { slug: cleanId },
+          { bundleId: cleanId },
+          ...(isObjId ? [{ _id: new mongoose.Types.ObjectId(cleanId) }] : []),
+        ],
+      });
+      if (res) return res;
+    } catch (_) {}
+
+    // 3. Parse string IDs like 'combo-c9-math-formula', 'combo-c10-sci-notes', 'combo-c9-sci-formula'
+    const lower = cleanId.toLowerCase();
+    let classLevel = '9';
+    if (lower.includes('c10') || lower.includes('class-10') || lower.includes('class10')) classLevel = '10';
+    else if (lower.includes('c11') || lower.includes('class-11') || lower.includes('class11')) classLevel = '11';
+    else if (lower.includes('c12') || lower.includes('class-12') || lower.includes('class12')) classLevel = '12';
+
+    let subject = 'Mathematics';
+    if (lower.includes('sci')) subject = 'Science';
+    else if (lower.includes('phy')) subject = 'Physics';
+    else if (lower.includes('chem')) subject = 'Chemistry';
+    else if (lower.includes('bio')) subject = 'Biology';
+    else if (lower.includes('math')) subject = 'Mathematics';
+
+    const isFormula = lower.includes('formula');
+    const comboType = isFormula ? 'FORMULA_COMBO' : 'QA_COMBO';
+
+    try {
+      const res = await StudyResourceBundle.findOne({
+        classLevel: { $in: [classLevel, `Class ${classLevel}`] },
+        subject: new RegExp(`^${subject}$`, 'i'),
+        comboType,
+      });
+      if (res) return res;
+    } catch (_) {}
+  }
+
+  if (filter && Object.keys(filter).length > 0) {
+    try {
+      const res = await StudyResourceBundle.findOne(filter);
+      if (res) return res;
+    } catch (_) {}
+  }
+
+  return null;
+};
+
 // Authoritative Default Pricing Matrix (Database Driven)
 // CLASS 9: Maths = ₹7, Science = ₹7, Formula Combo = ₹50, Notes/PPT = ₹12, Notes Combo = ₹100
 // CLASS 10: Maths = ₹7, Science = ₹7, Formula Combo = ₹50, Notes/PPT = ₹12, Notes Combo = ₹100
@@ -837,7 +901,7 @@ exports.readStudyResourceCombo = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const userId = req.user?.id;
 
-  const bundle = await StudyResourceBundle.findById(id).lean();
+  const bundle = await findStudyResourceBundleByIdOrSlug(id);
   if (!bundle || !bundle.published) {
     return error(res, 'Subject combo not found or unavailable', 404);
   }
@@ -922,7 +986,7 @@ exports.readStudyResourceCombo = asyncHandler(async (req, res, next) => {
 exports.streamStudyResourceCombo = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  const bundle = await StudyResourceBundle.findById(id).lean();
+  const bundle = await findStudyResourceBundleByIdOrSlug(id);
   if (!bundle || !bundle.published) {
     return error(res, 'Subject combo not found or unavailable', 404);
   }
@@ -1037,7 +1101,7 @@ exports.downloadStudyResourceCombo = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const userId = req.user.id;
 
-  const bundle = await StudyResourceBundle.findById(id).lean();
+  const bundle = await findStudyResourceBundleByIdOrSlug(id);
   if (!bundle || !bundle.published) {
     return error(res, 'Combo not found or unavailable', 404);
   }
@@ -1073,19 +1137,47 @@ exports.downloadStudyResourceCombo = asyncHandler(async (req, res, next) => {
   }
 
   const realFileUrl = bundle.fileUrl || bundle.fileReference?.url;
-  if (!realFileUrl) {
-    return error(res, 'Combo file is unavailable for download', 404);
+
+  if (mongoose.Types.ObjectId.isValid(bundle._id)) {
+    await StudyResourceBundle.findByIdAndUpdate(bundle._id, { $inc: { totalPurchases: 1 } });
   }
 
-  await StudyResourceBundle.findByIdAndUpdate(id, { $inc: { totalPurchases: 1 } });
+  // Fetch all included chapter resources
+  const includedResources = await StudyResource.find({
+    classLevel: { $in: [normalizedClass, `Class ${normalizedClass}`] },
+    subject: new RegExp(`^${bundle.subject}$`, 'i'),
+    published: true,
+    ...(isFormulaCombo
+      ? { resourceType: 'FORMULA_SHEET' }
+      : { resourceType: { $in: ['NOTES', 'IMPORTANT_QUESTIONS_ANSWERS', 'REVISION_NOTES'] } }),
+  })
+    .sort({ chapterNumber: 1, chapter: 1 })
+    .lean();
+
+  const formattedResources = includedResources.map((r) => {
+    const cleanChapterTitle = (r.title || `${r.chapter} - ${r.chapterTitle}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+    return {
+      id: r._id,
+      title: r.title,
+      chapter: r.chapter,
+      chapterTitle: r.chapterTitle,
+      downloadUrl: r.fileUrl || r.fileReference?.url || `/api/study-resources/stream/${r._id}?download=true`,
+      fileName: r.fileName || r.fileReference?.filename || `MentorNearby_Class_${r.classLevel}_${r.subject}_${cleanChapterTitle}.pdf`,
+    };
+  });
 
   const cleanTitle = (bundle.title || 'study-combo').replace(/[^a-zA-Z0-9_-]/g, '_');
   const fileName = bundle.fileName || `MentorNearby_${bundle.classLevel}_${bundle.subject}_${cleanTitle}.pdf`;
 
   return success(res, 'Combo download authorized', {
-    downloadUrl: realFileUrl,
+    downloadUrl: realFileUrl || (formattedResources[0]?.downloadUrl || null),
     fileName,
     filename: fileName,
+    bundleId: bundle._id,
+    title: bundle.title,
+    classLevel: bundle.classLevel,
+    subject: bundle.subject,
+    includedResources: formattedResources,
   });
 });
 
@@ -1222,27 +1314,48 @@ exports.createBundlePaymentOrder = asyncHandler(async (req, res, next) => {
 
   let bundle = null;
   if (bundleId) {
-    bundle = await StudyResourceBundle.findById(bundleId);
+    bundle = await findStudyResourceBundleByIdOrSlug(bundleId);
   }
 
   const effectiveClass = normalizeClass(classLevel || bundle?.classLevel);
   const effectiveSubject = subject || bundle?.subject;
-  const normalizedComboType = comboType === 'QA_COMBO' || comboType === 'IMPORTANT_QUESTIONS_ANSWERS' || bundle?.comboType === 'QA_COMBO' ? 'QA_COMBO' : 'FORMULA_COMBO';
-  const resourceType = normalizedComboType === 'FORMULA_COMBO' ? 'FORMULA_SHEET' : 'IMPORTANT_QUESTIONS_ANSWERS';
+  const normalizedComboType =
+    comboType === 'QA_COMBO' ||
+    comboType === 'IMPORTANT_QUESTIONS_ANSWERS' ||
+    comboType === 'NOTES' ||
+    bundle?.comboType === 'QA_COMBO'
+      ? 'QA_COMBO'
+      : 'FORMULA_COMBO';
+  const resourceType =
+    normalizedComboType === 'FORMULA_COMBO'
+      ? 'FORMULA_SHEET'
+      : 'IMPORTANT_QUESTIONS_ANSWERS';
 
   const standardPrices = await getStandardComboPrices(effectiveClass, effectiveSubject);
-  const defaultPrice = normalizedComboType === 'FORMULA_COMBO' ? standardPrices.formulaPrice : standardPrices.qaPrice;
+  const defaultPrice =
+    normalizedComboType === 'FORMULA_COMBO'
+      ? standardPrices.formulaPrice
+      : standardPrices.qaPrice;
 
   if (!bundle && effectiveClass && effectiveSubject) {
-    bundle = await StudyResourceBundle.findOne({
+    bundle = await findStudyResourceBundleByIdOrSlug(null, {
       classLevel: { $in: [effectiveClass, `Class ${effectiveClass}`] },
       subject: new RegExp(`^${effectiveSubject}$`, 'i'),
       comboType: normalizedComboType,
     });
   }
 
+  const subSlug = effectiveSubject?.toLowerCase().startsWith('math')
+    ? 'math'
+    : effectiveSubject?.toLowerCase().startsWith('sci')
+    ? 'sci'
+    : effectiveSubject?.toLowerCase().slice(0, 4) || 'gen';
+  const generatedSlug = `combo-c${effectiveClass}-${subSlug}-${normalizedComboType === 'FORMULA_COMBO' ? 'formula' : 'notes'}`;
+
   if (!bundle && effectiveClass && effectiveSubject) {
     bundle = await StudyResourceBundle.create({
+      bundleId: bundleId || generatedSlug,
+      slug: generatedSlug,
       title: `Class ${effectiveClass} ${effectiveSubject} ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets Combo' : 'Important Questions + Answers Combo'}`,
       description: `Complete package for all ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets' : 'Important Questions & Answers'} from Chapter 1 to Last Chapter for Class ${effectiveClass} ${effectiveSubject}.`,
       classLevel: effectiveClass,
@@ -1287,7 +1400,7 @@ exports.createBundlePaymentOrder = asyncHandler(async (req, res, next) => {
   const originalPrice = normalizedComboType === 'FORMULA_COMBO' ? (effectiveClass === '11' || effectiveClass === '12' ? 99 : 89) : (effectiveClass === '11' || effectiveClass === '12' ? 199 : 179);
 
   // Sync bundle price in DB if mismatched
-  if (bundle.price !== price) {
+  if (bundle.price !== price && mongoose.Types.ObjectId.isValid(bundle._id)) {
     bundle.price = price;
     await StudyResourceBundle.findByIdAndUpdate(bundle._id, { price });
   }
@@ -1324,6 +1437,7 @@ exports.createBundlePaymentOrder = asyncHandler(async (req, res, next) => {
     keyId: process.env.RAZORPAY_KEY_ID,
     bundle: {
       id: bundle._id,
+      bundleId: bundle.bundleId || bundle._id,
       title: bundle.title,
       classLevel: normalizedClass,
       subject: bundle.subject,
@@ -1819,7 +1933,7 @@ exports.adminSaveBundle = asyncHandler(async (req, res, next) => {
 
   let bundle = null;
   if (id) {
-    bundle = await StudyResourceBundle.findById(id);
+    bundle = await findStudyResourceBundleByIdOrSlug(id);
   }
 
   const normalizedClass = normalizeClass(classLevel || bundle?.classLevel);
@@ -1832,7 +1946,7 @@ exports.adminSaveBundle = asyncHandler(async (req, res, next) => {
   }
 
   if (!bundle) {
-    bundle = await StudyResourceBundle.findOne({
+    bundle = await findStudyResourceBundleByIdOrSlug(null, {
       classLevel: { $in: [normalizedClass, `Class ${normalizedClass}`] },
       subject: new RegExp(`^${targetSubject}$`, 'i'),
       comboType: normalizedComboType,
@@ -1916,7 +2030,7 @@ exports.adminSaveBundle = asyncHandler(async (req, res, next) => {
 
 exports.adminDeleteBundleFile = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const bundle = await StudyResourceBundle.findById(id);
+  const bundle = await findStudyResourceBundleByIdOrSlug(id);
   if (!bundle) {
     return error(res, 'Bundle not found', 404);
   }

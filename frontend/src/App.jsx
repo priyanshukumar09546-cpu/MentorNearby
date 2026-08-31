@@ -276,8 +276,12 @@ const AppContent = () => {
                             {/* 📄 Notes & PDFs Page */}
                             <Route path="/study-resources" element={<NotesAndPdfsPage />} />
                             <Route path="/study-resources/notes" element={<NotesAndPdfsPage />} />
+                            <Route path="/study-resources/formula-sheets" element={<NotesAndPdfsPage />} />
                             <Route path="/notes" element={<NotesAndPdfsPage />} />
                             <Route path="/notes-and-pdfs" element={<NotesAndPdfsPage />} />
+                            <Route path="/formula-sheets" element={<NotesAndPdfsPage />} />
+                            <Route path="/formula-sheet" element={<NotesAndPdfsPage />} />
+                            <Route path="/formulas" element={<NotesAndPdfsPage />} />
 
                             {/* 📚 Book Bank */}
                             <Route path="/book-bank" element={<StudyResourcesPage />} />

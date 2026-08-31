@@ -2,12 +2,23 @@
 // models/StudyResourceBundle.js
 // Database model for Formula Combos & Important Q&A Combos
 // Separate combo products for Class + Subject + ComboType
+// Supports string slug / bundleId (e.g. combo-c9-math-formula)
 // ============================================================
 
 const mongoose = require('mongoose');
 
 const studyResourceBundleSchema = new mongoose.Schema(
   {
+    bundleId: {
+      type: String,
+      trim: true,
+      index: true,
+    },
+    slug: {
+      type: String,
+      trim: true,
+      index: true,
+    },
     title: {
       type: String,
       required: [true, 'Bundle title is required'],
@@ -40,11 +51,17 @@ const studyResourceBundleSchema = new mongoose.Schema(
     },
     resourceType: {
       type: String,
-      enum: ['FORMULA_SHEET', 'IMPORTANT_QUESTIONS_ANSWERS'],
+      enum: ['FORMULA_SHEET', 'IMPORTANT_QUESTIONS_ANSWERS', 'NOTES'],
       default: function () {
         return this.comboType === 'FORMULA_COMBO' ? 'FORMULA_SHEET' : 'IMPORTANT_QUESTIONS_ANSWERS';
       },
     },
+    resources: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'StudyResource',
+      },
+    ],
     price: {
       type: Number,
       required: true,
@@ -121,7 +138,7 @@ const studyResourceBundleSchema = new mongoose.Schema(
   }
 );
 
-// Unique compound index on classLevel + subject + comboType
+// Compound index on classLevel + subject + comboType
 studyResourceBundleSchema.index({ classLevel: 1, subject: 1, comboType: 1 }, { unique: true });
 
 const StudyResourceBundle = mongoose.model('StudyResourceBundle', studyResourceBundleSchema);

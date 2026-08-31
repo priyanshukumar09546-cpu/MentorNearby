@@ -1103,6 +1103,7 @@ const NotesAndPdfsPage = () => {
           combo={comboPreviewData.combo}
           allResources={allResources}
           onBuyCombo={(c) => handleBuyCombo(c)}
+          onViewPdf={(item) => handleOpenViewer(item)}
           onViewIncludedResources={(c) => {
             setSelectedClass(String(c.classLevel));
             setSelectedSubject(c.subject);

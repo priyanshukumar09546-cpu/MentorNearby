@@ -9,6 +9,7 @@ import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import CookieConsent from './components/common/CookieConsent';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import ScrollToTop from './components/common/ScrollToTop';
 import StarsBackground from './components/StarsBackground';
 import GlobalStars from './components/GlobalStars';
 
@@ -403,6 +404,7 @@ const App = () => {
           <ToastProvider>
             <NotificationProvider>
               <BrowserRouter>
+                <ScrollToTop />
                 <AppContent />
               </BrowserRouter>
             </NotificationProvider>

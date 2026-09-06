@@ -127,8 +127,8 @@ const AppContent = () => {
     <div
       style={{
         backgroundColor: isDarkMode ? '#000000' : isChatRoute ? '#FFFFFF' : '#FFFBF5',
-        height: isChatRoute ? '100vh' : 'auto',
-        minHeight: '100vh',
+        height: isChatRoute ? '100dvh' : 'auto',
+        minHeight: isChatRoute ? '100dvh' : '100vh',
         overflow: isChatRoute ? 'hidden' : 'visible',
         position: 'relative',
         display: 'flex',
@@ -147,8 +147,8 @@ const AppContent = () => {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          height: isChatRoute ? '100vh' : 'auto',
-          minHeight: isChatRoute ? '100vh' : '100vh',
+          height: isChatRoute ? '100%' : 'auto',
+          minHeight: isChatRoute ? '100%' : '100vh',
           overflow: isChatRoute ? 'hidden' : 'visible',
           background: 'transparent',
         }}

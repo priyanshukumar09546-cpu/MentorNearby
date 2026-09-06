@@ -115,7 +115,7 @@ const ChatPage = () => {
     fetchSubStatus();
   }, [fetchConversations, fetchSubStatus]);
 
-  // ── 2. Handle Initial Selection & Target Partner from URL ──
+  // ── 2. Handle Target Partner from URL (ONLY when explicitly navigated with targetId) ──
   useEffect(() => {
     let isMounted = true;
     const myId = String(user?._id || user?.id || '');
@@ -171,44 +171,17 @@ const ChatPage = () => {
               .catch(() => {});
           });
       }
-    } else if (conversations.length > 0 && !activePartner) {
-      // On initial load without targetId, open the first other user
-      const firstRealConv = conversations.find(
-        (c) => c.otherUser && String(c.otherUser._id) !== myId
-      )?.otherUser;
-      if (firstRealConv) setActivePartner(firstRealConv);
     }
 
     return () => {
       isMounted = false;
     };
-  }, [targetId, conversations, activePartner, user]);
+  }, [targetId, conversations, user]);
 
-  // Tab change handler
+  // Tab change handler (never auto-opens a conversation)
   const handleTabChange = (newTab) => {
     setChatTab(newTab);
     setBlockedAttempt(null);
-
-    const nextFiltered = conversations.filter((c) => {
-      const other = c.otherUser || {};
-      if (newTab === 'STUDENTS') return other.role === 'STUDENT' || other.role === 'PARENT';
-      if (newTab === 'TUTORS') return other.role === 'TUTOR';
-      return true;
-    });
-
-    const stillInList = nextFiltered.find(
-      (c) => String(c.otherUser?._id) === String(activePartner?._id)
-    );
-
-    if (!stillInList) {
-      if (nextFiltered.length > 0) {
-        setActivePartner(nextFiltered[0]?.otherUser);
-      } else {
-        setActivePartner(null);
-        setPartnerProfile(null);
-        setMessages([]);
-      }
-    }
   };
 
   // ── 3. Fetch Real Partner Full Profile (Tutor or Student) for Header & Sidebar ──
@@ -564,7 +537,7 @@ const ChatPage = () => {
           {/* ─────────────────────────────────────────────────────────── */}
           {/* COLUMN 1: CHATS LIST                                        */}
           {/* ─────────────────────────────────────────────────────────── */}
-          <aside className="mn-chat-panel mn-chat-list-panel">
+          <aside className={`mn-chat-panel mn-chat-list-panel ${activePartner ? 'mobile-hidden' : ''}`}>
             <h2 className="mn-chat-list-title">Chats</h2>
 
             {/* Search Input */}
@@ -702,7 +675,7 @@ const ChatPage = () => {
           {/* ─────────────────────────────────────────────────────────── */}
           {/* COLUMN 2: ACTIVE CONVERSATION                               */}
           {/* ─────────────────────────────────────────────────────────── */}
-          <main className={`mn-chat-panel mn-chat-convo-panel ${activePartner ? 'has-partner' : ''}`}>
+          <main className={`mn-chat-panel mn-chat-convo-panel ${activePartner ? 'has-partner' : 'mobile-hidden'}`}>
             {activePartner ? (
               <>
                 {/* Conversation Header (ALWAYS VISIBLE, STICKY TOP-0, Z-50) */}
@@ -713,6 +686,8 @@ const ChatPage = () => {
                     className="mn-chat-mobile-back-btn"
                     onClick={() => {
                       setActivePartner(null);
+                      setPartnerProfile(null);
+                      setMessages([]);
                       navigate('/chat', { replace: true });
                     }}
                     aria-label="Back to conversations"

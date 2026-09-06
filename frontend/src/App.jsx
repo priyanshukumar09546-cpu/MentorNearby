@@ -6,6 +6,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import MobileBottomNav from './components/layout/MobileBottomNav';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import CookieConsent from './components/common/CookieConsent';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -211,6 +212,7 @@ const AppContent = () => {
                       >
                         <Navbar />
                         <div
+                          className={`mn-app-main-content ${isChatRoute ? 'is-chat' : ''}`}
                           style={{
                             flex: 1,
                             display: isChatRoute ? 'flex' : 'block',
@@ -371,6 +373,7 @@ const AppContent = () => {
                           </Routes>
                         </div>
                         {!isChatRoute && <Footer />}
+                        <MobileBottomNav />
                         {!isChatRoute && <CookieConsent />}
                       </div>
                     }

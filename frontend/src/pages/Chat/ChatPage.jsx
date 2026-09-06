@@ -70,10 +70,18 @@ const ChatPage = () => {
     return (user?.role || '').toString().toUpperCase() === 'TUTOR';
   }, [user?.role]);
 
-  // Keep ref synced for polling
+  // Keep ref synced for polling & toggle chat-open class on body for mobile bottom nav
   useEffect(() => {
     activePartnerIdRef.current = activePartner?._id || null;
-  }, [activePartner?._id]);
+    if (activePartner) {
+      document.body.classList.add('chat-open');
+    } else {
+      document.body.classList.remove('chat-open');
+    }
+    return () => {
+      document.body.classList.remove('chat-open');
+    };
+  }, [activePartner]);
 
   const scrollToBottom = (behavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior });

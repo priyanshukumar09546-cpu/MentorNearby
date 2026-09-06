@@ -1,0 +1,186 @@
+/* ============================================================
+   MobileBottomNav.css — MentorNearby Premium Mobile Bottom Bar
+   Fixed Bottom Navigation • Clean Glass Blur Surface
+   Native iOS & Android Safe Area Compliant
+   ============================================================ */
+
+/* Desktop & Tablets: strictly hidden */
+.mn-mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mn-mobile-bottom-nav {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(226, 232, 240, 0.85);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Dark Theme Support */
+  .mn-mobile-bottom-nav.dark {
+    background: rgba(17, 24, 39, 0.96);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Hide when an individual chat conversation is actively open */
+  body.chat-open .mn-mobile-bottom-nav {
+    display: none !important;
+  }
+
+  /* Add mobile bottom padding so page content & footer are not obscured */
+  .mn-app-main-content:not(.is-chat) {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body:not(.chat-open) .mn-chat-list-panel {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mn-footer-root {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Float CookieConsent banner safely above mobile bottom bar */
+  .mn-cookie-banner-wrap {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mn-bottom-nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 58px;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 4px;
+    position: relative;
+  }
+
+  /* Standard Item (Home, Explore, Messages, Profile) */
+  .mn-bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    height: 100%;
+    color: #64748B;
+    gap: 3px;
+    position: relative;
+    transition: transform 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mn-bottom-nav-item:active {
+    transform: scale(0.92);
+  }
+
+  .mn-bottom-icon-wrap {
+    font-size: 19px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    color: #94A3B8;
+    transition: color 0.15s ease, transform 0.15s ease;
+  }
+
+  .mn-mobile-bottom-nav.dark .mn-bottom-icon-wrap {
+    color: #64748B;
+  }
+
+  .mn-bottom-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #64748B;
+    line-height: 1.1;
+    letter-spacing: -0.1px;
+    transition: color 0.15s ease;
+  }
+
+  .mn-mobile-bottom-nav.dark .mn-bottom-label {
+    color: #94A3B8;
+  }
+
+  /* Highlighted Active Item (Coral-Red Brand Color #E11D48) */
+  .mn-bottom-nav-item.active .mn-bottom-icon-wrap {
+    color: #E11D48;
+    transform: translateY(-1px);
+  }
+
+  .mn-bottom-nav-item.active .mn-bottom-label {
+    color: #E11D48;
+    font-weight: 700;
+  }
+
+  /* ──────────────────────────────────────────────────────────── */
+  /* Center Elevated Action (+) Button                             */
+  /* ──────────────────────────────────────────────────────────── */
+  .mn-bottom-center-action {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    position: relative;
+    gap: 2px;
+    height: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mn-bottom-plus-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FF4565 0%, #E11D48 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    font-size: 20px;
+    font-weight: 900;
+    margin-top: -24px;
+    box-shadow: 0 6px 18px rgba(225, 29, 72, 0.42), 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    border: 3px solid #FFFFFF;
+  }
+
+  .mn-mobile-bottom-nav.dark .mn-bottom-plus-btn {
+    border-color: #111827;
+  }
+
+  .mn-bottom-center-action:active .mn-bottom-plus-btn {
+    transform: scale(0.92);
+    box-shadow: 0 3px 10px rgba(225, 29, 72, 0.3);
+  }
+
+  .mn-bottom-label.center-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1E293B;
+  }
+
+  .mn-mobile-bottom-nav.dark .mn-bottom-label.center-label {
+    color: #F8FAFC;
+  }
+
+  .mn-bottom-center-action.active .mn-bottom-label.center-label {
+    color: #E11D48;
+  }
+}

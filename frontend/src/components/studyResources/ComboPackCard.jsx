@@ -36,8 +36,9 @@ const ComboPackCard = ({
         Class {combo.classLevel} • {combo.subject}
       </div>
 
-      <div className="mn-np-combo-count">
-        Includes all Chapter {isFormula ? 'Formula Sheets' : 'Notes'}
+      <div className="mn-np-combo-count" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>Includes all Chapter {isFormula ? 'Formula Sheets' : 'Notes'}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 900, background: '#DCFCE7', color: '#166534', padding: '1px 7px', borderRadius: 6 }}>FREE</span>
       </div>
 
       <div
@@ -82,9 +83,12 @@ const ComboPackCard = ({
             gap: 6,
             height: 30,
             fontSize: 11.5,
+            background: '#16A34A',
+            color: '#FFFFFF',
+            border: 'none',
           }}
         >
-          <span>⚡</span> Buy Combo – ₹{combo.price}
+          <span>📥</span> Download Combo (Free)
         </button>
       </div>
     </div>

@@ -68,48 +68,70 @@ const SubjectResourcesPage = () => {
     }
   };
 
-  const handleBuyFormulaCombo = () => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { returnUrl: `/study-resources/class/${classLevel}/${subject}` } });
-      return;
+  const handleDirectDownload = async (resource) => {
+    try {
+      const rId = resource?._id || resource?.id;
+      if (!rId) return;
+      const res = await downloadWatermarkedNote(rId);
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `MentorNearby_${(resource.title || 'study_material').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      const targetUrl = resource?.fileUrl || `/api/study-resources/stream/${resource?._id || resource?.id}?download=true`;
+      const link = document.createElement('a');
+      link.href = targetUrl;
+      link.setAttribute('download', `MentorNearby_${(resource?.title || 'study_material').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     }
+  };
+
+  const handleDirectComboDownload = async (bundle) => {
+    try {
+      const bId = bundle?._id || bundle?.id;
+      const res = await downloadStudyResourceComboFile(bId);
+      const url = res?.downloadUrl || res?.data?.downloadUrl || bundle?.fileUrl || `/api/study-resources/combo/stream/${bId}?download=true`;
+      if (url) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${(bundle?.title || 'study_combo').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+    } catch (err) {
+      const targetUrl = bundle?.fileUrl || `/api/study-resources/combo/stream/${bundle?._id || bundle?.id}?download=true`;
+      const link = document.createElement('a');
+      link.href = targetUrl;
+      link.setAttribute('download', `${(bundle?.title || 'study_combo').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+  };
+
+  const handleBuyFormulaCombo = () => {
     const b = data?.combos?.formulaBundle || data?.bundle || formulaBundle;
-    setPaymentModalState({
-      isOpen: true,
-      purchaseType: 'FORMULA_COMBO',
-      comboType: 'FORMULA_COMBO',
-      resource: null,
-      bundle: b,
-    });
+    handleDirectComboDownload(b);
   };
 
   const handleBuyQaCombo = () => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { returnUrl: `/study-resources/class/${classLevel}/${subject}` } });
-      return;
-    }
     const b = data?.combos?.qaBundle || qaBundle;
-    setPaymentModalState({
-      isOpen: true,
-      purchaseType: 'QA_COMBO',
-      comboType: 'QA_COMBO',
-      resource: null,
-      bundle: b,
-    });
+    handleDirectComboDownload(b);
   };
 
   const handleBuySingleResource = (resource) => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { returnUrl: `/study-resources/class/${classLevel}/${subject}` } });
-      return;
-    }
-    setPaymentModalState({
-      isOpen: true,
-      purchaseType: 'INDIVIDUAL',
-      comboType: null,
-      resource: resource,
-      bundle: null,
-    });
+    handleDirectDownload(resource);
   };
 
   const handleReadDoc = (resource, isCombo = false) => {
@@ -122,57 +144,6 @@ const SubjectResourcesPage = () => {
       resource: rObj,
       isCombo: Boolean(isCombo || rObj?.isCombo || rObj?.comboType),
     });
-  };
-
-  const handleDirectDownload = async (resource) => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { returnUrl: `/study-resources/class/${classLevel}/${subject}` } });
-      return;
-    }
-    try {
-      const res = await downloadWatermarkedNote(resource._id || resource.id);
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `MentorNearby_${resource.title || 'notes'}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      if (err.response?.status === 403) {
-        handleBuySingleResource(resource);
-      } else {
-        alert('Download failed. Please try again.');
-      }
-    }
-  };
-
-  const handleDirectComboDownload = async (bundle) => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { returnUrl: `/study-resources/class/${classLevel}/${subject}` } });
-      return;
-    }
-    try {
-      const res = await downloadStudyResourceComboFile(bundle._id || bundle.id);
-      const url = res?.downloadUrl || res?.data?.downloadUrl;
-      if (url) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `${bundle.title || 'study_combo'}.pdf`);
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    } catch (err) {
-      if (err.response?.status === 403) {
-        handleBuyFormulaCombo();
-      } else {
-        alert('Failed to download combo file. Please try again.');
-      }
-    }
   };
 
   const handlePaymentSuccess = () => {
@@ -357,86 +328,44 @@ const SubjectResourcesPage = () => {
 
               <div className="sr-combo-card-bottom">
                 <div className="sr-combo-card-pricing">
-                  {formulaBundle.normalTotal > formulaBundle.price && (
-                    <span className="sr-combo-card-orig">Individual: ₹{formulaBundle.normalTotal}</span>
-                  )}
-                  <span className="sr-combo-card-price">₹{formulaBundle.price}</span>
-                  {formulaBundle.savings > 0 && (
-                    <span className="sr-combo-card-savings">Save ₹{formulaBundle.savings} ({formulaBundle.discountPercentage}% OFF)</span>
-                  )}
+                  <span className="sr-combo-card-price" style={{ color: '#059669' }}>FREE</span>
+                  <span className="sr-combo-card-savings" style={{ color: '#166534', background: '#DCFCE7' }}>100% Free Access</span>
                 </div>
 
-                {formulaBundle.isPurchased ? (
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleReadDoc(formulaBundle, true)}
-                      style={{
-                        flex: 1,
-                        minWidth: 120,
-                        padding: '10px 14px',
-                        borderRadius: 10,
-                        background: '#059669',
-                        color: '#FFFFFF',
-                        fontWeight: 700,
-                        fontSize: 13.5,
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      <span>📖</span>
-                      <span>Read Free</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDirectComboDownload(formulaBundle)}
-                      className="sr-combo-card-btn-unlocked"
-                      style={{ flex: 1, minWidth: 120 }}
-                    >
-                      <span>✓</span>
-                      <span>Download PDF</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleReadDoc(formulaBundle, true)}
-                      style={{
-                        flex: 1,
-                        minWidth: 120,
-                        padding: '10px 14px',
-                        borderRadius: 10,
-                        background: '#059669',
-                        color: '#FFFFFF',
-                        fontWeight: 700,
-                        fontSize: 13.5,
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      <span>📖</span>
-                      <span>Read Free</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleBuyFormulaCombo}
-                      className="sr-combo-card-btn"
-                      style={{ flex: 1, minWidth: 120 }}
-                    >
-                      <span>⬇️</span>
-                      <span>Download (₹{formulaBundle.price})</span>
-                    </button>
-                  </div>
-                )}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleReadDoc(formulaBundle, true)}
+                    style={{
+                      flex: 1,
+                      minWidth: 120,
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      background: '#059669',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      fontSize: 13.5,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span>📖</span>
+                    <span>Read Free</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDirectComboDownload(formulaBundle)}
+                    className="sr-combo-card-btn-unlocked"
+                    style={{ flex: 1, minWidth: 120, background: '#16A34A', color: '#FFF' }}
+                  >
+                    <span>⬇️</span>
+                    <span>Download (Free)</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -456,86 +385,44 @@ const SubjectResourcesPage = () => {
 
               <div className="sr-combo-card-bottom">
                 <div className="sr-combo-card-pricing">
-                  {qaBundle.normalTotal > qaBundle.price && (
-                    <span className="sr-combo-card-orig">Individual: ₹{qaBundle.normalTotal}</span>
-                  )}
-                  <span className="sr-combo-card-price">₹{qaBundle.price}</span>
-                  {qaBundle.savings > 0 && (
-                    <span className="sr-combo-card-savings">Save ₹{qaBundle.savings} ({qaBundle.discountPercentage}% OFF)</span>
-                  )}
+                  <span className="sr-combo-card-price" style={{ color: '#7C3AED' }}>FREE</span>
+                  <span className="sr-combo-card-savings" style={{ color: '#6D28D9', background: '#EDE9FE' }}>100% Free Access</span>
                 </div>
 
-                {qaBundle.isPurchased ? (
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleReadDoc(qaBundle, true)}
-                      style={{
-                        flex: 1,
-                        minWidth: 120,
-                        padding: '10px 14px',
-                        borderRadius: 10,
-                        background: '#7C3AED',
-                        color: '#FFFFFF',
-                        fontWeight: 700,
-                        fontSize: 13.5,
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      <span>📖</span>
-                      <span>Read Free</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDirectComboDownload(qaBundle)}
-                      className="sr-combo-card-btn-unlocked"
-                      style={{ flex: 1, minWidth: 120 }}
-                    >
-                      <span>✓</span>
-                      <span>Download PDF</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleReadDoc(qaBundle, true)}
-                      style={{
-                        flex: 1,
-                        minWidth: 120,
-                        padding: '10px 14px',
-                        borderRadius: 10,
-                        background: '#7C3AED',
-                        color: '#FFFFFF',
-                        fontWeight: 700,
-                        fontSize: 13.5,
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      <span>📖</span>
-                      <span>Read Free</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleBuyQaCombo}
-                      className="sr-combo-card-btn"
-                      style={{ flex: 1, minWidth: 120 }}
-                    >
-                      <span>⬇️</span>
-                      <span>Download (₹{qaBundle.price})</span>
-                    </button>
-                  </div>
-                )}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleReadDoc(qaBundle, true)}
+                    style={{
+                      flex: 1,
+                      minWidth: 120,
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      background: '#7C3AED',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      fontSize: 13.5,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span>📖</span>
+                    <span>Read Free</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDirectComboDownload(qaBundle)}
+                    className="sr-combo-card-btn-unlocked"
+                    style={{ flex: 1, minWidth: 120, background: '#16A34A', color: '#FFF' }}
+                  >
+                    <span>⬇️</span>
+                    <span>Download (Free)</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -596,15 +483,9 @@ const SubjectResourcesPage = () => {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <h3 className="sr-chapter-title">{ch.chapterTitle || `Chapter ${chNum}`}</h3>
-                        {isFreeDemoChapter ? (
-                          <span style={{ fontSize: 11, fontWeight: 900, background: '#DCFCE7', color: '#166534', border: '1px solid #BBF7D0', padding: '1px 8px', borderRadius: 6 }}>
-                            🎁 FREE DEMO UNIT
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 11, fontWeight: 900, background: '#EEF2FF', color: '#4338CA', border: '1px solid #C7D2FE', padding: '1px 8px', borderRadius: 6 }}>
-                            🔒 PREMIUM UNIT
-                          </span>
-                        )}
+                        <span style={{ fontSize: 11, fontWeight: 900, background: '#DCFCE7', color: '#166534', border: '1px solid #BBF7D0', padding: '1px 8px', borderRadius: 6 }}>
+                          🎁 100% FREE CHAPTER
+                        </span>
                       </div>
                       {ch.unit && <span className="sr-unit-name">{ch.unit}</span>}
                     </div>
@@ -619,23 +500,11 @@ const SubjectResourcesPage = () => {
                 <div className="sr-resources-grid">
                   {(ch.resources || []).map((res) => {
                     const isFormula = res.resourceType === 'FORMULA_SHEET';
-                    const isFreeDemo = isFreeDemoChapter || Boolean(res.isFreeDemo);
-                    
-                    const userIsSubscribed = Boolean(
-                      user?.isSubscribed &&
-                      user?.subscriptionExpiry &&
-                      new Date(user.subscriptionExpiry) > new Date()
-                    );
-                    const isUnlocked = userIsSubscribed || res.isDownloadUnlocked;
-
-                    const displayOrigPrice = res.originalPrice || (isFormula ? 49 : 79);
-                    const defaultSalePrice = isFormula ? singleFormulaPrice : singleNotesPrice;
-                    const salePrice = Number(res.downloadPrice || res.salePrice) || defaultSalePrice;
 
                     return (
                       <div
                         key={res._id}
-                        className={`sr-resource-card ${isUnlocked ? 'unlocked' : ''}`}
+                        className="sr-resource-card unlocked"
                       >
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -643,15 +512,9 @@ const SubjectResourcesPage = () => {
                               {isFormula ? '📘 FORMULA SHEET' : '📝 NOTES / PPT'}
                             </span>
                             
-                            {isUnlocked ? (
-                              <span style={{ fontSize: 11, fontWeight: 800, color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: 12 }}>
-                                ✓ UNLOCKED
-                              </span>
-                            ) : (
-                              <span style={{ fontSize: 11, fontWeight: 900, color: '#166534', background: '#DCFCE7', padding: '2px 8px', borderRadius: 12, border: '1px solid #BBF7D0' }}>
-                                📖 FREE READING
-                              </span>
-                            )}
+                            <span style={{ fontSize: 11, fontWeight: 800, color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: 12 }}>
+                              ✓ FREE ACCESS
+                            </span>
                           </div>
 
                           <h4 className="sr-res-title">{res.title}</h4>
@@ -664,23 +527,12 @@ const SubjectResourcesPage = () => {
                           
                           {/* Pricing Display */}
                           <div className="sr-res-pricing">
-                            {isUnlocked ? (
-                              <span style={{ fontSize: 12, fontWeight: 800, color: '#15803D', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <span>✓</span> {userIsSubscribed ? 'Subscribed' : res.unlockedVia === 'FORMULA_COMBO' ? 'In Formula Combo' : res.unlockedVia === 'QA_COMBO' ? 'In Q&A Combo' : 'Purchased'}
-                              </span>
-                            ) : (
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: 12, fontWeight: 800, color: '#059669' }}>
-                                  📖 Free Online Reading
-                                </span>
-                                <span style={{ fontSize: 11, color: 'var(--color-text-secondary, #64748B)' }}>
-                                  PDF: Subscription (₹99/mo)
-                                </span>
-                              </div>
-                            )}
+                            <span style={{ fontSize: 12, fontWeight: 800, color: '#15803D', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <span>✓</span> 100% Free Reading &amp; Download
+                            </span>
                           </div>
 
-                          {/* Action Buttons: 📖 Read Free Online + ⬇️ Download / Unlock */}
+                          {/* Action Buttons: 📖 Read Free Online + ⬇️ Download Free */}
                           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
                               type="button"
@@ -697,46 +549,33 @@ const SubjectResourcesPage = () => {
                               <span>📖</span> Read Free
                             </button>
 
-                            {isUnlocked ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDirectDownload(res)}
-                                  className="sr-btn-open-single"
-                                  style={{ background: '#1E293B', borderColor: '#1E293B', color: '#FFF' }}
-                                  title="Download watermarked PDF document"
-                                >
-                                  <span>⬇️</span> Download PDF
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenPrintModal(res.title)}
-                                  style={{
-                                    background: 'var(--card-bg, #F1F5F9)',
-                                    borderColor: 'var(--border-color, #CBD5E1)',
-                                    color: 'var(--color-text-primary, #334155)',
-                                    padding: '7px 10px',
-                                    borderRadius: 8,
-                                    fontSize: 12,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    border: '1px solid var(--border-color, #CBD5E1)',
-                                  }}
-                                >
-                                  🖨️ Print
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleBuySingleResource({ ...res, salePrice, downloadPrice: salePrice, originalPrice: displayOrigPrice })}
-                                className="sr-btn-unlock-single"
-                                style={{ padding: '7px 12px', fontSize: 12 }}
-                                title="Unlock PDF download with subscription"
-                              >
-                                <span>🔒</span> Subscribe
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDirectDownload(res)}
+                              className="sr-btn-open-single"
+                              style={{ background: '#16A34A', borderColor: '#16A34A', color: '#FFF', fontWeight: 800 }}
+                              title="Download PDF document (Free)"
+                            >
+                              <span>⬇️</span> Download (Free)
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenPrintModal(res.title)}
+                              style={{
+                                background: 'var(--card-bg, #F1F5F9)',
+                                borderColor: 'var(--border-color, #CBD5E1)',
+                                color: 'var(--color-text-primary, #334155)',
+                                padding: '7px 10px',
+                                borderRadius: 8,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                border: '1px solid var(--border-color, #CBD5E1)',
+                              }}
+                            >
+                              🖨️ Print
+                            </button>
                           </div>
                         </div>
                       </div>

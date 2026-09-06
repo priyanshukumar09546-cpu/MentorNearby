@@ -907,14 +907,9 @@ const StudyResourceViewerModalInner = ({
 
               {/* Download PDF Button — Subscription-gated watermarked download */}
               {(() => {
-                const currentUser = user;
-                const userIsSubscribed =
-                  currentUser?.isSubscribed &&
-                  currentUser?.subscriptionExpiry &&
-                  new Date(currentUser.subscriptionExpiry) > new Date();
                 const rId = resource?._id || resource?.id || propResource?._id || propResource?.id;
 
-                const handleSubscribedDownload = async () => {
+                const handleDirectDownload = async () => {
                   if (!rId) return;
                   setDownloading(true);
                   try {
@@ -924,58 +919,34 @@ const StudyResourceViewerModalInner = ({
                     const url = window.URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.setAttribute('download', `MentorNearby_${resource?.title || 'notes'}.pdf`);
+                    link.setAttribute('download', `MentorNearby_${resource?.title || 'study_resource'}.pdf`);
                     document.body.appendChild(link);
                     link.click();
                     link.remove();
                     window.URL.revokeObjectURL(url);
                   } catch (err) {
-                    if (err.response?.status === 403) {
-                      if (handleOpenPayment) handleOpenPayment(resource || propResource);
-                    } else {
-                      console.error('Download error:', err);
-                    }
+                    const fallbackUrl = resource?.fileUrl || `/api/study-resources/stream/${rId}?download=true`;
+                    const link = document.createElement('a');
+                    link.href = fallbackUrl;
+                    link.setAttribute('download', `MentorNearby_${resource?.title || 'study_resource'}.pdf`);
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
                   } finally {
                     setDownloading(false);
                   }
                 };
 
-                if (userIsSubscribed) {
-                  return (
-                    <button
-                      type="button"
-                      onClick={handleSubscribedDownload}
-                      disabled={downloading}
-                      style={{
-                        backgroundColor: '#059669',
-                        color: '#FFFFFF',
-                        border: '1px solid #10B981',
-                        borderRadius: '20px',
-                        padding: '5px 14px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)',
-                        opacity: downloading ? 0.6 : 1,
-                      }}
-                      title="Download Watermarked PDF"
-                    >
-                      <span>{downloading ? '⏳' : '📥'}</span>
-                      <span>{downloading ? 'Preparing...' : 'Download PDF'}</span>
-                    </button>
-                  );
-                }
                 return (
                   <button
                     type="button"
-                    onClick={() => { if (handleOpenPayment) handleOpenPayment(resource || propResource); }}
+                    onClick={handleDirectDownload}
+                    disabled={downloading}
                     style={{
-                      backgroundColor: '#2563EB',
+                      backgroundColor: '#059669',
                       color: '#FFFFFF',
-                      border: '1px solid #3B82F6',
+                      border: '1px solid #10B981',
                       borderRadius: '20px',
                       padding: '5px 14px',
                       fontSize: '12px',
@@ -984,12 +955,13 @@ const StudyResourceViewerModalInner = ({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)',
+                      opacity: downloading ? 0.6 : 1,
                     }}
-                    title="Subscribe to Download"
+                    title="Download PDF (100% Free)"
                   >
-                    <span>🔒</span>
-                    <span>Subscribe to Download</span>
+                    <span>{downloading ? '⏳' : '📥'}</span>
+                    <span>{downloading ? 'Preparing...' : 'Download PDF (Free)'}</span>
                   </button>
                 );
               })()}

@@ -23,10 +23,10 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
     {
       id: 'basic',
       name: 'Starter Plan',
-      price: 99,
+      price: 0,
       duration: '30 Days',
-      unlocks: '5 Contact Unlocks',
-      features: ['5 Direct Phone Numbers', 'Unlimited Direct Chats', 'Full Watermarked PDF Notes'],
+      unlocks: '3 Contact Unlocks',
+      features: ['3 Direct Phone Numbers', 'Unlimited Direct Chats', 'Full Watermarked PDF Notes (Free)'],
       popular: false,
     },
     {
@@ -57,6 +57,40 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
 
     setIsProcessing(true);
     try {
+      // Free Starter Plan: activate immediately
+      if (planKey === 'basic') {
+        await client.post('/subscription/create-order', {
+          planType: 'basic',
+          amount: 0,
+          tutorId: teacherId,
+        });
+
+        if (teacherId) {
+          try {
+            const tutorRes = await client.get(`/tutors/${teacherId}`);
+            const tData = tutorRes.data?.data?.tutorProfile || tutorRes.data?.data;
+            const realPhone = tData?.phone || tData?.user?.phone || '';
+            setUnlockedContact({
+              name: tData?.name || tData?.user?.name || teacherName || 'Teacher',
+              phone: realPhone,
+              whatsappNumber: tData?.whatsappNumber || realPhone,
+              email: tData?.user?.email || tData?.email || '',
+            });
+          } catch (_) {
+            setUnlockedContact({
+              name: teacherName || 'Teacher',
+              phone: '',
+              whatsappNumber: '',
+              email: '',
+            });
+          }
+        }
+        showToast('🎉 Starter Plan activated for FREE! Contact unlocked.', 'success');
+        if (onUnlockSuccess) onUnlockSuccess();
+        setIsProcessing(false);
+        return;
+      }
+
       // 1. Create order on backend
       const res = await client.post('/subscription/create-order', {
         planType: planKey,
@@ -208,7 +242,9 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
                     <div className="space-y-2">
                       <p className="text-xs font-bold text-gray-500 uppercase">{p.name}</p>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-gray-900">₹{p.price}</span>
+                        <span className={`text-2xl font-black ${p.price === 0 ? 'text-emerald-600' : 'text-gray-900'}`}>
+                          {p.price === 0 ? 'FREE' : `₹${p.price}`}
+                        </span>
                         <span className="text-[11px] text-gray-500">/ {p.duration}</span>
                       </div>
                       <p className="text-xs font-extrabold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md inline-block">
@@ -232,12 +268,18 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
                       }}
                       disabled={isProcessing}
                       className={`mt-4 w-full py-2.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer border-none ${
-                        isSelected
+                        p.price === 0
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          : isSelected
                           ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
                       }`}
                     >
-                      {isProcessing && selectedPlan === p.id ? 'Processing...' : `Unlock for ₹${p.price}`}
+                      {isProcessing && selectedPlan === p.id
+                        ? 'Processing...'
+                        : p.price === 0
+                        ? 'Get Started Free'
+                        : `Unlock for ₹${p.price}`}
                     </button>
                   </div>
                 );

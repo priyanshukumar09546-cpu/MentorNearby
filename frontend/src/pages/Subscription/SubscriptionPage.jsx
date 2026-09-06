@@ -84,6 +84,22 @@ const SubscriptionPage = () => {
     setLoadingPlan(planKey);
 
     try {
+      // Free Starter Plan: Instant activation without Razorpay payment
+      if (planKey === 'starter' || actualPlanKey.startsWith('starter') || planKey === 'basic') {
+        const res = await client.post('/subscription/create-order', {
+          planType: actualPlanKey,
+          billingCycle,
+          discountPercent: 0,
+        });
+        const orderData = res.data?.data || res.data;
+        showToast(orderData.message || 'Starter Plan activated for FREE! Enjoy full access. 🎉', 'success');
+        setLoadingPlan(null);
+        const params = new URLSearchParams(location.search);
+        const redirectUrl = params.get('redirect') || '/student-dashboard';
+        navigate(redirectUrl);
+        return;
+      }
+
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
         showToast('Could not load payment gateway. Please check your internet connection.', 'error');
@@ -101,6 +117,15 @@ const SubscriptionPage = () => {
 
       if (!orderData || !orderData.orderId) {
         throw new Error(res.data?.message || 'Failed to create payment order');
+      }
+
+      if (orderData.freeActivation || orderData.amount === 0) {
+        showToast(orderData.message || 'Plan activated for FREE! 🎉', 'success');
+        setLoadingPlan(null);
+        const params = new URLSearchParams(location.search);
+        const redirectUrl = params.get('redirect') || '/student-dashboard';
+        navigate(redirectUrl);
+        return;
       }
 
       // If test order simulation (Render/Local test keys)
@@ -343,20 +368,23 @@ const SubscriptionPage = () => {
 
               <div className="mn-sub-price-block">
                 <div className="mn-sub-price-row">
-                  <span className="mn-sub-price-num starter">
-                    ₹{isYearly ? 74 : 99}
+                  <span className="mn-sub-price-num starter" style={{ fontSize: '32px', color: '#16A34A', fontWeight: 900 }}>
+                    FREE
                   </span>
-                  <span className="mn-sub-price-period">/month</span>
                 </div>
-                <div className="mn-sub-price-billed">
-                  {isYearly ? 'Billed ₹891 yearly' : 'Billed monthly'}
+                <div className="mn-sub-price-billed" style={{ color: '#16A34A', fontWeight: 700 }}>
+                  100% Free Forever
                 </div>
               </div>
 
               <ul className="mn-sub-features-list">
                 <li className="mn-sub-feature-item">
                   <span className="mn-sub-check-icon starter">✓</span>
-                  <span>Unlock {isYearly ? '36' : '3'} Tutor Contacts / {isYearly ? 'year' : 'month'}</span>
+                  <span><strong>All Notes, PPTs & Formula Sheets (Free)</strong></span>
+                </li>
+                <li className="mn-sub-feature-item">
+                  <span className="mn-sub-check-icon starter">✓</span>
+                  <span>Unlock {isYearly ? '36' : '3'} Tutor Contacts</span>
                 </li>
                 <li className="mn-sub-feature-item">
                   <span className="mn-sub-check-icon starter">✓</span>
@@ -378,8 +406,9 @@ const SubscriptionPage = () => {
               onClick={() => handleSubscribe('starter')}
               disabled={loadingPlan === 'starter'}
               className="mn-sub-btn starter"
+              style={{ background: '#16A34A', borderColor: '#16A34A' }}
             >
-              {loadingPlan === 'starter' ? 'Opening Gateway...' : 'Choose Starter'}
+              {loadingPlan === 'starter' ? 'Activating Free Plan...' : 'Get Started Free'}
             </button>
           </div>
 

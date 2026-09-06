@@ -13,6 +13,7 @@ import StudyResourceViewerModal from '../../components/studyResources/StudyResou
 import StudyPaymentModal from '../../components/studyResources/StudyPaymentModal';
 import ComboPreviewModal from '../../components/studyResources/ComboPreviewModal';
 import PrintModal from '../../components/studyResources/PrintModal';
+import { useToast } from '../../context/ToastContext';
 import './NotesAndPdfs.css';
 
 // Dynamic Single-Class + Single-Subject Combo Definitions
@@ -254,6 +255,7 @@ const TRENDING_ITEMS = [
 
 const NotesAndPdfsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { showToast } = useToast();
 
   // Filters State (Default: Both Notes & Formula Sheets enabled)
   const [selectedTypes, setSelectedTypes] = useState(['NOTES', 'FORMULA_SHEET']);
@@ -505,49 +507,53 @@ const NotesAndPdfsPage = () => {
           fileSize: 1048576,
         },
         downloadPrice: price,
-        isDownloadUnlocked: false,
+        isDownloadUnlocked: true,
         isFree: true,
       },
       resourceId: targetId,
     });
   };
 
-  // Open Payment Download Modal for Individual Card
-  const handleOpenDownloadModal = (res) => {
-    const isSenior = ['11', '12'].includes(String(res.classLevel));
-    const isFormula = res.resourceType === 'FORMULA_SHEET';
-    const price = isFormula ? (isSenior ? 8 : 7) : (isSenior ? 14 : 12);
-    setPaymentData({
-      isOpen: true,
-      purchaseType: 'INDIVIDUAL',
-      resource: {
-        _id: res.id,
-        id: res.id,
-        title: `${res.chapter} – ${res.chapterTitle}`,
-        chapter: res.chapter,
-        chapterTitle: res.chapterTitle,
-        classLevel: res.classLevel,
-        subject: res.subject,
-        resourceType: res.resourceType,
-        downloadPrice: price,
-        salePrice: price,
-        originalPrice: isFormula ? 49 : 79,
-      },
-      bundle: null,
-      classLevel: res.classLevel,
-      subject: res.subject,
-    });
+  // Direct Free Download for Individual Card
+  const handleDownloadResource = async (res) => {
+    const rId = res?.id || res?._id;
+    if (!rId) return;
+    try {
+      if (showToast) showToast('📥 Preparing free PDF download...', 'info');
+      const { downloadWatermarkedNote } = await import('../../api/notes');
+      const apiRes = await downloadWatermarkedNote(rId);
+      const blob = new Blob([apiRes.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `MentorNearby_${(res.title || 'study_notes').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      if (showToast) showToast('✅ Download complete (100% Free)', 'success');
+    } catch (err) {
+      const targetUrl = res.fileUrl || `/api/study-resources/stream/${rId}?download=true`;
+      const link = document.createElement('a');
+      link.href = targetUrl;
+      link.setAttribute('download', `MentorNearby_${(res.title || 'study_notes').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      if (showToast) showToast('✅ Download started (100% Free)', 'success');
+    }
   };
 
-  // Open Direct Combo Purchase from Combo Modal or Buy Button
+  const handleOpenDownloadModal = (res) => {
+    handleDownloadResource(res);
+  };
+
+  // Open Direct Combo Preview with 100% Free Reading & Downloads
   const handleBuyCombo = (combo) => {
-    setPaymentData({
+    setComboPreviewData({
       isOpen: true,
-      purchaseType: 'COMBO',
-      bundle: combo,
-      resource: null,
-      classLevel: combo.classLevel,
-      subject: combo.subject,
+      combo,
     });
   };
 
@@ -802,8 +808,9 @@ const NotesAndPdfsPage = () => {
                         Class {combo.classLevel} • {combo.subject}
                       </div>
 
-                      <div className="mn-np-combo-count" style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginBottom: 8 }}>
-                        Includes all Chapter {combo.type === 'FORMULA' ? 'Formula Sheets' : 'Notes'}
+                      <div className="mn-np-combo-count" style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Includes all Chapter {combo.type === 'FORMULA' ? 'Formula Sheets' : 'Notes'}</span>
+                        <span style={{ fontSize: 10, fontWeight: 900, background: '#DCFCE7', color: '#166534', padding: '1px 6px', borderRadius: 4 }}>FREE</span>
                       </div>
 
                       <div
@@ -848,9 +855,12 @@ const NotesAndPdfsPage = () => {
                             gap: 6,
                             height: 30,
                             fontSize: 11.5,
+                            background: '#16A34A',
+                            color: '#FFFFFF',
+                            border: 'none',
                           }}
                         >
-                          <span>⚡</span> Buy Combo – ₹{combo.price}
+                          <span>📥</span> Download Combo (Free)
                         </button>
                       </div>
                     </div>
@@ -897,8 +907,9 @@ const NotesAndPdfsPage = () => {
                           {item.subject} • Class {item.classLevel}
                         </div>
 
-                        <div className="mn-np-card-meta">
-                          <span>📄</span> PDF • {item.fileSize || '340 KB'}
+                        <div className="mn-np-card-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>📄 PDF • {item.fileSize || '340 KB'}</span>
+                          <span style={{ fontSize: 10, fontWeight: 900, background: '#DCFCE7', color: '#166534', padding: '1px 6px', borderRadius: 4 }}>FREE</span>
                         </div>
 
                         <div className="mn-np-card-actions">
@@ -913,9 +924,14 @@ const NotesAndPdfsPage = () => {
                           <button
                             type="button"
                             className="mn-np-btn-download"
-                            onClick={() => handleOpenDownloadModal(item)}
+                            onClick={() => handleDownloadResource(item)}
+                            style={{
+                              background: '#16A34A',
+                              borderColor: '#16A34A',
+                              color: '#FFFFFF',
+                            }}
                           >
-                            Download 🔒
+                            Download (Free)
                           </button>
 
                           <button
@@ -1109,12 +1125,10 @@ const NotesAndPdfsPage = () => {
           resource={viewerData.resource}
           initialResource={viewerData.resource}
           onOpenPaymentModal={(res) => {
-            setViewerData({ isOpen: false, resource: null, resourceId: null });
-            handleOpenDownloadModal(res || viewerData.resource);
+            handleDownloadResource(res || viewerData.resource);
           }}
           onBuyDownload={(res) => {
-            setViewerData({ isOpen: false, resource: null, resourceId: null });
-            handleOpenDownloadModal(res || viewerData.resource);
+            handleDownloadResource(res || viewerData.resource);
           }}
         />
       )}

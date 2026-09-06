@@ -35,22 +35,22 @@ const PLANS = {
     badge: null,
   },
   starter: {
-    amount: 9900,
+    amount: 0,
     currency: 'INR',
-    label: 'Starter Plan – 3 Contacts (₹99/mo)',
-    interval: 30,
+    label: 'Starter Plan – Free Access',
+    interval: 365,
     unlocks: 3,
     isSubscription: true,
-    badge: 'Starter',
+    badge: 'Starter (Free)',
   },
   starter_yearly: {
-    amount: 89100,
+    amount: 0,
     currency: 'INR',
-    label: 'Starter Plan Yearly – 36 Contacts (₹891/yr)',
+    label: 'Starter Plan – Free Access',
     interval: 365,
     unlocks: 36,
     isSubscription: true,
-    badge: 'Starter',
+    badge: 'Starter (Free)',
   },
   growth: {
     amount: 19900,
@@ -117,13 +117,13 @@ const PLANS = {
     badge: 'One-Time',
   },
   basic: {
-    amount: 9900,
+    amount: 0,
     currency: 'INR',
-    label: 'Starter Plan (₹99)',
-    interval: 30,
+    label: 'Starter Plan (Free)',
+    interval: 365,
     unlocks: 3,
     isSubscription: true,
-    badge: 'Starter',
+    badge: 'Starter (Free)',
   },
   student: {
     amount: 19900,
@@ -160,12 +160,32 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
 
   const plan = PLANS[planKey];
 
-  if (plan.amount === 0) {
+  if (plan.amount === 0 || planKey === 'starter' || planKey === 'starter_yearly' || planKey === 'basic' || planKey === 'free') {
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + 365);
+    user.isSubscribed = true;
+    user.subscriptionExpiry = expiry;
+    user.isPremium = true;
+    user.premiumExpiresAt = expiry;
+    user.subscriptionType = 'starter';
+    user.contactUnlocks = (user.contactUnlocks || 0) + (plan.unlocks || 3);
+    await user.save();
+
     return res.status(200).json({
       success: true,
-      message: 'Free plan activated',
-      planType: 'free',
+      message: 'Starter plan activated for free! All study materials and features are now available.',
+      planType: 'starter',
+      isSubscribed: true,
+      contactUnlocks: user.contactUnlocks,
       amount: 0,
+      freeActivation: true,
+      data: {
+        orderId: `free_${Date.now()}`,
+        amount: 0,
+        currency: 'INR',
+        planType: 'starter',
+        planLabel: 'Starter Plan (Free)',
+      },
     });
   }
 

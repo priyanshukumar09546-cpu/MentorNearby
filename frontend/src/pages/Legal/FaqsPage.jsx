@@ -22,14 +22,14 @@ const DEFAULT_FAQS_LIST = [
   {
     _id: '2',
     category: 'STUDY_RESOURCES',
-    question: 'Is online reading for study resources really 100% free?',
-    answer: 'Yes! All formula sheets, chapter study notes, NCERT books, and 10-year board PYQ video solutions are 100% free to read and watch online on MentorNearby without any subscription lock.',
+    question: 'Are study resources really 100% free?',
+    answer: 'Yes! All formula sheets, chapter study notes, PPTs, NCERT books, and combo packs are 100% free to read online and download as printable PDFs on MentorNearby without any subscription or payment.',
   },
   {
     _id: '3',
     category: 'PAYMENTS',
     question: 'How much does it cost to download offline printable PDFs?',
-    answer: 'Class 9 & 10 Formula Sheets are ₹7, Notes/PPTs are ₹12. Class 11 & 12 Formula Sheets are ₹8, Notes/PPTs are ₹14. Complete all-chapter combos start from ₹50 (Formula) and ₹100 (Notes).',
+    answer: 'Downloading offline printable PDFs is completely FREE! All individual sheets, PPTs, and full chapter combos are available at ₹0 without any payment gateway.',
   },
   {
     _id: '4',

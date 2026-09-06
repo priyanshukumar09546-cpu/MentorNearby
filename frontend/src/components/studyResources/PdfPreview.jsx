@@ -67,10 +67,6 @@ const PdfPreview = ({ resource, onSubscriptionSuccess }) => {
 
   // ── Handle Watermarked Download ──────────────────────────
   const handleDownload = async () => {
-    if (!isAuthenticated) {
-      showToast('Please login to download notes', 'error');
-      return;
-    }
     setDownloadLoading(true);
     try {
       const res = await downloadWatermarkedNote(resourceId);
@@ -83,14 +79,9 @@ const PdfPreview = ({ resource, onSubscriptionSuccess }) => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      showToast('✅ PDF downloaded with personal watermark!', 'success');
+      showToast('✅ PDF downloaded successfully (Free)!', 'success');
     } catch (err) {
-      if (err.response?.status === 403) {
-        showToast('Subscribe to download full PDFs', 'error');
-        handleSubscribe();
-      } else {
-        showToast('Download failed. Please try again.', 'error');
-      }
+      showToast('Download failed. Please try again.', 'error');
     } finally {
       setDownloadLoading(false);
     }
@@ -295,9 +286,9 @@ const PdfPreview = ({ resource, onSubscriptionSuccess }) => {
       {/* ── Subtitle Banner ── */}
       <div
         style={{
-          background: '#FEF3C7',
-          borderTop: '1px solid #FDE68A',
-          borderBottom: '1px solid #FDE68A',
+          background: '#F0FDF4',
+          borderTop: '1px solid #BBF7D0',
+          borderBottom: '1px solid #BBF7D0',
           padding: '10px 16px',
           textAlign: 'center',
         }}
@@ -307,100 +298,66 @@ const PdfPreview = ({ resource, onSubscriptionSuccess }) => {
             margin: 0,
             fontSize: 12.5,
             fontWeight: 700,
-            color: '#92400E',
+            color: '#166534',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 6,
           }}
         >
-          <span>🔒</span>
-          <span>Free Preview (2 Pages) - Full PDF ke liye Subscribe karein</span>
+          <span>🎁</span>
+          <span>100% Free Educational Access — Download Full PDF Anytime</span>
         </p>
       </div>
 
       {/* ── Action CTA Button ── */}
       <div style={{ padding: '16px 20px', background: '#FFFFFF' }}>
-        {isSubscribed ? (
-          <button
-            onClick={handleDownload}
-            disabled={downloadLoading}
-            style={{
-              width: '100%',
-              padding: '13px',
-              background: downloadLoading ? '#86EFAC' : '#16A34A',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: 12,
-              fontSize: 14,
-              fontWeight: 800,
-              cursor: downloadLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              boxShadow: '0 4px 12px rgba(22,163,74,0.3)',
-            }}
-          >
-            {downloadLoading ? (
-              '⏳ Generating Watermarked PDF...'
-            ) : (
-              <>
-                <span>📥</span>
-                <span>Download Watermarked PDF</span>
-              </>
-            )}
-          </button>
-        ) : (
-          <div>
-            <button
-              onClick={handleSubscribe}
-              disabled={subscribeLoading}
-              style={{
-                width: '100%',
-                padding: '13px',
-                background: subscribeLoading ? '#93C5FD' : '#2563EB',
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: 12,
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: subscribeLoading ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
-                marginBottom: 10,
-              }}
-            >
-              {subscribeLoading ? (
-                '⏳ Initializing Razorpay...'
-              ) : (
-                <>
-                  <span>🔓</span>
-                  <span>Unlock Full PDF + All Notes - Rs {planPrice}/month</span>
-                </>
-              )}
-            </button>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 16,
-                flexWrap: 'wrap',
-              }}
-            >
-              {['✨ All Notes & Formula Sheets', '💬 Unlimited Chats', '🔒 Personal Watermark', '❌ Cancel Anytime'].map(
-                (perk) => (
-                  <span key={perk} style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
-                    {perk}
-                  </span>
-                )
-              )}
-            </div>
-          </div>
-        )}
+        <button
+          onClick={handleDownload}
+          disabled={downloadLoading}
+          style={{
+            width: '100%',
+            padding: '13px',
+            background: downloadLoading ? '#86EFAC' : '#16A34A',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 800,
+            cursor: downloadLoading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            boxShadow: '0 4px 12px rgba(22,163,74,0.3)',
+          }}
+        >
+          {downloadLoading ? (
+            '⏳ Downloading PDF...'
+          ) : (
+            <>
+              <span>📥</span>
+              <span>Download Full PDF (Free)</span>
+            </>
+          )}
+        </button>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 16,
+            flexWrap: 'wrap',
+            marginTop: 10,
+          }}
+        >
+          {['✨ 100% Free Access', '📥 Complete PDF Included', '🔒 Direct Download'].map(
+            (perk) => (
+              <span key={perk} style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
+                {perk}
+              </span>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

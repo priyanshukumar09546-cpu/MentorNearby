@@ -702,32 +702,9 @@ exports.readStudyResource = asyncHandler(async (req, res, next) => {
   const downloadPrice = Number(resource.salePrice || resource.downloadPrice) || defaultDownloadPrice;
   const originalPrice = Number(resource.originalPrice) || (isFormula ? 49 : 79);
 
-  // Check if user has purchase access for downloading
-  let isDownloadUnlocked = false;
-  let unlockedVia = null;
-
-  if (userId) {
-    const purchase = await StudyPurchase.findOne({
-      user: userId,
-      paymentStatus: 'COMPLETED',
-      $or: [
-        { resource: resource._id },
-        {
-          classLevel: { $in: [normalizedClass, `Class ${normalizedClass}`] },
-          subject: new RegExp(`^${resource.subject}$`, 'i'),
-          $or: [
-            { purchaseType: isFormula ? { $in: ['FORMULA_COMBO', 'SUBJECT_BUNDLE'] } : 'QA_COMBO' },
-            { comboType: isFormula ? 'FORMULA_COMBO' : 'QA_COMBO' },
-          ],
-        },
-      ],
-    }).lean();
-
-    if (purchase) {
-      isDownloadUnlocked = true;
-      unlockedVia = purchase?.purchaseType || 'INDIVIDUAL';
-    }
-  }
+  // 100% FREE access for all students (reading & downloading)
+  const isDownloadUnlocked = true;
+  const unlockedVia = 'FREE_ACCESS';
 
   // Increment views count asynchronously if in DB
   if (mongoose.Types.ObjectId.isValid(resource._id)) {
@@ -757,16 +734,16 @@ exports.readStudyResource = asyncHandler(async (req, res, next) => {
     chapterTitle: resource.chapterTitle || chapterContent.title,
     unit: resource.unit,
     resourceType: resource.resourceType,
-    isFreeDemo: true,
+    isFreeDemo: false,
     isFree: true,
-    accessType: 'FREE_DEMO',
+    accessType: 'FREE',
     readingEnabled: true, // Online Reading is 100% FREE
-    downloadEnabled: resource.downloadEnabled !== false,
-    downloadPrice,
-    originalPrice,
-    salePrice: downloadPrice,
-    isDownloadUnlocked,
-    unlockedVia,
+    downloadEnabled: true,
+    downloadPrice: 0,
+    originalPrice: 0,
+    salePrice: 0,
+    isDownloadUnlocked: true,
+    unlockedVia: 'FREE_ACCESS',
     sessionCode,
     watermarkText: `MentorNearby • For Personal Study Only • ${req.user ? req.user.name || 'Student' : 'Free Reader'}`,
     fileName,
@@ -909,31 +886,8 @@ exports.readStudyResourceCombo = asyncHandler(async (req, res, next) => {
   const isFormulaCombo = bundle.comboType === 'FORMULA_COMBO';
   const normalizedClass = normalizeClass(bundle.classLevel);
 
-  let isPurchased = false;
-  let unlockedVia = null;
-
-  if (userId) {
-    const purchase = await StudyPurchase.findOne({
-      user: userId,
-      paymentStatus: 'COMPLETED',
-      $or: [
-        { bundle: bundle._id },
-        {
-          classLevel: { $in: [normalizedClass, `Class ${normalizedClass}`] },
-          subject: new RegExp(`^${bundle.subject}$`, 'i'),
-          $or: [
-            { purchaseType: isFormulaCombo ? { $in: ['FORMULA_COMBO', 'SUBJECT_BUNDLE'] } : 'QA_COMBO' },
-            { comboType: bundle.comboType },
-          ],
-        },
-      ],
-    }).lean();
-
-    if (purchase) {
-      isPurchased = true;
-      unlockedVia = purchase.purchaseType || 'COMBO';
-    }
-  }
+  const isPurchased = true;
+  const unlockedVia = 'FREE_ACCESS';
 
   const realFileUrl = bundle.fileUrl || bundle.fileReference?.url;
   if (!realFileUrl) {
@@ -950,17 +904,17 @@ exports.readStudyResourceCombo = asyncHandler(async (req, res, next) => {
     subject: bundle.subject,
     comboType: bundle.comboType,
     resourceType: bundle.resourceType,
-    isFreeDemo: true,
+    isFreeDemo: false,
     isFree: true,
-    accessType: 'FREE_DEMO',
+    accessType: 'FREE',
     readingEnabled: true, // Online reading is 100% FREE
     downloadEnabled: true,
-    price: bundle.price,
-    downloadPrice: bundle.price,
-    originalPrice: bundle.originalPrice || (isFormulaCombo ? 249 : 429),
-    salePrice: bundle.price,
-    isDownloadUnlocked: isPurchased,
-    unlockedVia,
+    price: 0,
+    downloadPrice: 0,
+    originalPrice: 0,
+    salePrice: 0,
+    isDownloadUnlocked: true,
+    unlockedVia: 'FREE_ACCESS',
     sessionCode,
     watermarkText: `MentorNearby • For Personal Study Only • ${req.user ? req.user.name || 'Student' : 'Free Reader'}`,
     fileName: bundle.fileName || `${bundle.title}.pdf`,
@@ -1109,32 +1063,8 @@ exports.downloadStudyResourceCombo = asyncHandler(async (req, res, next) => {
   const isFormulaCombo = bundle.comboType === 'FORMULA_COMBO';
   const normalizedClass = normalizeClass(bundle.classLevel);
 
-  let isAuthorized = false;
-  if (req.user?.role === 'ADMIN') {
-    isAuthorized = true;
-  } else {
-    const purchase = await StudyPurchase.findOne({
-      user: userId,
-      paymentStatus: 'COMPLETED',
-      $or: [
-        { bundle: bundle._id },
-        {
-          classLevel: { $in: [normalizedClass, `Class ${normalizedClass}`] },
-          subject: new RegExp(`^${bundle.subject}$`, 'i'),
-          $or: [
-            { purchaseType: isFormulaCombo ? { $in: ['FORMULA_COMBO', 'SUBJECT_BUNDLE'] } : 'QA_COMBO' },
-            { comboType: bundle.comboType },
-          ],
-        },
-      ],
-    }).lean();
-
-    if (purchase) isAuthorized = true;
-  }
-
-  if (!isAuthorized) {
-    return error(res, 'Purchase required to download this combo package', 403, 'PURCHASE_REQUIRED');
-  }
+  // 100% Free download for all students
+  const isAuthorized = true;
 
   const realFileUrl = bundle.fileUrl || bundle.fileReference?.url;
 

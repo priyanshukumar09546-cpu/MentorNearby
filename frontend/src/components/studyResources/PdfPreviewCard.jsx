@@ -43,14 +43,9 @@ const PdfPreviewCard = ({ resource, onSubscriptionSuccess }) => {
 
   // ── Handle Watermarked Download ──────────────────────────
   const handleDownload = async () => {
-    if (!isAuthenticated) {
-      showToast('Please login to download notes', 'error');
-      return;
-    }
     setDownloadLoading(true);
     try {
       const res = await downloadWatermarkedNote(resourceId);
-      // Create a download link from the blob response
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -60,15 +55,9 @@ const PdfPreviewCard = ({ resource, onSubscriptionSuccess }) => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      showToast('✅ PDF downloaded with personal watermark!', 'success');
+      showToast('✅ PDF downloaded successfully (Free)!', 'success');
     } catch (err) {
-      // axios blob errors need to be parsed from the blob
-      if (err.response?.status === 403) {
-        showToast('Subscribe to download full PDFs', 'error');
-        handleSubscribe();
-      } else {
-        showToast('Download failed. Please try again.', 'error');
-      }
+      showToast('Download failed. Please try again.', 'error');
     } finally {
       setDownloadLoading(false);
     }
@@ -160,7 +149,7 @@ const PdfPreviewCard = ({ resource, onSubscriptionSuccess }) => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
-              background: 'rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.2)',
               color: '#FFF',
               fontSize: 10,
               fontWeight: 700,
@@ -168,7 +157,7 @@ const PdfPreviewCard = ({ resource, onSubscriptionSuccess }) => {
               borderRadius: 20,
             }}
           >
-            👁️ Free Preview (2 Pages)
+            🎁 100% Free Access
           </span>
         </div>
         <span style={{ fontSize: 24 }}>📄</span>
@@ -206,15 +195,15 @@ const PdfPreviewCard = ({ resource, onSubscriptionSuccess }) => {
           draggable={false}
         />
 
-        {/* Bottom blur + CTA overlay */}
+        {/* Bottom blur overlay */}
         <div
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
-            height: 140,
-            background: 'linear-gradient(to top, rgba(248,250,252,0.98) 60%, transparent)',
+            height: 100,
+            background: 'linear-gradient(to top, rgba(248,250,252,0.98) 50%, transparent)',
             display: 'flex',
             alignItems: 'flex-end',
             padding: '12px 16px',
@@ -225,99 +214,63 @@ const PdfPreviewCard = ({ resource, onSubscriptionSuccess }) => {
             style={{
               margin: 0,
               fontSize: 12,
-              color: '#475569',
-              fontWeight: 600,
+              color: '#166534',
+              fontWeight: 700,
               textAlign: 'center',
               width: '100%',
             }}
           >
-            🔒 Free Preview (2 Pages) — Full PDF ke liye Subscribe karein
+            🎁 100% Free Educational Access — Download Complete PDF Below
           </p>
         </div>
       </div>
 
       {/* ── CTA Section ─────────────────────────────────── */}
       <div style={{ padding: '16px 18px', borderTop: '1px solid #F1F5F9' }}>
-        {isSubscribed ? (
-          // ── SUBSCRIBED: Show download button ────────────
-          <button
-            onClick={handleDownload}
-            disabled={downloadLoading}
-            style={{
-              width: '100%',
-              padding: '13px',
-              background: downloadLoading ? '#93C5FD' : '#16A34A',
-              color: '#FFF',
-              border: 'none',
-              borderRadius: 12,
-              fontSize: 14,
-              fontWeight: 800,
-              cursor: downloadLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              boxShadow: '0 3px 10px rgba(22,163,74,0.3)',
-            }}
-          >
-            {downloadLoading ? (
-              '⏳ Preparing download...'
-            ) : (
-              <>
-                <span>⬇️</span>
-                <span>Download Watermarked PDF</span>
-              </>
-            )}
-          </button>
-        ) : (
-          // ── NOT SUBSCRIBED: Show subscribe CTA ──────────
-          <div>
-            <button
-              onClick={handleSubscribe}
-              disabled={subscribeLoading}
-              style={{
-                width: '100%',
-                padding: '13px',
-                background: subscribeLoading ? '#93C5FD' : '#2563EB',
-                color: '#FFF',
-                border: 'none',
-                borderRadius: 12,
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: subscribeLoading ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                boxShadow: '0 3px 10px rgba(37,99,235,0.3)',
-                marginBottom: 10,
-              }}
-            >
-              {subscribeLoading ? (
-                '⏳ Loading payment...'
-              ) : (
-                <>
-                  <span>🔓</span>
-                  <span>Unlock Full PDF + All Notes — ₹{planPrice}/month</span>
-                </>
-              )}
-            </button>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 16,
-                flexWrap: 'wrap',
-              }}
-            >
-              {['✅ Unlimited Downloads', '✅ Unlimited Chats', '✅ Cancel anytime'].map((f) => (
-                <span key={f} style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
-                  {f}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+        <button
+          onClick={handleDownload}
+          disabled={downloadLoading}
+          style={{
+            width: '100%',
+            padding: '13px',
+            background: downloadLoading ? '#86EFAC' : '#16A34A',
+            color: '#FFF',
+            border: 'none',
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 800,
+            cursor: downloadLoading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            boxShadow: '0 3px 10px rgba(22,163,74,0.3)',
+          }}
+        >
+          {downloadLoading ? (
+            '⏳ Downloading PDF...'
+          ) : (
+            <>
+              <span>⬇️</span>
+              <span>Download Full PDF (Free)</span>
+            </>
+          )}
+        </button>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 16,
+            flexWrap: 'wrap',
+            marginTop: 10,
+          }}
+        >
+          {['✅ 100% Free Access', '✅ Complete PDF Download', '✅ Safe & Direct'].map((f) => (
+            <span key={f} style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
+              {f}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );

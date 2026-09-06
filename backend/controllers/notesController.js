@@ -115,26 +115,13 @@ exports.downloadWithWatermark = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const userId = req.user?._id || req.user?.id;
 
-  // Fetch full user record to check subscription
-  const user = await User.findById(userId).select('name phone isSubscribed subscriptionExpiry subscriptionType role');
-  if (!user) {
-    return error(res, 'User not found', 404);
+  // Fetch user record if logged in (for personalized watermark)
+  let user = null;
+  if (userId) {
+    user = await User.findById(userId).select('name phone isSubscribed subscriptionExpiry subscriptionType role');
   }
 
-  // ── Subscription Gate ─────────────────────────────────────
-  if (!isActiveSubscriber(user)) {
-    const planPrice = user.role === 'TUTOR' ? 149 : 99;
-    const planType = user.role === 'TUTOR' ? 'teacher' : 'student';
-    return res.status(403).json({
-      success: false,
-      paywall: true,
-      plan: planPrice,
-      planType,
-      message: `Subscribe at ₹${planPrice}/month to download unlimited PDFs with personal watermark.`,
-    });
-  }
-
-  // ── Fetch Resource ────────────────────────────────────────
+  // ── Fetch Resource (100% Free Access) ────────────────────
   let resource;
   try {
     resource = await StudyResource.findById(id).lean();
@@ -152,9 +139,10 @@ exports.downloadWithWatermark = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    // Build personalised watermark text
-    const userPhone = user.phone || 'N/A';
-    const watermarkText = `MentorNearby | Downloaded by ${user.name} - ${userPhone}`;
+    // Build personalised or free study watermark text
+    const userName = user?.name || 'Student';
+    const userContact = user?.phone || 'Free Edition';
+    const watermarkText = `MentorNearby | Downloaded by ${userName} - ${userContact}`;
 
     // Fetch, watermark, and stream back
     const pdfBuffer = await fetchPdfBuffer(fileUrl);

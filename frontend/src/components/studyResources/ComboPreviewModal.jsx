@@ -199,8 +199,8 @@ const ComboPreviewModal = ({
           {/* Pricing Banner */}
           <div
             style={{
-              background: 'linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%)',
-              border: '1px solid rgba(234, 88, 12, 0.25)',
+              background: 'linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(34, 197, 94, 0.03) 100%)',
+              border: '1px solid rgba(22, 163, 74, 0.25)',
               borderRadius: 12,
               padding: '14px 16px',
               marginBottom: 16,
@@ -218,11 +218,11 @@ const ComboPreviewModal = ({
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#EA580C', lineHeight: 1.1 }}>
-                ₹{combo.price}
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#16A34A', lineHeight: 1.1 }}>
+                FREE
               </div>
-              <div style={{ fontSize: 11.5, color: 'var(--text-muted, #94A3B8)', textDecoration: 'line-through', marginTop: 2 }}>
-                ₹{isFormula ? (['11', '12'].includes(classLevel) ? 256 : 168) : (['11', '12'].includes(classLevel) ? 448 : 288)}
+              <div style={{ fontSize: 11, color: '#15803D', fontWeight: 700, marginTop: 2 }}>
+                100% Free Access
               </div>
             </div>
           </div>
@@ -242,7 +242,7 @@ const ComboPreviewModal = ({
             >
               <span>Included Chapter PDFs ({includedResources.length})</span>
               <span style={{ fontSize: 11, color: '#16A34A', fontWeight: 700 }}>
-                {isUnlocked ? '✓ All Sheets Unlocked' : '✓ 100% Free Online Preview'}
+                ✓ 100% Free Download & Reading
               </span>
             </div>
 
@@ -324,53 +324,26 @@ const ComboPreviewModal = ({
                         <span>👁️</span> View PDF
                       </button>
 
-                      {isUnlocked ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDownloadSingle(item)}
-                          style={{
-                            height: 28,
-                            padding: '0 10px',
-                            background: '#16A34A',
-                            border: 'none',
-                            borderRadius: 6,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: '#FFFFFF',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                          }}
-                        >
-                          <span>⬇️</span> Download
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onClose();
-                            if (onBuyCombo) onBuyCombo(combo);
-                          }}
-                          style={{
-                            height: 28,
-                            padding: '0 8px',
-                            background: 'var(--bg-card, #F1F5F9)',
-                            border: '1px solid var(--border-color, #CBD5E1)',
-                            borderRadius: 6,
-                            fontSize: 10.5,
-                            fontWeight: 700,
-                            color: 'var(--text-muted, #64748B)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                          }}
-                          title="Download locked until combo purchased"
-                        >
-                          <span>🔒</span> Download
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadSingle(item)}
+                        style={{
+                          height: 28,
+                          padding: '0 10px',
+                          background: '#16A34A',
+                          border: 'none',
+                          borderRadius: 6,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: '#FFFFFF',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <span>⬇️</span> Download (Free)
+                      </button>
                     </div>
                   </div>
                 ))
@@ -393,87 +366,34 @@ const ComboPreviewModal = ({
             zIndex: 10,
           }}
         >
-          {isUnlocked ? (
-            <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
-              <button
-                type="button"
-                onClick={handleDownloadAll}
-                disabled={downloadingAll}
-                style={{
-                  flex: 1,
-                  height: 42,
-                  background: '#16A34A',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontWeight: 900,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(22, 163, 74, 0.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                }}
-              >
-                <span>⬇️</span> {downloadingAll ? 'Downloading All...' : `Download All ${includedResources.length || ''} PDFs`}
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  if (onViewIncludedResources) onViewIncludedResources(combo);
-                  onClose();
-                }}
-                style={{
-                  flex: 1,
-                  height: 42,
-                  background: 'var(--surface, #FFFFFF)',
-                  border: '1px solid var(--border-color, #CBD5E1)',
-                  color: 'var(--text-primary, #0F172A)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                View Included Resources
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  if (onBuyCombo) onBuyCombo(combo);
-                }}
-                style={{
-                  flex: 1.3,
-                  height: 42,
-                  background: '#EA580C',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontWeight: 900,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
-                  transition: 'all 0.15s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                }}
-              >
-                <span>⚡</span> Unlock all {includedResources.length || 6} sheets for ₹{combo.price}
-              </button>
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+            <button
+              type="button"
+              onClick={handleDownloadAll}
+              disabled={downloadingAll}
+              style={{
+                flex: 1,
+                height: 42,
+                background: '#16A34A',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 900,
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(22, 163, 74, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+            >
+              <span>⬇️</span> {downloadingAll ? 'Downloading All...' : `Download All ${includedResources.length || ''} PDFs (Free)`}
+            </button>
+          </div>
 
           <div style={{ fontSize: 10.5, color: 'var(--text-muted, #64748B)', textAlign: 'center' }}>
-            🛡️ Secure 256-bit Encrypted Payment • Instant Lifetime PDF Access
+            ⚡ 100% Free Educational Access • Instant Direct Download
           </div>
         </div>
       </div>

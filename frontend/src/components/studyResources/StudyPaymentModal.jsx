@@ -151,152 +151,24 @@ const StudyPaymentModal = ({
   };
 
   const handleCheckout = async () => {
-    if (!isAuthenticated) {
-      showToast('Please login to download study resources', 'info');
-      navigate('/login');
-      return;
-    }
-
     try {
       setLoading(true);
       setErrorMsg(null);
 
       const isComboOrder = isDirectCombo || selectedOption === 'COMBO';
-      const targetResId = resource?._id || resource?.id || (bundle?.id || 'c9-sci-ch1-formula');
+      const targetResId = resource?._id || resource?.id || (bundle?._id || bundle?.id || 'c9-sci-ch1-formula');
+      const targetTitle = isComboOrder ? comboName : itemTitle;
 
-      // If Individual download chosen -> use Subscription flow (Rs 99/mo)
-      if (!isComboOrder && selectedOption === 'INDIVIDUAL') {
-        const isLoaded = await loadRazorpayScript();
-        if (!isLoaded) {
-          setErrorMsg('Failed to load Razorpay payment gateway. Please check your connection.');
-          setLoading(false);
-          return;
-        }
-
-        const orderRes = await createSubscriptionOrder(subscriptionPlanType);
-        const { orderId, amount, currency, razorpayKeyId, userEmail, userName } =
-          orderRes.data.data;
-
-        const options = {
-          key: razorpayKeyId,
-          amount,
-          currency,
-          name: 'MentorNearby',
-          description: `${subscriptionPlanType === 'teacher' ? 'Teacher' : 'Student'} Plan — Unlimited Notes + Chats`,
-          order_id: orderId,
-          prefill: {
-            name: userName || user?.name || '',
-            email: userEmail || user?.email || '',
-            contact: user?.phone || '',
-          },
-          theme: { color: '#2563EB' },
-          handler: async function (response) {
-            try {
-              setLoading(true);
-              await verifySubscriptionPayment({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                planType: subscriptionPlanType,
-              });
-              setPaymentSuccess(true);
-              showToast('🎉 Subscribed! Downloading watermarked PDF...', 'success');
-              await triggerPdfDownload(targetResId, itemTitle);
-              setTimeout(() => {
-                onClose();
-                if (onSuccess) onSuccess();
-              }, 1200);
-            } catch (vErr) {
-              setErrorMsg(vErr.response?.data?.message || 'Payment verification failed');
-            } finally {
-              setLoading(false);
-            }
-          },
-          modal: {
-            ondismiss: function () {
-              setLoading(false);
-            },
-          },
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (resp) {
-          setErrorMsg(resp.error?.description || 'Payment was cancelled or failed.');
-          setLoading(false);
-        });
-        rzp.open();
-        return;
-      }
-
-      // Combo order flow
-      const orderRes = await createBundlePaymentOrder({
-        bundleId: bundle?._id || bundle?.id,
-        classLevel: effectiveClass,
-        subject: effectiveSubject,
-        comboType: isFormula ? 'FORMULA_COMBO' : 'QA_COMBO',
-      });
-
-      const orderData = orderRes.data || orderRes;
-      const { orderId, amount, currency, keyId } = orderData;
-
-      const isLoaded = await loadRazorpayScript();
-      if (!isLoaded && !orderId?.startsWith('stub_')) {
-        setErrorMsg('Failed to load Razorpay payment gateway. Please check your internet connection.');
-        setLoading(false);
-        return;
-      }
-
-      const options = {
-        key: keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: Math.round(Number(amount || activePrice) * 100).toString(),
-        currency: currency || 'INR',
-        name: 'MentorNearby',
-        description: comboName,
-        order_id: orderId,
-        prefill: {
-          name: user?.name || '',
-          email: user?.email || '',
-          contact: user?.phone || '',
-        },
-        theme: {
-          color: '#EA580C',
-        },
-        handler: async function (response) {
-          try {
-            setLoading(true);
-            const verifyRes = await verifyStudyPayment({
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-            });
-
-            setPaymentSuccess(true);
-            showToast(verifyRes.message || 'Payment verified! Unlocked successfully.', 'success');
-            setTimeout(() => {
-              onClose();
-              if (onSuccess) onSuccess();
-            }, 1200);
-          } catch (vErr) {
-            setErrorMsg(vErr.response?.data?.message || 'Payment verification failed on server');
-          } finally {
-            setLoading(false);
-          }
-        },
-        modal: {
-          ondismiss: function () {
-            setLoading(false);
-          },
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (resp) {
-        setErrorMsg(resp.error?.description || 'Payment was cancelled or failed.');
-        setLoading(false);
-      });
-      rzp.open();
+      await triggerPdfDownload(targetResId, targetTitle);
+      setPaymentSuccess(true);
+      if (showToast) showToast('✅ Download started (100% Free)', 'success');
+      setTimeout(() => {
+        onClose();
+        if (onSuccess) onSuccess();
+      }, 1200);
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'Failed to initiate purchase');
+      setErrorMsg('Failed to start download. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -356,7 +228,7 @@ const StudyPaymentModal = ({
           }}
         >
           <h3 className="sr-payment-modal-title" style={{ margin: 0 }}>
-            {isDirectCombo ? 'Buy Combo Pack' : 'Download PPT / Study Material'}
+            {isDirectCombo ? 'Download Combo Pack (Free)' : 'Download Study Material (Free)'}
           </h3>
           <button
             type="button"
@@ -396,23 +268,19 @@ const StudyPaymentModal = ({
               {/* Value vs Price Breakdown */}
               <div className="sr-payment-breakdown-box">
                 <div className="sr-payment-row">
-                  <span>Original Total Value:</span>
-                  <span className="sr-payment-strike">₹{comboOriginalVal}</span>
-                </div>
-                <div className="sr-payment-row green">
-                  <span>Bundle Discount:</span>
-                  <span>- ₹{comboOriginalVal - comboPrice}</span>
+                  <span>Included Resources:</span>
+                  <span style={{ fontWeight: 700 }}>All Chapters</span>
                 </div>
                 <div className="sr-payment-divider" />
                 <div className="sr-payment-row total">
-                  <span>Amount to Pay:</span>
-                  <span className="sr-payment-price">₹{comboPrice}</span>
+                  <span>Access Fee:</span>
+                  <span className="sr-payment-price" style={{ color: '#16A34A' }}>FREE</span>
                 </div>
               </div>
 
               <div className="sr-payment-trust-badge">
-                <span>🛡️</span>
-                <span>Secure Payment • Unlocks all {isFormula ? 'Formula Sheets' : 'Notes'} in this combo</span>
+                <span>⚡</span>
+                <span>100% Free Educational Access • Instant Direct Download</span>
               </div>
             </div>
           ) : (
@@ -435,19 +303,19 @@ const StudyPaymentModal = ({
               {/* Free Online Reading Banner */}
               <div className="sr-payment-free-read">
                 <span>✓</span>
-                <span>Reading Online is FREE</span>
+                <span>Reading Online &amp; Download are 100% FREE</span>
               </div>
 
               {/* Option Selection Area */}
               <div className="sr-payment-opts-header">
-                <span>Choose an Option</span>
-                <span className="sr-payment-shield">
-                  🛡️ Secure Payment
+                <span>Download Options</span>
+                <span className="sr-payment-shield" style={{ color: '#16A34A' }}>
+                  ✓ 100% Free
                 </span>
               </div>
 
               <div className="sr-payment-options-list">
-                {/* Option 1: Monthly Subscription */}
+                {/* Option 1: Single Document */}
                 <label
                   className={`sr-payment-opt-item ${selectedOption === 'INDIVIDUAL' ? 'active' : ''}`}
                   onClick={() => setSelectedOption('INDIVIDUAL')}
@@ -460,16 +328,16 @@ const StudyPaymentModal = ({
                       onChange={() => setSelectedOption('INDIVIDUAL')}
                     />
                     <div>
-                      <div className="sr-payment-opt-title">Monthly Subscription (Recommended)</div>
-                      <div className="sr-payment-opt-sub">Unlock All Notes &amp; Formula Sheets + Unlimited Chats</div>
+                      <div className="sr-payment-opt-title">Current Chapter PDF (Free)</div>
+                      <div className="sr-payment-opt-sub">Instant direct PDF download for this chapter</div>
                     </div>
                   </div>
-                  <div className="sr-payment-opt-price">
-                    ₹{subscriptionPlanPrice}/mo
+                  <div className="sr-payment-opt-price" style={{ color: '#16A34A' }}>
+                    FREE
                   </div>
                 </label>
 
-                {/* Option 2: Single-Class Single-Subject Combo */}
+                {/* Option 2: Full Subject Pack */}
                 <label
                   className={`sr-payment-opt-item ${selectedOption === 'COMBO' ? 'active' : ''}`}
                   onClick={() => setSelectedOption('COMBO')}
@@ -482,12 +350,12 @@ const StudyPaymentModal = ({
                       onChange={() => setSelectedOption('COMBO')}
                     />
                     <div>
-                      <div className="sr-payment-opt-title">{singleComboName}</div>
+                      <div className="sr-payment-opt-title">{singleComboName} (Free)</div>
                       <div className="sr-payment-opt-sub">{singleComboSub}</div>
                     </div>
                   </div>
-                  <div className="sr-payment-opt-price">
-                    ₹{singleComboPrice}
+                  <div className="sr-payment-opt-price" style={{ color: '#16A34A' }}>
+                    FREE
                   </div>
                 </label>
               </div>
@@ -529,21 +397,17 @@ const StudyPaymentModal = ({
             className="sr-payment-cta-btn"
             onClick={handleCheckout}
             disabled={loading || paymentSuccess}
-            style={{ width: '100%', margin: 0 }}
+            style={{ width: '100%', margin: 0, background: '#16A34A', borderColor: '#16A34A', color: '#FFFFFF' }}
           >
             {loading
-              ? 'Processing Order...'
+              ? 'Starting Download...'
               : paymentSuccess
-                ? '✓ Unlocked!'
-                : isDirectCombo
-                  ? `Pay ₹${comboPrice} & Unlock Combo`
-                  : selectedOption === 'INDIVIDUAL'
-                    ? `Subscribe for ₹${subscriptionPlanPrice}/mo`
-                    : `Pay ₹${activePrice} & Unlock`}
+                ? '✓ Download Started!'
+                : '📥 Download PDF (Free)'}
           </button>
 
           <div className="sr-payment-footer-note" style={{ marginTop: 8 }}>
-            🛡️ Payments are secure and encrypted
+            ⚡ 100% Free Educational Access • Instant Direct Download
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { searchTutors, getPublicStats } from '../../api/search';
 import { getFeaturedTutors } from '../../api/tutors';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import MobileHomeApp from '../../components/home/MobileHomeApp';
 import './HomePage.css';
 
 const POPULAR_SUBJECTS = [
@@ -67,16 +68,6 @@ const FAQS = [
   },
 ];
 
-const LIVE_ACTIVITIES = [
-  { name: 'Rahul', city: 'Bareilly', action: 'just chatted with Class 10 Maths teacher', time: '2 mins ago', icon: '💬' },
-  { name: 'Priya', city: 'Civil Lines', action: 'contacted Physics home tutor for Class 12', time: 'Just now', icon: '⚡' },
-  { name: 'Amit', city: 'Rajendra Nagar', action: 'started chat with Chemistry mentor', time: '4 mins ago', icon: '🧪' },
-  { name: 'Ananya', city: 'Subhash Nagar', action: 'unlocked Biology revision notes', time: 'Just now', icon: '📖' },
-  { name: 'Vikram', city: 'Model Town', action: 'requested demo with English tutor', time: '1 min ago', icon: '👨‍🏫' },
-  { name: 'Sneha', city: 'Rampur Garden', action: 'connected with Science teacher within 3km', time: '3 mins ago', icon: '📍' },
-  { name: 'Rohan', city: 'Mahanagar', action: 'chatted with Mathematics faculty', time: 'Just now', icon: '💬' },
-];
-
 const HERO_PHRASES = [
   'Find The Best Home Tutors Near You',
   'Within 5 Kilometers',
@@ -93,7 +84,6 @@ const HomePage = () => {
   const [openFaq, setOpenFaq] = useState(null);
   const [featuredTutors, setFeaturedTutors] = useState([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
-  const [activeActivityIndex, setActiveActivityIndex] = useState(0);
 
   // Typewriter effect state
   const [phraseIndex, setPhraseIndex] = useState(0);
@@ -125,14 +115,6 @@ const HomePage = () => {
 
     return () => clearTimeout(timer);
   }, [displayText, isDeleting, phraseIndex]);
-
-  // Live Activity rotation every 5 seconds
-  useEffect(() => {
-    const activityTimer = setInterval(() => {
-      setActiveActivityIndex((prev) => (prev + 1) % LIVE_ACTIVITIES.length);
-    }, 5000);
-    return () => clearInterval(activityTimer);
-  }, []);
 
   const [publicStats, setPublicStats] = useState({
     totalStudents: 0,
@@ -231,9 +213,20 @@ const HomePage = () => {
 
   return (
     <main className="mn-home-root">
-      {/* ============================================================ */}
-      {/* 1. HERO SECTION (3-COLUMN EXACT REFERENCE LAYOUT)            */}
-      {/* ============================================================ */}
+      {/* 📱 MOBILE VIEW (<= 768px): App-Style Experience inspired by Reference */}
+      <div className="mn-mobile-home-container">
+        <MobileHomeApp
+          featuredTutors={featuredTutors}
+          loadingTutors={loadingTutors}
+          publicStats={publicStats}
+        />
+      </div>
+
+      {/* 💻 DESKTOP VIEW (> 768px): Preserved Original 3-Column Layout */}
+      <div className="mn-desktop-home-container">
+        {/* ============================================================ */}
+        {/* 1. HERO SECTION (3-COLUMN EXACT REFERENCE LAYOUT)            */}
+        {/* ============================================================ */}
       <section className="mn-hero-section" aria-labelledby="mn-hero-heading">
         <div className="mn-hero-ambient-glow" aria-hidden="true"></div>
         <div className="mn-container">
@@ -457,49 +450,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ============================================================ */}
-      {/* 1.5 LIVE ACTIVITY TICKER: "Abhi Active Students"            */}
-      {/* ============================================================ */}
-      <section
-        style={{
-          background: 'linear-gradient(90deg, rgba(254, 243, 199, 0.45) 0%, rgba(253, 230, 138, 0.3) 100%)',
-          borderTop: '1px solid #FDE68A',
-          borderBottom: '1px solid #FDE68A',
-          padding: '12px 16px',
-        }}
-        aria-label="Live Student Activity on MentorNearby"
-      >
-        <div className="mn-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FEF3C7', border: '1px solid #F59E0B', padding: '4px 12px', borderRadius: 20 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A', display: 'inline-block', boxShadow: '0 0 8px #16A34A' }}></span>
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Abhi Active Students
-            </span>
-          </div>
 
-          <div
-            key={activeActivityIndex}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 13.5,
-              fontWeight: 600,
-              color: '#1E293B',
-              animation: 'fadeIn 0.4s ease-in-out',
-            }}
-          >
-            <span style={{ fontSize: 16 }}>{LIVE_ACTIVITIES[activeActivityIndex].icon}</span>
-            <span>
-              <strong>{LIVE_ACTIVITIES[activeActivityIndex].name}</strong> from <span style={{ color: '#D97706', fontWeight: 700 }}>{LIVE_ACTIVITIES[activeActivityIndex].city}</span>{' '}
-              {LIVE_ACTIVITIES[activeActivityIndex].action}
-            </span>
-            <span style={{ fontSize: 11, color: '#64748B', marginLeft: 4 }}>
-              • {LIVE_ACTIVITIES[activeActivityIndex].time}
-            </span>
-          </div>
-        </div>
-      </section>
 
       {/* ============================================================ */}
       {/* 2. MIDDLE 3-COLUMN DIRECTORY SECTION                         */}
@@ -983,6 +934,7 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+      </div>
     </main>
   );
 };

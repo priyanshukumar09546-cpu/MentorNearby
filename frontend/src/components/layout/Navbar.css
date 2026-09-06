@@ -365,22 +365,39 @@
   gap: 8px;
 }
 
-.nav-notification-btn.compact {
-  width: 34px;
-  height: 34px;
-}
-
-.navbar-mobile-toggle {
+.mobile-header-controls .theme-toggle-btn.compact,
+.mobile-header-controls .nav-notification-btn.compact,
+.mobile-header-controls .navbar-mobile-toggle {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   background: var(--color-surface, #FFFFFF);
-  border: 1px solid var(--color-border, #E8E2D8);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 18px;
-  color: var(--color-text-primary, #18181B);
-  cursor: pointer;
+  border: 1px solid #E2E8F0;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  color: var(--color-text-primary, #18181B);
+  cursor: pointer;
+  padding: 0;
+  font-size: 16px;
+}
+
+.mobile-header-controls .theme-toggle-btn.compact:active,
+.mobile-header-controls .nav-notification-btn.compact:active,
+.mobile-header-controls .navbar-mobile-toggle:active {
+  transform: scale(0.92);
+}
+
+[data-theme="dark"] .mobile-header-controls .theme-toggle-btn.compact,
+[data-theme="dark"] .mobile-header-controls .nav-notification-btn.compact,
+[data-theme="dark"] .mobile-header-controls .navbar-mobile-toggle {
+  background: #181822;
+  border-color: #282838;
+  color: #F8FAFC;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .navbar-mobile-drawer {

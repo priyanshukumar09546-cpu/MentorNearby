@@ -11,6 +11,26 @@
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+/* ============================================================
+   📱 Mobile App View vs 💻 Desktop View Toggle
+   ============================================================ */
+.mn-mobile-home-container {
+  display: none;
+}
+
+.mn-desktop-home-container {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .mn-mobile-home-container {
+    display: block;
+  }
+  .mn-desktop-home-container {
+    display: none !important;
+  }
+}
+
 .mn-container {
   max-width: 1360px;
   margin: 0 auto;

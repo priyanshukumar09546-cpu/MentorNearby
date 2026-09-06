@@ -1,0 +1,1001 @@
+/* ============================================================
+   MobileHomeApp.css — MentorNearby Mobile App Interface
+   Inspired by Reference Image 1 & Image 2
+   Pixel-Accurate Native Experience for iOS Safari & Android
+   ============================================================ */
+
+.mn-mobile-home-app {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding-bottom: 24px;
+}
+
+/* Light Theme Background */
+.mn-mobile-home-app.light {
+  background: #FAF8F5;
+  color: #0F172A;
+}
+
+/* Dark Theme Background */
+.mn-mobile-home-app.dark {
+  background: #09090C;
+  color: #F8FAFC;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 1. PROMINENT SEARCH BAR (Image 1 Reference)                  */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-search-section {
+  padding: 12px 16px 14px;
+}
+
+.mn-m-search-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 99px;
+  padding: 11px 18px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mn-mobile-home-app.dark .mn-m-search-form {
+  background: #181822;
+  border-color: #282838;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.mn-m-search-form:focus-within {
+  border-color: #E11D48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+}
+
+.mn-m-search-icon {
+  font-size: 15px;
+  color: #94A3B8;
+  flex-shrink: 0;
+}
+
+.mn-m-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #0F172A;
+  font-family: inherit;
+  padding: 0;
+}
+
+.mn-mobile-home-app.dark .mn-m-search-input {
+  color: #F8FAFC;
+}
+
+.mn-m-search-input::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.mn-m-search-clear-btn {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 2. CATEGORY SHORTCUTS (4 Items in a Row)                     */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-categories-section {
+  padding: 0 16px 14px;
+}
+
+.mn-m-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.mn-m-cat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 6px 10px;
+  border-radius: 14px;
+  text-decoration: none;
+  transition: transform 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mn-m-cat-card:active {
+  transform: scale(0.94);
+}
+
+.mn-m-cat-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
+.mn-m-cat-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Theme-specific Category Colors */
+.cat-blue {
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+}
+.cat-blue .mn-m-cat-icon-wrap {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563EB;
+}
+.cat-blue .mn-m-cat-title {
+  color: #1E40AF;
+}
+
+.cat-red {
+  background: #FEF2F2;
+  border: 1px solid #FEE2E2;
+}
+.cat-red .mn-m-cat-icon-wrap {
+  background: rgba(225, 29, 72, 0.12);
+  color: #E11D48;
+}
+.cat-red .mn-m-cat-title {
+  color: #9F1239;
+}
+
+.cat-green {
+  background: #F0FDF4;
+  border: 1px solid #DCFCE7;
+}
+.cat-green .mn-m-cat-icon-wrap {
+  background: rgba(22, 163, 74, 0.12);
+  color: #16A34A;
+}
+.cat-green .mn-m-cat-title {
+  color: #166534;
+}
+
+.cat-orange {
+  background: #FFF7ED;
+  border: 1px solid #FFEDD5;
+}
+.cat-orange .mn-m-cat-icon-wrap {
+  background: rgba(217, 119, 6, 0.12);
+  color: #D97706;
+}
+.cat-orange .mn-m-cat-title {
+  color: #9A3412;
+}
+
+/* Dark Theme Adjustments for Category Cards */
+.mn-mobile-home-app.dark .cat-blue {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+.mn-mobile-home-app.dark .cat-blue .mn-m-cat-title {
+  color: #93C5FD;
+}
+
+.mn-mobile-home-app.dark .cat-red {
+  background: rgba(225, 29, 72, 0.12);
+  border-color: rgba(225, 29, 72, 0.25);
+}
+.mn-mobile-home-app.dark .cat-red .mn-m-cat-title {
+  color: #FDA4AF;
+}
+
+.mn-mobile-home-app.dark .cat-green {
+  background: rgba(22, 163, 74, 0.12);
+  border-color: rgba(22, 163, 74, 0.25);
+}
+.mn-mobile-home-app.dark .cat-green .mn-m-cat-title {
+  color: #86EFAC;
+}
+
+.mn-mobile-home-app.dark .cat-orange {
+  background: rgba(217, 119, 6, 0.12);
+  border-color: rgba(217, 119, 6, 0.25);
+}
+.mn-mobile-home-app.dark .cat-orange .mn-m-cat-title {
+  color: #FDBA74;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 3. BANNER CAROUSEL (4 Real Banners from Image 2)             */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-banner-section {
+  padding: 0 16px 14px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mn-m-banner-slider-outer {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: #FFFFFF;
+}
+
+.mn-mobile-home-app.dark .mn-m-banner-slider-outer {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  background: #181822;
+}
+
+.mn-m-banner-track {
+  display: flex;
+  transition: transform 0.38s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
+}
+
+.mn-m-banner-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+.mn-m-banner-link {
+  display: block;
+  text-decoration: none;
+  width: 100%;
+  line-height: 0;
+}
+
+.mn-m-banner-img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 937 / 245;
+  object-fit: cover;
+  display: block;
+  border-radius: 0;
+}
+
+/* Carousel Pagination Dots */
+.mn-m-carousel-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.mn-m-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #CBD5E1;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mn-mobile-home-app.dark .mn-m-dot {
+  background: #334155;
+}
+
+.mn-m-dot.active {
+  width: 22px;
+  border-radius: 99px;
+  background: #E11D48;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 4. PLATFORM TRUST & STATS STRIP (Strictly Real Data)         */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-trust-strip-section {
+  padding: 0 16px 18px;
+}
+
+.mn-m-trust-strip-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 10px 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.mn-mobile-home-app.dark .mn-m-trust-strip-container {
+  background: #181822;
+  border-color: #282838;
+}
+
+.mn-m-trust-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+}
+
+.mn-m-trust-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.trust-orange {
+  background: #FFF7ED;
+  color: #EA580C;
+}
+.trust-green {
+  background: #F0FDF4;
+  color: #16A34A;
+}
+.trust-gold {
+  background: #FEF3C7;
+  color: #D97706;
+}
+.trust-coral {
+  background: #FEF2F2;
+  color: #E11D48;
+}
+
+.mn-mobile-home-app.dark .trust-orange { background: rgba(234, 88, 12, 0.15); color: #FB923C; }
+.mn-mobile-home-app.dark .trust-green { background: rgba(22, 163, 74, 0.15); color: #4ADE80; }
+.mn-mobile-home-app.dark .trust-gold { background: rgba(217, 119, 6, 0.15); color: #FBBF24; }
+.mn-mobile-home-app.dark .trust-coral { background: rgba(225, 29, 72, 0.15); color: #FB7185; }
+
+.mn-m-trust-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mn-m-trust-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.1;
+}
+
+.mn-mobile-home-app.dark .mn-m-trust-val {
+  color: #F8FAFC;
+}
+
+.mn-m-trust-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #64748B;
+  line-height: 1.1;
+  margin-top: 1px;
+}
+
+.mn-mobile-home-app.dark .mn-m-trust-label {
+  color: #94A3B8;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 5. COMMON SECTION HEADERS                                    */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-section {
+  padding: 0 16px 20px;
+}
+
+.mn-m-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.mn-m-section-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.mn-mobile-home-app.dark .mn-m-section-title {
+  color: #F8FAFC;
+}
+
+.mn-m-view-all-link {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #E11D48;
+  text-decoration: none;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 5. POPULAR SUBJECTS GRID (10 Items matching Image 1)         */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px 6px;
+}
+
+.mn-m-subject-chip {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0;
+  gap: 5px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mn-m-subject-chip:active .mn-m-subject-icon-box {
+  transform: scale(0.92);
+}
+
+.mn-m-subject-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: transform 0.12s ease;
+}
+
+.mn-m-subject-symbol {
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mn-m-subject-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.15;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.mn-mobile-home-app.dark .mn-m-subject-name {
+  color: #CBD5E1;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 6. FEATURED TUTORS (Real Tutor Cards matching Image 1)       */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-tutors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mn-m-tutor-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  position: relative;
+}
+
+.mn-mobile-home-app.dark .mn-m-tutor-card {
+  background: #181822;
+  border-color: #282838;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.mn-m-tutor-avatar-wrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.mn-m-tutor-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #E2E8F0;
+}
+
+.mn-mobile-home-app.dark .mn-m-tutor-avatar-img {
+  border-color: #334155;
+}
+
+.mn-m-tutor-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #0F172A;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mn-m-online-badge {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #16A34A;
+  border: 2px solid #FFFFFF;
+}
+
+.mn-mobile-home-app.dark .mn-m-online-badge {
+  border-color: #181822;
+}
+
+.mn-m-tutor-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mn-m-tutor-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mn-m-tutor-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0F172A;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mn-mobile-home-app.dark .mn-m-tutor-name {
+  color: #F8FAFC;
+}
+
+.mn-m-verified-icon {
+  color: #2563EB;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.mn-m-tutor-subline {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #64748B;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mn-mobile-home-app.dark .mn-m-tutor-subline {
+  color: #94A3B8;
+}
+
+.mn-m-tutor-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+
+.mn-m-tutor-rating,
+.mn-m-tutor-new-tag {
+  color: #0F172A;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.mn-mobile-home-app.dark .mn-m-tutor-rating,
+.mn-mobile-home-app.dark .mn-m-tutor-new-tag {
+  color: #F8FAFC;
+}
+
+.mn-m-star-gold {
+  color: #F59E0B;
+  font-size: 10.5px;
+}
+
+.mn-m-tutor-location {
+  color: #64748B;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.mn-mobile-home-app.dark .mn-m-tutor-location {
+  color: #94A3B8;
+}
+
+.mn-m-tutor-action-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.mn-m-mode-pill {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #DB2777;
+  background: #FDF2F8;
+  border-radius: 20px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.mn-mobile-home-app.dark .mn-m-mode-pill {
+  background: rgba(219, 39, 119, 0.15);
+  color: #F472B6;
+}
+
+.mn-m-view-profile-btn {
+  font-size: 11px;
+  font-weight: 700;
+  color: #E11D48;
+  border: 1.5px solid #E11D48;
+  border-radius: 20px;
+  padding: 5px 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.mn-mobile-home-app.dark .mn-m-view-profile-btn {
+  border-color: #F43F5E;
+  color: #F43F5E;
+}
+
+.mn-m-view-profile-btn:active {
+  background: #E11D48;
+  color: #FFFFFF !important;
+}
+
+/* Skeleton Loading Cards */
+.mn-m-tutor-skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.mn-mobile-home-app.dark .mn-m-tutor-skeleton-card {
+  background: #181822;
+  border-color: #282838;
+}
+
+.mn-m-skeleton-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  flex-shrink: 0;
+  animation: mnPulse 1.5s infinite;
+}
+
+.mn-mobile-home-app.dark .mn-m-skeleton-avatar {
+  background: #282838;
+}
+
+.mn-m-skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mn-m-skeleton-line {
+  height: 12px;
+  border-radius: 4px;
+  background: #E2E8F0;
+  animation: mnPulse 1.5s infinite;
+}
+
+.mn-mobile-home-app.dark .mn-m-skeleton-line {
+  background: #282838;
+}
+
+.mn-m-skeleton-line.title { width: 45%; }
+.mn-m-skeleton-line.sub { width: 70%; height: 10px; }
+.mn-m-skeleton-line.tag { width: 30%; height: 9px; }
+
+@keyframes mnPulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}
+
+/* Empty State */
+.mn-m-empty-tutors-card {
+  text-align: center;
+  padding: 24px 16px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+}
+
+.mn-mobile-home-app.dark .mn-m-empty-tutors-card {
+  background: #181822;
+  border-color: #282838;
+}
+
+.mn-m-empty-icon {
+  font-size: 32px;
+  color: #94A3B8;
+  margin-bottom: 8px;
+}
+
+.mn-m-empty-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 4px;
+}
+
+.mn-mobile-home-app.dark .mn-m-empty-title {
+  color: #F8FAFC;
+}
+
+.mn-m-empty-desc {
+  font-size: 12px;
+  color: #64748B;
+  margin: 0 0 12px;
+}
+
+.mn-mobile-home-app.dark .mn-m-empty-desc {
+  color: #94A3B8;
+}
+
+.mn-m-empty-cta {
+  display: inline-block;
+  background: #E11D48;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 18px;
+  border-radius: 20px;
+  text-decoration: none;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 7. STUDY RESOURCES LIST                                      */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-resources-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mn-m-res-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 10px 14px;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.mn-mobile-home-app.dark .mn-m-res-card {
+  background: #181822;
+  border-color: #282838;
+}
+
+.mn-m-res-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.res-blue { background: #EFF6FF; color: #2563EB; }
+.res-emerald { background: #F0FDF4; color: #059669; }
+.res-violet { background: #FAF5FF; color: #7C3AED; }
+
+.mn-mobile-home-app.dark .res-blue { background: rgba(37, 99, 235, 0.15); color: #93C5FD; }
+.mn-mobile-home-app.dark .res-emerald { background: rgba(5, 150, 105, 0.15); color: #6EE7B7; }
+.mn-mobile-home-app.dark .res-violet { background: rgba(124, 58, 237, 0.15); color: #C4B5FD; }
+
+.mn-m-res-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mn-m-res-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.mn-mobile-home-app.dark .mn-m-res-title {
+  color: #F8FAFC;
+}
+
+.mn-m-res-sub {
+  font-size: 11px;
+  color: #64748B;
+}
+
+.mn-mobile-home-app.dark .mn-m-res-sub {
+  color: #94A3B8;
+}
+
+.mn-m-res-arrow {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 8. FAQS ACCORDION                                            */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mn-m-faq-item {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.mn-mobile-home-app.dark .mn-m-faq-item {
+  background: #181822;
+  border-color: #282838;
+}
+
+.mn-m-faq-question-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0F172A;
+  gap: 8px;
+}
+
+.mn-mobile-home-app.dark .mn-m-faq-question-btn {
+  color: #F8FAFC;
+}
+
+.mn-m-faq-toggle {
+  font-size: 11px;
+  color: #64748B;
+  flex-shrink: 0;
+}
+
+.mn-m-faq-answer {
+  padding: 0 14px 12px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #64748B;
+}
+
+.mn-mobile-home-app.dark .mn-m-faq-answer {
+  color: #94A3B8;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 9. LOCAL TUITION KEYWORDS SEO                                */
+/* ──────────────────────────────────────────────────────────── */
+.mn-m-seo-strip {
+  padding: 16px;
+  margin: 0 16px 10px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+}
+
+.mn-mobile-home-app.dark .mn-m-seo-strip {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mn-m-seo-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: #334155;
+}
+
+.mn-mobile-home-app.dark .mn-m-seo-title {
+  color: #CBD5E1;
+}
+
+.mn-m-seo-text {
+  font-size: 11px;
+  color: #64748B;
+  line-height: 1.4;
+  margin: 0 0 10px;
+}
+
+.mn-mobile-home-app.dark .mn-m-seo-text {
+  color: #94A3B8;
+}
+
+.mn-m-seo-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mn-m-seo-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.mn-mobile-home-app.dark .mn-m-seo-tag {
+  background: #181822;
+  border-color: #334155;
+  color: #94A3B8;
+}

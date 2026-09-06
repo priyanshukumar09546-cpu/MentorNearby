@@ -395,6 +395,21 @@ const App = () => {
         }
       }
     } catch (_) {}
+
+    // Smoothly dismiss PWA launch splash screen once application has initialized
+    const splash = document.getElementById('pwa-splash-screen');
+    if (splash) {
+      const timer = setTimeout(() => {
+        splash.classList.add('fade-out');
+        const removeTimer = setTimeout(() => {
+          try {
+            splash.remove();
+          } catch (_) {}
+        }, 400);
+        return () => clearTimeout(removeTimer);
+      }, 320);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   return (

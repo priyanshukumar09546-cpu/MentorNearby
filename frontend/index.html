@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
     
     <!-- Primary Meta Tags -->
@@ -30,6 +30,10 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png" />
     <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-startup-image" href="/apple-splash.png" />
+
+    <!-- Preload Splash Logo for Instant 0ms Paint -->
+    <link rel="preload" as="image" href="/splash-logo.png" />
 
     <!-- iOS Web App Configuration -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -38,7 +42,7 @@
 
     <!-- Android Chrome & PWA Web App Manifest -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#EA580C" />
+    <meta name="theme-color" content="#FAF8F5" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="MentorNearby" />
 
@@ -69,6 +73,109 @@
     <!-- FontAwesome 6 Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+    <!-- Inline Critical Styles for MentorNearby PWA Splash Launch -->
+    <style id="pwa-splash-styles">
+      html, body {
+        background-color: #FAF8F5;
+        margin: 0;
+        padding: 0;
+      }
+      #pwa-splash-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        background-color: #FAF8F5;
+        background-image: 
+          radial-gradient(ellipse 65% 50% at 0% 0%, rgba(254, 226, 226, 0.55) 0%, rgba(254, 226, 226, 0.15) 50%, transparent 80%),
+          radial-gradient(ellipse 60% 50% at 100% 100%, rgba(254, 243, 199, 0.65) 0%, rgba(254, 243, 199, 0.18) 50%, transparent 80%);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 9999999;
+        box-sizing: border-box;
+        padding: calc(44px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));
+        font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        opacity: 1;
+        transition: opacity 0.38s cubic-bezier(0.4, 0, 0.2, 1), transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: auto;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #pwa-splash-screen.fade-out {
+        opacity: 0;
+        transform: scale(1.02);
+        pointer-events: none;
+      }
+      .mn-splash-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        width: 100%;
+        max-width: 440px;
+        margin: auto 0;
+      }
+      .mn-splash-logo {
+        width: 232px;
+        max-width: 72vw;
+        height: auto;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto;
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.03));
+      }
+      .mn-splash-spinner {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 3.5px solid rgba(217, 119, 6, 0.12);
+        border-top-color: #D97706;
+        border-right-color: #F59E0B;
+        animation: mnSplashSpin 0.9s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+        margin: 36px auto 14px;
+      }
+      .mn-splash-text {
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #64748B;
+        margin: 0;
+        letter-spacing: -0.1px;
+      }
+      .mn-splash-footer {
+        flex-shrink: 0;
+        text-align: center;
+        margin-top: auto;
+      }
+      .mn-splash-tagline {
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        color: #1E293B;
+        text-transform: uppercase;
+        margin: 0;
+        line-height: 1.6;
+      }
+      .mn-splash-bar {
+        width: 36px;
+        height: 1.5px;
+        background-color: #D97706;
+        margin: 8px auto 0;
+        border-radius: 2px;
+      }
+      @keyframes mnSplashSpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+
     <!-- Structured Data: Organization -->
     <script type="application/ld+json">
     {
@@ -83,6 +190,23 @@
     </script>
   </head>
   <body>
+    <!-- Initial PWA / App Launch Splash Screen -->
+    <div id="pwa-splash-screen">
+      <div style="flex-shrink: 0; height: 10px;"></div>
+      <div class="mn-splash-main">
+        <img src="/splash-logo.png" alt="MentorNearby" class="mn-splash-logo" />
+        <div class="mn-splash-spinner"></div>
+        <p class="mn-splash-text">Loading your space...</p>
+      </div>
+      <div class="mn-splash-footer">
+        <p class="mn-splash-tagline">
+          BETTER LEARNING<br />
+          A BRIGHTER TOMORROW
+        </p>
+        <div class="mn-splash-bar"></div>
+      </div>
+    </div>
+
     <div id="root"></div>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script type="module" src="/src/main.jsx"></script>

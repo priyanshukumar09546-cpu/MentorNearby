@@ -27,16 +27,10 @@
     <link rel="icon" media="(prefers-color-scheme: dark)" type="image/png" sizes="192x192" href="/icon-dark-192x192.png" />
     <link rel="shortcut icon" href="/favicon.ico" />
 
-    <!-- Apple Touch Icons (iOS Safari Home Screen - Light & Dark Modes) -->
-    <link rel="apple-touch-icon" id="apple-touch-icon-main" href="/apple-touch-icon.png" />
-    <link rel="apple-touch-icon" media="(prefers-color-scheme: light)" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="apple-touch-icon" media="(prefers-color-scheme: dark)" sizes="180x180" href="/apple-touch-icon-dark-180x180.png" />
-    <link rel="apple-touch-icon" media="(prefers-color-scheme: light)" sizes="152x152" href="/apple-touch-icon-152x152.png" />
-    <link rel="apple-touch-icon" media="(prefers-color-scheme: dark)" sizes="152x152" href="/apple-touch-icon-dark-152x152.png" />
-    <link rel="apple-touch-icon" media="(prefers-color-scheme: light)" sizes="120x120" href="/apple-touch-icon-120x120.png" />
-    <link rel="apple-touch-icon" media="(prefers-color-scheme: dark)" sizes="120x120" href="/apple-touch-icon-dark-120x120.png" />
-    <link rel="apple-touch-icon-precomposed" media="(prefers-color-scheme: light)" href="/apple-touch-icon.png" />
-    <link rel="apple-touch-icon-precomposed" media="(prefers-color-scheme: dark)" href="/apple-touch-icon-dark.png" />
+    <!-- Apple Touch Icons (iOS Safari Home Screen - Adaptive Light & Dark System Appearance) -->
+    <!-- Exactly one canonical link pair without competing/conflicting static declarations -->
+    <link rel="apple-touch-icon" id="apple-touch-icon-main" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon-precomposed" id="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="apple-touch-startup-image" href="/apple-splash.png" />
 
     <!-- Preload Splash Logo for Instant 0ms Paint -->
@@ -47,33 +41,61 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="MentorNearby" />
 
-    <!-- Android Chrome & PWA Web App Manifest (Adaptive Light/Dark Support) -->
+    <!-- Android Chrome & PWA Web App Manifest (Adaptive System Appearance Support) -->
     <link rel="manifest" id="manifest-link" href="/manifest.json" />
-    <link rel="manifest" media="(prefers-color-scheme: light)" href="/manifest-light.json" />
-    <link rel="manifest" media="(prefers-color-scheme: dark)" href="/manifest-dark.json" />
     <meta name="theme-color" id="theme-color-meta-light" media="(prefers-color-scheme: light)" content="#FAF8F5" />
     <meta name="theme-color" id="theme-color-meta-dark" media="(prefers-color-scheme: dark)" content="#000000" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="MentorNearby" />
 
-    <!-- Instant 0ms Inline Theme & PWA Manifest Switcher -->
+    <!-- Instant 0ms Inline Theme & Adaptive Home Screen Icon Handler -->
     <script>
       (function() {
         try {
-          var saved = localStorage.getItem('theme') || localStorage.getItem('mentornearby-theme');
-          var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          
-          var manifestEl = document.getElementById('manifest-link');
-          if (manifestEl) {
-            manifestEl.setAttribute('href', isDark ? '/manifest-dark.json' : '/manifest.json');
-          }
-          
+          // 1. System appearance check (iPhone / Android prefers-color-scheme)
+          var mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+          var isSystemDark = mql ? mql.matches : false;
+
+          // 2. Select appropriate icon and manifest for system appearance
+          var targetAppleIcon = isSystemDark ? '/apple-touch-icon-dark.png' : '/apple-touch-icon.png';
+          var targetManifest = isSystemDark ? '/manifest-dark.json' : '/manifest.json';
+
+          // 3. Immediately set apple-touch-icon BEFORE browser captures Home Screen icon
           var appleIconEl = document.getElementById('apple-touch-icon-main');
           if (appleIconEl) {
-            appleIconEl.setAttribute('href', isDark ? '/apple-touch-icon-dark.png' : '/apple-touch-icon.png');
+            appleIconEl.setAttribute('href', targetAppleIcon);
+          }
+          var applePrecomposedEl = document.getElementById('apple-touch-icon-precomposed');
+          if (applePrecomposedEl) {
+            applePrecomposedEl.setAttribute('href', targetAppleIcon);
           }
 
-          if (isDark) {
+          // 4. Set PWA manifest (manifest.json for light, manifest-dark.json for dark)
+          var manifestEl = document.getElementById('manifest-link');
+          if (manifestEl) {
+            manifestEl.setAttribute('href', targetManifest);
+          }
+
+          // 5. Real-time listener: updates icon if appearance changes in iOS Control Center while page is open
+          function onSystemAppearanceChange(e) {
+            var dark = e.matches;
+            var newIcon = dark ? '/apple-touch-icon-dark.png' : '/apple-touch-icon.png';
+            var newManifest = dark ? '/manifest-dark.json' : '/manifest.json';
+            if (appleIconEl) appleIconEl.setAttribute('href', newIcon);
+            if (applePrecomposedEl) applePrecomposedEl.setAttribute('href', newIcon);
+            if (manifestEl) manifestEl.setAttribute('href', newManifest);
+          }
+
+          if (mql && mql.addEventListener) {
+            mql.addEventListener('change', onSystemAppearanceChange);
+          } else if (mql && mql.addListener) {
+            mql.addListener(onSystemAppearanceChange);
+          }
+
+          // 6. Website UI theme initialization (preserves existing website theme behavior)
+          var savedTheme = localStorage.getItem('theme') || localStorage.getItem('mentornearby-theme');
+          var isUiDark = savedTheme === 'dark';
+          if (isUiDark) {
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('light');
             document.documentElement.setAttribute('data-theme', 'dark');

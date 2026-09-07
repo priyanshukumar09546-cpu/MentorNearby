@@ -54,14 +54,19 @@ export const ThemeProvider = ({ children }) => {
       } catch (_) {}
 
       // Synchronize PWA Manifest, Apple Touch Icon, and Theme Meta
-      const isDarkTheme = active === 'dark';
+      // Note: Home screen icon is tied to device system appearance (prefers-color-scheme)
+      const isSystemDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
       const manifestEl = document.getElementById('manifest-link');
       if (manifestEl) {
-        manifestEl.setAttribute('href', isDarkTheme ? '/manifest-dark.json' : '/manifest.json');
+        manifestEl.setAttribute('href', isSystemDark ? '/manifest-dark.json' : '/manifest.json');
       }
       const appleIconEl = document.getElementById('apple-touch-icon-main');
       if (appleIconEl) {
-        appleIconEl.setAttribute('href', isDarkTheme ? '/apple-touch-icon-dark.png' : '/apple-touch-icon.png');
+        appleIconEl.setAttribute('href', isSystemDark ? '/apple-touch-icon-dark.png' : '/apple-touch-icon.png');
+      }
+      const applePrecomposedEl = document.getElementById('apple-touch-icon-precomposed');
+      if (applePrecomposedEl) {
+        applePrecomposedEl.setAttribute('href', isSystemDark ? '/apple-touch-icon-dark.png' : '/apple-touch-icon.png');
       }
     };
 

@@ -52,6 +52,17 @@ export const ThemeProvider = ({ children }) => {
         localStorage.setItem(PRIMARY_STORAGE_KEY, theme);
         localStorage.setItem(BRAND_STORAGE_KEY, theme);
       } catch (_) {}
+
+      // Synchronize PWA Manifest, Apple Touch Icon, and Theme Meta
+      const isDarkTheme = active === 'dark';
+      const manifestEl = document.getElementById('manifest-link');
+      if (manifestEl) {
+        manifestEl.setAttribute('href', isDarkTheme ? '/manifest-dark.json' : '/manifest.json');
+      }
+      const appleIconEl = document.getElementById('apple-touch-icon-main');
+      if (appleIconEl) {
+        appleIconEl.setAttribute('href', isDarkTheme ? '/apple-touch-icon-dark.png' : '/apple-touch-icon.png');
+      }
     };
 
     updateTheme();

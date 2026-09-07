@@ -16,20 +16,27 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="https://mentornearby.com/" />
 
-    <!-- Favicons -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
+    <!-- Favicons (Adaptive Dual Light/Dark Theme) -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" media="(prefers-color-scheme: light)" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" media="(prefers-color-scheme: dark)" type="image/png" sizes="32x32" href="/favicon-dark-32x32.png" />
+    <link rel="icon" media="(prefers-color-scheme: light)" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" media="(prefers-color-scheme: dark)" type="image/png" sizes="16x16" href="/favicon-dark-16x16.png" />
+    <link rel="icon" media="(prefers-color-scheme: light)" type="image/png" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="icon" media="(prefers-color-scheme: dark)" type="image/png" sizes="192x192" href="/icon-dark-192x192.png" />
     <link rel="shortcut icon" href="/favicon.ico" />
 
-    <!-- Apple Touch Icons (iOS Safari Home Screen) -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
-    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png" />
-    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png" />
+    <!-- Apple Touch Icons (iOS Safari Home Screen - Light & Dark Modes) -->
+    <link rel="apple-touch-icon" id="apple-touch-icon-main" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" media="(prefers-color-scheme: light)" sizes="180x180" href="/apple-touch-icon-180x180.png" />
+    <link rel="apple-touch-icon" media="(prefers-color-scheme: dark)" sizes="180x180" href="/apple-touch-icon-dark-180x180.png" />
+    <link rel="apple-touch-icon" media="(prefers-color-scheme: light)" sizes="152x152" href="/apple-touch-icon-152x152.png" />
+    <link rel="apple-touch-icon" media="(prefers-color-scheme: dark)" sizes="152x152" href="/apple-touch-icon-dark-152x152.png" />
+    <link rel="apple-touch-icon" media="(prefers-color-scheme: light)" sizes="120x120" href="/apple-touch-icon-120x120.png" />
+    <link rel="apple-touch-icon" media="(prefers-color-scheme: dark)" sizes="120x120" href="/apple-touch-icon-dark-120x120.png" />
+    <link rel="apple-touch-icon-precomposed" media="(prefers-color-scheme: light)" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon-precomposed" media="(prefers-color-scheme: dark)" href="/apple-touch-icon-dark.png" />
     <link rel="apple-touch-startup-image" href="/apple-splash.png" />
 
     <!-- Preload Splash Logo for Instant 0ms Paint -->
@@ -40,11 +47,41 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="MentorNearby" />
 
-    <!-- Android Chrome & PWA Web App Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#FAF8F5" />
+    <!-- Android Chrome & PWA Web App Manifest (Adaptive Light/Dark Support) -->
+    <link rel="manifest" id="manifest-link" href="/manifest.json" />
+    <link rel="manifest" media="(prefers-color-scheme: light)" href="/manifest-light.json" />
+    <link rel="manifest" media="(prefers-color-scheme: dark)" href="/manifest-dark.json" />
+    <meta name="theme-color" id="theme-color-meta-light" media="(prefers-color-scheme: light)" content="#FAF8F5" />
+    <meta name="theme-color" id="theme-color-meta-dark" media="(prefers-color-scheme: dark)" content="#000000" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="MentorNearby" />
+
+    <!-- Instant 0ms Inline Theme & PWA Manifest Switcher -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('theme') || localStorage.getItem('mentornearby-theme');
+          var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          
+          var manifestEl = document.getElementById('manifest-link');
+          if (manifestEl) {
+            manifestEl.setAttribute('href', isDark ? '/manifest-dark.json' : '/manifest.json');
+          }
+          
+          var appleIconEl = document.getElementById('apple-touch-icon-main');
+          if (appleIconEl) {
+            appleIconEl.setAttribute('href', isDark ? '/apple-touch-icon-dark.png' : '/apple-touch-icon.png');
+          }
+
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.style.colorScheme = 'dark';
+          }
+        } catch (_) {}
+      })();
+    </script>
 
     <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
     <meta property="og:type" content="website" />
@@ -170,9 +207,27 @@
         margin: 8px auto 0;
         border-radius: 2px;
       }
-      @keyframes mnSplashSpin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      @media (prefers-color-scheme: dark) {
+        html, body {
+          background-color: #000000 !important;
+        }
+        #pwa-splash-screen {
+          background-color: #000000 !important;
+          background-image: 
+            radial-gradient(ellipse 65% 50% at 0% 0%, rgba(30, 41, 59, 0.65) 0%, transparent 80%),
+            radial-gradient(ellipse 60% 50% at 100% 100%, rgba(15, 23, 42, 0.85) 0%, transparent 80%) !important;
+        }
+        .mn-splash-text {
+          color: #94A3B8 !important;
+        }
+        .mn-splash-tagline {
+          color: #F8FAFC !important;
+        }
+        .mn-splash-spinner {
+          border-color: rgba(245, 158, 11, 0.2) !important;
+          border-top-color: #F59E0B !important;
+          border-right-color: #D97706 !important;
+        }
       }
     </style>
 

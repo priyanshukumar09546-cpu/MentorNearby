@@ -557,23 +557,51 @@
   font-size: 14px;
 }
 
+/* Mobile Promotional Banner */
+.auth-mobile-login-banner-wrap {
+  display: none;
+}
+
 /* ========================================================
    RESPONSIVE DESIGN
    ======================================================== */
 @media (max-width: 960px) {
+  .auth-page-wrapper {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 16px 16px calc(80px + env(safe-area-inset-bottom, 0px)) 16px;
+  }
+
+  .auth-mobile-login-banner-wrap {
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto 16px auto;
+    box-sizing: border-box;
+  }
+
+  .auth-mobile-login-banner-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+    object-fit: contain;
+  }
+
   .auth-split-card {
     grid-template-columns: 1fr;
-    max-width: 560px;
+    max-width: 480px;
     width: 100%;
     min-height: auto;
+    border-radius: 20px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     overflow: hidden;
   }
 
   .auth-left-panel {
-    min-height: auto;
-    padding: 32px 24px 0;
-    overflow: hidden;
+    display: none !important;
   }
 
   .auth-panel-glow,
@@ -582,22 +610,11 @@
   }
 
   .auth-illustration-wrap {
-    height: 260px;
-    min-height: 200px;
-    margin: 0 auto;
-    width: 100%;
-    max-width: 100%;
-    overflow: hidden;
-  }
-
-  .auth-panel-illustration {
-    max-height: 260px;
-    width: auto;
-    max-width: 100%;
+    display: none;
   }
 
   .auth-right-panel {
-    padding: 32px 24px;
+    padding: 28px 24px;
     overflow: hidden;
     width: 100%;
     max-width: 100%;
@@ -607,55 +624,37 @@
 
 @media (max-width: 480px) {
   .auth-page-wrapper {
-    padding: 16px;
+    padding: 12px 14px calc(80px + env(safe-area-inset-bottom, 0px)) 14px;
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
   }
 
+  .auth-mobile-login-banner-wrap {
+    margin-bottom: 14px;
+  }
+
+  .auth-mobile-login-banner-img {
+    border-radius: 14px;
+  }
+
   .auth-split-card {
-    border-radius: 20px;
+    border-radius: 18px;
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
     overflow: hidden;
-  }
-
-  .auth-left-panel {
-    padding: 24px 16px 0;
-  }
-
-  .auth-brand-logo-img {
-    height: 44px;
-  }
-
-  .auth-panel-title {
-    font-size: 22px;
-  }
-
-  .auth-illustration-wrap {
-    height: 190px;
-    min-height: 160px;
-    margin: 0 auto;
-    width: 100%;
-    max-width: 100%;
-    overflow: hidden;
-  }
-
-  .auth-panel-illustration {
-    max-height: 190px;
-    width: auto;
-    max-width: 100%;
   }
 
   .auth-right-panel {
-    padding: 24px 16px;
+    padding: 22px 16px;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
   }
 
   .auth-form-title {
-    font-size: 20px;
+    font-size: 22px;
   }
 }
+

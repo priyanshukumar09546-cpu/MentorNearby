@@ -148,7 +148,7 @@
     width: 46px;
     height: 46px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #FF4565 0%, #E11D48 100%);
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -156,7 +156,7 @@
     font-size: 20px;
     font-weight: 900;
     margin-top: -24px;
-    box-shadow: 0 6px 18px rgba(225, 29, 72, 0.42), 0 2px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 18px rgba(217, 119, 6, 0.42), 0 2px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     border: 3px solid #FFFFFF;
   }
@@ -167,7 +167,7 @@
 
   .mn-bottom-center-action:active .mn-bottom-plus-btn {
     transform: scale(0.92);
-    box-shadow: 0 3px 10px rgba(225, 29, 72, 0.3);
+    box-shadow: 0 3px 10px rgba(217, 119, 6, 0.35);
   }
 
   .mn-bottom-label.center-label {

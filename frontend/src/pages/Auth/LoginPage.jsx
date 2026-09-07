@@ -157,6 +157,15 @@ const LoginPage = () => {
 
   return (
     <div className="auth-page-wrapper">
+      {/* Mobile Promotional Banner (Above Login Card) */}
+      <div className="auth-mobile-login-banner-wrap">
+        <img
+          src="/banners/login-banner.png"
+          alt="Learn with Verified Tutors - Get personalized guidance for your academic success"
+          className="auth-mobile-login-banner-img"
+        />
+      </div>
+
       <div className="auth-split-card">
         
         {/* ========================================================

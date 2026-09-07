@@ -85,6 +85,63 @@ const MobileBottomNav = () => {
     pathname.startsWith('/purchases') ||
     pathname.startsWith('/kyc');
 
+  // Handler for Home button:
+  // - If user is already on the Home page ('/'), smoothly scroll to the top (0, 0)
+  // - If user is on any other page, immediately reset scroll to top (0, 0) and navigate
+  const handleHomeClick = (e) => {
+    if (pathname === '/') {
+      e.preventDefault();
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      } catch (_) {
+        window.scrollTo(0, 0);
+      }
+      if (document.documentElement) {
+        try {
+          document.documentElement.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        } catch (_) {
+          document.documentElement.scrollTop = 0;
+        }
+      }
+      if (document.body) {
+        try {
+          document.body.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        } catch (_) {
+          document.body.scrollTop = 0;
+        }
+      }
+      const root = document.getElementById('root');
+      if (root) {
+        try {
+          root.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        } catch (_) {
+          root.scrollTop = 0;
+        }
+      }
+      const mainContent = document.querySelector('.mn-app-main-content');
+      if (mainContent) {
+        try {
+          mainContent.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        } catch (_) {
+          mainContent.scrollTop = 0;
+        }
+      }
+      return;
+    }
+
+    // Navigating from any other page to Home:
+    // Reset immediately so the view begins at the very top (0, 0)
+    try {
+      window.scrollTo(0, 0);
+    } catch (_) {}
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    const root = document.getElementById('root');
+    if (root) root.scrollTop = 0;
+    const mainContent = document.querySelector('.mn-app-main-content');
+    if (mainContent) mainContent.scrollTop = 0;
+  };
+
   // Handler for Messages to guarantee clean conversation list opening
   const handleMessagesClick = (e) => {
     if (pathname.startsWith('/chat') || pathname.startsWith('/messages')) {
@@ -104,6 +161,7 @@ const MobileBottomNav = () => {
         {/* 1. Home */}
         <Link
           to="/"
+          onClick={handleHomeClick}
           className={`mn-bottom-nav-item ${isHomeActive ? 'active' : ''}`}
           aria-label="Home"
         >

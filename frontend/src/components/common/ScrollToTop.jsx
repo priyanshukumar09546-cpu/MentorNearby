@@ -44,19 +44,21 @@ const ScrollToTop = () => {
       if (document.body) document.body.scrollTop = 0;
       const root = document.getElementById('root');
       if (root) root.scrollTop = 0;
+      const mainContent = document.querySelector('.mn-app-main-content');
+      if (mainContent) mainContent.scrollTop = 0;
     };
 
     // Immediate reset
     resetScroll();
 
-    // Secondary reset via RAF & microtask to handle lazy-loaded Suspense chunks
+    // Secondary reset via RAF & timer to handle lazy-loaded Suspense chunks
     const rafId = requestAnimationFrame(() => {
       resetScroll();
     });
 
     const timerId = setTimeout(() => {
       resetScroll();
-    }, 10);
+    }, 50);
 
     return () => {
       cancelAnimationFrame(rafId);

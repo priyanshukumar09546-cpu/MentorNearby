@@ -10,6 +10,7 @@ const StudyPurchase = require('../models/StudyPurchase');
 const PrintProvider = require('../models/PrintProvider');
 const AdminConfig = require('../models/AdminConfig');
 const User = require('../models/User');
+const EducationalResource = require('../models/EducationalResource');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -56,6 +57,42 @@ const findStudyResourceByIdOrSlug = async (id) => {
     if (res) return res;
   } catch (_) {}
 
+  // 2B. If id starts with ncert-, find in EducationalResource
+  if (cleanId.startsWith('ncert-')) {
+    const parts = cleanId.split('-');
+    const edId = parts[1];
+    const chNum = parseInt(parts[2], 10) || 1;
+    try {
+      if (mongoose.Types.ObjectId.isValid(edId)) {
+        const ed = await EducationalResource.findById(edId).lean();
+        if (ed && Array.isArray(ed.chapters)) {
+          const ch = ed.chapters.find((c, idx) => (c.unitNumber || idx + 1) === chNum) || ed.chapters[chNum - 1];
+          if (ch) {
+            const openUrl = ch.openUrl || ch.downloadUrl || ch.sourceUrl;
+            return {
+              _id: cleanId,
+              id: cleanId,
+              title: `Chapter ${chNum} NCERT Solutions — ${ch.title}`,
+              description: `Official NCERT textbook chapter and solutions for ${ch.title}.`,
+              resourceType: 'NCERT_SOLUTIONS',
+              classLevel: ed.classLevel,
+              subject: ed.subject,
+              chapterNumber: chNum,
+              chapterTitle: ch.title,
+              published: true,
+              isFree: true,
+              readingEnabled: true,
+              downloadEnabled: true,
+              fileUrl: openUrl,
+              fileReference: { url: openUrl, filename: `NCERT_${ed.subject}_Ch${chNum}.pdf` },
+              hasRealFile: true,
+            };
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   // 3. Fallback: Parse string IDs like 'c9-sci-ch5-formula', 'c10-sci-ch1-notes', 'c9-sci-ch1-formula'
   const lower = cleanId.toLowerCase();
   let classLevel = '9';
@@ -81,7 +118,7 @@ const findStudyResourceByIdOrSlug = async (id) => {
       classLevel,
       subject,
       chapterNumber,
-      resourceType, // STRICT RESOURCE TYPE MATCHING (FORMULA_SHEET vs IMPORTANT_QUESTIONS_ANSWERS)
+      resourceType,
       published: true,
       $or: [
         { fileUrl: { $regex: 'res.cloudinary.com' } },
@@ -94,30 +131,8 @@ const findStudyResourceByIdOrSlug = async (id) => {
     }
   } catch (_) {}
 
-  const chapterContent = studyContentEngine.getChapterStudyContent({
-    classLevel,
-    subject,
-    chapterNumber,
-    resourceType,
-  });
-
-  return {
-    _id: cleanId,
-    id: cleanId,
-    title: `Chapter ${chapterNumber} ${isFormula ? 'Formula Sheet' : 'Revision Notes'} — ${chapterContent.title || 'Key Concepts'}`,
-    chapter: `Chapter ${chapterNumber}`,
-    chapterNumber,
-    chapterTitle: chapterContent.title || 'Key Concepts',
-    classLevel,
-    subject,
-    resourceType,
-    published: true,
-    downloadEnabled: true,
-    fileSize: 324000,
-    downloadPrice: isFormula ? (['11', '12'].includes(classLevel) ? 8 : 7) : (['11', '12'].includes(classLevel) ? 14 : 12),
-    salePrice: isFormula ? (['11', '12'].includes(classLevel) ? 8 : 7) : (['11', '12'].includes(classLevel) ? 14 : 12),
-    originalPrice: isFormula ? 49 : 79,
-  };
+  // If no authentic DB record with a real file exists, return null (never fabricate fake notes)
+  return null;
 };
 
 // Helper: Find study resource bundle by MongoDB ObjectId, slug, bundleId, or synthetic ID
@@ -437,26 +452,20 @@ exports.getSubjectStudyResources = asyncHandler(async (req, res, next) => {
   // 6. Group resources by chapter with clean reading & download metadata
   const chaptersMap = new Map();
 
+  // Helper to determine if a study resource has an authentic uploaded file
+  const isRealResource = (r) => {
+    const url = r.fileUrl || (r.fileReference && r.fileReference.url) || '';
+    if (!url) return false;
+    if (url.includes('dummy.pdf') || url.includes('w3.org')) return false;
+    return true;
+  };
+
   resources.forEach((r) => {
     const chNum = r.chapterNumber || 1;
     const isFormula = r.resourceType === 'FORMULA_SHEET';
     const defaultSinglePrice = isFormula ? standardPrices.singleFormulaPrice : standardPrices.singleNotesPrice;
     const individualPrice = Number(r.downloadPrice || r.salePrice) || defaultSinglePrice;
     const origPrice = Number(r.originalPrice) || (isFormula ? 49 : 79);
-
-    let isDownloadUnlocked = false;
-    let unlockedVia = null;
-
-    if (userPurchasedResourceIds.has(r._id.toString())) {
-      isDownloadUnlocked = true;
-      unlockedVia = 'INDIVIDUAL';
-    } else if (isFormula && userPurchasedFormulaCombo) {
-      isDownloadUnlocked = true;
-      unlockedVia = 'FORMULA_COMBO';
-    } else if (!isFormula && userPurchasedQaCombo) {
-      isDownloadUnlocked = true;
-      unlockedVia = 'QA_COMBO';
-    }
 
     if (!chaptersMap.has(chNum)) {
       chaptersMap.set(chNum, {
@@ -467,32 +476,117 @@ exports.getSubjectStudyResources = asyncHandler(async (req, res, next) => {
       });
     }
 
-    const isFreeDemo = r.isFreeDemo === true || chNum <= 2;
+    // ONLY push resources that have a legitimate real file (not dummy.pdf / not w3.org)
+    if (isRealResource(r)) {
+      let isDownloadUnlocked = false;
+      let unlockedVia = null;
 
-    chaptersMap.get(chNum).resources.push({
-      _id: r._id,
-      title: r.title,
-      description: r.description,
-      resourceType: r.resourceType,
-      classLevel: r.classLevel,
-      subject: r.subject,
-      chapterNumber: r.chapterNumber,
-      chapterTitle: r.chapterTitle,
-      unit: r.unit,
-      isFreeDemo,
-      isFree: isFreeDemo || r.isFree,
-      readingEnabled: true, // Reading is ALWAYS 100% FREE
-      downloadEnabled: r.downloadEnabled !== false,
-      originalPrice: origPrice,
-      downloadPrice: individualPrice,
-      salePrice: individualPrice,
-      isDownloadUnlocked,
-      isUnlocked: isDownloadUnlocked,
-      unlockedVia,
-      viewsCount: r.viewsCount || 0,
-      downloadsCount: r.downloadsCount || 0,
-    });
+      if (userPurchasedResourceIds.has(r._id.toString())) {
+        isDownloadUnlocked = true;
+        unlockedVia = 'INDIVIDUAL';
+      } else if (isFormula && userPurchasedFormulaCombo) {
+        isDownloadUnlocked = true;
+        unlockedVia = 'FORMULA_COMBO';
+      } else if (!isFormula && userPurchasedQaCombo) {
+        isDownloadUnlocked = true;
+        unlockedVia = 'QA_COMBO';
+      }
+
+      const isFreeDemo = r.isFreeDemo === true || chNum <= 2;
+
+      chaptersMap.get(chNum).resources.push({
+        _id: r._id,
+        id: r._id,
+        title: r.title,
+        description: r.description,
+        resourceType: r.resourceType,
+        classLevel: r.classLevel,
+        subject: r.subject,
+        chapterNumber: r.chapterNumber,
+        chapterTitle: r.chapterTitle,
+        unit: r.unit,
+        isFreeDemo,
+        isFree: isFreeDemo || r.isFree,
+        readingEnabled: true, // Reading is ALWAYS 100% FREE
+        downloadEnabled: r.downloadEnabled !== false,
+        originalPrice: origPrice,
+        downloadPrice: individualPrice,
+        salePrice: individualPrice,
+        isDownloadUnlocked,
+        isUnlocked: isDownloadUnlocked,
+        unlockedVia,
+        viewsCount: r.viewsCount || 0,
+        downloadsCount: r.downloadsCount || 0,
+        fileUrl: r.fileUrl || r.fileReference?.url,
+        fileReference: r.fileReference,
+        hasRealFile: true,
+      });
+    }
   });
+
+  // Also query EducationalResource for real NCERT books / solutions for this class + subject
+  try {
+    const edBooks = await EducationalResource.find({
+      isActive: true,
+      classLevel: { $in: [normalizedClass, `Class ${normalizedClass}`, classLevel] },
+      $or: [
+        { subject: new RegExp(`^${subject}$`, 'i') },
+        { title: new RegExp(`^${subject}$`, 'i') },
+      ],
+    }).lean();
+
+    edBooks.forEach((ed) => {
+      if (Array.isArray(ed.chapters)) {
+        ed.chapters.forEach((ch, idx) => {
+          const chNum = ch.unitNumber || idx + 1;
+          const openUrl = ch.openUrl || ch.downloadUrl || ch.sourceUrl;
+          if (openUrl && !openUrl.includes('dummy.pdf') && !openUrl.includes('w3.org')) {
+            if (!chaptersMap.has(chNum)) {
+              chaptersMap.set(chNum, {
+                chapterNumber: chNum,
+                chapterTitle: ch.title || `Chapter ${chNum}`,
+                unit: ch.unit || '',
+                resources: [],
+              });
+            }
+            const existingRes = chaptersMap.get(chNum).resources.some(
+              (resItem) => resItem.resourceType === 'NCERT_SOLUTIONS'
+            );
+            if (!existingRes) {
+              chaptersMap.get(chNum).resources.push({
+                _id: `ncert-${ed._id}-${chNum}`,
+                id: `ncert-${ed._id}-${chNum}`,
+                title: `Chapter ${chNum} NCERT Solutions — ${ch.title}`,
+                description: `Official NCERT textbook chapter and solutions for ${ch.title}.`,
+                resourceType: 'NCERT_SOLUTIONS',
+                classLevel: normalizedClass,
+                subject: subject,
+                chapterNumber: chNum,
+                chapterTitle: ch.title,
+                unit: ch.unit || '',
+                isFreeDemo: true,
+                isFree: true,
+                readingEnabled: true,
+                downloadEnabled: true,
+                originalPrice: 0,
+                downloadPrice: 0,
+                salePrice: 0,
+                isDownloadUnlocked: true,
+                isUnlocked: true,
+                unlockedVia: 'FREE_ACCESS',
+                fileUrl: openUrl,
+                fileReference: {
+                  url: openUrl,
+                  filename: `NCERT_${subject}_Ch${chNum}.pdf`,
+                },
+                hasRealFile: true,
+              });
+            }
+          }
+        });
+      }
+    });
+  } catch (_) {}
 
   const chapters = Array.from(chaptersMap.values()).sort((a, b) => a.chapterNumber - b.chapterNumber);
 
@@ -695,6 +789,19 @@ exports.readStudyResource = asyncHandler(async (req, res, next) => {
     return error(res, 'Study resource not found or unavailable', 404);
   }
 
+  let realFileUrl = resource.fileUrl;
+  if (resource.fileReference?.url && (resource.fileReference.url.includes('res.cloudinary.com') || resource.fileReference.url.includes('ncert.nic.in'))) {
+    realFileUrl = resource.fileReference.url;
+  } else if (!realFileUrl || realFileUrl.includes('dummy.pdf') || realFileUrl.includes('w3.org')) {
+    realFileUrl = (resource.fileReference?.url && !resource.fileReference.url.includes('dummy.pdf') && !resource.fileReference.url.includes('w3.org'))
+      ? resource.fileReference.url
+      : null;
+  }
+
+  if (!realFileUrl) {
+    return error(res, 'This study resource does not have an uploaded file yet.', 404);
+  }
+
   const isFormula = resource.resourceType === 'FORMULA_SHEET';
   const normalizedClass = normalizeClass(resource.classLevel);
   const isSenior = ['11', '12'].includes(normalizedClass);
@@ -819,55 +926,14 @@ exports.streamStudyResource = asyncHandler(async (req, res, next) => {
         });
         return streamRes.pipe(res);
       }
-      // Fallback to high-fidelity generated PDF if remote fetch returns error
-      const pdfBuffer = studyContentEngine.generateStudyPdfBuffer({
-        title: resource.title,
-        classLevel: resource.classLevel,
-        subject: resource.subject,
-        chapterNumber: resource.chapterNumber,
-        resourceType: resource.resourceType,
-      });
-      res.writeHead(200, {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `${isDownload ? 'attachment' : 'inline'}; filename="${cleanFileName}"`,
-        'Cache-Control': 'private, no-store, max-age=0',
-        'Content-Length': pdfBuffer.length,
-      });
-      return res.end(pdfBuffer);
+      return error(res, 'Study resource file could not be retrieved from storage', 404);
     }).on('error', () => {
-      const pdfBuffer = studyContentEngine.generateStudyPdfBuffer({
-        title: resource.title,
-        classLevel: resource.classLevel,
-        subject: resource.subject,
-        chapterNumber: resource.chapterNumber,
-        resourceType: resource.resourceType,
-      });
-      res.writeHead(200, {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `${isDownload ? 'attachment' : 'inline'}; filename="${cleanFileName}"`,
-        'Cache-Control': 'private, no-store, max-age=0',
-        'Content-Length': pdfBuffer.length,
-      });
-      return res.end(pdfBuffer);
+      return error(res, 'Study resource file streaming error', 500);
     });
   }
 
-  // 3. Dynamic High-Fidelity Academic PDF Stream
-  const pdfBuffer = studyContentEngine.generateStudyPdfBuffer({
-    title: resource.title,
-    classLevel: resource.classLevel,
-    subject: resource.subject,
-    chapterNumber: resource.chapterNumber,
-    resourceType: resource.resourceType,
-  });
-
-  res.writeHead(200, {
-    'Content-Type': 'application/pdf',
-    'Content-Disposition': `${isDownload ? 'attachment' : 'inline'}; filename="${cleanFileName}"`,
-    'Cache-Control': 'private, no-store, max-age=0',
-    'Content-Length': pdfBuffer.length,
-  });
-  return res.end(pdfBuffer);
+  // 3. No authentic uploaded file exists for this resource
+  return error(res, 'Study resource file is not available yet', 404);
 });
 
 // ============================================================

@@ -331,7 +331,7 @@ const StudyResourceViewerModalInner = ({
 
   const streamFileUrl =
     getFullDocUrl(rawFileUrl) ||
-    `/api/study-resources/stream/${resource?._id || resourceId || 'c9-sci-ch1-notes'}`;
+    ((resource?._id || resourceId) ? `/api/study-resources/stream/${resource?._id || resourceId}` : '');
 
   // Fetch Blob (PDF or High-Res Image Scan)
   useEffect(() => {

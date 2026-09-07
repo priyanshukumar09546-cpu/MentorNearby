@@ -172,7 +172,8 @@ const SubjectPage = () => {
   // Real Study Resources & Master Combo State
   const [studyData, setStudyData] = useState(null);
   const [loadingResources, setLoadingResources] = useState(false);
-  const [selectedResourceTypeFilter, setSelectedResourceTypeFilter] = useState('ALL');
+  const initialType = searchParams.get('type') || searchParams.get('category') || 'ALL';
+  const [selectedResourceTypeFilter, setSelectedResourceTypeFilter] = useState(initialType);
 
   // PDF Viewer Modal State (Direct Master Combo PDF Viewing)
   const [viewerModalState, setViewerModalState] = useState({
@@ -187,8 +188,14 @@ const SubjectPage = () => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set('tab', activeTab);
     nextParams.set('class', selectedClass);
+    if (selectedResourceTypeFilter && selectedResourceTypeFilter !== 'ALL') {
+      nextParams.set('type', selectedResourceTypeFilter);
+    } else {
+      nextParams.delete('type');
+      nextParams.delete('category');
+    }
     setSearchParams(nextParams, { replace: true });
-  }, [activeTab, selectedClass]);
+  }, [activeTab, selectedClass, selectedResourceTypeFilter]);
 
   // 1. Fetch REAL Tutors from MongoDB database
   useEffect(() => {
@@ -253,6 +260,179 @@ const SubjectPage = () => {
   const formulaBundle = useMemo(() => {
     return studyData?.combos?.formulaBundle || studyData?.bundle || null;
   }, [studyData]);
+
+  // Helper to resolve the matching resource for a category from a chapter's resource list
+  const getResourceForCategory = (resList, categoryFilter) => {
+    if (!Array.isArray(resList)) return null;
+
+    if (categoryFilter === 'FORMULA_SHEET') {
+      return resList.find((r) => r.resourceType === 'FORMULA_SHEET' && r.hasRealFile !== false);
+    }
+    if (categoryFilter === 'NOTES') {
+      return resList.find((r) => r.resourceType === 'NOTES' && r.hasRealFile !== false);
+    }
+    if (categoryFilter === 'IMPORTANT_QUESTIONS') {
+      return resList.find(
+        (r) =>
+          (r.resourceType === 'IMPORTANT_QUESTIONS' || r.resourceType === 'IMPORTANT_QUESTIONS_ANSWERS') &&
+          r.hasRealFile !== false
+      );
+    }
+    if (categoryFilter === 'NCERT_SOLUTIONS') {
+      return resList.find(
+        (r) =>
+          (r.resourceType === 'NCERT_SOLUTIONS' ||
+            r.resourceType === 'BOOK' ||
+            r.resourceType === 'NCERT_BOOK' ||
+            r.resourceType === 'SOLUTION') &&
+          r.hasRealFile !== false
+      );
+    }
+    if (categoryFilter === 'PYQ') {
+      return resList.find(
+        (r) => (r.resourceType === 'PYQ_PAPERS' || r.resourceType === 'PYQ') && r.hasRealFile !== false
+      );
+    }
+    if (categoryFilter === 'PRACTICE_QUESTIONS') {
+      return resList.find((r) => r.resourceType === 'PRACTICE_QUESTIONS' && r.hasRealFile !== false);
+    }
+
+    // Default 'ALL': return formula sheet first if available, or first valid real resource
+    return (
+      resList.find((r) => r.resourceType === 'FORMULA_SHEET' && r.hasRealFile !== false) ||
+      resList.find((r) => r.hasRealFile !== false) ||
+      null
+    );
+  };
+
+  // Filter chapters matching active category
+  const displayedChapters = useMemo(() => {
+    if (!chapters || chapters.length === 0) return [];
+    if (selectedResourceTypeFilter === 'ALL') {
+      return chapters;
+    }
+    return chapters.filter((ch) => {
+      const res = getResourceForCategory(ch.resources, selectedResourceTypeFilter);
+      return Boolean(res);
+    });
+  }, [chapters, selectedResourceTypeFilter]);
+
+  // Clean, transparent empty states when a category has no uploaded resources yet
+  const renderCategoryEmptyState = () => {
+    switch (selectedResourceTypeFilter) {
+      case 'NOTES':
+        return (
+          <div className="mn-subj-empty-state">
+            <div className="mn-subj-empty-icon">📝</div>
+            <p className="mn-subj-empty-text">
+              No Chapter-wise Notes available yet for Class {selectedClass} {subjectConfig.name}
+            </p>
+            <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.5 }}>
+              Our educators are currently curating and verifying authentic handwritten notes for this syllabus. In the meantime, you can explore the complete Formula Sheets.
+            </p>
+            <button
+              type="button"
+              className="mn-subj-empty-btn"
+              onClick={() => setSelectedResourceTypeFilter('FORMULA_SHEET')}
+            >
+              View Available Formula Sheets
+            </button>
+          </div>
+        );
+      case 'IMPORTANT_QUESTIONS':
+        return (
+          <div className="mn-subj-empty-state">
+            <div className="mn-subj-empty-icon">❓</div>
+            <p className="mn-subj-empty-text">
+              No Important Questions uploaded yet for Class {selectedClass} {subjectConfig.name}
+            </p>
+            <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.5 }}>
+              Curated high-frequency exam questions with official marking scheme solutions are being prepared by verified mentors.
+            </p>
+            <button
+              type="button"
+              className="mn-subj-empty-btn"
+              onClick={() => setSelectedResourceTypeFilter('FORMULA_SHEET')}
+            >
+              View Available Formula Sheets
+            </button>
+          </div>
+        );
+      case 'PYQ':
+        return (
+          <div className="mn-subj-empty-state">
+            <div className="mn-subj-empty-icon">📄</div>
+            <p className="mn-subj-empty-text">
+              No Previous Year Papers for Class {selectedClass} {subjectConfig.name}
+            </p>
+            <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.5 }}>
+              Previous year board examination papers and 10-year video solutions are published for Class 10 and Class 12 board classes.
+            </p>
+            <button
+              type="button"
+              className="mn-subj-empty-btn"
+              onClick={() => navigate('/courses')}
+            >
+              Explore 10-Year Board Papers
+            </button>
+          </div>
+        );
+      case 'NCERT_SOLUTIONS':
+        return (
+          <div className="mn-subj-empty-state">
+            <div className="mn-subj-empty-icon">📖</div>
+            <p className="mn-subj-empty-text">
+              No NCERT Solutions uploaded yet for Class {selectedClass} {subjectConfig.name}
+            </p>
+            <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.5 }}>
+              Chapter-wise NCERT solutions and reference textbooks are being updated for this subject.
+            </p>
+            <button
+              type="button"
+              className="mn-subj-empty-btn"
+              onClick={() => navigate('/books')}
+            >
+              Browse Books Library
+            </button>
+          </div>
+        );
+      case 'PRACTICE_QUESTIONS':
+        return (
+          <div className="mn-subj-empty-state">
+            <div className="mn-subj-empty-icon">🎯</div>
+            <p className="mn-subj-empty-text">
+              No Practice Questions available yet for Class {selectedClass} {subjectConfig.name}
+            </p>
+            <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.5 }}>
+              Topic-wise practice problem sets and test series are currently being compiled.
+            </p>
+            <button
+              type="button"
+              className="mn-subj-empty-btn"
+              onClick={() => setSelectedResourceTypeFilter('FORMULA_SHEET')}
+            >
+              View Available Formula Sheets
+            </button>
+          </div>
+        );
+      default:
+        return (
+          <div className="mn-subj-empty-state">
+            <div className="mn-subj-empty-icon">📚</div>
+            <p className="mn-subj-empty-text">
+              Study resources for {subjectConfig.name} Class {selectedClass} are currently being updated.
+            </p>
+            <Link
+              to="/study-resources"
+              className="mn-subj-empty-btn"
+              style={{ textDecoration: 'none', display: 'inline-block' }}
+            >
+              Browse All Study Materials
+            </Link>
+          </div>
+        );
+    }
+  };
 
   // ------------------------------------------------------------
   // SECTION 4, 5, 6: Direct Single Complete Combo PDF Viewer
@@ -606,17 +786,16 @@ const SubjectPage = () => {
 
             {/* ------------------------------------------------------------ */}
             {/* 6 Category Tiles (Matching Screen 3)                         */}
-            {/* ------------------------------------------------------------ */}
-            <h3 className="mn-subj-section-label" style={{ marginTop: 6 }}>
-              Study Material for Class {selectedClass}
-            </h3>
-
+            <h3 className="mn-subj-section-label" style={{ marginTop: 6 }}>Study Material for Class {selectedClass}</h3>
             <div className="mn-subj-materials-grid">
               {/* Tile 1: Chapter-wise Notes */}
               <div
-                className="mn-subj-material-card"
+                className={`mn-subj-material-card ${selectedResourceTypeFilter === 'NOTES' ? 'active' : ''}`}
                 onClick={() => setSelectedResourceTypeFilter(selectedResourceTypeFilter === 'NOTES' ? 'ALL' : 'NOTES')}
                 style={{ borderColor: selectedResourceTypeFilter === 'NOTES' ? '#2563EB' : '#E2E8F0' }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedResourceTypeFilter === 'NOTES'}
               >
                 <div className="mn-subj-mat-icon-box" style={{ background: '#EFF6FF', color: '#2563EB' }}>
                   <i className="fa-solid fa-file-lines"></i>
@@ -632,9 +811,12 @@ const SubjectPage = () => {
 
               {/* Tile 2: Important Questions */}
               <div
-                className="mn-subj-material-card"
-                onClick={() => setSelectedResourceTypeFilter(selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS_ANSWERS' ? 'ALL' : 'IMPORTANT_QUESTIONS_ANSWERS')}
-                style={{ borderColor: selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS_ANSWERS' ? '#2563EB' : '#E2E8F0' }}
+                className={`mn-subj-material-card ${selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS' ? 'active' : ''}`}
+                onClick={() => setSelectedResourceTypeFilter(selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS' ? 'ALL' : 'IMPORTANT_QUESTIONS')}
+                style={{ borderColor: selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS' ? '#2563EB' : '#E2E8F0' }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS'}
               >
                 <div className="mn-subj-mat-icon-box" style={{ background: '#FEF2F2', color: '#E11D48' }}>
                   <i className="fa-solid fa-circle-question"></i>
@@ -649,7 +831,14 @@ const SubjectPage = () => {
               </div>
 
               {/* Tile 3: Previous Year Papers */}
-              <Link to="/courses" className="mn-subj-material-card" style={{ textDecoration: 'none' }}>
+              <div
+                className={`mn-subj-material-card ${selectedResourceTypeFilter === 'PYQ' ? 'active' : ''}`}
+                onClick={() => setSelectedResourceTypeFilter(selectedResourceTypeFilter === 'PYQ' ? 'ALL' : 'PYQ')}
+                style={{ borderColor: selectedResourceTypeFilter === 'PYQ' ? '#2563EB' : '#E2E8F0' }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedResourceTypeFilter === 'PYQ'}
+              >
                 <div className="mn-subj-mat-icon-box" style={{ background: '#F0FDF4', color: '#16A34A' }}>
                   <i className="fa-solid fa-clock-rotate-left"></i>
                 </div>
@@ -660,10 +849,17 @@ const SubjectPage = () => {
                   </h4>
                   <p className="mn-subj-mat-desc">Past year questions with detailed solutions</p>
                 </div>
-              </Link>
+              </div>
 
               {/* Tile 4: NCERT Solutions */}
-              <Link to="/books" className="mn-subj-material-card" style={{ textDecoration: 'none' }}>
+              <div
+                className={`mn-subj-material-card ${selectedResourceTypeFilter === 'NCERT_SOLUTIONS' ? 'active' : ''}`}
+                onClick={() => setSelectedResourceTypeFilter(selectedResourceTypeFilter === 'NCERT_SOLUTIONS' ? 'ALL' : 'NCERT_SOLUTIONS')}
+                style={{ borderColor: selectedResourceTypeFilter === 'NCERT_SOLUTIONS' ? '#2563EB' : '#E2E8F0' }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedResourceTypeFilter === 'NCERT_SOLUTIONS'}
+              >
                 <div className="mn-subj-mat-icon-box" style={{ background: '#FAF5FF', color: '#9333EA' }}>
                   <i className="fa-solid fa-book"></i>
                 </div>
@@ -674,13 +870,16 @@ const SubjectPage = () => {
                   </h4>
                   <p className="mn-subj-mat-desc">Step-by-step solutions for all exercises</p>
                 </div>
-              </Link>
+              </div>
 
               {/* Tile 5: Formula Sheet */}
               <div
-                className="mn-subj-material-card"
+                className={`mn-subj-material-card ${selectedResourceTypeFilter === 'FORMULA_SHEET' ? 'active' : ''}`}
                 onClick={() => setSelectedResourceTypeFilter(selectedResourceTypeFilter === 'FORMULA_SHEET' ? 'ALL' : 'FORMULA_SHEET')}
                 style={{ borderColor: selectedResourceTypeFilter === 'FORMULA_SHEET' ? '#2563EB' : '#E2E8F0' }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedResourceTypeFilter === 'FORMULA_SHEET'}
               >
                 <div className="mn-subj-mat-icon-box" style={{ background: '#EFF6FF', color: '#2563EB' }}>
                   <span style={{ fontWeight: 900 }}>π</span>
@@ -695,7 +894,14 @@ const SubjectPage = () => {
               </div>
 
               {/* Tile 6: Practice Questions */}
-              <Link to="/study-resources" className="mn-subj-material-card" style={{ textDecoration: 'none' }}>
+              <div
+                className={`mn-subj-material-card ${selectedResourceTypeFilter === 'PRACTICE_QUESTIONS' ? 'active' : ''}`}
+                onClick={() => setSelectedResourceTypeFilter(selectedResourceTypeFilter === 'PRACTICE_QUESTIONS' ? 'ALL' : 'PRACTICE_QUESTIONS')}
+                style={{ borderColor: selectedResourceTypeFilter === 'PRACTICE_QUESTIONS' ? '#2563EB' : '#E2E8F0' }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedResourceTypeFilter === 'PRACTICE_QUESTIONS'}
+              >
                 <div className="mn-subj-mat-icon-box" style={{ background: '#FFF7ED', color: '#D97706' }}>
                   <i className="fa-solid fa-bullseye"></i>
                 </div>
@@ -706,14 +912,14 @@ const SubjectPage = () => {
                   </h4>
                   <p className="mn-subj-mat-desc">Topic-wise practice for better preparation</p>
                 </div>
-              </Link>
+              </div>
             </div>
 
             {/* ------------------------------------------------------------ */}
             {/* SECTION 4, 5, 6, 7: FORMULA SHEET COMBO MASTER CARD          */}
             {/* ONE SINGLE CARD REPRESENTING ONE COMPLETE MASTER COMBO PDF   */}
             {/* ------------------------------------------------------------ */}
-            {formulaBundle && (
+            {(selectedResourceTypeFilter === 'ALL' || selectedResourceTypeFilter === 'FORMULA_SHEET') && formulaBundle && (
               <section className="mn-subj-combo-section" aria-label="Complete Formula Sheet Combo">
                 <div className="mn-subj-combo-master-card">
                   <div className="mn-subj-combo-card-top">
@@ -766,14 +972,46 @@ const SubjectPage = () => {
             <section className="mn-subj-chapters-section">
               <div className="mn-subj-list-header">
                 <h3 className="mn-subj-list-title">
-                  Popular Chapters (Class {selectedClass})
+                  {selectedResourceTypeFilter === 'ALL'
+                    ? `Popular Chapters (Class ${selectedClass})`
+                    : selectedResourceTypeFilter === 'NOTES'
+                    ? `Chapter-wise Notes (Class ${selectedClass})`
+                    : selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS'
+                    ? `Important Questions (Class ${selectedClass})`
+                    : selectedResourceTypeFilter === 'PYQ'
+                    ? `Previous Year Papers (Class ${selectedClass})`
+                    : selectedResourceTypeFilter === 'NCERT_SOLUTIONS'
+                    ? `NCERT Solutions (Class ${selectedClass})`
+                    : selectedResourceTypeFilter === 'FORMULA_SHEET'
+                    ? `Formula Sheets (Class ${selectedClass})`
+                    : selectedResourceTypeFilter === 'PRACTICE_QUESTIONS'
+                    ? `Practice Questions (Class ${selectedClass})`
+                    : `Popular Chapters (Class ${selectedClass})`}
                 </h3>
-                <Link
-                  to={`/study-resources?class=${selectedClass}&subject=${encodeURIComponent(subjectConfig.name)}`}
-                  style={{ fontSize: 12, fontWeight: 700, color: '#E11D48', textDecoration: 'none' }}
-                >
-                  View All
-                </Link>
+                {selectedResourceTypeFilter !== 'ALL' ? (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResourceTypeFilter('ALL')}
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#2563EB',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '2px 6px',
+                    }}
+                  >
+                    Show All
+                  </button>
+                ) : (
+                  <Link
+                    to={`/study-resources?class=${selectedClass}&subject=${encodeURIComponent(subjectConfig.name)}`}
+                    style={{ fontSize: 12, fontWeight: 700, color: '#E11D48', textDecoration: 'none' }}
+                  >
+                    View All
+                  </Link>
+                )}
               </div>
 
               {loadingResources ? (
@@ -781,28 +1019,40 @@ const SubjectPage = () => {
                   <div className="spinner" style={{ margin: '0 auto 10px', width: 28, height: 28 }}></div>
                   <p style={{ fontSize: 12 }}>Loading chapters from curriculum database...</p>
                 </div>
-              ) : chapters.length > 0 ? (
+              ) : displayedChapters.length > 0 ? (
                 <div className="mn-subj-chapters-list">
-                  {chapters.map((ch, idx) => {
+                  {displayedChapters.map((ch, idx) => {
                     const chNum = ch.chapterNumber || idx + 1;
                     const chTitle = ch.chapterTitle || `Chapter ${chNum}`;
                     const resList = ch.resources || [];
-                    const formulaRes = resList.find((r) => r.resourceType === 'FORMULA_SHEET');
-                    const notesRes = resList.find((r) => r.resourceType === 'IMPORTANT_QUESTIONS_ANSWERS' || r.resourceType === 'NOTES');
+                    const formulaRes = resList.find((r) => r.resourceType === 'FORMULA_SHEET' && r.hasRealFile !== false);
+                    const ncertRes = resList.find(
+                      (r) =>
+                        (r.resourceType === 'NCERT_SOLUTIONS' ||
+                          r.resourceType === 'BOOK' ||
+                          r.resourceType === 'NCERT_BOOK' ||
+                          r.resourceType === 'SOLUTION') &&
+                        r.hasRealFile !== false
+                    );
+                    const notesRes = resList.find((r) => r.resourceType === 'NOTES' && r.hasRealFile !== false);
+                    const qaRes = resList.find(
+                      (r) =>
+                        (r.resourceType === 'IMPORTANT_QUESTIONS' || r.resourceType === 'IMPORTANT_QUESTIONS_ANSWERS') &&
+                        r.hasRealFile !== false
+                    );
+                    const pyqRes = resList.find(
+                      (r) => (r.resourceType === 'PYQ_PAPERS' || r.resourceType === 'PYQ') && r.hasRealFile !== false
+                    );
+                    const practiceRes = resList.find((r) => r.resourceType === 'PRACTICE_QUESTIONS' && r.hasRealFile !== false);
 
-                    // Filter based on selected quick filter
-                    if (selectedResourceTypeFilter === 'FORMULA_SHEET' && !formulaRes) return null;
-                    if (selectedResourceTypeFilter === 'NOTES' && !notesRes) return null;
-                    if (selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS_ANSWERS' && !notesRes) return null;
-
-                    const primaryResource = formulaRes || notesRes || resList[0];
+                    const targetResource = getResourceForCategory(resList, selectedResourceTypeFilter);
 
                     return (
                       <div
                         key={chNum}
                         className="mn-subj-chapter-row"
                         onClick={() => {
-                          if (primaryResource) handleOpenChapterResource(primaryResource);
+                          if (targetResource) handleOpenChapterResource(targetResource);
                         }}
                       >
                         <div className="mn-subj-chapter-left">
@@ -818,17 +1068,80 @@ const SubjectPage = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div className="mn-subj-chapter-resources-preview">
                             {formulaRes && (
-                              <span className="mn-subj-chapter-res-tag" title="Formula Sheet Available">
+                              <span
+                                className="mn-subj-chapter-res-tag"
+                                title="Formula Sheet Available"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenChapterResource(formulaRes);
+                                }}
+                              >
                                 📘 Formulas
+                              </span>
+                            )}
+                            {ncertRes && (
+                              <span
+                                className="mn-subj-chapter-res-tag"
+                                style={{ background: '#FAF5FF', color: '#9333EA' }}
+                                title="NCERT Textbook & Solutions"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenChapterResource(ncertRes);
+                                }}
+                              >
+                                📖 NCERT
                               </span>
                             )}
                             {notesRes && (
                               <span
                                 className="mn-subj-chapter-res-tag"
-                                style={{ background: '#FEF2F2', color: '#E11D48' }}
-                                title="Q&A Notes Available"
+                                style={{ background: '#EFF6FF', color: '#2563EB' }}
+                                title="Handwritten Notes Available"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenChapterResource(notesRes);
+                                }}
                               >
-                                📝 Q&amp;A
+                                📝 Notes
+                              </span>
+                            )}
+                            {qaRes && (
+                              <span
+                                className="mn-subj-chapter-res-tag"
+                                style={{ background: '#FEF2F2', color: '#E11D48' }}
+                                title="Important Q&A Available"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenChapterResource(qaRes);
+                                }}
+                              >
+                                ❓ Q&amp;A
+                              </span>
+                            )}
+                            {pyqRes && (
+                              <span
+                                className="mn-subj-chapter-res-tag"
+                                style={{ background: '#F0FDF4', color: '#16A34A' }}
+                                title="PYQ Papers Available"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenChapterResource(pyqRes);
+                                }}
+                              >
+                                📄 PYQ
+                              </span>
+                            )}
+                            {practiceRes && (
+                              <span
+                                className="mn-subj-chapter-res-tag"
+                                style={{ background: '#FFF7ED', color: '#D97706' }}
+                                title="Practice Questions Available"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenChapterResource(practiceRes);
+                                }}
+                              >
+                                🎯 Practice
                               </span>
                             )}
                           </div>
@@ -841,19 +1154,7 @@ const SubjectPage = () => {
                   })}
                 </div>
               ) : (
-                <div className="mn-subj-empty-state">
-                  <div className="mn-subj-empty-icon">📚</div>
-                  <p className="mn-subj-empty-text">
-                    Study resources for {subjectConfig.name} Class {selectedClass} are currently being updated.
-                  </p>
-                  <Link
-                    to="/study-resources"
-                    className="mn-subj-empty-btn"
-                    style={{ textDecoration: 'none', display: 'inline-block' }}
-                  >
-                    Browse All Study Materials
-                  </Link>
-                </div>
+                renderCategoryEmptyState()
               )}
             </section>
 

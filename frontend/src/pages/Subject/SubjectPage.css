@@ -523,6 +523,12 @@
   box-shadow: 0 3px 8px rgba(37, 99, 235, 0.08);
 }
 
+.mn-subj-material-card.active {
+  border-color: #2563EB !important;
+  background-color: #F8FAFC;
+  box-shadow: 0 0 0 1.5px #2563EB, 0 3px 8px rgba(37, 99, 235, 0.12);
+}
+
 .mn-subj-mat-icon-box {
   width: 34px;
   height: 34px;

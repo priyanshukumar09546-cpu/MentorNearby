@@ -32,19 +32,21 @@ async function inspect() {
     });
   });
 
-  const sampleBundles = await StudyResourceBundle.find().limit(5).lean();
-  console.log('\nSample StudyResourceBundles:');
-  sampleBundles.forEach(b => {
-    console.log({
-      _id: b._id,
-      title: b.title,
-      classLevel: b.classLevel,
-      subject: b.subject,
-      comboType: b.comboType,
-      price: b.price,
-      fileUrl: b.fileUrl,
-      fileReference: b.fileReference,
-    });
+  const allBundles = await StudyResourceBundle.find().lean();
+  console.log('\nAll StudyResourceBundles (' + allBundles.length + ' total):');
+  allBundles.forEach(b => {
+    if (b.fileUrl || b.fileReference?.url) {
+      console.log('BUNDLE_WITH_FILE:', {
+        _id: b._id,
+        title: b.title,
+        classLevel: b.classLevel,
+        subject: b.subject,
+        comboType: b.comboType,
+        price: b.price,
+        fileUrl: b.fileUrl,
+        filename: b.fileReference?.filename || b.fileName,
+      });
+    }
   });
 
   await mongoose.disconnect();

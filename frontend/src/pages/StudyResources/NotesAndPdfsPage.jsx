@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { searchStudyResources } from '../../api/studyResources';
+import { searchStudyResources, downloadStudyResourceComboFile } from '../../api/studyResources';
 import { OFFICIAL_NOTES_AND_FORMULAS_CATALOG } from '../../data/officialAcademicCatalog';
 import StudyResourceViewerModal from '../../components/studyResources/StudyResourceViewerModal';
 import StudyPaymentModal from '../../components/studyResources/StudyPaymentModal';
@@ -549,12 +549,46 @@ const NotesAndPdfsPage = () => {
     handleDownloadResource(res);
   };
 
-  // Open Direct Combo Preview with 100% Free Reading & Downloads
-  const handleBuyCombo = (combo) => {
-    setComboPreviewData({
+  // Open Direct Combo Master PDF in Viewer (100% Free Online Reading)
+  const handleViewCombo = (combo) => {
+    const comboId = combo._id || combo.id;
+    setViewerData({
       isOpen: true,
-      combo,
+      resourceId: comboId,
+      resource: {
+        ...combo,
+        _id: comboId,
+        id: comboId,
+        title: combo.name || combo.title,
+        isCombo: true,
+      },
+      isCombo: true,
     });
+  };
+
+  // Direct Free Download for Combo Master PDF
+  const handleBuyCombo = async (combo) => {
+    const comboId = combo._id || combo.id;
+    try {
+      if (showToast) showToast('Preparing free combo download...', 'info');
+      const data = await downloadStudyResourceComboFile(comboId);
+      const downloadUrl = data?.data?.downloadUrl || data?.downloadUrl || data?.fileUrl;
+      if (downloadUrl) {
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${(combo.name || combo.title || 'Formula_Sheet_Combo').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        if (showToast) showToast('✅ Combo download started (100% Free)', 'success');
+      } else {
+        handleViewCombo(combo);
+      }
+    } catch (err) {
+      console.warn('Combo direct download fallback to viewer:', err);
+      handleViewCombo(combo);
+    }
   };
 
   return (
@@ -791,7 +825,7 @@ const NotesAndPdfsPage = () => {
                     <div
                       key={combo.id}
                       className={`mn-np-combo-card ${combo.badgeColor}`}
-                      onClick={() => setComboPreviewData({ isOpen: true, combo })}
+                      onClick={() => handleViewCombo(combo)}
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="mn-np-combo-top">
@@ -829,7 +863,7 @@ const NotesAndPdfsPage = () => {
                           className="mn-np-btn-view"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setComboPreviewData({ isOpen: true, combo });
+                            handleViewCombo(combo);
                           }}
                           style={{
                             display: 'flex',
@@ -1120,10 +1154,11 @@ const NotesAndPdfsPage = () => {
       {viewerData.isOpen && (
         <StudyResourceViewerModal
           isOpen={viewerData.isOpen}
-          onClose={() => setViewerData({ isOpen: false, resource: null, resourceId: null })}
+          onClose={() => setViewerData({ isOpen: false, resource: null, resourceId: null, isCombo: false })}
           resourceId={viewerData.resourceId}
           resource={viewerData.resource}
           initialResource={viewerData.resource}
+          isCombo={viewerData.isCombo}
           onOpenPaymentModal={(res) => {
             handleDownloadResource(res || viewerData.resource);
           }}

@@ -189,7 +189,7 @@ const HomePage = () => {
   };
 
   const handleSubjectClick = (subject) => {
-    navigate(`/search?subject=${encodeURIComponent(subject)}`);
+    navigate(`/subject/${encodeURIComponent(subject)}`);
   };
 
   const handleUnlock = (tutorId) => {

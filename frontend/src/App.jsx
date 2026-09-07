@@ -82,6 +82,8 @@ const CoursesPage = lazy(() => import('./pages/Courses/CoursesPage'));
 const CourseDetailPage = lazy(() => import('./pages/Courses/CourseDetailPage'));
 const CourseWatchPage = lazy(() => import('./pages/Courses/CourseWatchPage'));
 const MyCoursesPage = lazy(() => import('./pages/StudentDashboard/MyCoursesPage'));
+const SubjectPage = lazy(() => import('./pages/Subject/SubjectPage'));
+const ClassDiscoveryPage = lazy(() => import('./pages/ClassDiscovery/ClassDiscoveryPage'));
 
 // Legal & Informational Code-Split Routes
 const PrivacyPolicyPage = lazy(() => import('./pages/Legal/PrivacyPolicyPage'));
@@ -268,6 +270,14 @@ const AppContent = () => {
                             <Route path="/student/:id" element={<StudentProfilePage />} />
                             <Route path="/students/:id" element={<StudentProfilePage />} />
                             <Route path="/student-profile/:id" element={<StudentProfilePage />} />
+
+                            {/* 📖 Subject Pages */}
+                            <Route path="/subject/:subjectName" element={<SubjectPage />} />
+                            <Route path="/subjects/:subjectName" element={<SubjectPage />} />
+
+                            {/* 🎒 Class Discovery Hubs (Class 9-10 & 11-12) */}
+                            <Route path="/classes/:classRange" element={<ClassDiscoveryPage />} />
+                            <Route path="/class/:classRange" element={<ClassDiscoveryPage />} />
 
                             {/* 🎓 Courses & PYQ Mastery Routes */}
                             <Route path="/courses" element={<CoursesPage />} />

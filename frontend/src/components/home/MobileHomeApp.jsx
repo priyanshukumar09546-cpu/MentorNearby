@@ -137,7 +137,7 @@ const MobileHomeApp = ({ featuredTutors = [], loadingTutors = false, publicStats
     if (sub.isMore) {
       navigate('/search');
     } else {
-      navigate(`/search?subject=${encodeURIComponent(sub.name)}`);
+      navigate(`/subject/${encodeURIComponent(sub.name)}`);
     }
   };
 
@@ -177,7 +177,7 @@ const MobileHomeApp = ({ featuredTutors = [], loadingTutors = false, publicStats
       <section className="mn-m-categories-section">
         <div className="mn-m-categories-grid">
           {/* Class 9–10 */}
-          <Link to="/search?class=9,10" className="mn-m-cat-card cat-blue">
+          <Link to="/classes/9-10" className="mn-m-cat-card cat-blue">
             <div className="mn-m-cat-icon-wrap">
               <i className="fa-solid fa-book-open"></i>
             </div>
@@ -185,7 +185,7 @@ const MobileHomeApp = ({ featuredTutors = [], loadingTutors = false, publicStats
           </Link>
 
           {/* Class 11–12 */}
-          <Link to="/search?class=11,12" className="mn-m-cat-card cat-red">
+          <Link to="/classes/11-12" className="mn-m-cat-card cat-red">
             <div className="mn-m-cat-icon-wrap">
               <i className="fa-solid fa-user-graduate"></i>
             </div>

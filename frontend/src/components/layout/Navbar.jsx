@@ -434,7 +434,7 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile Header Controls */}
+        {/* Mobile Header Controls matching Reference Design */}
         <div className="mobile-header-controls">
           <ThemeSwitcher compact={true} />
           <div className="nav-notification-wrapper" style={{ position: 'relative' }}>
@@ -444,25 +444,30 @@ const Navbar = () => {
               onClick={toggleNotifDropdown}
               aria-label="Notifications"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
-              {unreadCount > 0 && (
-                <span className="nav-notification-badge">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
+              <span className="nav-notification-dot" aria-hidden="true"></span>
             </button>
           </div>
-          <button
-            type="button"
-            className="navbar-mobile-toggle"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle navigation menu"
+          <Link
+            to={isAuthenticated ? getDashboardPath() : '/login'}
+            className="navbar-mobile-avatar-btn"
+            aria-label="User Profile"
           >
-            {mobileMenuOpen ? '✕' : '☰'}
-          </button>
+            {user?.avatar || user?.profilePhoto?.url ? (
+              <img
+                src={user?.avatar || user?.profilePhoto?.url}
+                alt={user?.name || 'User'}
+                className="navbar-mobile-avatar-img"
+              />
+            ) : (
+              <span className="navbar-mobile-avatar-initial">
+                {(user?.name || 'A').charAt(0).toUpperCase()}
+              </span>
+            )}
+          </Link>
         </div>
       </div>
 

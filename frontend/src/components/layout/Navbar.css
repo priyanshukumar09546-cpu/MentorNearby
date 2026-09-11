@@ -367,28 +367,62 @@
 
 .mobile-header-controls .theme-toggle-btn.compact,
 .mobile-header-controls .nav-notification-btn.compact,
+.mobile-header-controls .navbar-mobile-avatar-btn,
 .mobile-header-controls .navbar-mobile-toggle {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
   background: var(--color-surface, #FFFFFF);
   border: 1px solid #E2E8F0;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: all 0.15s ease;
   flex-shrink: 0;
   color: var(--color-text-primary, #18181B);
   cursor: pointer;
   padding: 0;
   font-size: 16px;
+  text-decoration: none;
 }
 
 .mobile-header-controls .theme-toggle-btn.compact:active,
 .mobile-header-controls .nav-notification-btn.compact:active,
+.mobile-header-controls .navbar-mobile-avatar-btn:active,
 .mobile-header-controls .navbar-mobile-toggle:active {
   transform: scale(0.92);
+}
+
+.navbar-mobile-avatar-btn {
+  background: #FFE4E6 !important;
+  border-color: #FECDD3 !important;
+  overflow: hidden;
+}
+
+.navbar-mobile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.navbar-mobile-avatar-initial {
+  color: #1E293B;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1;
+}
+
+.nav-notification-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  background-color: #E11D48;
+  border-radius: 50%;
+  border: 1.5px solid #FFFFFF;
 }
 
 [data-theme="dark"] .mobile-header-controls .theme-toggle-btn.compact,
@@ -398,6 +432,19 @@
   border-color: #282838;
   color: #F8FAFC;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navbar-mobile-avatar-btn {
+  background: #2D2432 !important;
+  border-color: #4C3550 !important;
+}
+
+[data-theme="dark"] .navbar-mobile-avatar-initial {
+  color: #F8FAFC;
+}
+
+[data-theme="dark"] .nav-notification-dot {
+  border-color: #181822;
 }
 
 .navbar-mobile-drawer {

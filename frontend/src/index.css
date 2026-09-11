@@ -7,6 +7,39 @@ html.dark, html.dark body, html.dark #root {
   color: #ffffff !important;
 }
 
+/* Ensure startup splash screen remains pure white standalone screen */
+#pwa-splash-screen,
+html.dark #pwa-splash-screen,
+body.dark #pwa-splash-screen,
+[data-theme="dark"] #pwa-splash-screen {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  background-image: none !important;
+  color: #1E293B !important;
+}
+
+html.dark #pwa-splash-screen .mn-splash-text,
+body.dark #pwa-splash-screen .mn-splash-text {
+  color: #64748B !important;
+}
+
+html.dark #pwa-splash-screen .mn-splash-tagline,
+body.dark #pwa-splash-screen .mn-splash-tagline {
+  color: #1E293B !important;
+}
+
+html.dark #pwa-splash-screen .mn-splash-bar,
+body.dark #pwa-splash-screen .mn-splash-bar {
+  background-color: #D97706 !important;
+}
+
+html.dark #pwa-splash-screen .mn-splash-spinner,
+body.dark #pwa-splash-screen .mn-splash-spinner {
+  border: 3.5px solid rgba(217, 119, 6, 0.15) !important;
+  border-top-color: #D97706 !important;
+  border-right-color: #F59E0B !important;
+}
+
 html.light body {
   background-color: #f9fafb !important;
   color: #000000 !important;

@@ -43,8 +43,7 @@
 
     <!-- Android Chrome & PWA Web App Manifest (Adaptive System Appearance Support) -->
     <link rel="manifest" id="manifest-link" href="/manifest.json" />
-    <meta name="theme-color" id="theme-color-meta-light" media="(prefers-color-scheme: light)" content="#FAF8F5" />
-    <meta name="theme-color" id="theme-color-meta-dark" media="(prefers-color-scheme: dark)" content="#000000" />
+    <meta name="theme-color" id="theme-color-meta" content="#FFFFFF" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="MentorNearby" />
 
@@ -99,7 +98,6 @@
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('light');
             document.documentElement.setAttribute('data-theme', 'dark');
-            document.documentElement.style.colorScheme = 'dark';
           }
         } catch (_) {}
       })();
@@ -135,43 +133,46 @@
     <!-- Inline Critical Styles for MentorNearby PWA Splash Launch -->
     <style id="pwa-splash-styles">
       html, body {
-        background-color: #FAF8F5;
+        background-color: #FFFFFF;
         margin: 0;
         padding: 0;
       }
-      #pwa-splash-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        background-color: #FAF8F5;
-        background-image: 
-          radial-gradient(ellipse 65% 50% at 0% 0%, rgba(254, 226, 226, 0.55) 0%, rgba(254, 226, 226, 0.15) 50%, transparent 80%),
-          radial-gradient(ellipse 60% 50% at 100% 100%, rgba(254, 243, 199, 0.65) 0%, rgba(254, 243, 199, 0.18) 50%, transparent 80%);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 9999999;
-        box-sizing: border-box;
-        padding: calc(44px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));
-        font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        opacity: 1;
-        transition: opacity 0.38s cubic-bezier(0.4, 0, 0.2, 1), transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
-        pointer-events: auto;
-        user-select: none;
-        -webkit-user-select: none;
+      #pwa-splash-screen,
+      html.dark #pwa-splash-screen,
+      body.dark #pwa-splash-screen,
+      [data-theme="dark"] #pwa-splash-screen {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        background-image: none !important;
+        color: #1E293B !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        z-index: 9999999 !important;
+        box-sizing: border-box !important;
+        padding: calc(44px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+        font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+        opacity: 1 !important;
+        transition: opacity 0.38s cubic-bezier(0.4, 0, 0.2, 1), transform 0.38s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        pointer-events: auto !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
       }
       #pwa-splash-screen.fade-out {
-        opacity: 0;
-        transform: scale(1.02);
-        pointer-events: none;
+        opacity: 0 !important;
+        transform: scale(1.02) !important;
+        pointer-events: none !important;
       }
-      .mn-splash-main {
+      #pwa-splash-screen .mn-splash-main {
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -182,7 +183,7 @@
         max-width: 440px;
         margin: auto 0;
       }
-      .mn-splash-logo {
+      #pwa-splash-screen .mn-splash-logo {
         width: 232px;
         max-width: 72vw;
         height: auto;
@@ -191,65 +192,56 @@
         margin: 0 auto;
         filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.03));
       }
-      .mn-splash-spinner {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        border: 3.5px solid rgba(217, 119, 6, 0.12);
-        border-top-color: #D97706;
-        border-right-color: #F59E0B;
-        animation: mnSplashSpin 0.9s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
-        margin: 36px auto 14px;
+      #pwa-splash-screen .mn-splash-spinner,
+      html.dark #pwa-splash-screen .mn-splash-spinner,
+      body.dark #pwa-splash-screen .mn-splash-spinner {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 50% !important;
+        border: 3.5px solid rgba(217, 119, 6, 0.15) !important;
+        border-top-color: #D97706 !important;
+        border-right-color: #F59E0B !important;
+        animation: mnSplashSpin 0.9s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite !important;
+        margin: 36px auto 14px !important;
+        box-sizing: border-box !important;
       }
-      .mn-splash-text {
-        font-size: 13.5px;
-        font-weight: 500;
-        color: #64748B;
-        margin: 0;
-        letter-spacing: -0.1px;
+      #pwa-splash-screen .mn-splash-text,
+      html.dark #pwa-splash-screen .mn-splash-text,
+      body.dark #pwa-splash-screen .mn-splash-text {
+        font-size: 13.5px !important;
+        font-weight: 500 !important;
+        color: #64748B !important;
+        margin: 0 !important;
+        letter-spacing: -0.1px !important;
       }
-      .mn-splash-footer {
+      #pwa-splash-screen .mn-splash-footer {
         flex-shrink: 0;
         text-align: center;
         margin-top: auto;
       }
-      .mn-splash-tagline {
-        font-size: 9.5px;
-        font-weight: 700;
-        letter-spacing: 0.22em;
-        color: #1E293B;
-        text-transform: uppercase;
-        margin: 0;
-        line-height: 1.6;
+      #pwa-splash-screen .mn-splash-tagline,
+      html.dark #pwa-splash-screen .mn-splash-tagline,
+      body.dark #pwa-splash-screen .mn-splash-tagline {
+        font-size: 9.5px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.22em !important;
+        color: #1E293B !important;
+        text-transform: uppercase !important;
+        margin: 0 !important;
+        line-height: 1.6 !important;
       }
-      .mn-splash-bar {
-        width: 36px;
-        height: 1.5px;
-        background-color: #D97706;
-        margin: 8px auto 0;
-        border-radius: 2px;
+      #pwa-splash-screen .mn-splash-bar,
+      html.dark #pwa-splash-screen .mn-splash-bar,
+      body.dark #pwa-splash-screen .mn-splash-bar {
+        width: 36px !important;
+        height: 1.5px !important;
+        background-color: #D97706 !important;
+        margin: 8px auto 0 !important;
+        border-radius: 2px !important;
       }
-      @media (prefers-color-scheme: dark) {
-        html, body {
-          background-color: #000000 !important;
-        }
-        #pwa-splash-screen {
-          background-color: #000000 !important;
-          background-image: 
-            radial-gradient(ellipse 65% 50% at 0% 0%, rgba(30, 41, 59, 0.65) 0%, transparent 80%),
-            radial-gradient(ellipse 60% 50% at 100% 100%, rgba(15, 23, 42, 0.85) 0%, transparent 80%) !important;
-        }
-        .mn-splash-text {
-          color: #94A3B8 !important;
-        }
-        .mn-splash-tagline {
-          color: #F8FAFC !important;
-        }
-        .mn-splash-spinner {
-          border-color: rgba(245, 158, 11, 0.2) !important;
-          border-top-color: #F59E0B !important;
-          border-right-color: #D97706 !important;
-        }
+      @keyframes mnSplashSpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
     </style>
 

@@ -13,6 +13,38 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import './SearchPage.css';
 
+// Subject visual branding dictionary matching Screen 3
+const SUBJECT_AESTHETICS = {
+  mathematics: { symbol: 'π', color: '#2563EB', bg: '#EFF6FF', border: '#DBEAFE', darkBg: 'rgba(37, 99, 235, 0.15)' },
+  maths: { symbol: 'π', color: '#2563EB', bg: '#EFF6FF', border: '#DBEAFE', darkBg: 'rgba(37, 99, 235, 0.15)' },
+  physics: { symbol: '⚛️', color: '#E11D48', bg: '#FDF2F8', border: '#FCE7F3', darkBg: 'rgba(225, 29, 72, 0.15)' },
+  chemistry: { symbol: '🧪', color: '#059669', bg: '#F0FDF4', border: '#DCFCE7', darkBg: 'rgba(5, 150, 105, 0.15)' },
+  biology: { symbol: '🧬', color: '#9333EA', bg: '#FAF5FF', border: '#F3E8FF', darkBg: 'rgba(147, 51, 234, 0.15)' },
+  english: { symbol: '📖', color: '#D97706', bg: '#FFF7ED', border: '#FFEDD5', darkBg: 'rgba(217, 119, 6, 0.15)' },
+  hindi: { symbol: 'Aअ', color: '#E11D48', bg: '#FFF1F2', border: '#FFE4E6', darkBg: 'rgba(225, 29, 72, 0.15)' },
+  'computer science': { symbol: '💻', color: '#4F46E5', bg: '#EEF2FF', border: '#E0E7FF', darkBg: 'rgba(79, 70, 229, 0.15)' },
+  'art & craft': { symbol: '🎨', color: '#D97706', bg: '#FEFCE8', border: '#FEF08A', darkBg: 'rgba(217, 119, 6, 0.15)' },
+  accountancy: { symbol: '₹', color: '#E11D48', bg: '#FEF2F2', border: '#FEE2E2', darkBg: 'rgba(225, 29, 72, 0.15)' },
+  economics: { symbol: '📈', color: '#7C3AED', bg: '#FAF5FF', border: '#F3E8FF', darkBg: 'rgba(124, 58, 237, 0.15)' },
+  'social studies': { symbol: '🌐', color: '#059669', bg: '#F0FDF4', border: '#DCFCE7', darkBg: 'rgba(5, 150, 105, 0.15)' },
+  history: { symbol: '🏛️', color: '#BE123C', bg: '#FFF1F2', border: '#FFE4E6', darkBg: 'rgba(190, 18, 60, 0.15)' },
+  geography: { symbol: '🧭', color: '#0D9488', bg: '#ECFDF5', border: '#CCFBF1', darkBg: 'rgba(13, 148, 136, 0.15)' },
+  science: { symbol: '🔬', color: '#0D9488', bg: '#F0FDFA', border: '#CCFBF1', darkBg: 'rgba(13, 148, 136, 0.15)' },
+};
+
+const getSubjectAesthetic = (subjectName) => {
+  const key = (subjectName || '').toLowerCase().trim();
+  return (
+    SUBJECT_AESTHETICS[key] || {
+      symbol: (subjectName || '').charAt(0).toUpperCase() || '📚',
+      color: '#2563EB',
+      bg: '#EFF6FF',
+      border: '#DBEAFE',
+      darkBg: 'rgba(37, 99, 235, 0.15)',
+    }
+  );
+};
+
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -413,28 +445,56 @@ const SearchPage = () => {
 
   const activeFilterCount = activeFilters.length;
 
+  const currentSubjectAesthetic = selectedSubject ? getSubjectAesthetic(selectedSubject) : null;
+
   return (
     <div className={`mn-all-tutors-root ${isDarkMode ? 'dark' : 'light'}`}>
       <div className="mn-all-tutors-container">
         
         {/* ============================================================ */}
-        {/* 1. TITLE & REAL TUTOR COUNT                                  */}
+        {/* 1. TITLE / SUBJECT BANNER & REAL TUTOR COUNT                 */}
         {/* ============================================================ */}
-        <div className="mn-all-tutors-title-row">
-          <div className="mn-all-tutors-title-wrap">
-            <h1 className="mn-all-tutors-heading">All Tutors</h1>
-            <p className="mn-all-tutors-sub">
-              Discover verified tutors and find the perfect match for your learning goals.
-            </p>
-          </div>
-          <div className="mn-all-tutors-count-badge">
-            {!loading && (
-              <span>
-                {totalCount} {totalCount === 1 ? 'Tutor' : 'Tutors'}
+        {selectedSubject ? (
+          <div className="mn-subject-banner-container">
+            <div className="mn-subject-banner-card">
+              <div
+                className="mn-subject-banner-icon-box"
+                style={{
+                  background: isDarkMode ? currentSubjectAesthetic.darkBg : currentSubjectAesthetic.bg,
+                  color: currentSubjectAesthetic.color,
+                  borderColor: isDarkMode ? 'transparent' : currentSubjectAesthetic.border,
+                }}
+              >
+                <span className="mn-subject-banner-symbol">{currentSubjectAesthetic.symbol}</span>
+              </div>
+              <div className="mn-subject-banner-text">
+                <h1 className="mn-subject-banner-title">{selectedSubject} Tutors</h1>
+                <p className="mn-subject-banner-desc">Find verified tutors who teach {selectedSubject}.</p>
+              </div>
+            </div>
+            <div className="mn-subject-tutors-count-row">
+              <span className="mn-subject-tutors-count-text">
+                {!loading && `${totalCount} ${totalCount === 1 ? 'Tutor' : 'Tutors'}`}
               </span>
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mn-all-tutors-title-row">
+            <div className="mn-all-tutors-title-wrap">
+              <h1 className="mn-all-tutors-heading">All Tutors</h1>
+              <p className="mn-all-tutors-sub">
+                Discover verified tutors and find the perfect match for your learning goals.
+              </p>
+            </div>
+            <div className="mn-all-tutors-count-badge">
+              {!loading && (
+                <span>
+                  {totalCount} {totalCount === 1 ? 'Tutor' : 'Tutors'}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ============================================================ */}
         {/* 2. SEARCH BAR                                                */}
@@ -444,10 +504,14 @@ const SearchPage = () => {
           <input
             type="text"
             className="mn-all-tutors-search-input"
-            placeholder="Search by name, subject, class, or location..."
+            placeholder={
+              selectedSubject
+                ? 'Search tutors, location, or class...'
+                : 'Search by name, subject, class, or location...'
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Search by name, subject, class, or location"
+            aria-label="Search tutors"
           />
           {searchQuery && (
             <button
@@ -482,17 +546,19 @@ const SearchPage = () => {
             )}
           </button>
 
-          {/* B. Subject Dropdown Pill */}
-          <button
-            ref={filterPillRefs.subject}
-            type="button"
-            className={`mn-filter-pill-btn ${selectedSubject ? 'active' : ''}`}
-            onClick={() => handleTogglePopover('subject')}
-            aria-expanded={activePopover?.name === 'subject'}
-          >
-            <span>{selectedSubject || 'Subject'}</span>
-            <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
-          </button>
+          {/* B. Subject Dropdown Pill (shown when not viewing a dedicated subject banner) */}
+          {!selectedSubject && (
+            <button
+              ref={filterPillRefs.subject}
+              type="button"
+              className={`mn-filter-pill-btn ${selectedSubject ? 'active' : ''}`}
+              onClick={() => handleTogglePopover('subject')}
+              aria-expanded={activePopover?.name === 'subject'}
+            >
+              <span>{selectedSubject || 'Subject'}</span>
+              <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
+            </button>
+          )}
 
           {/* C. Class Dropdown Pill */}
           <button

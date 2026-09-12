@@ -132,9 +132,9 @@ const MobileHomeApp = ({ featuredTutors = [], loadingTutors = false, publicStats
 
   const handleSubjectClick = (sub) => {
     if (sub.isMore) {
-      navigate('/search');
+      navigate('/subjects');
     } else {
-      navigate(`/subject/${encodeURIComponent(sub.name)}`);
+      navigate(`/tutors?subject=${encodeURIComponent(sub.name)}`);
     }
   };
 
@@ -515,7 +515,7 @@ const MobileHomeApp = ({ featuredTutors = [], loadingTutors = false, publicStats
       <section className="mn-m-section">
         <div className="mn-m-section-header">
           <h2 className="mn-m-section-title">Popular Subjects</h2>
-          <Link to="/search" className="mn-m-view-all-link">
+          <Link to="/subjects" className="mn-m-view-all-link">
             <span>View All</span>
           </Link>
         </div>

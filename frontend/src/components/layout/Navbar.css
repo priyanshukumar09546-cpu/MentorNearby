@@ -394,9 +394,11 @@
   transform: scale(0.92);
 }
 
-.navbar-mobile-avatar-btn {
-  background: #FFE4E6 !important;
+.navbar-mobile-avatar-btn,
+.navbar-mobile-toggle {
+  background: #FFF1F2 !important;
   border-color: #FECDD3 !important;
+  color: #1E293B !important;
   overflow: hidden;
 }
 
@@ -434,9 +436,11 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .navbar-mobile-avatar-btn {
-  background: #2D2432 !important;
-  border-color: #4C3550 !important;
+[data-theme="dark"] .navbar-mobile-avatar-btn,
+[data-theme="dark"] .navbar-mobile-toggle {
+  background: #2D2028 !important;
+  border-color: #4C303E !important;
+  color: #F8FAFC !important;
 }
 
 [data-theme="dark"] .navbar-mobile-avatar-initial {

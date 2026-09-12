@@ -96,6 +96,9 @@ const Navbar = () => {
     location.pathname === '/search' ||
     location.pathname === '/explore' ||
     location.pathname === '/find-tutors' ||
+    location.pathname === '/subjects' ||
+    location.pathname === '/all-subjects' ||
+    location.pathname.startsWith('/subject') ||
     location.pathname.startsWith('/tutors/') ||
     location.pathname.startsWith('/tutor/');
 
@@ -460,9 +463,9 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile Header Controls matching Reference Design */}
+        {/* Mobile Header Controls matching Reference Design (Theme/Sun -> Notification -> ☰) */}
         <div className="mobile-header-controls">
-          {!isExploreOrTutor && <ThemeSwitcher compact={true} />}
+          <ThemeSwitcher compact={true} />
           <div className="nav-notification-wrapper" style={{ position: 'relative' }}>
             <button
               type="button"
@@ -477,23 +480,25 @@ const Navbar = () => {
               <span className="nav-notification-dot" aria-hidden="true"></span>
             </button>
           </div>
-          <Link
-            to={isAuthenticated ? getDashboardPath() : '/login'}
-            className="navbar-mobile-avatar-btn"
-            aria-label="User Profile"
+          <button
+            type="button"
+            className={`navbar-mobile-toggle ${mobileMenuOpen ? 'open' : ''}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle navigation menu"
           >
-            {user?.avatar || user?.profilePhoto?.url ? (
-              <img
-                src={user?.avatar || user?.profilePhoto?.url}
-                alt={user?.name || 'User'}
-                className="navbar-mobile-avatar-img"
-              />
+            {mobileMenuOpen ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             ) : (
-              <span className="navbar-mobile-avatar-initial">
-                {(user?.name || 'A').charAt(0).toUpperCase()}
-              </span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
             )}
-          </Link>
+          </button>
         </div>
       </div>
 

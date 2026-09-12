@@ -82,6 +82,7 @@ const CoursesPage = lazy(() => import('./pages/Courses/CoursesPage'));
 const CourseDetailPage = lazy(() => import('./pages/Courses/CourseDetailPage'));
 const CourseWatchPage = lazy(() => import('./pages/Courses/CourseWatchPage'));
 const MyCoursesPage = lazy(() => import('./pages/StudentDashboard/MyCoursesPage'));
+const AllSubjectsPage = lazy(() => import('./pages/Subject/AllSubjectsPage'));
 const SubjectPage = lazy(() => import('./pages/Subject/SubjectPage'));
 const ClassDiscoveryPage = lazy(() => import('./pages/ClassDiscovery/ClassDiscoveryPage'));
 
@@ -272,7 +273,9 @@ const AppContent = () => {
                             <Route path="/students/:id" element={<StudentProfilePage />} />
                             <Route path="/student-profile/:id" element={<StudentProfilePage />} />
 
-                            {/* 📖 Subject Pages */}
+                            {/* 📖 All Subjects & Subject Pages */}
+                            <Route path="/subjects" element={<AllSubjectsPage />} />
+                            <Route path="/all-subjects" element={<AllSubjectsPage />} />
                             <Route path="/subject/:subjectName" element={<SubjectPage />} />
                             <Route path="/subjects/:subjectName" element={<SubjectPage />} />
 

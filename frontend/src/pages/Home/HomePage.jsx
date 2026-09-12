@@ -189,7 +189,7 @@ const HomePage = () => {
   };
 
   const handleSubjectClick = (subject) => {
-    navigate(`/subject/${encodeURIComponent(subject)}`);
+    navigate(`/tutors?subject=${encodeURIComponent(subject)}`);
   };
 
   const handleUnlock = (tutorId) => {
@@ -463,7 +463,7 @@ const HomePage = () => {
             <div className="mn-directory-col">
               <div className="mn-col-header">
                 <h3 className="mn-col-title">Popular Subjects</h3>
-                <Link to="/search" className="mn-col-view-all">View All</Link>
+                <Link to="/subjects" className="mn-col-view-all">View All</Link>
               </div>
 
               <div className="mn-subjects-2x4-grid">

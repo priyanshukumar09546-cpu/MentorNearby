@@ -96,6 +96,95 @@
 }
 
 /* ============================================================
+   2B. SUBJECT BANNER CARD (Screen 3 Reference Design)
+   ============================================================ */
+.mn-subject-banner-container {
+  margin-bottom: 8px;
+}
+
+.mn-subject-banner-card {
+  display: flex;
+  align-items: center;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.mn-all-tutors-root.dark .mn-subject-banner-card {
+  background: #14141E;
+  border-color: #262638;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mn-subject-banner-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 14px;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.mn-subject-banner-symbol {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mn-subject-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.mn-subject-banner-title {
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0 0 3px 0;
+  letter-spacing: -0.02em;
+  color: #0F172A;
+}
+
+.mn-all-tutors-root.dark .mn-subject-banner-title {
+  color: #F8FAFC;
+}
+
+.mn-subject-banner-desc {
+  font-size: 12.5px;
+  line-height: 1.4;
+  margin: 0;
+  color: #64748B;
+}
+
+.mn-all-tutors-root.dark .mn-subject-banner-desc {
+  color: #94A3B8;
+}
+
+.mn-subject-tutors-count-row {
+  margin: 12px 0 6px;
+  display: flex;
+  align-items: center;
+}
+
+.mn-subject-tutors-count-text {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.01em;
+}
+
+.mn-all-tutors-root.dark .mn-subject-tutors-count-text {
+  color: #F8FAFC;
+}
+
+/* ============================================================
    3. SEARCH BAR
    ============================================================ */
 .mn-all-tutors-search-form {

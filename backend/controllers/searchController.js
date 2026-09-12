@@ -12,7 +12,7 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
     page = 1, limit = 12, sort = 'relevance'
   } = req.query;
 
-  const query = { profileVisibility: { $ne: false } };
+  const andConditions = [{ profileVisibility: { $ne: false } }];
 
   // General text search (q or search parameter)
   const generalSearch = (req.query.q || req.query.search || '').trim();
@@ -37,82 +37,99 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
       orClauses.push({ user: { $in: userIds } });
     }
 
-    query['$or'] = orClauses;
+    andConditions.push({ $or: orClauses });
   }
 
   if (lat && lng) {
-    query['location.coordinates'] = {
-      $nearSphere: {
-        $geometry: {
-          type: 'Point',
-          coordinates: [parseFloat(lng), parseFloat(lat)]
-        },
-        $maxDistance: parseInt(radius) * 1000 
+    andConditions.push({
+      'location.coordinates': {
+        $nearSphere: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)]
+          },
+          $maxDistance: parseInt(radius) * 1000 
+        }
       }
-    };
+    });
   }
 
   if (pincode) {
-    query['location.pincode'] = pincode;
+    andConditions.push({ 'location.pincode': pincode });
   }
 
-  const locationQuery = city || req.query.location;
+  const locationQuery = city || req.query.location || req.query.area;
   if (locationQuery) {
-    if (/^\d{6}$/.test(locationQuery.trim())) {
-      query['location.pincode'] = locationQuery.trim();
+    const locTrimmed = locationQuery.trim();
+    if (/^\d{6}$/.test(locTrimmed)) {
+      andConditions.push({ 'location.pincode': locTrimmed });
     } else {
-      const locRegex = new RegExp(locationQuery.trim(), 'i');
-      if (query['$or']) {
-        query['$and'] = query['$and'] || [];
-        query['$and'].push({
-          $or: [
-            { 'location.city': locRegex },
-            { 'location.area': locRegex },
-            { serviceAreas: locRegex }
-          ]
-        });
-      } else {
-        query['$or'] = [
+      const locRegex = new RegExp(locTrimmed, 'i');
+      andConditions.push({
+        $or: [
           { 'location.city': locRegex },
           { 'location.area': locRegex },
+          { 'location.pincode': locRegex },
           { serviceAreas: locRegex }
-        ];
-      }
+        ]
+      });
     }
   }
 
   const subjectQuery = subjects || req.query.subject;
   if (subjectQuery) {
     const subjArr = subjectQuery.split(',').map(s => new RegExp(s.trim(), 'i'));
-    query.subjects = { $in: subjArr };
+    andConditions.push({ subjects: { $in: subjArr } });
   }
 
-  const gradeQuery = grades || req.query.class;
+  const gradeQuery = grades || req.query.class || req.query.grade;
   if (gradeQuery) {
-    const gradeArr = gradeQuery.split(',').map(g => new RegExp(g.trim(), 'i'));
-    query.grades = { $in: gradeArr };
+    const gradeArr = gradeQuery.split(',').map(g => {
+      const raw = g.trim();
+      const numOnly = raw.replace(/class\s*/i, '').trim();
+      return new RegExp(`(class\\s*)?${numOnly}$|^${raw}$`, 'i');
+    });
+    andConditions.push({ grades: { $in: gradeArr } });
   }
 
-  if (teachingModes) {
-    const modesArr = teachingModes.split(',').map(m => new RegExp(`^${m.trim()}$`, 'i'));
-    query.teachingModes = { $in: modesArr };
+  const modesParam = teachingModes || req.query.mode || req.query.availability;
+  if (modesParam) {
+    const cleanMode = modesParam.trim();
+    if (/online\s*(&|\+|,|and)\s*offline|hybrid/i.test(cleanMode)) {
+      andConditions.push({ teachingModes: { $all: ['Online', 'Offline'] } });
+    } else {
+      const modesArr = cleanMode.split(',').map(m => new RegExp(`^${m.trim()}$`, 'i'));
+      andConditions.push({ teachingModes: { $in: modesArr } });
+    }
   }
 
   const effectiveMaxFees = maxFees || req.query.maxFee;
   if (minFees || effectiveMaxFees) {
-    query['fees.amount'] = {};
-    if (minFees) query['fees.amount'].$gte = Number(minFees);
-    if (effectiveMaxFees) query['fees.amount'].$lte = Number(effectiveMaxFees);
+    const feeFilter = {};
+    if (minFees) feeFilter.$gte = Number(minFees);
+    if (effectiveMaxFees) feeFilter.$lte = Number(effectiveMaxFees);
+    andConditions.push({ 'fees.amount': feeFilter });
   }
 
-  if (minExperience) {
-    query['experience.years'] = { $gte: Number(minExperience) };
+  const expParam = minExperience || req.query.experience;
+  if (expParam) {
+    const expNum = parseInt(expParam);
+    if (!isNaN(expNum) && expNum > 0) {
+      andConditions.push({ 'experience.years': { $gte: expNum } });
+    }
+  }
+
+  const minRatingParam = req.query.minRating || req.query.rating;
+  if (minRatingParam && !isNaN(parseFloat(minRatingParam))) {
+    andConditions.push({ averageRating: { $gte: parseFloat(minRatingParam) } });
   }
 
   const isVerifiedOnly = verified === 'true' || req.query.verifiedOnly === 'true';
   if (isVerifiedOnly) {
-    query.kycStatus = 'VERIFIED';
+    andConditions.push({ kycStatus: 'VERIFIED' });
   }
+
+  const query = andConditions.length > 1 ? { $and: andConditions } : andConditions[0];
 
   const pageNum = parseInt(page) || 1;
   const limitNum = Math.min(parseInt(limit) || 20, 50);
@@ -138,9 +155,9 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
     activeTutors.sort((a, b) => (a.fees?.amount || 0) - (b.fees?.amount || 0));
   } else if (sort === 'fees_desc') {
     activeTutors.sort((a, b) => (b.fees?.amount || 0) - (a.fees?.amount || 0));
-  } else if (sort === 'experience') {
+  } else if (sort === 'experience' || sort === 'experience_desc') {
     activeTutors.sort((a, b) => (b.experience?.years || 0) - (a.experience?.years || 0));
-  } else if (sort === 'rating') {
+  } else if (sort === 'rating' || sort === 'rating_desc') {
     activeTutors.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
   } else {
     // ── Default Ranking Algorithm ────────────────────────────

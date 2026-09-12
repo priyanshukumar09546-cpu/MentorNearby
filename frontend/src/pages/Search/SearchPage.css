@@ -1,8 +1,8 @@
 /* ============================================================
    SearchPage.css — MentorNearby "All Tutors" Marketplace
-   Pixel-Accurate Implementation Matching Reference Design
+   End-to-End Functional Filter Styling Matching Reference Design
    (media_1789232106161.png)
-   Strictly Real Database Data • Zero Fake / Mock Tutors
+   Fixed Popover Dropdowns • Modals • 2-Col Grid & List View
    ============================================================ */
 
 /* ============================================================
@@ -14,6 +14,7 @@
   padding: 16px 0 100px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   transition: background-color 0.25s ease, color 0.25s ease;
+  position: relative;
 }
 
 .mn-all-tutors-root.light {
@@ -187,16 +188,11 @@
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 4px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .mn-all-tutors-filter-pills-row::-webkit-scrollbar {
   display: none;
-}
-
-.mn-filter-pill-wrapper {
-  position: relative;
-  flex-shrink: 0;
 }
 
 .mn-filter-pill-btn {
@@ -212,17 +208,19 @@
   transition: all 0.15s ease;
   font-family: inherit;
   flex-shrink: 0;
+  border: 1px solid #E2E8F0;
+  user-select: none;
 }
 
 .mn-all-tutors-root.light .mn-filter-pill-btn {
   background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  border-color: #E2E8F0;
   color: #334155;
 }
 
 .mn-all-tutors-root.dark .mn-filter-pill-btn {
   background-color: #1E293B;
-  border: 1px solid #334155;
+  border-color: #334155;
   color: #CBD5E1;
 }
 
@@ -236,7 +234,7 @@
   background-color: #273549;
 }
 
-/* Active Pill State */
+/* Active Filter Pill Highlight */
 .mn-all-tutors-root.light .mn-filter-pill-btn.active,
 .mn-all-tutors-root.light .mn-filter-pill-btn.has-active-filters {
   background-color: #FFF7ED;
@@ -257,86 +255,226 @@
   font-size: 10px;
   color: #64748B;
   margin-left: 2px;
-  transition: transform 0.2s ease;
 }
 
-.mn-filter-active-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+.mn-filter-count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background-color: #EA580C;
-  display: inline-block;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  margin-left: 2px;
 }
 
-/* Dropdown Menu Popup */
-.mn-filter-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  min-width: 175px;
-  max-height: 240px;
+/* Active Filter Chips Bar */
+.mn-active-filters-chips-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 4px 0;
+}
+
+.mn-active-filters-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.mn-active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #FFF7ED;
+  border: 1px solid #FDBA74;
+  color: #C2410C;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.mn-all-tutors-root.dark .mn-active-filter-chip {
+  background-color: rgba(234, 88, 12, 0.2);
+  border-color: rgba(234, 88, 12, 0.4);
+  color: #FB923C;
+}
+
+.mn-active-filter-chip button {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  opacity: 0.75;
+}
+
+.mn-active-filter-chip button:hover {
+  opacity: 1;
+}
+
+.mn-clear-all-text-btn {
+  background: none;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #EF4444;
+  cursor: pointer;
+  padding: 2px 4px;
+  margin-left: 4px;
+}
+
+.mn-clear-all-text-btn:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================
+   5. UNCLIPPED FLOATING POPOVER DROPDOWNS
+   Fixed positioning ensures zero parent container clipping
+   ============================================================ */
+.mn-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 9998;
+}
+
+.mn-popover-card {
+  position: fixed;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 4px 10px rgba(0, 0, 0, 0.08);
+  z-index: 9999;
+  max-height: 280px;
   overflow-y: auto;
-  z-index: 60;
-  padding: 6px;
   box-sizing: border-box;
+  animation: mn-popover-fade-in 0.15s ease-out;
 }
 
-.mn-all-tutors-root.light .mn-filter-dropdown-menu {
+.mn-all-tutors-root.light .mn-popover-card {
   background-color: #FFFFFF;
   border: 1px solid #E2E8F0;
 }
 
-.mn-all-tutors-root.dark .mn-filter-dropdown-menu {
+.mn-all-tutors-root.dark .mn-popover-card {
   background-color: #1E293B;
   border: 1px solid #334155;
 }
 
-.mn-filter-dropdown-item {
-  display: block;
+@keyframes mn-popover-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mn-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 6px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.mn-all-tutors-root.dark .mn-popover-header {
+  border-bottom-color: #334155;
+}
+
+.mn-popover-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748B;
+}
+
+.mn-all-tutors-root.dark .mn-popover-title {
+  color: #94A3B8;
+}
+
+.mn-popover-close-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.mn-popover-close-btn:hover {
+  color: #0F172A;
+}
+
+.mn-popover-items-list {
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mn-popover-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
-  text-align: left;
   padding: 8px 12px;
-  font-size: 12.5px;
+  font-size: 13px;
   border-radius: 8px;
   border: none;
   background: transparent;
   cursor: pointer;
-  transition: background-color 0.12s ease;
   font-family: inherit;
+  transition: all 0.12s ease;
+  text-align: left;
 }
 
-.mn-all-tutors-root.light .mn-filter-dropdown-item {
-  color: #334155;
+.mn-all-tutors-root.light .mn-popover-item {
+  color: #1E293B;
 }
 
-.mn-all-tutors-root.dark .mn-filter-dropdown-item {
-  color: #E2E8F0;
+.mn-all-tutors-root.dark .mn-popover-item {
+  color: #F1F5F9;
 }
 
-.mn-all-tutors-root.light .mn-filter-dropdown-item:hover {
+.mn-all-tutors-root.light .mn-popover-item:hover {
   background-color: #F1F5F9;
 }
 
-.mn-all-tutors-root.dark .mn-filter-dropdown-item:hover {
+.mn-all-tutors-root.dark .mn-popover-item:hover {
   background-color: #334155;
 }
 
-.mn-all-tutors-root.light .mn-filter-dropdown-item.selected {
+.mn-all-tutors-root.light .mn-popover-item.selected {
   background-color: #FFF7ED;
   color: #EA580C;
   font-weight: 600;
 }
 
-.mn-all-tutors-root.dark .mn-filter-dropdown-item.selected {
-  background-color: rgba(234, 88, 12, 0.2);
+.mn-all-tutors-root.dark .mn-popover-item.selected {
+  background-color: rgba(234, 88, 12, 0.22);
   color: #FB923C;
   font-weight: 600;
 }
 
+.mn-popover-item.selected i {
+  font-size: 11px;
+}
+
 /* ============================================================
-   5. SORT BY & VIEW TOGGLE (GRID / LIST)
+   6. SORT BY & VIEW TOGGLE (GRID / LIST)
    ============================================================ */
 .mn-all-tutors-sort-bar {
   display: flex;
@@ -375,7 +513,7 @@
   appearance: none;
   -webkit-appearance: none;
   border-radius: 20px;
-  padding: 5px 28px 5px 12px;
+  padding: 6px 28px 6px 12px;
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -440,7 +578,7 @@
 }
 
 /* ============================================================
-   6. TUTOR CARD (EXACT REFERENCE DESIGN)
+   7. TUTOR CARD & RESPONSIVE GRID / LIST
    ============================================================ */
 .mn-all-tutors-list-container {
   display: flex;
@@ -448,10 +586,18 @@
   gap: 12px;
 }
 
+/* GRID VIEW: 2 Columns on Mobile, Multi-column on Tablet/Desktop */
 .mn-all-tutors-list-container.grid-view {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .mn-all-tutors-list-container.grid-view {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
 }
 
 .mn-tutor-real-card {
@@ -477,7 +623,7 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
-/* Card Top Row */
+/* Top Row */
 .mn-tutor-card-top-row {
   display: flex;
   align-items: center;
@@ -494,7 +640,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background-color: #059669; /* Exact green badge from reference */
+  background-color: #059669;
   color: #FFFFFF;
   font-size: 9.5px;
   font-weight: 800;
@@ -512,14 +658,14 @@
 .mn-tutor-top-right-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .mn-tutor-availability-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
+  gap: 4px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -543,8 +689,8 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #EF4444; /* Reference red/coral heart outline */
-  font-size: 15px;
+  color: #EF4444;
+  font-size: 14px;
   padding: 2px;
   display: flex;
   align-items: center;
@@ -560,14 +706,14 @@
   color: #EF4444;
 }
 
-/* Card Main Content: Photo + Info + Action */
+/* Card Main Content */
 .mn-tutor-card-main-content {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
 
-/* 1. Left Photo Column */
+/* Photo */
 .mn-tutor-photo-col {
   flex-shrink: 0;
 }
@@ -629,7 +775,7 @@
   border: 2px solid #1E293B;
 }
 
-/* 2. Middle Information Column */
+/* Information Column */
 .mn-tutor-info-col {
   flex: 1;
   min-width: 0;
@@ -752,8 +898,17 @@
   font-size: 12px;
 }
 
+.mn-tutor-star-icon.muted {
+  color: #94A3B8;
+}
+
 .mn-tutor-rating-number {
   font-size: 12px;
+  font-weight: 700;
+}
+
+.mn-tutor-rating-number.new-badge {
+  color: #10B981;
   font-weight: 700;
 }
 
@@ -777,7 +932,7 @@
   color: #94A3B8;
 }
 
-/* 3. Right Action & Pricing Column */
+/* Action & Pricing Column */
 .mn-tutor-action-col {
   flex-shrink: 0;
   display: flex;
@@ -823,7 +978,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #EA580C; /* Reference exact vibrant orange */
+  background-color: #EA580C;
   color: #FFFFFF;
   text-decoration: none;
   font-size: 12px;
@@ -841,7 +996,267 @@
 }
 
 /* ============================================================
-   7. SKELETON LOADING STATE
+   GRID VIEW ADAPTATIONS FOR TUTOR CARDS
+   ============================================================ */
+.mn-all-tutors-list-container.grid-view .mn-tutor-real-card {
+  padding: 10px;
+}
+
+.mn-all-tutors-list-container.grid-view .mn-tutor-card-main-content {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.mn-all-tutors-list-container.grid-view .mn-tutor-info-col {
+  width: 100%;
+}
+
+.mn-all-tutors-list-container.grid-view .mn-tutor-name-row {
+  justify-content: center;
+}
+
+.mn-all-tutors-list-container.grid-view .mn-tutor-detail-line {
+  justify-content: center;
+}
+
+.mn-all-tutors-list-container.grid-view .mn-tutor-chips-row {
+  justify-content: center;
+}
+
+.mn-all-tutors-list-container.grid-view .mn-tutor-rating-row {
+  justify-content: center;
+}
+
+.mn-all-tutors-list-container.grid-view .mn-tutor-action-col {
+  width: 100%;
+  align-items: center;
+  min-height: auto;
+  gap: 6px;
+  padding-left: 0;
+  margin-top: 4px;
+}
+
+.mn-all-tutors-list-container.grid-view .mn-tutor-view-profile-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 6px 10px;
+  font-size: 11.5px;
+}
+
+/* ============================================================
+   8. COMPREHENSIVE FILTERS MODAL / SLIDE-OVER DRAWER
+   ============================================================ */
+.mn-filters-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .mn-filters-modal-root {
+    align-items: center;
+  }
+}
+
+.mn-filters-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  animation: mn-backdrop-fade 0.2s ease;
+}
+
+@keyframes mn-backdrop-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mn-filters-modal-panel {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  max-height: 85vh;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+  animation: mn-drawer-slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 640px) {
+  .mn-filters-modal-panel {
+    border-radius: 20px;
+    max-height: 80vh;
+  }
+}
+
+@keyframes mn-drawer-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.mn-all-tutors-root.light .mn-filters-modal-panel {
+  background-color: #FFFFFF;
+}
+
+.mn-all-tutors-root.dark .mn-filters-modal-panel {
+  background-color: #1E293B;
+  color: #F8FAFC;
+}
+
+.mn-filters-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.mn-all-tutors-root.dark .mn-filters-modal-header {
+  border-bottom-color: #334155;
+}
+
+.mn-filters-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mn-filters-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.mn-filters-modal-count-badge {
+  background-color: #EA580C;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.mn-filters-modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #64748B;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.mn-filters-modal-close:hover {
+  color: #EF4444;
+}
+
+.mn-filters-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-sizing: border-box;
+}
+
+.mn-filter-section-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #475569;
+}
+
+.mn-all-tutors-root.dark .mn-filter-section-title {
+  color: #94A3B8;
+}
+
+.mn-filter-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mn-modal-chip {
+  background-color: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  color: #334155;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.mn-all-tutors-root.dark .mn-modal-chip {
+  background-color: #334155;
+  border-color: #475569;
+  color: #CBD5E1;
+}
+
+.mn-modal-chip.active {
+  background-color: #EA580C !important;
+  border-color: #EA580C !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+}
+
+.mn-filters-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid #E2E8F0;
+}
+
+.mn-all-tutors-root.dark .mn-filters-modal-footer {
+  border-top-color: #334155;
+}
+
+.mn-modal-clear-btn {
+  background: none;
+  border: 1px solid #CBD5E1;
+  color: #64748B;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mn-all-tutors-root.dark .mn-modal-clear-btn {
+  border-color: #475569;
+  color: #CBD5E1;
+}
+
+.mn-modal-apply-btn {
+  flex: 1;
+  background-color: #EA580C;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.mn-modal-apply-btn:hover {
+  background-color: #C2410C;
+}
+
+/* ============================================================
+   9. SKELETON, EMPTY & ERROR STATES
    ============================================================ */
 .skeleton-card {
   pointer-events: none;
@@ -929,9 +1344,6 @@
   100% { background-position: -200% 0; }
 }
 
-/* ============================================================
-   8. EMPTY STATE & ERROR STATE
-   ============================================================ */
 .mn-all-tutors-empty-box,
 .mn-all-tutors-error-box {
   text-align: center;
@@ -1023,7 +1435,7 @@
 }
 
 /* ============================================================
-   9. PAGINATION
+   10. PAGINATION
    ============================================================ */
 .mn-all-tutors-pagination {
   display: flex;
@@ -1074,7 +1486,7 @@
 }
 
 /* ============================================================
-   10. MOBILE SPECIFIC TWEAKS (Matching 390px Reference Screen)
+   11. MOBILE SPECIFIC TWEAKS (Matching 390px Reference Screen)
    ============================================================ */
 @media (max-width: 480px) {
   .mn-all-tutors-root {

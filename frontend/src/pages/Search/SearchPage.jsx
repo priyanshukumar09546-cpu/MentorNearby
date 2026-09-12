@@ -1,11 +1,11 @@
 // ============================================================
 // pages/Search/SearchPage.jsx
 // MentorNearby "All Tutors" Marketplace Page
-// Inspired by Reference Design (media_1789232106161.png)
-// STRICTLY REAL DATABASE DATA • ZERO FAKE / MOCK TUTORS
+// End-to-End Functional Filter System with Real Database Data
+// ZERO Fake / Mock Tutors • Fixed Popover Dropdown Architecture
 // ============================================================
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { searchTutors } from '../../api/search';
 import { saveTutor, removeSavedTutor, getMySavedTutors } from '../../api/savedTutors';
@@ -20,42 +20,73 @@ const SearchPage = () => {
   const { isDark, darkMode } = useTheme();
   const isDarkMode = isDark ?? darkMode ?? false;
 
-  // Search & Filter States
+  // Single source of truth for filters
   const [searchQuery, setSearchQuery] = useState(
-    searchParams.get('q') || searchParams.get('search') || searchParams.get('subject') || ''
+    searchParams.get('q') || searchParams.get('search') || ''
   );
   const [selectedSubject, setSelectedSubject] = useState(searchParams.get('subject') || '');
-  const [selectedClass, setSelectedClass] = useState(searchParams.get('class') || searchParams.get('grade') || '');
-  const [selectedLocation, setSelectedLocation] = useState(searchParams.get('location') || searchParams.get('city') || '');
-  const [selectedMode, setSelectedMode] = useState(searchParams.get('mode') || '');
+  const [selectedClass, setSelectedClass] = useState(
+    searchParams.get('class') || searchParams.get('grade') || ''
+  );
+  const [selectedLocation, setSelectedLocation] = useState(
+    searchParams.get('location') || searchParams.get('city') || ''
+  );
+  const [selectedMode, setSelectedMode] = useState(
+    searchParams.get('mode') || searchParams.get('teachingModes') || ''
+  );
+  const [selectedMaxFees, setSelectedMaxFees] = useState(
+    searchParams.get('maxFees') || searchParams.get('maxFee') || ''
+  );
+  const [selectedMinExp, setSelectedMinExp] = useState(
+    searchParams.get('minExperience') || searchParams.get('experience') || ''
+  );
+  const [selectedMinRating, setSelectedMinRating] = useState(
+    searchParams.get('minRating') || searchParams.get('rating') || ''
+  );
   const [sort, setSort] = useState(searchParams.get('sort') || 'relevance');
-  const [viewMode, setViewMode] = useState('list'); // 'list' matches the reference screenshot
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page')) || 1);
 
-  // Active Dropdown Pill State
-  const [openDropdown, setOpenDropdown] = useState(null); // 'subject' | 'class' | 'location' | 'mode' | 'filters' | null
-  const dropdownRef = useRef(null);
+  // Floating Popover State: { name: 'subject'|'class'|'location'|'mode'|'sort', top, left, width }
+  const [activePopover, setActivePopover] = useState(null);
 
-  // Real Database State
+  // Full Filters Modal / Drawer State
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
+
+  // Real Database Tutors State
   const [tutors, setTutors] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Full Catalog of Real Filter Options (derived from database)
+  const [catalogSubjects, setCatalogSubjects] = useState([]);
+  const [catalogClasses, setCatalogClasses] = useState([]);
+  const [catalogLocations, setCatalogLocations] = useState([]);
+
   // Saved / Bookmark State
   const [savedTutorIds, setSavedTutorIds] = useState(new Set());
 
-  // Close dropdowns on outside click
+  // Button Refs for Popover Anchoring
+  const filterPillRefs = {
+    subject: useRef(null),
+    class: useRef(null),
+    location: useRef(null),
+    mode: useRef(null),
+    sort: useRef(null),
+  };
+
+  // Close popover on window resize / scroll
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpenDropdown(null);
+    const handleScrollOrResize = () => {
+      if (activePopover) {
+        setActivePopover(null);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    window.addEventListener('resize', handleScrollOrResize);
+    return () => window.removeEventListener('resize', handleScrollOrResize);
+  }, [activePopover]);
 
   // Load User Saved Tutors if authenticated
   useEffect(() => {
@@ -69,7 +100,274 @@ const SearchPage = () => {
       .catch(() => {});
   }, [isAuthenticated]);
 
-  // Handle Save / Bookmark Tutor Toggle
+  // Fetch full catalog once to extract complete real filter options
+  useEffect(() => {
+    searchTutors({ limit: 50 })
+      .then((res) => {
+        const allList =
+          res.data?.data?.tutors ||
+          res.data?.tutors ||
+          res.data?.data ||
+          (Array.isArray(res.data) ? res.data : []);
+
+        if (Array.isArray(allList) && allList.length > 0) {
+          // Extract real subjects
+          const subs = Array.from(
+            new Set(
+              allList
+                .flatMap((t) => t.subjects || [t.subject])
+                .filter(Boolean)
+                .map((s) => s.trim())
+            )
+          ).sort();
+          if (subs.length > 0) setCatalogSubjects(subs);
+
+          // Extract real classes
+          const cls = Array.from(
+            new Set(
+              allList
+                .flatMap((t) => t.grades || t.classes || [])
+                .filter(Boolean)
+                .map((c) => c.toString().trim())
+            )
+          ).sort((a, b) => {
+            const numA = parseInt(a.replace(/\D/g, '')) || 0;
+            const numB = parseInt(b.replace(/\D/g, '')) || 0;
+            return numA - numB;
+          });
+          if (cls.length > 0) setCatalogClasses(cls);
+
+          // Extract real locations (split multiple like "HAPUR & Ghaziabad")
+          const locs = Array.from(
+            new Set(
+              allList
+                .flatMap((t) => {
+                  const city = t.location?.city || '';
+                  const area = t.location?.area || '';
+                  return [city, area];
+                })
+                .flatMap((locStr) => locStr.split(/[&,/+]/))
+                .map((l) => l.trim())
+                .filter((l) => l.length > 1)
+            )
+          ).map((l) => l.charAt(0).toUpperCase() + l.slice(1).toLowerCase());
+          const dedupedLocs = Array.from(new Set(locs)).sort();
+          if (dedupedLocs.length > 0) setCatalogLocations(dedupedLocs);
+        }
+      })
+      .catch((err) => {
+        console.error('Error loading filter catalog:', err);
+      });
+  }, []);
+
+  // Sync URL query params with state
+  const syncParamsToUrl = useCallback(
+    (overrides = {}) => {
+      const p = new URLSearchParams();
+      const current = {
+        q: searchQuery,
+        subject: selectedSubject,
+        class: selectedClass,
+        location: selectedLocation,
+        mode: selectedMode,
+        maxFees: selectedMaxFees,
+        minExperience: selectedMinExp,
+        minRating: selectedMinRating,
+        sort,
+        page: currentPage,
+        ...overrides,
+      };
+
+      if (current.q && current.q.trim()) p.set('q', current.q.trim());
+      if (current.subject) p.set('subject', current.subject);
+      if (current.class) p.set('class', current.class);
+      if (current.location) p.set('location', current.location);
+      if (current.mode) p.set('mode', current.mode);
+      if (current.maxFees) p.set('maxFees', current.maxFees);
+      if (current.minExperience) p.set('minExperience', current.minExperience);
+      if (current.minRating) p.set('minRating', current.minRating);
+      if (current.sort && current.sort !== 'relevance') p.set('sort', current.sort);
+      if (current.page && current.page > 1) p.set('page', current.page.toString());
+
+      setSearchParams(p, { replace: true });
+    },
+    [
+      searchQuery,
+      selectedSubject,
+      selectedClass,
+      selectedLocation,
+      selectedMode,
+      selectedMaxFees,
+      selectedMinExp,
+      selectedMinRating,
+      sort,
+      currentPage,
+      setSearchParams,
+    ]
+  );
+
+  // Fetch Tutors from Real Database API with active filters
+  const fetchTutorsFromApi = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const cleanParams = {};
+      if (searchQuery.trim()) cleanParams.q = searchQuery.trim();
+      if (selectedSubject) cleanParams.subject = selectedSubject;
+      if (selectedClass) cleanParams.class = selectedClass;
+      if (selectedLocation) cleanParams.location = selectedLocation;
+      if (selectedMode) cleanParams.teachingModes = selectedMode;
+      if (selectedMaxFees) cleanParams.maxFees = selectedMaxFees;
+      if (selectedMinExp) cleanParams.minExperience = selectedMinExp;
+      if (selectedMinRating) cleanParams.minRating = selectedMinRating;
+      if (sort && sort !== 'relevance') cleanParams.sort = sort;
+      cleanParams.page = currentPage;
+      cleanParams.limit = 12;
+
+      const res = await searchTutors(cleanParams);
+      const list =
+        res.data?.data?.tutors ||
+        res.data?.tutors ||
+        res.data?.data ||
+        (Array.isArray(res.data) ? res.data : []);
+      const total =
+        res.data?.data?.total ?? res.data?.total ?? (Array.isArray(list) ? list.length : 0);
+      const pages = res.data?.data?.pages || res.data?.pages || Math.ceil(total / 12) || 1;
+
+      setTutors(Array.isArray(list) ? list : []);
+      setTotalCount(total);
+      setTotalPages(pages);
+    } catch (err) {
+      console.error('Error fetching tutors from API:', err);
+      setError(err.response?.data?.message || 'Unable to connect to tutor database. Please try again.');
+      setTutors([]);
+      setTotalCount(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    searchQuery,
+    selectedSubject,
+    selectedClass,
+    selectedLocation,
+    selectedMode,
+    selectedMaxFees,
+    selectedMinExp,
+    selectedMinRating,
+    sort,
+    currentPage,
+  ]);
+
+  // Execute fetch when filters change
+  useEffect(() => {
+    fetchTutorsFromApi();
+  }, [fetchTutorsFromApi]);
+
+  // Toggle or open a popover directly below its corresponding button
+  const handleTogglePopover = (name) => {
+    if (activePopover?.name === name) {
+      setActivePopover(null);
+      return;
+    }
+
+    const btn = filterPillRefs[name]?.current;
+    if (!btn) return;
+
+    const rect = btn.getBoundingClientRect();
+    const popoverWidth = 210;
+
+    // Viewport-safe left calculation
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - 12) {
+      left = window.innerWidth - popoverWidth - 12;
+    }
+    if (left < 12) {
+      left = 12;
+    }
+
+    setActivePopover({
+      name,
+      top: rect.bottom + 6,
+      left,
+      width: Math.max(rect.width, 190),
+    });
+  };
+
+  // Close popover helper
+  const handleClosePopover = () => {
+    setActivePopover(null);
+  };
+
+  // Filter Selection Handlers
+  const handleSelectSubject = (subj) => {
+    setSelectedSubject(subj);
+    setCurrentPage(1);
+    handleClosePopover();
+    syncParamsToUrl({ subject: subj, page: 1 });
+  };
+
+  const handleSelectClass = (cls) => {
+    setSelectedClass(cls);
+    setCurrentPage(1);
+    handleClosePopover();
+    syncParamsToUrl({ class: cls, page: 1 });
+  };
+
+  const handleSelectLocation = (loc) => {
+    setSelectedLocation(loc);
+    setCurrentPage(1);
+    handleClosePopover();
+    syncParamsToUrl({ location: loc, page: 1 });
+  };
+
+  const handleSelectMode = (mode) => {
+    setSelectedMode(mode);
+    setCurrentPage(1);
+    handleClosePopover();
+    syncParamsToUrl({ mode, page: 1 });
+  };
+
+  const handleSelectSort = (newSort) => {
+    setSort(newSort);
+    setCurrentPage(1);
+    handleClosePopover();
+    syncParamsToUrl({ sort: newSort, page: 1 });
+  };
+
+  // Search Submission
+  const handleExecuteSearch = (e) => {
+    if (e) e.preventDefault();
+    handleClosePopover();
+    setCurrentPage(1);
+    syncParamsToUrl({ q: searchQuery, page: 1 });
+  };
+
+  // Clear Search Bar Only
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setCurrentPage(1);
+    syncParamsToUrl({ q: '', page: 1 });
+  };
+
+  // Clear All Filters
+  const handleClearAll = () => {
+    setSearchQuery('');
+    setSelectedSubject('');
+    setSelectedClass('');
+    setSelectedLocation('');
+    setSelectedMode('');
+    setSelectedMaxFees('');
+    setSelectedMinExp('');
+    setSelectedMinRating('');
+    setSort('relevance');
+    setCurrentPage(1);
+    handleClosePopover();
+    setShowFiltersModal(false);
+    setSearchParams(new URLSearchParams());
+  };
+
+  // Saved / Bookmark Toggle
   const handleToggleSave = async (e, tutorId) => {
     e.preventDefault();
     e.stopPropagation();
@@ -103,114 +401,21 @@ const SearchPage = () => {
     }
   };
 
-  // Fetch Real Tutors from Database API
-  const fetchTutorsFromApi = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const cleanParams = {};
-      if (searchQuery.trim()) cleanParams.q = searchQuery.trim();
-      if (selectedSubject) cleanParams.subject = selectedSubject;
-      if (selectedClass) cleanParams.class = selectedClass;
-      if (selectedLocation) cleanParams.location = selectedLocation;
-      if (selectedMode) cleanParams.teachingModes = selectedMode;
-      if (sort && sort !== 'relevance') cleanParams.sort = sort;
-      cleanParams.page = currentPage;
-      cleanParams.limit = 12;
+  // Count active filters (excluding search and sort)
+  const activeFilters = [];
+  if (selectedSubject) activeFilters.push({ key: 'subject', label: selectedSubject });
+  if (selectedClass) activeFilters.push({ key: 'class', label: selectedClass });
+  if (selectedLocation) activeFilters.push({ key: 'location', label: selectedLocation });
+  if (selectedMode) activeFilters.push({ key: 'mode', label: selectedMode });
+  if (selectedMaxFees) activeFilters.push({ key: 'maxFees', label: `Under ₹${selectedMaxFees}` });
+  if (selectedMinExp) activeFilters.push({ key: 'minExperience', label: `${selectedMinExp}+ Yrs Exp` });
+  if (selectedMinRating) activeFilters.push({ key: 'minRating', label: `${selectedMinRating}+ ★` });
 
-      const res = await searchTutors(cleanParams);
-      const list =
-        res.data?.data?.tutors ||
-        res.data?.tutors ||
-        res.data?.data ||
-        (Array.isArray(res.data) ? res.data : []);
-      const total =
-        res.data?.data?.total ?? res.data?.total ?? (Array.isArray(list) ? list.length : 0);
-      const pages = res.data?.data?.pages || res.data?.pages || Math.ceil(total / 12) || 1;
-
-      setTutors(Array.isArray(list) ? list : []);
-      setTotalCount(total);
-      setTotalPages(pages);
-    } catch (err) {
-      console.error('Error fetching tutors from API:', err);
-      setError(err.response?.data?.message || 'Unable to connect to tutor database. Please try again.');
-      setTutors([]);
-      setTotalCount(0);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Sync state on page/sort change or when searchParams change
-  useEffect(() => {
-    fetchTutorsFromApi();
-  }, [currentPage, sort, selectedSubject, selectedClass, selectedLocation, selectedMode]);
-
-  // Trigger search execution
-  const handleExecuteSearch = (e) => {
-    if (e) e.preventDefault();
-    setOpenDropdown(null);
-    setCurrentPage(1);
-
-    const params = new URLSearchParams();
-    if (searchQuery.trim()) params.set('q', searchQuery.trim());
-    if (selectedSubject) params.set('subject', selectedSubject);
-    if (selectedClass) params.set('class', selectedClass);
-    if (selectedLocation) params.set('location', selectedLocation);
-    if (selectedMode) params.set('mode', selectedMode);
-    if (sort !== 'relevance') params.set('sort', sort);
-    params.set('page', '1');
-
-    setSearchParams(params);
-    fetchTutorsFromApi();
-  };
-
-  const handleClearAll = () => {
-    setSearchQuery('');
-    setSelectedSubject('');
-    setSelectedClass('');
-    setSelectedLocation('');
-    setSelectedMode('');
-    setSort('relevance');
-    setCurrentPage(1);
-    setOpenDropdown(null);
-    setSearchParams(new URLSearchParams());
-    setTimeout(() => {
-      fetchTutorsFromApi();
-    }, 0);
-  };
-
-  // Extract dynamic filter options from loaded tutors
-  const availableSubjects = Array.from(
-    new Set(
-      tutors
-        .flatMap((t) => t.subjects || [t.subject])
-        .filter(Boolean)
-        .map((s) => s.trim())
-    )
-  );
-
-  const availableClasses = Array.from(
-    new Set(
-      tutors
-        .flatMap((t) => t.grades || t.classes || [])
-        .filter(Boolean)
-        .map((c) => c.toString().trim())
-    )
-  );
-
-  const availableLocations = Array.from(
-    new Set(
-      tutors
-        .map((t) => (t.location?.city || t.location?.area || '').trim())
-        .filter(Boolean)
-    )
-  );
+  const activeFilterCount = activeFilters.length;
 
   return (
     <div className={`mn-all-tutors-root ${isDarkMode ? 'dark' : 'light'}`}>
-      <div className="mn-all-tutors-container" ref={dropdownRef}>
+      <div className="mn-all-tutors-container">
         
         {/* ============================================================ */}
         {/* 1. TITLE & REAL TUTOR COUNT                                  */}
@@ -248,16 +453,8 @@ const SearchPage = () => {
             <button
               type="button"
               className="mn-all-tutors-search-clear"
-              onClick={() => {
-                setSearchQuery('');
-                setCurrentPage(1);
-                const params = new URLSearchParams(searchParams);
-                params.delete('q');
-                params.delete('search');
-                setSearchParams(params);
-                setTimeout(() => fetchTutorsFromApi(), 0);
-              }}
-              aria-label="Clear search"
+              onClick={handleClearSearch}
+              aria-label="Clear search query"
             >
               <i className="fa-solid fa-xmark"></i>
             </button>
@@ -265,218 +462,111 @@ const SearchPage = () => {
         </form>
 
         {/* ============================================================ */}
-        {/* 3. HORIZONTAL FILTER PILLS ROW (Matching Reference Design)   */}
+        {/* 3. HORIZONTAL FILTER PILLS ROW                               */}
         {/* ============================================================ */}
         <div className="mn-all-tutors-filter-pills-row">
           
-          {/* A. Filters Button */}
+          {/* A. Filters Button (Opens Comprehensive Filters Modal) */}
           <button
             type="button"
             className={`mn-filter-pill-btn mn-filter-pill-main ${
-              selectedSubject || selectedClass || selectedLocation || selectedMode ? 'has-active-filters' : ''
+              activeFilterCount > 0 ? 'has-active-filters' : ''
             }`}
-            onClick={() => setOpenDropdown(openDropdown === 'filters' ? null : 'filters')}
-            aria-label="Toggle Filters Sheet"
+            onClick={() => setShowFiltersModal(true)}
+            aria-label="Open filter settings modal"
           >
             <i className="fa-solid fa-sliders"></i>
             <span>Filters</span>
-            {(selectedSubject || selectedClass || selectedLocation || selectedMode) && (
-              <span className="mn-filter-active-dot"></span>
+            {activeFilterCount > 0 && (
+              <span className="mn-filter-count-pill">{activeFilterCount}</span>
             )}
           </button>
 
           {/* B. Subject Dropdown Pill */}
-          <div className="mn-filter-pill-wrapper">
-            <button
-              type="button"
-              className={`mn-filter-pill-btn ${selectedSubject ? 'active' : ''}`}
-              onClick={() => setOpenDropdown(openDropdown === 'subject' ? null : 'subject')}
-              aria-expanded={openDropdown === 'subject'}
-            >
-              <span>{selectedSubject || 'Subject'}</span>
-              <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
-            </button>
-
-            {openDropdown === 'subject' && (
-              <div className="mn-filter-dropdown-menu">
-                <button
-                  type="button"
-                  className={`mn-filter-dropdown-item ${!selectedSubject ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedSubject('');
-                    setOpenDropdown(null);
-                    setCurrentPage(1);
-                  }}
-                >
-                  All Subjects
-                </button>
-                {availableSubjects.map((subj) => (
-                  <button
-                    key={subj}
-                    type="button"
-                    className={`mn-filter-dropdown-item ${selectedSubject === subj ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedSubject(subj);
-                      setOpenDropdown(null);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    {subj}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <button
+            ref={filterPillRefs.subject}
+            type="button"
+            className={`mn-filter-pill-btn ${selectedSubject ? 'active' : ''}`}
+            onClick={() => handleTogglePopover('subject')}
+            aria-expanded={activePopover?.name === 'subject'}
+          >
+            <span>{selectedSubject || 'Subject'}</span>
+            <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
+          </button>
 
           {/* C. Class Dropdown Pill */}
-          <div className="mn-filter-pill-wrapper">
-            <button
-              type="button"
-              className={`mn-filter-pill-btn ${selectedClass ? 'active' : ''}`}
-              onClick={() => setOpenDropdown(openDropdown === 'class' ? null : 'class')}
-              aria-expanded={openDropdown === 'class'}
-            >
-              <span>{selectedClass || 'Class'}</span>
-              <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
-            </button>
-
-            {openDropdown === 'class' && (
-              <div className="mn-filter-dropdown-menu">
-                <button
-                  type="button"
-                  className={`mn-filter-dropdown-item ${!selectedClass ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedClass('');
-                    setOpenDropdown(null);
-                    setCurrentPage(1);
-                  }}
-                >
-                  All Classes
-                </button>
-                {availableClasses.map((cls) => (
-                  <button
-                    key={cls}
-                    type="button"
-                    className={`mn-filter-dropdown-item ${selectedClass === cls ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedClass(cls);
-                      setOpenDropdown(null);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    {cls}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <button
+            ref={filterPillRefs.class}
+            type="button"
+            className={`mn-filter-pill-btn ${selectedClass ? 'active' : ''}`}
+            onClick={() => handleTogglePopover('class')}
+            aria-expanded={activePopover?.name === 'class'}
+          >
+            <span>{selectedClass || 'Class'}</span>
+            <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
+          </button>
 
           {/* D. Location Dropdown Pill */}
-          <div className="mn-filter-pill-wrapper">
-            <button
-              type="button"
-              className={`mn-filter-pill-btn ${selectedLocation ? 'active' : ''}`}
-              onClick={() => setOpenDropdown(openDropdown === 'location' ? null : 'location')}
-              aria-expanded={openDropdown === 'location'}
-            >
-              <span>{selectedLocation || 'Location'}</span>
-              <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
-            </button>
-
-            {openDropdown === 'location' && (
-              <div className="mn-filter-dropdown-menu">
-                <button
-                  type="button"
-                  className={`mn-filter-dropdown-item ${!selectedLocation ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedLocation('');
-                    setOpenDropdown(null);
-                    setCurrentPage(1);
-                  }}
-                >
-                  All Locations
-                </button>
-                {availableLocations.map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    className={`mn-filter-dropdown-item ${selectedLocation === loc ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedLocation(loc);
-                      setOpenDropdown(null);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    {loc}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <button
+            ref={filterPillRefs.location}
+            type="button"
+            className={`mn-filter-pill-btn ${selectedLocation ? 'active' : ''}`}
+            onClick={() => handleTogglePopover('location')}
+            aria-expanded={activePopover?.name === 'location'}
+          >
+            <span>{selectedLocation || 'Location'}</span>
+            <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
+          </button>
 
           {/* E. Availability Dropdown Pill */}
-          <div className="mn-filter-pill-wrapper">
-            <button
-              type="button"
-              className={`mn-filter-pill-btn ${selectedMode ? 'active' : ''}`}
-              onClick={() => setOpenDropdown(openDropdown === 'mode' ? null : 'mode')}
-              aria-expanded={openDropdown === 'mode'}
-            >
-              <span>{selectedMode || 'Availability'}</span>
-              <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
-            </button>
-
-            {openDropdown === 'mode' && (
-              <div className="mn-filter-dropdown-menu">
-                <button
-                  type="button"
-                  className={`mn-filter-dropdown-item ${!selectedMode ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedMode('');
-                    setOpenDropdown(null);
-                    setCurrentPage(1);
-                  }}
-                >
-                  All Modes
-                </button>
-                <button
-                  type="button"
-                  className={`mn-filter-dropdown-item ${selectedMode === 'Online' ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedMode('Online');
-                    setOpenDropdown(null);
-                    setCurrentPage(1);
-                  }}
-                >
-                  Online
-                </button>
-                <button
-                  type="button"
-                  className={`mn-filter-dropdown-item ${selectedMode === 'Offline' ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedMode('Offline');
-                    setOpenDropdown(null);
-                    setCurrentPage(1);
-                  }}
-                >
-                  Offline / Home
-                </button>
-                <button
-                  type="button"
-                  className={`mn-filter-dropdown-item ${selectedMode === 'Hybrid' ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedMode('Hybrid');
-                    setOpenDropdown(null);
-                    setCurrentPage(1);
-                  }}
-                >
-                  Online &amp; Offline
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            ref={filterPillRefs.mode}
+            type="button"
+            className={`mn-filter-pill-btn ${selectedMode ? 'active' : ''}`}
+            onClick={() => handleTogglePopover('mode')}
+            aria-expanded={activePopover?.name === 'mode'}
+          >
+            <span>{selectedMode || 'Availability'}</span>
+            <i className="fa-solid fa-chevron-down mn-pill-chevron"></i>
+          </button>
 
         </div>
+
+        {/* ============================================================ */}
+        {/* ACTIVE FILTER TAGS ROW (IF ANY ACTIVE)                       */}
+        {/* ============================================================ */}
+        {activeFilterCount > 0 && (
+          <div className="mn-active-filters-chips-bar">
+            <span className="mn-active-filters-label">Active:</span>
+            {activeFilters.map((f) => (
+              <span key={f.key} className="mn-active-filter-chip">
+                <span>{f.label}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (f.key === 'subject') handleSelectSubject('');
+                    if (f.key === 'class') handleSelectClass('');
+                    if (f.key === 'location') handleSelectLocation('');
+                    if (f.key === 'mode') handleSelectMode('');
+                    if (f.key === 'maxFees') { setSelectedMaxFees(''); syncParamsToUrl({ maxFees: '' }); }
+                    if (f.key === 'minExperience') { setSelectedMinExp(''); syncParamsToUrl({ minExperience: '' }); }
+                    if (f.key === 'minRating') { setSelectedMinRating(''); syncParamsToUrl({ minRating: '' }); }
+                  }}
+                  aria-label={`Remove ${f.label} filter`}
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              </span>
+            ))}
+            <button
+              type="button"
+              className="mn-clear-all-text-btn"
+              onClick={handleClearAll}
+            >
+              Clear All
+            </button>
+          </div>
+        )}
 
         {/* ============================================================ */}
         {/* 4. SORT BY & VIEW TOGGLE (GRID / LIST)                       */}
@@ -488,17 +578,14 @@ const SearchPage = () => {
               <select
                 className="mn-all-tutors-sort-select"
                 value={sort}
-                onChange={(e) => {
-                  setSort(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => handleSelectSort(e.target.value)}
                 aria-label="Sort tutors by"
               >
                 <option value="relevance">Recommended</option>
-                <option value="rating">Rating</option>
+                <option value="rating">Highest Rated</option>
                 <option value="fees_asc">Price: Low to High</option>
                 <option value="fees_desc">Price: High to Low</option>
-                <option value="experience">Experience</option>
+                <option value="experience">Experience: High to Low</option>
               </select>
               <i className="fa-solid fa-chevron-down mn-sort-arrow-icon"></i>
             </div>
@@ -510,7 +597,7 @@ const SearchPage = () => {
               type="button"
               className={`mn-view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
               onClick={() => setViewMode('grid')}
-              aria-label="Grid view"
+              aria-label="Grid view (2 columns)"
               title="Grid View"
             >
               <i className="fa-solid fa-table-cells-large"></i>
@@ -519,7 +606,7 @@ const SearchPage = () => {
               type="button"
               className={`mn-view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
               onClick={() => setViewMode('list')}
-              aria-label="List view"
+              aria-label="List view (Single column)"
               title="List View"
             >
               <i className="fa-solid fa-bars"></i>
@@ -567,27 +654,23 @@ const SearchPage = () => {
             </button>
           </div>
         ) : tutors.length === 0 ? (
-          /* EMPTY STATE */
+          /* EMPTY STATE (Zero Fake Tutors Guaranteed) */
           <div className="mn-all-tutors-empty-box">
             <div className="mn-all-tutors-empty-icon">🔍</div>
-            <h3 className="mn-all-tutors-empty-title">
-              {searchQuery || selectedSubject || selectedClass || selectedLocation || selectedMode
-                ? 'No tutors found'
-                : 'No tutors available yet'}
-            </h3>
+            <h3 className="mn-all-tutors-empty-title">No tutors found</h3>
             <p className="mn-all-tutors-empty-desc">
-              {searchQuery || selectedSubject || selectedClass || selectedLocation || selectedMode
-                ? 'No tutors matched your specific filters. Try clearing some filters to see all verified tutors.'
+              {activeFilterCount > 0 || searchQuery
+                ? 'No tutors matched your specific filters. Try changing or clearing your filters to see available tutors.'
                 : 'Verified tutors will appear here once they join MentorNearby.'}
             </p>
             <div className="mn-all-tutors-empty-actions">
-              {(searchQuery || selectedSubject || selectedClass || selectedLocation || selectedMode) && (
+              {(activeFilterCount > 0 || searchQuery) && (
                 <button
                   type="button"
                   className="mn-all-tutors-clear-btn"
                   onClick={handleClearAll}
                 >
-                  Clear Search &amp; Filters
+                  Clear Filters
                 </button>
               )}
               <Link to="/become-tutor" className="mn-all-tutors-become-btn">
@@ -621,7 +704,7 @@ const SearchPage = () => {
                   ? tutor.subjects.join(', ')
                   : (tutor.subject || '');
 
-              // Real qualification (from education array or qualifications)
+              // Real qualification
               let qualification = '';
               if (Array.isArray(tutor.education) && tutor.education.length > 0) {
                 const edu = tutor.education[0];
@@ -654,7 +737,7 @@ const SearchPage = () => {
                 classRange = `Class ${tutor.classes.join(', ')}`;
               }
 
-              // Real experience (ONLY display if it exists in database record)
+              // Real experience
               let experienceStr = '';
               if (tutor.experience?.years !== undefined && tutor.experience?.years !== null) {
                 experienceStr = `${tutor.experience.years}+ Years Exp.`;
@@ -670,12 +753,10 @@ const SearchPage = () => {
                 modesStr = tutor.teachingModes.toString();
               }
 
-              // Real ratings & review count
-              const hasRating = tutor.averageRating > 0 || tutor.rating > 0;
-              const ratingDisplay = hasRating
-                ? Number(tutor.averageRating || tutor.rating).toFixed(1)
-                : '5.0';
-              const reviewCount = tutor.totalReviews || 0;
+              // Real ratings & review count (DO NOT FABRICATE 5.0)
+              const numRating = Number(tutor.averageRating || tutor.rating || 0);
+              const reviewCount = Number(tutor.totalReviews || 0);
+              const hasRealRating = numRating > 0 && reviewCount > 0;
 
               // Real fees / pricing
               const feeAmount =
@@ -707,7 +788,7 @@ const SearchPage = () => {
                     <div className="mn-tutor-verified-badge-wrap">
                       {isVerified && (
                         <span className="mn-tutor-verified-badge">
-                          <i className="fa-solid fa-shield-halved"></i>
+                          <i className="fa-solid fa-circle-check"></i>
                           <span>VERIFIED</span>
                         </span>
                       )}
@@ -730,7 +811,7 @@ const SearchPage = () => {
                     </div>
                   </div>
 
-                  {/* Main Card Content: Photo + Info + Pricing/CTA */}
+                  {/* Main Card Content */}
                   <div className="mn-tutor-card-main-content">
                     
                     {/* Left: Tutor Photo */}
@@ -803,11 +884,21 @@ const SearchPage = () => {
                         </div>
                       )}
 
-                      {/* Real Rating & Review Count */}
+                      {/* Real Rating & Review Count (Honest state without fake 5.0) */}
                       <div className="mn-tutor-rating-row">
-                        <span className="mn-tutor-star-icon">★</span>
-                        <span className="mn-tutor-rating-number">{ratingDisplay}</span>
-                        <span className="mn-tutor-reviews-count">({reviewCount})</span>
+                        {hasRealRating ? (
+                          <>
+                            <span className="mn-tutor-star-icon">★</span>
+                            <span className="mn-tutor-rating-number">{numRating.toFixed(1)}</span>
+                            <span className="mn-tutor-reviews-count">({reviewCount})</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="mn-tutor-star-icon muted">★</span>
+                            <span className="mn-tutor-rating-number new-badge">New</span>
+                            <span className="mn-tutor-reviews-count">(0 reviews)</span>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -881,9 +972,406 @@ const SearchPage = () => {
         )}
 
       </div>
+
+      {/* ============================================================ */}
+      {/* 7. UNCLIPPED FLOATING POPOVER (PORTAL OUTSIDE SCROLL ROW)    */}
+      {/* ============================================================ */}
+      {activePopover && (
+        <>
+          {/* Backdrop overlay for outside tap */}
+          <div
+            className="mn-popover-backdrop"
+            onClick={handleClosePopover}
+            aria-hidden="true"
+          />
+
+          {/* Floating Dropdown Popover */}
+          <div
+            className="mn-popover-card"
+            style={{
+              top: `${activePopover.top}px`,
+              left: `${activePopover.left}px`,
+              minWidth: `${activePopover.width}px`,
+            }}
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Popover Header with Title and Clear */}
+            <div className="mn-popover-header">
+              <span className="mn-popover-title">
+                {activePopover.name === 'subject' && 'Select Subject'}
+                {activePopover.name === 'class' && 'Select Class'}
+                {activePopover.name === 'location' && 'Select Location'}
+                {activePopover.name === 'mode' && 'Select Availability'}
+              </span>
+              <button
+                type="button"
+                className="mn-popover-close-btn"
+                onClick={handleClosePopover}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* A. Subject Options */}
+            {activePopover.name === 'subject' && (
+              <div className="mn-popover-items-list">
+                <button
+                  type="button"
+                  className={`mn-popover-item ${!selectedSubject ? 'selected' : ''}`}
+                  onClick={() => handleSelectSubject('')}
+                >
+                  <span>All Subjects</span>
+                  {!selectedSubject && <i className="fa-solid fa-check"></i>}
+                </button>
+                {catalogSubjects.map((subj) => (
+                  <button
+                    key={subj}
+                    type="button"
+                    className={`mn-popover-item ${selectedSubject === subj ? 'selected' : ''}`}
+                    onClick={() => handleSelectSubject(subj)}
+                  >
+                    <span>{subj}</span>
+                    {selectedSubject === subj && <i className="fa-solid fa-check"></i>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* B. Class Options */}
+            {activePopover.name === 'class' && (
+              <div className="mn-popover-items-list">
+                <button
+                  type="button"
+                  className={`mn-popover-item ${!selectedClass ? 'selected' : ''}`}
+                  onClick={() => handleSelectClass('')}
+                >
+                  <span>All Classes</span>
+                  {!selectedClass && <i className="fa-solid fa-check"></i>}
+                </button>
+                {catalogClasses.map((cls) => (
+                  <button
+                    key={cls}
+                    type="button"
+                    className={`mn-popover-item ${selectedClass === cls ? 'selected' : ''}`}
+                    onClick={() => handleSelectClass(cls)}
+                  >
+                    <span>{cls}</span>
+                    {selectedClass === cls && <i className="fa-solid fa-check"></i>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* C. Location Options */}
+            {activePopover.name === 'location' && (
+              <div className="mn-popover-items-list">
+                <button
+                  type="button"
+                  className={`mn-popover-item ${!selectedLocation ? 'selected' : ''}`}
+                  onClick={() => handleSelectLocation('')}
+                >
+                  <span>All Locations</span>
+                  {!selectedLocation && <i className="fa-solid fa-check"></i>}
+                </button>
+                {catalogLocations.map((loc) => (
+                  <button
+                    key={loc}
+                    type="button"
+                    className={`mn-popover-item ${selectedLocation === loc ? 'selected' : ''}`}
+                    onClick={() => handleSelectLocation(loc)}
+                  >
+                    <span>{loc}</span>
+                    {selectedLocation === loc && <i className="fa-solid fa-check"></i>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* D. Availability Options */}
+            {activePopover.name === 'mode' && (
+              <div className="mn-popover-items-list">
+                <button
+                  type="button"
+                  className={`mn-popover-item ${!selectedMode ? 'selected' : ''}`}
+                  onClick={() => handleSelectMode('')}
+                >
+                  <span>All Modes</span>
+                  {!selectedMode && <i className="fa-solid fa-check"></i>}
+                </button>
+                <button
+                  type="button"
+                  className={`mn-popover-item ${selectedMode === 'Online' ? 'selected' : ''}`}
+                  onClick={() => handleSelectMode('Online')}
+                >
+                  <span>Online</span>
+                  {selectedMode === 'Online' && <i className="fa-solid fa-check"></i>}
+                </button>
+                <button
+                  type="button"
+                  className={`mn-popover-item ${selectedMode === 'Offline' ? 'selected' : ''}`}
+                  onClick={() => handleSelectMode('Offline')}
+                >
+                  <span>Offline</span>
+                  {selectedMode === 'Offline' && <i className="fa-solid fa-check"></i>}
+                </button>
+                <button
+                  type="button"
+                  className={`mn-popover-item ${selectedMode === 'Online & Offline' ? 'selected' : ''}`}
+                  onClick={() => handleSelectMode('Online & Offline')}
+                >
+                  <span>Online &amp; Offline</span>
+                  {selectedMode === 'Online & Offline' && <i className="fa-solid fa-check"></i>}
+                </button>
+              </div>
+            )}
+
+          </div>
+        </>
+      )}
+
+      {/* ============================================================ */}
+      {/* 8. COMPREHENSIVE FILTERS MODAL / SLIDE-OVER DRAWER          */}
+      {/* ============================================================ */}
+      {showFiltersModal && (
+        <div className="mn-filters-modal-root" role="dialog" aria-modal="true">
+          <div
+            className="mn-filters-modal-backdrop"
+            onClick={() => setShowFiltersModal(false)}
+          />
+
+          <div className="mn-filters-modal-panel">
+            {/* Modal Header */}
+            <div className="mn-filters-modal-header">
+              <div className="mn-filters-modal-title-wrap">
+                <h2 className="mn-filters-modal-title">Filters</h2>
+                {activeFilterCount > 0 && (
+                  <span className="mn-filters-modal-count-badge">
+                    {activeFilterCount} {activeFilterCount === 1 ? 'active' : 'active'}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                className="mn-filters-modal-close"
+                onClick={() => setShowFiltersModal(false)}
+                aria-label="Close filters"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="mn-filters-modal-body">
+              
+              {/* Section 1: Subject */}
+              <div className="mn-filter-section">
+                <label className="mn-filter-section-title">Subject</label>
+                <div className="mn-filter-chips-grid">
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${!selectedSubject ? 'active' : ''}`}
+                    onClick={() => setSelectedSubject('')}
+                  >
+                    All Subjects
+                  </button>
+                  {catalogSubjects.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`mn-modal-chip ${selectedSubject === s ? 'active' : ''}`}
+                      onClick={() => setSelectedSubject(s)}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section 2: Class */}
+              <div className="mn-filter-section">
+                <label className="mn-filter-section-title">Class / Grade</label>
+                <div className="mn-filter-chips-grid">
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${!selectedClass ? 'active' : ''}`}
+                    onClick={() => setSelectedClass('')}
+                  >
+                    All Classes
+                  </button>
+                  {catalogClasses.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`mn-modal-chip ${selectedClass === c ? 'active' : ''}`}
+                      onClick={() => setSelectedClass(c)}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section 3: Location */}
+              <div className="mn-filter-section">
+                <label className="mn-filter-section-title">Location</label>
+                <div className="mn-filter-chips-grid">
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${!selectedLocation ? 'active' : ''}`}
+                    onClick={() => setSelectedLocation('')}
+                  >
+                    All Locations
+                  </button>
+                  {catalogLocations.map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      className={`mn-modal-chip ${selectedLocation === l ? 'active' : ''}`}
+                      onClick={() => setSelectedLocation(l)}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section 4: Availability */}
+              <div className="mn-filter-section">
+                <label className="mn-filter-section-title">Availability / Mode</label>
+                <div className="mn-filter-chips-grid">
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${!selectedMode ? 'active' : ''}`}
+                    onClick={() => setSelectedMode('')}
+                  >
+                    All Modes
+                  </button>
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${selectedMode === 'Online' ? 'active' : ''}`}
+                    onClick={() => setSelectedMode('Online')}
+                  >
+                    Online
+                  </button>
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${selectedMode === 'Offline' ? 'active' : ''}`}
+                    onClick={() => setSelectedMode('Offline')}
+                  >
+                    Offline
+                  </button>
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${selectedMode === 'Online & Offline' ? 'active' : ''}`}
+                    onClick={() => setSelectedMode('Online & Offline')}
+                  >
+                    Online &amp; Offline
+                  </button>
+                </div>
+              </div>
+
+              {/* Section 5: Maximum Fees */}
+              <div className="mn-filter-section">
+                <label className="mn-filter-section-title">Monthly Fee (Max)</label>
+                <div className="mn-filter-chips-grid">
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${!selectedMaxFees ? 'active' : ''}`}
+                    onClick={() => setSelectedMaxFees('')}
+                  >
+                    Any Price
+                  </button>
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${selectedMaxFees === '3000' ? 'active' : ''}`}
+                    onClick={() => setSelectedMaxFees('3000')}
+                  >
+                    Under ₹3,000
+                  </button>
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${selectedMaxFees === '5000' ? 'active' : ''}`}
+                    onClick={() => setSelectedMaxFees('5000')}
+                  >
+                    Under ₹5,000
+                  </button>
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${selectedMaxFees === '10000' ? 'active' : ''}`}
+                    onClick={() => setSelectedMaxFees('10000')}
+                  >
+                    Under ₹10,000
+                  </button>
+                </div>
+              </div>
+
+              {/* Section 6: Experience */}
+              <div className="mn-filter-section">
+                <label className="mn-filter-section-title">Teaching Experience</label>
+                <div className="mn-filter-chips-grid">
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${!selectedMinExp ? 'active' : ''}`}
+                    onClick={() => setSelectedMinExp('')}
+                  >
+                    Any Experience
+                  </button>
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${selectedMinExp === '1' ? 'active' : ''}`}
+                    onClick={() => setSelectedMinExp('1')}
+                  >
+                    1+ Years
+                  </button>
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${selectedMinExp === '3' ? 'active' : ''}`}
+                    onClick={() => setSelectedMinExp('3')}
+                  >
+                    3+ Years
+                  </button>
+                  <button
+                    type="button"
+                    className={`mn-modal-chip ${selectedMinExp === '5' ? 'active' : ''}`}
+                    onClick={() => setSelectedMinExp('5')}
+                  >
+                    5+ Years
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="mn-filters-modal-footer">
+              <button
+                type="button"
+                className="mn-modal-clear-btn"
+                onClick={handleClearAll}
+              >
+                Clear All
+              </button>
+              <button
+                type="button"
+                className="mn-modal-apply-btn"
+                onClick={() => {
+                  setShowFiltersModal(false);
+                  setCurrentPage(1);
+                  syncParamsToUrl({ page: 1 });
+                }}
+              >
+                Show Results
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 
 export default SearchPage;
-

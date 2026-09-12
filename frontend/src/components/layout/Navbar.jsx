@@ -91,8 +91,16 @@ const Navbar = () => {
     setActiveDropdown(activeDropdown === name ? null : name);
   };
 
+  const isExploreOrTutor =
+    location.pathname === '/tutors' ||
+    location.pathname === '/search' ||
+    location.pathname === '/explore' ||
+    location.pathname === '/find-tutors' ||
+    location.pathname.startsWith('/tutors/') ||
+    location.pathname.startsWith('/tutor/');
+
   return (
-    <header className={`navbar ${isDarkMode ? 'navbar-dark' : ''}`} ref={navRef}>
+    <header className={`navbar ${isDarkMode ? 'navbar-dark' : ''} ${isExploreOrTutor ? 'is-explore-page' : ''}`} ref={navRef}>
       {isDarkMode && (
         <div
           className="navbar-glow-line"
@@ -108,6 +116,24 @@ const Navbar = () => {
         />
       )}
       <div className="navbar-container">
+        {/* Mobile Back Button (Matching All Tutors Reference Design) */}
+        {isExploreOrTutor && (
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate('/');
+              }
+            }}
+            className="navbar-mobile-back-btn"
+            aria-label="Go back"
+          >
+            <i className="fa-solid fa-arrow-left"></i>
+          </button>
+        )}
+
         {/* Brand Logo matching Reference */}
         <Link to="/" className="navbar-logo" aria-label="MentorNearby Home">
           <img
@@ -436,7 +462,7 @@ const Navbar = () => {
 
         {/* Mobile Header Controls matching Reference Design */}
         <div className="mobile-header-controls">
-          <ThemeSwitcher compact={true} />
+          {!isExploreOrTutor && <ThemeSwitcher compact={true} />}
           <div className="nav-notification-wrapper" style={{ position: 'relative' }}>
             <button
               type="button"

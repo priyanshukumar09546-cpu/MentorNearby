@@ -45,6 +45,7 @@ const MobileBottomNav = () => {
   const isExploreActive =
     pathname.startsWith('/search') ||
     pathname.startsWith('/tutors') ||
+    pathname.startsWith('/explore') ||
     pathname.startsWith('/find-tutors') ||
     pathname.startsWith('/find-students') ||
     pathname.startsWith('/courses') ||

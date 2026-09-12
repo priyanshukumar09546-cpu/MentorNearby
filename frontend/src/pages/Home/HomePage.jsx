@@ -487,8 +487,8 @@ const HomePage = () => {
               <div className="mn-col-header">
                 <h3 className="mn-col-title">Featured Tutors</h3>
                 <div className="mn-col-header-right">
-                  <Link to="/search" className="mn-col-view-all">View All</Link>
-                  <Link to="/search" className="mn-carousel-arrow-btn" aria-label="Next tutors">›</Link>
+                  <Link to="/tutors" className="mn-col-view-all">View All</Link>
+                  <Link to="/tutors" className="mn-carousel-arrow-btn" aria-label="Next tutors">›</Link>
                 </div>
               </div>
 

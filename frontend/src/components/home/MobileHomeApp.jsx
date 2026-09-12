@@ -378,7 +378,7 @@ const MobileHomeApp = ({ featuredTutors = [], loadingTutors = false, publicStats
       <section className="mn-m-section mn-m-featured-section">
         <div className="mn-m-section-header">
           <h2 className="mn-m-section-title">Featured Tutors</h2>
-          <Link to="/search" className="mn-m-view-all-link">
+          <Link to="/tutors" className="mn-m-view-all-link">
             <span>View All</span>
             <i className="fa-solid fa-chevron-right" style={{ fontSize: '11px', marginLeft: '3px' }}></i>
           </Link>

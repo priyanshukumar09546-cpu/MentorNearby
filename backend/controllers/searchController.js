@@ -12,7 +12,33 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
     page = 1, limit = 12, sort = 'relevance'
   } = req.query;
 
-  const query = { profileVisibility: true };
+  const query = { profileVisibility: { $ne: false } };
+
+  // General text search (q or search parameter)
+  const generalSearch = (req.query.q || req.query.search || '').trim();
+  if (generalSearch) {
+    const User = require('../models/User');
+    const matchedUsers = await User.find({ name: new RegExp(generalSearch, 'i') }, '_id').lean().catch(() => []);
+    const userIds = matchedUsers.map(u => u._id);
+    const searchRegex = new RegExp(generalSearch, 'i');
+
+    const orClauses = [
+      { subjects: searchRegex },
+      { grades: searchRegex },
+      { 'location.city': searchRegex },
+      { 'location.area': searchRegex },
+      { 'location.pincode': searchRegex },
+      { serviceAreas: searchRegex },
+      { professionalHeadline: searchRegex },
+      { bio: searchRegex }
+    ];
+
+    if (userIds.length > 0) {
+      orClauses.push({ user: { $in: userIds } });
+    }
+
+    query['$or'] = orClauses;
+  }
 
   if (lat && lng) {
     query['location.coordinates'] = {
@@ -35,10 +61,23 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
     if (/^\d{6}$/.test(locationQuery.trim())) {
       query['location.pincode'] = locationQuery.trim();
     } else {
-      query['$or'] = [
-        { 'location.city': new RegExp(locationQuery, 'i') },
-        { 'location.area': new RegExp(locationQuery, 'i') }
-      ];
+      const locRegex = new RegExp(locationQuery.trim(), 'i');
+      if (query['$or']) {
+        query['$and'] = query['$and'] || [];
+        query['$and'].push({
+          $or: [
+            { 'location.city': locRegex },
+            { 'location.area': locRegex },
+            { serviceAreas: locRegex }
+          ]
+        });
+      } else {
+        query['$or'] = [
+          { 'location.city': locRegex },
+          { 'location.area': locRegex },
+          { serviceAreas: locRegex }
+        ];
+      }
     }
   }
 
@@ -55,7 +94,8 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
   }
 
   if (teachingModes) {
-    query.teachingModes = { $in: teachingModes.split(',') };
+    const modesArr = teachingModes.split(',').map(m => new RegExp(`^${m.trim()}$`, 'i'));
+    query.teachingModes = { $in: modesArr };
   }
 
   const effectiveMaxFees = maxFees || req.query.maxFee;
@@ -77,9 +117,9 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
   const pageNum = parseInt(page) || 1;
   const limitNum = Math.min(parseInt(limit) || 20, 50);
 
-  // Fetch tutors with user subscription and lead tracking fields
+  // Fetch tutors with user subscription, avatar, and lead tracking fields
   const tutors = await TutorProfile.find(query)
-    .populate('user', 'name isSuspended isSubscribed freeLeadsUsed freeChatsUsed subscriptionExpiry subscriptionType')
+    .populate('user', 'name email avatar profilePic isSuspended isSubscribed freeLeadsUsed freeChatsUsed subscriptionExpiry subscriptionType')
     .lean();
 
   // Filter out any suspended or orphaned profiles

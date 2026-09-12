@@ -7,7 +7,9 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.mentornearby.com';
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? 'http://localhost:5000' : 'https://api.mentornearby.com');
 console.log('Using API URL:', API_URL);
 
 const baseURL = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`;

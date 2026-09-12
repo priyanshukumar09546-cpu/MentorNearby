@@ -262,6 +262,7 @@ const AppContent = () => {
                             <Route path="/search" element={<SearchPage />} />
                             <Route path="/find-tutors" element={<SearchPage />} />
                             <Route path="/tutors" element={<SearchPage />} />
+                            <Route path="/explore" element={<SearchPage />} />
                             <Route path="/view-all-tutors" element={<SearchPage />} />
                             <Route path="/find-students" element={<FindStudentsPage />} />
                             <Route path="/students" element={<FindStudentsPage />} />

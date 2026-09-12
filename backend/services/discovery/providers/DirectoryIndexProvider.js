@@ -35,12 +35,15 @@ class DirectoryIndexProvider extends BaseProvider {
 
     const candidates = [];
     const subjects = options.subjects || ['Mathematics', 'Science', 'English', 'Physics', 'Chemistry'];
+    const queryTerms = ['coaching', 'academy', 'tuition', 'tutor', 'classes'];
 
     // Search public educational directories by querying open public search APIs / indexes
-    for (const subject of subjects.slice(0, 3)) {
+    for (let i = 0; i < queryTerms.length; i++) {
+      const term = queryTerms[i];
+      const subject = subjects[i % subjects.length];
       try {
         // Query open directory index using public search query
-        const queryUrl = `https://nominatim.openstreetmap.org/search?q=tuition+or+teacher+in+${encodeURIComponent(targetCity)}&format=json&addressdetails=1&limit=20`;
+        const queryUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${term} in ${targetCity}`)}&format=json&addressdetails=1&limit=20`;
         const res = await this.safeFetch(queryUrl, {
           headers: { 'Accept': 'application/json' },
         });

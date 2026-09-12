@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
@@ -8,6 +9,65 @@ const TutorProfile = require('../models/TutorProfile');
 const emailService = require('../services/emailService');
 const riskService = require('../services/riskService');
 const otpService = require('../services/otpService');
+
+// Helper to link a newly registered tutor to a Tutor Discovery Lead
+async function linkDiscoveryLead({ leadId, token, phone, email, userId, tutorProfileId }) {
+  try {
+    const TutorLead = require('../models/TutorLead');
+    let matchedLead = null;
+
+    if (leadId && mongoose.Types.ObjectId.isValid(leadId)) {
+      matchedLead = await TutorLead.findById(leadId);
+    } else if (token) {
+      matchedLead = await TutorLead.findOne({ claimToken: token });
+    }
+
+    if (!matchedLead && (phone || email)) {
+      const matchConditions = [];
+      if (email) matchConditions.push({ email: email.toLowerCase().trim() });
+      if (phone) {
+        const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+        if (cleanPhone.length === 10) {
+          matchConditions.push({ phone: new RegExp(cleanPhone + '$') });
+        }
+      }
+      if (matchConditions.length > 0) {
+        matchedLead = await TutorLead.findOne({ $or: matchConditions });
+      }
+    }
+
+    if (matchedLead) {
+      matchedLead.status = 'REGISTERED';
+      matchedLead.claimed = true;
+      matchedLead.claimedAt = new Date();
+      matchedLead.claimedBy = userId;
+      matchedLead.tutorProfile = tutorProfileId;
+      matchedLead.tutorUser = userId;
+      await matchedLead.save();
+
+      if (matchedLead.city) {
+        const DiscoveryCity = require('../models/DiscoveryCity');
+        await DiscoveryCity.findOneAndUpdate(
+          { name: new RegExp(`^${matchedLead.city}$`, 'i') },
+          { $inc: { claimedCount: 1 } }
+        ).catch(() => {});
+      }
+
+      await TutorProfile.findByIdAndUpdate(tutorProfileId, {
+        registeredViaDiscovery: true,
+        discoveryLeadId: matchedLead._id,
+        isApproved: false,
+        profileVisibility: false,
+        profileStatus: 'pending',
+      });
+
+      return matchedLead;
+    }
+  } catch (linkErr) {
+    console.warn('[Discovery Linking] Could not link lead:', linkErr.message);
+  }
+  return null;
+}
 
 exports.register = asyncHandler(async (req, res, next) => {
   const { name, email, password, role, phone } = req.body;
@@ -61,6 +121,15 @@ exports.register = asyncHandler(async (req, res, next) => {
         profilePhoto, introVideo, certificates,
         kycStatus: initialKycStatus,
         profileVisibility: false
+      });
+
+      await linkDiscoveryLead({
+        leadId: req.body.discoveryLeadId || req.query?.leadId,
+        token: req.body.discoveryToken || req.query?.token,
+        phone: existingUser.phone,
+        email: existingUser.email,
+        userId: existingUser._id,
+        tutorProfileId: tutorProfile._id,
       });
 
       if (kycData) {
@@ -193,6 +262,15 @@ exports.register = asyncHandler(async (req, res, next) => {
       certificates: certificates || [],
       kycStatus: initialKycStatus,
       profileVisibility: false // Hidden from public marketplace until approved by Admin
+    });
+
+    await linkDiscoveryLead({
+      leadId: req.body.discoveryLeadId || req.query?.leadId,
+      token: req.body.discoveryToken || req.query?.token,
+      phone: user.phone || phone,
+      email: user.email || normalizedEmail,
+      userId: user._id,
+      tutorProfileId: tutorProfile._id,
     });
 
     if (kycData) {

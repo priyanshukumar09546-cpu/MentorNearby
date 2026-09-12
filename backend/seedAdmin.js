@@ -1,6 +1,11 @@
 // ============================================================
 // seedAdmin.js — Automated Admin Seeder for MentorNearby
 // ============================================================
+const dns = require('dns');
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (_) {}
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const path = require('path');

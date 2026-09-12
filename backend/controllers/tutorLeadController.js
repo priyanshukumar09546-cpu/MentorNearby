@@ -119,12 +119,51 @@ exports.inviteLead = asyncHandler(async (req, res) => {
 
   const baseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const claimUrl = `${baseUrl}/claim-profile/${token}`;
+  const registrationUrl = `${baseUrl}/become-tutor?leadId=${lead._id}&token=${token}`;
 
   return success(res, `Invitation generated for ${lead.name}`, {
     claimToken: token,
     claimUrl,
+    registrationUrl,
     expiresAt: expires,
     status: lead.status,
+  });
+});
+
+// ── 3B. MARK LEAD CONTACTED (When Admin shares on WhatsApp) ──
+exports.markContacted = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const lead = await TutorLead.findById(id);
+
+  if (!lead) {
+    return error(res, 'Tutor lead not found', 404);
+  }
+
+  // Ensure claimToken exists
+  if (!lead.claimToken) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 30);
+    lead.claimToken = token;
+    lead.claimTokenExpires = expires;
+  }
+
+  // Only update to CONTACTED if currently DISCOVERED or LEAD
+  if (lead.status === 'DISCOVERED' || lead.status === 'LEAD') {
+    lead.status = 'CONTACTED';
+  }
+  lead.contactedAt = new Date();
+  await lead.save();
+
+  const baseUrl = process.env.CLIENT_URL || (process.env.NODE_ENV === 'production' ? 'https://www.mentornearby.com' : 'http://localhost:5173');
+  const registrationLink = `${baseUrl}/become-tutor?leadId=${lead._id}&token=${lead.claimToken}`;
+
+  return success(res, `Lead marked as CONTACTED for ${lead.name}`, {
+    leadId: lead._id,
+    status: lead.status,
+    contactedAt: lead.contactedAt,
+    claimToken: lead.claimToken,
+    registrationLink,
   });
 });
 

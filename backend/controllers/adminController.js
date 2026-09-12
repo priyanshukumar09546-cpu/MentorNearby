@@ -1266,7 +1266,7 @@ exports.getTutors = asyncHandler(async (req, res, next) => {
   const { status, accountStatus, kycStatus, verified, search, page = 1, limit = 50 } = req.query;
   const query = { role: 'TUTOR' };
 
-  if (accountStatus === 'ACTIVE') {
+  if (accountStatus === 'ACTIVE' || accountStatus === 'PENDING_APPROVAL') {
     query.isSuspended = { $ne: true };
   } else if (accountStatus === 'SUSPENDED') {
     query.isSuspended = true;
@@ -1328,6 +1328,16 @@ exports.getTutors = asyncHandler(async (req, res, next) => {
     tutorsWithProfiles = tutorsWithProfiles.filter((t) => t.profile?.kycStatus === 'VERIFIED');
   } else if (verified === 'false') {
     tutorsWithProfiles = tutorsWithProfiles.filter((t) => t.profile?.kycStatus !== 'VERIFIED');
+  }
+
+  if (accountStatus === 'PENDING_APPROVAL' || req.query.approvalStatus === 'PENDING') {
+    tutorsWithProfiles = tutorsWithProfiles.filter(
+      (t) => (!t.profile?.isApproved && t.profile?.profileStatus !== 'approved' && !t.isSuspended)
+    );
+  } else if (accountStatus === 'ACTIVE') {
+    tutorsWithProfiles = tutorsWithProfiles.filter(
+      (t) => (t.profile?.isApproved || t.profile?.profileStatus === 'approved') && !t.isSuspended
+    );
   }
 
   const total = await User.countDocuments(query);
@@ -1582,6 +1592,34 @@ exports.approveTutor = asyncHandler(async (req, res, next) => {
   if (userDoc) {
     userDoc.isVerified = true;
     await userDoc.save();
+  }
+
+  // Connect to Tutor Discovery Engine if this tutor came from a discovery lead
+  try {
+    const TutorLead = require('../models/TutorLead');
+    const DiscoveryCity = require('../models/DiscoveryCity');
+    const linkedLead = await TutorLead.findOne({
+      $or: [
+        { claimedBy: userId },
+        { tutorProfile: tutorProfile._id },
+        { _id: tutorProfile.discoveryLeadId || null },
+      ],
+    });
+    if (linkedLead) {
+      linkedLead.status = 'LIVE';
+      linkedLead.verified = true;
+      linkedLead.tutorProfile = tutorProfile._id;
+      await linkedLead.save();
+
+      if (linkedLead.city) {
+        await DiscoveryCity.findOneAndUpdate(
+          { name: new RegExp(`^${linkedLead.city}$`, 'i') },
+          { $inc: { verifiedCount: 1, liveCount: 1 } }
+        ).catch(() => {});
+      }
+    }
+  } catch (discoverySyncErr) {
+    console.warn('[Discovery Sync on Approve] Warning:', discoverySyncErr.message);
   }
 
   const recipientEmail = userDoc?.email || tutorProfile?.email;

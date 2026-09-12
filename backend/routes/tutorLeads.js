@@ -10,6 +10,7 @@ const {
   getLeads,
   getLeadById,
   inviteLead,
+  markContacted,
   approveLead,
   rejectLead,
 } = require('../controllers/tutorLeadController');
@@ -20,6 +21,7 @@ router.use(authorize('ADMIN'));
 router.get('/', getLeads);
 router.get('/:id', getLeadById);
 router.post('/:id/invite', inviteLead);
+router.post('/:id/contacted', markContacted);
 router.post('/:id/approve', approveLead);
 router.post('/:id/reject', rejectLead);
 

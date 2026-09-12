@@ -77,11 +77,13 @@ const AdminTutorsPage = () => {
 
   // Real statistics calculation based on DB response
   const stats = useMemo(() => {
-    const active = tutors.filter((t) => !t.isSuspended).length;
+    const active = tutors.filter((t) => !t.isSuspended && (t.profile?.isApproved || t.profile?.profileStatus === 'approved')).length;
+    const pendingApproval = tutors.filter((t) => !t.isSuspended && !t.profile?.isApproved && t.profile?.profileStatus !== 'approved').length;
     const suspended = tutors.filter((t) => t.isSuspended).length;
     const verified = tutors.filter((t) => t.profile?.kycStatus === 'VERIFIED').length;
     const pending = tutors.filter((t) => t.profile?.kycStatus === 'PENDING').length;
-    return { active, suspended, verified, pending, total: totalTutors };
+    const discoveryTutors = tutors.filter((t) => t.profile?.registeredViaDiscovery || t.registeredViaDiscovery || t.profile?.discoveryLeadId).length;
+    return { active, pendingApproval, suspended, verified, pending, discoveryTutors, total: totalTutors };
   }, [tutors, totalTutors]);
 
   // Copy helper
@@ -351,6 +353,15 @@ const AdminTutorsPage = () => {
 
         <div className="admin-kpi-card">
           <div className="admin-kpi-header">
+            <span className="admin-kpi-label">Pending Approval</span>
+            <div className="admin-kpi-icon-box">⏳</div>
+          </div>
+          <p className="admin-kpi-value text-amber-600">{stats.pendingApproval}</p>
+          <p className="admin-kpi-subtext">Awaiting admin review</p>
+        </div>
+
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-header">
             <span className="admin-kpi-label">Suspended</span>
             <div className="admin-kpi-icon-box">🔴</div>
           </div>
@@ -383,6 +394,7 @@ const AdminTutorsPage = () => {
               className="admin-select w-full text-xs"
             >
               <option value="ALL">All Account Statuses</option>
+              <option value="PENDING_APPROVAL">⏳ Pending Approval Only</option>
               <option value="ACTIVE">🟢 Active Only</option>
               <option value="SUSPENDED">🔴 Suspended Only</option>
             </select>
@@ -458,6 +470,24 @@ const AdminTutorsPage = () => {
                               <p className="admin-user-name">{tutor.name}</p>
                               {isVerified && <span className="text-emerald-600 text-xs" title="Verified Identity">✓</span>}
                             </div>
+                            {(profile.registeredViaDiscovery || tutor.registeredViaDiscovery || profile.discoveryLeadId) && (
+                              <div style={{ marginTop: '2px', marginBottom: '2px' }}>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                  color: '#b45309',
+                                  padding: '1px 6px',
+                                  borderRadius: '999px',
+                                  border: '1px solid #fcd34d',
+                                }}>
+                                  🛰️ Registered via Discovery Engine
+                                </span>
+                              </div>
+                            )}
                             <p className="admin-user-email truncate max-w-[170px] text-xs text-[#575752]">
                               {tutor.email}
                             </p>
@@ -536,6 +566,15 @@ const AdminTutorsPage = () => {
                                 {tutor.suspensionReason}
                               </span>
                             )}
+                          </div>
+                        ) : (!profile.isApproved && profile.profileStatus !== 'approved' && !tutor.isApproved) ? (
+                          <div className="flex flex-col items-start gap-0.5">
+                            <span className="admin-badge font-bold" style={{ background: '#fef3c7', color: '#d97706', border: '1px solid #fde68a' }}>
+                              ⏳ Pending Approval
+                            </span>
+                            <span className="text-[9.5px] text-amber-700 font-medium">
+                              Hidden from search
+                            </span>
                           </div>
                         ) : (
                           <span className="admin-badge admin-badge-emerald font-bold">
@@ -737,6 +776,26 @@ const AdminTutorsPage = () => {
                 ✕
               </button>
             </div>
+
+            {/* Discovery Engine Acquisition Banner */}
+            {(viewModalData.tutor?.profile?.registeredViaDiscovery || viewModalData.tutor?.registeredViaDiscovery || viewModalData.tutor?.profile?.discoveryLeadId) && (
+              <div style={{
+                background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                border: '1px solid #fcd34d',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                marginBottom: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#92400e',
+                fontWeight: 600,
+                fontSize: '12px'
+              }}>
+                <span style={{ fontSize: '16px' }}>🛰️</span>
+                <span><strong>Discovery Engine Lead:</strong> This tutor was acquired through the automated Discovery Engine and completed registration via invitation link.</span>
+              </div>
+            )}
 
             {/* Content Details */}
             <div className="space-y-4 text-xs">

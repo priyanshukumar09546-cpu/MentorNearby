@@ -27,6 +27,7 @@ export const toggleDiscoveryProvider = (data) => client.post('/tutor-discovery/p
 export const getTutorLeads = (params) => client.get('/tutor-leads', { params });
 export const getTutorLeadById = (id) => client.get(`/tutor-leads/${id}`);
 export const inviteTutorLead = (id) => client.post(`/tutor-leads/${id}/invite`);
+export const markLeadContacted = (id) => client.post(`/tutor-leads/${id}/contacted`);
 export const approveTutorLead = (id, data) => client.post(`/tutor-leads/${id}/approve`, data);
 export const rejectTutorLead = (id, data) => client.post(`/tutor-leads/${id}/reject`, data);
 

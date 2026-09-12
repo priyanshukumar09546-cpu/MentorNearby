@@ -99,16 +99,30 @@ const TutorLeadSchema = new mongoose.Schema(
       type: String,
       enum: [
         'DISCOVERED',
+        'CONTACTED',
+        'REGISTERED',
+        'PENDING APPROVAL',
+        'APPROVED',
+        'LIVE',
+        'REJECTED',
+        'SUSPENDED',
+        // Backwards compatibility
         'LEAD',
         'INVITED',
         'CLAIMED',
         'PROFILE_COMPLETED',
         'VERIFICATION_PENDING',
         'VERIFIED',
-        'LIVE',
-        'REJECTED',
       ],
-      default: 'LEAD',
+      default: 'DISCOVERED',
+      index: true,
+    },
+    contactedAt: {
+      type: Date,
+    },
+    registrationToken: {
+      type: String,
+      sparse: true,
       index: true,
     },
     claimed: {

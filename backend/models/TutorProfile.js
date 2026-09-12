@@ -161,6 +161,16 @@ const TutorProfileSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  registeredViaDiscovery: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  discoveryLeadId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TutorLead',
+    default: null
+  },
   isProfileComplete: {
     type: Boolean,
     default: false

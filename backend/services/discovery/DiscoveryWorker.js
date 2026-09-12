@@ -188,7 +188,7 @@ class DiscoveryWorker {
           // Save new legitimate lead
           await TutorLead.create({
             ...dedup.normalizedCandidate,
-            status: 'LEAD',
+            status: 'DISCOVERED',
             discoveredAt: new Date(),
           });
 

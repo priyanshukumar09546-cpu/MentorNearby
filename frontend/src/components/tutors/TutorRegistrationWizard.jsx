@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { uploadPhoto, uploadDocument, uploadTutorId } from '../../api/upload';
 import { sendDigilockerOtp, verifyDigilockerOtp } from '../../api/kyc';
+import { getClaimProfile } from '../../api/tutorDiscovery';
 import PhotoCropModal from '../common/PhotoCropModal';
 import Step7KYC from '../onboarding/Step7KYC';
 import '../../pages/Auth/BecomeTutorPage.css';
@@ -28,6 +29,13 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
   const [step, setStep] = useState(1);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Discovery Invite State (if arriving via WhatsApp invite link)
+  const [searchParams] = useSearchParams();
+  const leadId = searchParams.get('leadId');
+  const token = searchParams.get('token');
+  const [discoveryInvite, setDiscoveryInvite] = useState(null);
+  const [loadingDiscoveryInvite, setLoadingDiscoveryInvite] = useState(false);
 
   // Profile Photo Cropper State
   const [rawPhotoSrc, setRawPhotoSrc] = useState(null);
@@ -115,6 +123,39 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingKycField, setUploadingKycField] = useState(null);
+
+  // Prefill details if arriving via WhatsApp invite token
+  useEffect(() => {
+    if (!token) return;
+    let isMounted = true;
+    setLoadingDiscoveryInvite(true);
+    getClaimProfile(token)
+      .then((res) => {
+        if (!isMounted) return;
+        const data = res.data?.data || res.data;
+        if (data) {
+          setDiscoveryInvite(data);
+          setFormData((prev) => ({
+            ...prev,
+            name: data.name || prev.name,
+            preferredLocation: data.city || data.locality || prev.preferredLocation,
+            subjects: Array.isArray(data.subjects) && data.subjects.length > 0 ? data.subjects : prev.subjects,
+            classes: Array.isArray(data.classes) && data.classes.length > 0 ? data.classes : prev.classes,
+            qualification: data.qualification || prev.qualification,
+            experience: data.experience || prev.experience,
+            teachingMode: data.teachingMode === 'Both' || data.teachingMode === 'Online' || data.teachingMode === 'Offline' ? data.teachingMode : prev.teachingMode,
+            headline: data.name ? `${data.name} — Expert Tutor in ${data.city || 'India'}` : prev.headline,
+          }));
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not prefill from discovery lead token:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingDiscoveryInvite(false);
+      });
+    return () => { isMounted = false; };
+  }, [token]);
 
   // 1. Trigger Photo Selection and Open Interactive Cropper Modal
   const handlePhotoSelect = (e) => {
@@ -440,6 +481,8 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
         phone: formData.phone.trim(),
         password: formData.password,
         role: 'TUTOR',
+        discoveryLeadId: leadId || undefined,
+        discoveryToken: token || undefined,
         professionalHeadline: formData.headline.trim(),
         bio: formData.bio.trim(),
         gender: formData.gender,
@@ -520,6 +563,31 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
 
           <div className="mn-wizard-cap-divider">🎓</div>
         </div>
+
+        {/* Discovery Engine Invitation Banner */}
+        {discoveryInvite && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.08))',
+            border: '1.5px solid #f59e0b',
+            borderRadius: '14px',
+            padding: '16px 22px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.1)'
+          }}>
+            <span style={{ fontSize: '32px', flexShrink: 0 }}>🎉</span>
+            <div>
+              <h4 style={{ margin: '0 0 4px 0', color: '#b45309', fontWeight: '700', fontSize: '16px' }}>
+                Welcome to MentorNearby{discoveryInvite.name ? `, ${discoveryInvite.name}` : ''}!
+              </h4>
+              <p style={{ margin: 0, fontSize: '13.5px', color: '#78350f', lineHeight: '1.45' }}>
+                We noticed your teaching profile in <strong>{discoveryInvite.city || 'your city'}</strong> and invited you to join MentorNearby. We've pre-filled your subjects and details below—please review, set your password, and finish registration!
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ============================================================ */}
         {/* MAIN 8-STEP CARD CONTAINER                                   */}

@@ -106,7 +106,7 @@ class BaseProvider {
     if (!candidate.name || typeof candidate.name !== 'string') return false;
     const cleanName = candidate.name.trim();
     if (cleanName.length < 3 || cleanName.length > 80) return false;
-    if (/advertisement|sponsored|institute|coaching classes|academy|pvt ltd/i.test(cleanName)) {
+    if (/advertisement|sponsored|pvt ltd|private limited|corporate office|headquarters/i.test(cleanName)) {
       return false;
     }
 

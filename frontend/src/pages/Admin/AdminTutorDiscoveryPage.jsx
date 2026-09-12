@@ -25,6 +25,7 @@ import {
   getTutorLeads,
   getTutorLeadById,
   inviteTutorLead,
+  markLeadContacted,
   approveTutorLead,
   rejectTutorLead,
 } from '../../api/tutorDiscovery';
@@ -213,9 +214,54 @@ const AdminTutorDiscoveryPage = () => {
         fetchStats();
         fetchCities();
         fetchLogs();
+        if (cityName) {
+          setLeadCityFilter(cityName);
+          setLeadPage(1);
+          setActiveTab('leads');
+        }
       }
     } catch (err) {
       showToast?.(err.response?.data?.message || 'Failed to start discovery engine', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleShareOnWhatsApp = async (lead) => {
+    try {
+      setActionLoading(true);
+      let regUrl = '';
+      try {
+        const res = await markLeadContacted(lead._id);
+        if (res.data?.success) {
+          regUrl = res.data.data.registrationUrl;
+        }
+      } catch (e) {
+        console.warn('markLeadContacted error, fallback url:', e);
+      }
+
+      if (!regUrl) {
+        const token = lead.claimToken || lead.registrationToken || lead._id;
+        regUrl = `${window.location.origin}/become-tutor?leadId=${lead._id}&token=${token}`;
+      }
+
+      const message = `Hello ${lead.name || 'Tutor'},\n\nWe’re inviting selected tutors to join MentorNearby — a platform designed to connect qualified tutors with students and parents looking for trusted home and online tutoring.\n\nWe came across your tutoring profile and believe your teaching experience could be a great fit for our platform.\n\nJoin MentorNearby and start receiving relevant student enquiries based on your preferred subjects, classes and location.\n\n👉 Join MentorNearby:\n${regUrl}\n\nWe’d be happy to have you onboard.\n\nRegards,\nTeam MentorNearby\nConnecting Students with the Right Mentors`;
+
+      const cleanPhone = (lead.phone || '').replace(/\D/g, '');
+      let waUrl = '';
+      if (cleanPhone.length >= 10) {
+        const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+        waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
+      } else {
+        waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      }
+
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      showToast?.(`Tutor "${lead.name}" marked as CONTACTED and WhatsApp opened!`, 'success');
+      fetchLeads();
+      fetchStats();
+    } catch (err) {
+      showToast?.('Could not open WhatsApp', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -744,12 +790,15 @@ const AdminTutorDiscoveryPage = () => {
               >
                 <option value="ALL">All Lifecycle Statuses</option>
                 <option value="DISCOVERED">DISCOVERED</option>
+                <option value="CONTACTED">CONTACTED (Shared on WhatsApp)</option>
+                <option value="REGISTERED">REGISTERED</option>
+                <option value="PENDING APPROVAL">PENDING APPROVAL</option>
+                <option value="LIVE">LIVE (On Public Search)</option>
                 <option value="LEAD">LEAD</option>
                 <option value="INVITED">INVITED</option>
                 <option value="CLAIMED">CLAIMED</option>
                 <option value="PROFILE_COMPLETED">PROFILE_COMPLETED</option>
                 <option value="VERIFIED">VERIFIED</option>
-                <option value="LIVE">LIVE (On Public Search)</option>
                 <option value="REJECTED">REJECTED</option>
               </select>
               <button className="admin-btn admin-btn-secondary" onClick={() => { setLeadPage(1); fetchLeads(); }}>
@@ -889,7 +938,23 @@ const AdminTutorDiscoveryPage = () => {
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          <button
+                            className="admin-btn admin-btn-sm"
+                            style={{
+                              backgroundColor: '#25D366',
+                              color: '#ffffff',
+                              border: 'none',
+                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                            onClick={() => handleShareOnWhatsApp(lead)}
+                            title="Open WhatsApp with customized invitation message and mark lead as CONTACTED"
+                          >
+                            <span>💬</span> Share on WhatsApp
+                          </button>
                           <button
                             className="admin-btn admin-btn-sm admin-btn-secondary"
                             onClick={() => handleViewLead(lead)}
@@ -1277,6 +1342,17 @@ const AdminTutorDiscoveryPage = () => {
                 Close
               </button>
               <button
+                className="admin-btn"
+                style={{ background: '#25D366', color: '#ffffff', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
+                onClick={() => {
+                  const targetLead = viewLeadModal.lead;
+                  setViewLeadModal({ isOpen: false, lead: null });
+                  handleShareOnWhatsApp(targetLead);
+                }}
+              >
+                💬 Share on WhatsApp
+              </button>
+              <button
                 className="admin-btn admin-btn-primary"
                 onClick={() => {
                   const targetLead = viewLeadModal.lead;
@@ -1309,7 +1385,7 @@ const AdminTutorDiscoveryPage = () => {
 
             <div className="discovery-modal-body">
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                This secure one-time link lets the teacher claim their profile, review their information, set their hourly fees and subjects, and submit for verification.
+                This secure one-time link lets the teacher join MentorNearby, review their information, set their hourly fees and subjects, and submit for verification.
               </p>
 
               <div>
@@ -1334,21 +1410,17 @@ const AdminTutorDiscoveryPage = () => {
                 </div>
               </div>
 
-              {inviteModal.lead.phone && (
-                <div style={{ marginTop: '0.5rem' }}>
-                  <a
-                    href={`https://wa.me/91${inviteModal.lead.phone.replace(/[^0-9]/g, '').slice(-10)}?text=${encodeURIComponent(
-                      `Hello ${inviteModal.lead.name}! MentorNearby found your tutoring listing in ${inviteModal.lead.city}. Claim your verified profile to start receiving direct student enquiries: ${inviteModal.inviteUrl}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="admin-btn"
-                    style={{ background: '#25D366', color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-                  >
-                    💬 Send Claim Invitation via WhatsApp
-                  </a>
-                </div>
-              )}
+              <div style={{ marginTop: '0.75rem' }}>
+                <button
+                  onClick={() => {
+                    handleShareOnWhatsApp(inviteModal.lead);
+                  }}
+                  className="admin-btn"
+                  style={{ background: '#25D366', color: '#ffffff', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
+                >
+                  💬 Share on WhatsApp (Official Template)
+                </button>
+              </div>
             </div>
 
             <div className="discovery-modal-footer">

@@ -1,0 +1,328 @@
+/* ============================================================ */
+/* AdminTutorDiscoveryPage.css                                   */
+/* MentorNearby Enterprise Discovery Engine & City Targets       */
+/* ============================================================ */
+
+.discovery-page-container {
+  padding: 1.5rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* ── KPI Grid ── */
+.discovery-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.discovery-kpi-card {
+  background: var(--admin-surface, #ffffff);
+  border: 1px solid var(--border, #e6e2d9);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-subtle, 0 4px 16px rgba(0, 0, 0, 0.03));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.discovery-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover, 0 8px 24px rgba(0, 0, 0, 0.06));
+}
+
+.kpi-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #85857d);
+  margin-bottom: 0.35rem;
+}
+
+.kpi-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary, #1c1c1a);
+  line-height: 1.2;
+}
+
+.kpi-subtext {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #575752);
+  margin-top: 0.25rem;
+}
+
+.kpi-icon-bubble {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  background: var(--admin-bg-soft, #f7f5f0);
+}
+
+/* ── Engine Control Banner ── */
+.engine-status-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #f8fafc;
+  border-radius: 14px;
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.engine-status-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.engine-pulse-indicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.engine-pulse-indicator.running {
+  background: #10b981;
+  box-shadow: 0 0 12px #10b981;
+  animation: engine-pulse 1.8s infinite;
+}
+
+.engine-pulse-indicator.paused {
+  background: #f59e0b;
+  box-shadow: 0 0 10px #f59e0b;
+}
+
+.engine-pulse-indicator.idle {
+  background: #94a3b8;
+}
+
+@keyframes engine-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.engine-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Section Tabs ── */
+.discovery-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--border, #e6e2d9);
+  padding-bottom: 0.25rem;
+  overflow-x: auto;
+}
+
+.discovery-tab-btn {
+  padding: 0.65rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #575752);
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.discovery-tab-btn:hover {
+  color: var(--brand-gold-dark, #a96f13);
+  background: var(--admin-bg-soft, #f7f5f0);
+}
+
+.discovery-tab-btn.active {
+  color: var(--brand-gold-dark, #a96f13);
+  background: var(--admin-surface, #ffffff);
+  border-bottom: 3px solid var(--brand-gold, #d89b2b);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.02);
+}
+
+/* ── Live Log Terminal ── */
+.discovery-terminal {
+  background: #0d1117;
+  color: #c9d1d9;
+  border-radius: 12px;
+  padding: 1.25rem;
+  font-family: 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace;
+  font-size: 0.85rem;
+  border: 1px solid #30363d;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #21262d;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.terminal-log-line {
+  display: flex;
+  gap: 0.75rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.log-time {
+  color: #6e7681;
+  flex-shrink: 0;
+}
+
+.log-level {
+  font-weight: 700;
+  flex-shrink: 0;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.log-level.INFO { color: #58a6ff; }
+.log-level.SUCCESS { color: #3fb950; }
+.log-level.WARN { color: #d29922; }
+.log-level.ERROR { color: #f85149; }
+
+.log-city {
+  color: #a371f7;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.log-message {
+  color: #e6edf3;
+  flex: 1;
+}
+
+/* ── Modals & Overlays ── */
+.discovery-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.discovery-modal-card {
+  background: var(--admin-surface, #ffffff);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 680px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border, #e6e2d9);
+  display: flex;
+  flex-direction: column;
+}
+
+.discovery-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-soft, #eeece6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.discovery-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.discovery-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-soft, #eeece6);
+  background: var(--admin-bg-soft, #f7f5f0);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-radius: 0 0 16px 16px;
+}
+
+/* ── Progress Bar ── */
+.quota-progress-container {
+  width: 100%;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  height: 8px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 0.35rem;
+}
+
+.quota-progress-bar {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #d89b2b, #10b981);
+  transition: width 0.4s ease;
+}
+
+/* ── Badges ── */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-pill.DISCOVERED { background: #f1f5f9; color: #475569; }
+.status-pill.LEAD { background: #e0f2fe; color: #0284c7; }
+.status-pill.INVITED { background: #f3e8ff; color: #9333ea; }
+.status-pill.CLAIMED { background: #fef3c7; color: #d97706; }
+.status-pill.PROFILE_COMPLETED { background: #dbeafe; color: #2563eb; }
+.status-pill.VERIFICATION_PENDING { background: #ffedd5; color: #ea580c; }
+.status-pill.VERIFIED { background: #ccfbf1; color: #0d9488; }
+.status-pill.LIVE { background: #dcfce7; color: #15803d; }
+.status-pill.REJECTED { background: #fee2e2; color: #b91c1c; }
+
+.priority-star {
+  color: #f59e0b;
+  font-size: 1rem;
+}

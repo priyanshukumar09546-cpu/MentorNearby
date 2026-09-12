@@ -116,6 +116,8 @@ safeRoute('/api/cms', './routes/cmsRoutes');
 safeRoute('/api/search', './routes/search');
 safeRoute('/api/referrals', './routes/referral');
 safeRoute('/api/referral', './routes/referral');
+safeRoute('/api/tutor-discovery', './routes/tutorDiscovery');
+safeRoute('/api/tutor-leads', './routes/tutorLeads');
 
 // ── 404 CATCH-ALL ROUTE ──
 app.use((req, res) => {

@@ -67,6 +67,8 @@ const AdminCoursesPage = lazy(() => import('./pages/Admin/AdminCoursesPage'));
 const AdminStudyResourcesPage = lazy(() => import('./pages/Admin/AdminStudyResourcesPage'));
 const AdminFooterCmsPage = lazy(() => import('./pages/Admin/AdminFooterCmsPage'));
 const AdminSubscriptionsPage = lazy(() => import('./pages/Admin/AdminSubscriptionsPage'));
+const AdminTutorDiscoveryPage = lazy(() => import('./pages/Admin/AdminTutorDiscoveryPage'));
+const ClaimProfilePage = lazy(() => import('./pages/Auth/ClaimProfilePage'));
 
 // Books & Courses Secondary Routes
 const BooksHomePage = lazy(() => import('./pages/Books/BooksHomePage'));
@@ -176,6 +178,7 @@ const AppContent = () => {
                             <Route path="users" element={<AdminUsersPage />} />
                             <Route path="students" element={<AdminStudentsPage />} />
                             <Route path="tutors" element={<AdminTutorsPage />} />
+                            <Route path="tutor-discovery" element={<AdminTutorDiscoveryPage />} />
                             <Route path="kyc" element={<AdminKYCPage />} />
                             <Route path="kyc-pending" element={<AdminKYCPage />} />
                             <Route path="requests" element={<AdminRequestsPage />} />
@@ -240,6 +243,8 @@ const AppContent = () => {
                             <Route path="/reset-password" element={<ResetPasswordPage />} />
                             <Route path="/update-password" element={<ResetPasswordPage />} />
                             <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+                            <Route path="/claim-profile/:token" element={<ClaimProfilePage />} />
+                            <Route path="/claim/:token" element={<ClaimProfilePage />} />
                             
                             {/* 🧑‍🏫 Tutor Protected Routes */}
                             <Route path="/tutor/dashboard" element={<ProtectedRoute roles={['tutor']}><TutorDashboardPage /></ProtectedRoute>} />

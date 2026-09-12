@@ -1,0 +1,135 @@
+/* ============================================================ */
+/* ClaimProfilePage.css                                         */
+/* MentorNearby Verified Tutor Profile Claim & Onboarding       */
+/* ============================================================ */
+
+.claim-page-wrapper {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  background: var(--color-bg, #FAF8F5);
+}
+
+.claim-container {
+  width: 100%;
+  max-width: 680px;
+  background: var(--card-bg, #FFFFFF);
+  border: 1px solid var(--card-border, #E8E2D8);
+  border-radius: 24px;
+  box-shadow: var(--card-shadow, 0 20px 48px rgba(0, 0, 0, 0.06));
+  overflow: hidden;
+}
+
+.claim-header-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  padding: 2rem 2.25rem;
+  text-align: center;
+  position: relative;
+}
+
+.claim-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  background: rgba(216, 155, 43, 0.2);
+  color: #f2c66d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(216, 155, 43, 0.4);
+}
+
+.claim-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: #ffffff !important;
+}
+
+.claim-subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.claim-body {
+  padding: 2rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.claim-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.claim-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #1c1c1a);
+}
+
+.claim-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.claim-input:focus {
+  border-color: #d89b2b;
+  box-shadow: 0 0 0 3px rgba(216, 155, 43, 0.15);
+}
+
+.claim-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .claim-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .claim-body {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+.claim-success-card {
+  text-align: center;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.claim-success-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -48,6 +48,7 @@ const AdminLayout = ({ children }) => {
         { path: '/admin/users', label: 'Users Directory', icon: '👥' },
         { path: '/admin/students', label: 'Students Marketplace', icon: '👨‍🎓' },
         { path: '/admin/tutors', label: 'Tutors Marketplace', icon: '👨‍🏫' },
+        { path: '/admin/tutor-discovery', label: 'Tutor Discovery Engine', icon: '🛰️' },
         { path: '/admin/requests', label: 'Tutor Requests', icon: '📋' },
         { path: '/admin/courses', label: 'Courses & PYQs', icon: '🎓' },
         { path: '/admin/study-resources', label: 'Study Resources & Store', icon: '📖' },

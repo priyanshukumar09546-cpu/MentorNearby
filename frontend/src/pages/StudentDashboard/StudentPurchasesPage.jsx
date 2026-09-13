@@ -138,7 +138,7 @@ const StudentPurchasesPage = () => {
                     <div key={b.purchaseId} style={{ background: '#FFF', border: '1.5px solid #86EFAC', borderRadius: 16, padding: 22, boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                         <span style={{ fontSize: 11, fontWeight: 800, color: '#15803D', background: '#DCFCE7', padding: '3px 10px', borderRadius: 20 }}>
-                          ✓ {b.comboType === 'QA_COMBO' ? 'Q&A COMBO UNLOCKED' : 'FORMULA COMBO UNLOCKED'}
+                          ✓ {b.comboType === 'QA_COMBO' ? 'NOTES COMBO UNLOCKED' : 'FORMULA COMBO UNLOCKED'}
                         </span>
                         <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
                           Paid ₹{b.amount}
@@ -189,7 +189,7 @@ const StudentPurchasesPage = () => {
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <span className={`sr-res-type-badge ${item.resourceType === 'FORMULA_SHEET' ? 'formula' : 'qa'}`}>
-                            {item.resourceType === 'FORMULA_SHEET' ? '📄 Formula Sheet' : '✍️ Important Q&A'}
+                            {item.resourceType === 'FORMULA_SHEET' ? '📄 Formula Sheet' : '📝 Notes'}
                           </span>
                           <span style={{ fontSize: 11, fontWeight: 700, color: '#64748B' }}>
                             Class {item.classLevel} • {item.subject}

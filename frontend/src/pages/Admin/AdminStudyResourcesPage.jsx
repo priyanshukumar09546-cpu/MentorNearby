@@ -284,7 +284,7 @@ const AdminStudyResourcesPage = () => {
       chapterNumber: access.chapterNumber,
       chapterTitle: r.chapterTitle || '',
       unit: r.unit || `Unit ${access.chapterNumber}`,
-      resourceType: r.resourceType || 'FORMULA_SHEET',
+      resourceType: (r.resourceType === 'IMPORTANT_QUESTIONS_ANSWERS' ? 'NOTES' : r.resourceType) || 'FORMULA_SHEET',
       readingEnabled: access.isFreeDemo,
       downloadEnabled: r.downloadEnabled !== false,
       originalPrice: access.originalPrice,
@@ -623,7 +623,7 @@ const AdminStudyResourcesPage = () => {
             >
               <option value="">All Types</option>
               <option value="FORMULA_SHEET">Formula Sheet</option>
-              <option value="IMPORTANT_QUESTIONS_ANSWERS">Notes / Important Q&amp;A</option>
+              <option value="NOTES">Notes</option>
             </select>
 
             <button onClick={loadResources} className="admin-btn admin-btn-secondary">
@@ -678,7 +678,7 @@ const AdminStudyResourcesPage = () => {
                         </td>
                         <td style={{ padding: '14px 16px' }}>
                           <span style={{ fontSize: 11, fontWeight: 800, color: isFormula ? '#1D4ED8' : '#6D28D9', background: isFormula ? '#EFF6FF' : '#F5F3FF', padding: '3px 8px', borderRadius: 6, marginRight: 6 }}>
-                            {isFormula ? '📘 Formula' : '📚 Q&A'}
+                            {isFormula ? '📘 Formula' : '📝 Notes'}
                           </span>
                           {access.isFreeDemo && (
                             <span style={{ fontSize: 10, fontWeight: 900, color: '#166534', background: '#DCFCE7', padding: '2px 6px', borderRadius: 4 }}>
@@ -1043,7 +1043,7 @@ const AdminStudyResourcesPage = () => {
             >
               <option value="">All Types</option>
               <option value="FORMULA_COMBO">📘 Formula Combos</option>
-              <option value="QA_COMBO">📚 Q&A Combos</option>
+              <option value="QA_COMBO">📝 Notes Combos</option>
             </select>
 
             <select
@@ -1181,7 +1181,7 @@ const AdminStudyResourcesPage = () => {
                               Class {b.classLevel} • {b.subject}
                             </span>
                             <span style={{ fontSize: 10.5, fontWeight: 800, color: isQA ? '#7C3AED' : '#2563EB', background: isQA ? '#F5F3FF' : '#EFF6FF', padding: '3px 8px', borderRadius: 6 }}>
-                              {isQA ? '📚 Q&A Combo' : '📘 Formula Combo'}
+                              {isQA ? '📝 Notes Combo' : '📘 Formula Combo'}
                             </span>
                           </div>
                           
@@ -1391,7 +1391,7 @@ const AdminStudyResourcesPage = () => {
                   <tr key={p._id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                     <td style={{ padding: '10px 12px', fontWeight: 700 }}>{p.user?.name || 'Student'}</td>
                     <td style={{ padding: '10px 12px' }}>
-                      {p.purchaseType === 'FORMULA_COMBO' ? '📘 Formula Sheets Combo' : p.purchaseType === 'QA_COMBO' ? '📚 Q&A Combo' : p.resource?.title || 'Formula Sheet / Q&A'}
+                      {p.purchaseType === 'FORMULA_COMBO' ? '📘 Formula Sheets Combo' : p.purchaseType === 'QA_COMBO' ? '📝 Notes Combo' : p.resource?.title || 'Formula Sheet / Notes'}
                     </td>
                     <td style={{ padding: '10px 12px' }}>Class {p.classLevel} • {p.subject}</td>
                     <td style={{ padding: '10px 12px', fontWeight: 800, color: '#15803D' }}>₹{p.amount}</td>
@@ -1504,7 +1504,7 @@ const AdminStudyResourcesPage = () => {
                     style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 12.5 }}
                   >
                     <option value="FORMULA_SHEET">Formula Sheet</option>
-                    <option value="IMPORTANT_QUESTIONS_ANSWERS">Important Questions + Answers</option>
+                    <option value="NOTES">Notes</option>
                     <option value="REVISION_NOTES">Revision Notes &amp; PPT</option>
                   </select>
                 </div>
@@ -1727,7 +1727,7 @@ const AdminStudyResourcesPage = () => {
                   Edit Subject Combo &amp; Master File
                 </h3>
                 <span style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>
-                  Class {bundleFormData.classLevel} • {bundleFormData.subject} • {bundleFormData.comboType === 'QA_COMBO' ? 'Q&A Combo' : 'Formula Combo'}
+                  Class {bundleFormData.classLevel} • {bundleFormData.subject} • {bundleFormData.comboType === 'QA_COMBO' ? 'Notes Combo' : 'Formula Combo'}
                 </span>
               </div>
               <button

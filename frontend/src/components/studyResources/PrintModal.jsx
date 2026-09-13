@@ -127,7 +127,7 @@ const PrintModal = ({ isOpen, onClose, resourceTitle }) => {
             Want a physical copy of your notes?
           </h3>
           <p style={{ fontSize: 13, color: '#64748B', margin: 0 }}>
-            Get your formula sheets and important Q&amp;A printed and delivered to your doorstep.
+            Get your formula sheets and notes printed and delivered to your doorstep.
           </p>
 
           <button

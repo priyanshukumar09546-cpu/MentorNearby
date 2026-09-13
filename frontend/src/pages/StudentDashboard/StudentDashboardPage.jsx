@@ -721,11 +721,11 @@ const StudentDashboardPage = () => {
               {/* Resource 2 */}
               <Link to="/study-resources" className="sd-resource-card questions bg-white border border-gray-200 shadow-xs rounded-xl p-4 text-gray-900 flex items-center gap-3 hover:border-emerald-300 transition">
                 <div className="sd-resource-icon-box green">
-                  <span>❓</span>
+                  <span>📝</span>
                 </div>
                 <div className="sd-resource-text flex-1 min-w-0">
-                  <span className="sd-resource-title text-gray-900 font-bold text-sm block">Important Questions</span>
-                  <span className="sd-resource-desc text-gray-500 text-xs block truncate">Chapter-wise important questions</span>
+                  <span className="sd-resource-title text-gray-900 font-bold text-sm block">Notes</span>
+                  <span className="sd-resource-desc text-gray-500 text-xs block truncate">Chapter-wise revision notes</span>
                 </div>
                 <span className="sd-resource-arrow text-gray-400">→</span>
               </Link>

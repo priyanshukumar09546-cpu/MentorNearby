@@ -110,7 +110,7 @@ const findStudyResourceByIdOrSlug = async (id) => {
   const chapterNumber = chMatch ? parseInt(chMatch[1], 10) : 1;
 
   const isFormula = lower.includes('formula') || lower.includes('sheet');
-  const resourceType = isFormula ? 'FORMULA_SHEET' : 'IMPORTANT_QUESTIONS_ANSWERS';
+  const resourceTypeQuery = isFormula ? 'FORMULA_SHEET' : { $in: ['NOTES', 'IMPORTANT_QUESTIONS_ANSWERS'] };
 
   // Search MongoDB Atlas for original uploaded Cloudinary file matching this chapter
   try {
@@ -118,7 +118,7 @@ const findStudyResourceByIdOrSlug = async (id) => {
       classLevel,
       subject,
       chapterNumber,
-      resourceType,
+      resourceType: resourceTypeQuery,
       published: true,
       $or: [
         { fileUrl: { $regex: 'res.cloudinary.com' } },
@@ -383,12 +383,12 @@ exports.getSubjectStudyResources = asyncHandler(async (req, res, next) => {
 
   if (!qaBundle) {
     qaBundle = {
-      title: `Class ${normalizedClass} ${subject} Important Questions + Answers Combo`,
-      description: `Get all Important Questions + Answers from Chapter 1 to the final chapter for Class ${normalizedClass} ${subject}.`,
+      title: `Class ${normalizedClass} ${subject} Notes Combo`,
+      description: `Get all Chapter Notes from Chapter 1 to the final chapter for Class ${normalizedClass} ${subject}.`,
       classLevel: normalizedClass,
       subject: subject,
       comboType: 'QA_COMBO',
-      resourceType: 'IMPORTANT_QUESTIONS_ANSWERS',
+      resourceType: 'NOTES',
       price: standardPrices.qaPrice,
       published: true,
     };
@@ -1352,8 +1352,8 @@ exports.createBundlePaymentOrder = asyncHandler(async (req, res, next) => {
     bundle = await StudyResourceBundle.create({
       bundleId: bundleId || generatedSlug,
       slug: generatedSlug,
-      title: `Class ${effectiveClass} ${effectiveSubject} ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets Combo' : 'Important Questions + Answers Combo'}`,
-      description: `Complete package for all ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets' : 'Important Questions & Answers'} from Chapter 1 to Last Chapter for Class ${effectiveClass} ${effectiveSubject}.`,
+      title: `Class ${effectiveClass} ${effectiveSubject} ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets Combo' : 'Notes Combo'}`,
+      description: `Complete package for all ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets' : 'Notes'} from Chapter 1 to Last Chapter for Class ${effectiveClass} ${effectiveSubject}.`,
       classLevel: effectiveClass,
       subject: effectiveSubject,
       comboType: normalizedComboType,
@@ -1388,7 +1388,7 @@ exports.createBundlePaymentOrder = asyncHandler(async (req, res, next) => {
   });
 
   if (existingComboPurchase) {
-    return error(res, `You have already purchased the ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets' : 'Important Questions + Answers'} combo for this subject`, 400, 'ALREADY_PURCHASED');
+    return error(res, `You have already purchased the ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets' : 'Notes'} combo for this subject`, 400, 'ALREADY_PURCHASED');
   }
 
   // Server-side authoritative price retrieval from single source of truth
@@ -1510,7 +1510,7 @@ exports.verifyStudyPayment = asyncHandler(async (req, res, next) => {
       {
         classLevel: { $in: [purchase.classLevel, `Class ${purchase.classLevel}`] },
         subject: new RegExp(`^${purchase.subject}$`, 'i'),
-        resourceType: 'IMPORTANT_QUESTIONS_ANSWERS',
+        resourceType: { $in: ['NOTES', 'IMPORTANT_QUESTIONS_ANSWERS'] },
       },
       { $inc: { totalPurchases: 1 } }
     );
@@ -1580,7 +1580,7 @@ exports.getMyDownloads = asyncHandler(async (req, res, next) => {
     } else if (p.purchaseType === 'FORMULA_COMBO' || p.purchaseType === 'QA_COMBO' || p.purchaseType === 'SUBJECT_BUNDLE') {
       comboPacks.push({
         purchaseId: p._id,
-        title: p.bundle?.title || `Class ${p.classLevel} ${p.subject} ${p.comboType === 'QA_COMBO' ? 'Q&A Combo' : 'Formula Sheets Combo'}`,
+        title: p.bundle?.title || `Class ${p.classLevel} ${p.subject} ${p.comboType === 'QA_COMBO' ? 'Notes Combo' : 'Formula Sheets Combo'}`,
         classLevel: p.classLevel,
         subject: p.subject,
         comboType: p.comboType || (p.purchaseType === 'QA_COMBO' ? 'QA_COMBO' : 'FORMULA_COMBO'),
@@ -1640,7 +1640,11 @@ exports.adminGetResources = asyncHandler(async (req, res, next) => {
   }
 
   if (resourceType) {
-    query.resourceType = resourceType;
+    if (resourceType === 'NOTES' || resourceType === 'IMPORTANT_QUESTIONS_ANSWERS') {
+      query.resourceType = { $in: ['NOTES', 'IMPORTANT_QUESTIONS_ANSWERS'] };
+    } else {
+      query.resourceType = resourceType;
+    }
   }
 
   if (published !== undefined && published !== '') {
@@ -1911,7 +1915,7 @@ exports.adminGetBundles = asyncHandler(async (req, res, next) => {
       const count = await StudyResource.countDocuments({
         classLevel: { $in: [b.classLevel, `Class ${b.classLevel}`] },
         subject: new RegExp(`^${b.subject}$`, 'i'),
-        resourceType: isFormula ? 'FORMULA_SHEET' : 'IMPORTANT_QUESTIONS_ANSWERS',
+        resourceType: isFormula ? 'FORMULA_SHEET' : { $in: ['NOTES', 'IMPORTANT_QUESTIONS_ANSWERS'] },
       });
       return {
         ...b,
@@ -1935,7 +1939,7 @@ exports.adminSaveBundle = asyncHandler(async (req, res, next) => {
   const normalizedClass = normalizeClass(classLevel || bundle?.classLevel);
   const normalizedComboType = (comboType || bundle?.comboType) === 'QA_COMBO' ? 'QA_COMBO' : 'FORMULA_COMBO';
   const targetSubject = subject || bundle?.subject;
-  const resourceType = normalizedComboType === 'FORMULA_COMBO' ? 'FORMULA_SHEET' : 'IMPORTANT_QUESTIONS_ANSWERS';
+  const resourceType = normalizedComboType === 'FORMULA_COMBO' ? 'FORMULA_SHEET' : 'NOTES';
 
   if (!bundle && (!normalizedClass || !targetSubject)) {
     return error(res, 'Class level and subject are required', 400);
@@ -2003,8 +2007,8 @@ exports.adminSaveBundle = asyncHandler(async (req, res, next) => {
     await bundle.save();
   } else {
     bundle = await StudyResourceBundle.create({
-      title: title || `Class ${normalizedClass} ${targetSubject} ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets Combo' : 'Important Questions + Answers Combo'}`,
-      description: description || `Complete package for all ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets' : 'Important Questions & Answers'} from Chapter 1 to Last Chapter for Class ${normalizedClass} ${targetSubject}.`,
+      title: title || `Class ${normalizedClass} ${targetSubject} ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets Combo' : 'Notes Combo'}`,
+      description: description || `Complete package for all ${normalizedComboType === 'FORMULA_COMBO' ? 'Formula Sheets' : 'Notes'} from Chapter 1 to Last Chapter for Class ${normalizedClass} ${targetSubject}.`,
       classLevel: normalizedClass,
       subject: targetSubject,
       comboType: normalizedComboType,

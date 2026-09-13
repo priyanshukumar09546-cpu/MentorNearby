@@ -250,7 +250,7 @@ const SubjectResourcesPage = () => {
               Class {classLevel} {subject} Study Material
             </h1>
             <p className="sr-hero-subtitle" style={{ maxWidth: 640 }}>
-              Start preparing with our first two units completely free. Formula Sheets + Important Questions &amp; Answers are open for free reading. Unit 3 onwards are premium.
+              Start preparing with our first two units completely free. Formula Sheets + Notes are open for free reading. Unit 3 onwards are premium.
             </p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 18 }}>
@@ -369,16 +369,16 @@ const SubjectResourcesPage = () => {
               </div>
             </div>
 
-            {/* Combo 2: Important Questions + Answers Combo */}
+            {/* Combo 2: Notes Combo */}
             <div className={`sr-combo-card sr-combo-card-qa ${qaBundle.isPurchased ? 'purchased' : ''}`}>
               <div className="sr-combo-card-top">
-                <div className="sr-combo-card-badge sr-combo-card-badge-qa">📚 ALL-CHAPTER Q&amp;A BANK</div>
+                <div className="sr-combo-card-badge sr-combo-card-badge-qa">📚 ALL-CHAPTER NOTES PACK</div>
                 <h3 className="sr-combo-card-title">{qaBundle.title}</h3>
                 <p className="sr-combo-card-desc">{qaBundle.description}</p>
                 
                 <div className="sr-combo-card-features">
-                  <div className="sr-combo-card-feature">✓ All Chapter Important Q&amp;A ({qaBundle.resourceCount || chapters.length} Chapters)</div>
-                  <div className="sr-combo-card-feature">✓ Exam-Focused Questions &amp; Detailed Solutions</div>
+                  <div className="sr-combo-card-feature">✓ All Chapter Notes ({qaBundle.resourceCount || chapters.length} Chapters)</div>
+                  <div className="sr-combo-card-feature">✓ Key Concepts, Formulas &amp; Comprehensive Notes</div>
                   <div className="sr-combo-card-feature">✓ Lifetime Access &amp; PDF Download</div>
                 </div>
               </div>
@@ -509,7 +509,7 @@ const SubjectResourcesPage = () => {
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                             <span className={`sr-res-type-badge ${isFormula ? 'formula' : 'qa'}`}>
-                              {isFormula ? '📘 FORMULA SHEET' : '📝 NOTES / PPT'}
+                              {isFormula ? '📘 FORMULA SHEET' : '📝 NOTES'}
                             </span>
                             
                             <span style={{ fontSize: 11, fontWeight: 800, color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: 12 }}>

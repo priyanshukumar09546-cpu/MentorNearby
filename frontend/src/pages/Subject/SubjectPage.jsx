@@ -268,13 +268,12 @@ const SubjectPage = () => {
     if (categoryFilter === 'FORMULA_SHEET') {
       return resList.find((r) => r.resourceType === 'FORMULA_SHEET' && r.hasRealFile !== false);
     }
-    if (categoryFilter === 'NOTES') {
-      return resList.find((r) => r.resourceType === 'NOTES' && r.hasRealFile !== false);
-    }
-    if (categoryFilter === 'IMPORTANT_QUESTIONS') {
+    if (categoryFilter === 'NOTES' || categoryFilter === 'IMPORTANT_QUESTIONS') {
       return resList.find(
         (r) =>
-          (r.resourceType === 'IMPORTANT_QUESTIONS' || r.resourceType === 'IMPORTANT_QUESTIONS_ANSWERS') &&
+          (r.resourceType === 'NOTES' ||
+            r.resourceType === 'IMPORTANT_QUESTIONS' ||
+            r.resourceType === 'IMPORTANT_QUESTIONS_ANSWERS') &&
           r.hasRealFile !== false
       );
     }
@@ -321,6 +320,7 @@ const SubjectPage = () => {
   const renderCategoryEmptyState = () => {
     switch (selectedResourceTypeFilter) {
       case 'NOTES':
+      case 'IMPORTANT_QUESTIONS':
         return (
           <div className="mn-subj-empty-state">
             <div className="mn-subj-empty-icon">📝</div>
@@ -329,25 +329,6 @@ const SubjectPage = () => {
             </p>
             <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.5 }}>
               Our educators are currently curating and verifying authentic handwritten notes for this syllabus. In the meantime, you can explore the complete Formula Sheets.
-            </p>
-            <button
-              type="button"
-              className="mn-subj-empty-btn"
-              onClick={() => setSelectedResourceTypeFilter('FORMULA_SHEET')}
-            >
-              View Available Formula Sheets
-            </button>
-          </div>
-        );
-      case 'IMPORTANT_QUESTIONS':
-        return (
-          <div className="mn-subj-empty-state">
-            <div className="mn-subj-empty-icon">❓</div>
-            <p className="mn-subj-empty-text">
-              No Important Questions uploaded yet for Class {selectedClass} {subjectConfig.name}
-            </p>
-            <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.5 }}>
-              Curated high-frequency exam questions with official marking scheme solutions are being prepared by verified mentors.
             </p>
             <button
               type="button"
@@ -809,7 +790,7 @@ const SubjectPage = () => {
                 </div>
               </div>
 
-              {/* Tile 2: Important Questions */}
+              {/* Tile 2: Notes */}
               <div
                 className={`mn-subj-material-card ${selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS' ? 'active' : ''}`}
                 onClick={() => setSelectedResourceTypeFilter(selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS' ? 'ALL' : 'IMPORTANT_QUESTIONS')}
@@ -819,14 +800,14 @@ const SubjectPage = () => {
                 aria-pressed={selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS'}
               >
                 <div className="mn-subj-mat-icon-box" style={{ background: '#FEF2F2', color: '#E11D48' }}>
-                  <i className="fa-solid fa-circle-question"></i>
+                  <i className="fa-solid fa-book-open"></i>
                 </div>
                 <div className="mn-subj-mat-info">
                   <h4 className="mn-subj-mat-title">
-                    <span>Important Questions</span>
+                    <span>Notes</span>
                     <i className="fa-solid fa-chevron-right" style={{ fontSize: 10, color: '#94A3B8' }}></i>
                   </h4>
-                  <p className="mn-subj-mat-desc">Most expected questions with solutions</p>
+                  <p className="mn-subj-mat-desc">Revision notes, formulas &amp; key concepts</p>
                 </div>
               </div>
 
@@ -977,7 +958,7 @@ const SubjectPage = () => {
                     : selectedResourceTypeFilter === 'NOTES'
                     ? `Chapter-wise Notes (Class ${selectedClass})`
                     : selectedResourceTypeFilter === 'IMPORTANT_QUESTIONS'
-                    ? `Important Questions (Class ${selectedClass})`
+                    ? `Notes (Class ${selectedClass})`
                     : selectedResourceTypeFilter === 'PYQ'
                     ? `Previous Year Papers (Class ${selectedClass})`
                     : selectedResourceTypeFilter === 'NCERT_SOLUTIONS'
@@ -1109,13 +1090,13 @@ const SubjectPage = () => {
                               <span
                                 className="mn-subj-chapter-res-tag"
                                 style={{ background: '#FEF2F2', color: '#E11D48' }}
-                                title="Important Q&A Available"
+                                title="Notes Available"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleOpenChapterResource(qaRes);
                                 }}
                               >
-                                ❓ Q&amp;A
+                                📝 Notes
                               </span>
                             )}
                             {pyqRes && (

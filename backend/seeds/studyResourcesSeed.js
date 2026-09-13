@@ -350,14 +350,14 @@ async function seedStudyResources() {
       });
       totalBundlesCreated++;
 
-      // 2. Create Important Questions + Answers Combo
+      // 2. Create Notes Combo
       await StudyResourceBundle.create({
-        title: `Class ${item.classLevel} ${item.subject} Important Questions + Answers Combo`,
-        description: `Get all Important Questions + Answers from Chapter 1 to Chapter ${item.chapters.length} for Class ${item.classLevel} ${item.subject}. Free to read online; lifetime PDF downloads included.`,
+        title: `Class ${item.classLevel} ${item.subject} Notes Combo`,
+        description: `Get all Chapter Notes from Chapter 1 to Chapter ${item.chapters.length} for Class ${item.classLevel} ${item.subject}. Free to read online; lifetime PDF downloads included.`,
         classLevel: item.classLevel,
         subject: item.subject,
         comboType: 'QA_COMBO',
-        resourceType: 'IMPORTANT_QUESTIONS_ANSWERS',
+        resourceType: 'NOTES',
         price: item.qaComboPrice,
         published: true,
       });

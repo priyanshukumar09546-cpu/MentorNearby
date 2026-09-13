@@ -256,6 +256,9 @@ const StudyResourceViewerModalInner = ({
       loadResourceForReading();
       setZoomLevel(100);
       setIsContentObscured(false);
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
     }
   }, [isOpen, resourceId, propResource, loadResourceForReading]);
 
@@ -515,9 +518,26 @@ const StudyResourceViewerModalInner = ({
         };
 
         await page.render(renderContext).promise;
+
+        if (pageNum === 1 && container) {
+          container.scrollTop = 0;
+        }
       } catch (e) {
         console.error(`Page ${pageNum} render error:`, e);
       }
+    }
+
+    if (container) {
+      container.scrollTop = 0;
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = 0;
+        }
+        const page1El = document.getElementById('pdf-page-1') || canvasRefs.current[1];
+        if (page1El && page1El.scrollIntoView) {
+          page1El.scrollIntoView({ block: 'start', behavior: 'instant' });
+        }
+      });
     }
   }, [pdfDoc, zoomLevel, useFallbackIframe]);
 
@@ -987,7 +1007,7 @@ const StudyResourceViewerModalInner = ({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
             padding: '12px',
             WebkitOverflowScrolling: 'touch',
             minHeight: 0,
@@ -1080,13 +1100,13 @@ const StudyResourceViewerModalInner = ({
               style={{
                 position: 'relative',
                 width: '100%',
-                flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: 'flex-start',
                 gap: '16px',
-                margin: 'auto',
+                margin: (numPages === 1 && zoomLevel <= 100) ? 'auto' : '0 auto',
+                paddingBottom: '32px',
               }}
             >
               {Array.from({ length: numPages }).map((_, index) => {
@@ -1094,7 +1114,17 @@ const StudyResourceViewerModalInner = ({
                 return (
                   <div
                     key={pageNum}
-                    style={{ position: 'relative', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: 'auto' }}
+                    id={`pdf-page-${pageNum}`}
+                    data-page-number={pageNum}
+                    style={{
+                      position: 'relative',
+                      maxWidth: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      margin: '0 auto',
+                    }}
                   >
                     <canvas
                       ref={(el) => {

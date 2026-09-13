@@ -1086,7 +1086,7 @@ const SubjectPage = () => {
                                 📝 Notes
                               </span>
                             )}
-                            {qaRes && (
+                            {qaRes && !notesRes && (
                               <span
                                 className="mn-subj-chapter-res-tag"
                                 style={{ background: '#FEF2F2', color: '#E11D48' }}

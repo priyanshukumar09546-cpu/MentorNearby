@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { searchStudyResources, downloadStudyResourceComboFile } from '../../api/studyResources';
+import { searchStudyResources, downloadStudyResourceComboFile, downloadStudyResourceFile } from '../../api/studyResources';
 import { OFFICIAL_NOTES_AND_FORMULAS_CATALOG } from '../../data/officialAcademicCatalog';
 import StudyResourceViewerModal from '../../components/studyResources/StudyResourceViewerModal';
 import StudyPaymentModal from '../../components/studyResources/StudyPaymentModal';
@@ -300,12 +300,28 @@ const NotesAndPdfsPage = () => {
     const combined = [...OFFICIAL_NOTES_AND_FORMULAS_CATALOG];
     dbResources.forEach((dbItem) => {
       const isFormula = dbItem.resourceType === 'FORMULA_SHEET' || dbItem.resourceType === 'NOTES_FORMULAS';
+      const isNotes =
+        dbItem.resourceType === 'NOTES' ||
+        dbItem.resourceType === 'IMPORTANT_QUESTIONS' ||
+        dbItem.resourceType === 'IMPORTANT_QUESTIONS_ANSWERS' ||
+        dbItem.resourceType === 'REVISION_NOTES';
+
+      // CRITICAL: Do NOT let full-year PYQ_PAPERS or BOOK resources overwrite chapter notes!
+      if (!isFormula && !isNotes) return;
+      const chNum = dbItem.chapterNumber !== undefined && dbItem.chapterNumber !== null ? Number(dbItem.chapterNumber) : 0;
+      if (chNum <= 0) return; // Skip complete books / past year papers that are not chapter-specific
+
       const effectiveType = isFormula ? 'FORMULA_SHEET' : 'NOTES';
       const isSenior = ['11', '12'].includes(String(dbItem.classLevel));
       const price = isFormula ? (isSenior ? 8 : 7) : (isSenior ? 14 : 12);
 
       const existingIndex = combined.findIndex(
-        (c) => c.id === dbItem._id || (c.chapterNumber === dbItem.chapterNumber && c.classLevel === String(dbItem.classLevel) && c.subject?.toLowerCase() === dbItem.subject?.toLowerCase() && c.resourceType === effectiveType)
+        (c) =>
+          c.id === dbItem._id ||
+          (Number(c.chapterNumber) === chNum &&
+            String(c.classLevel) === String(dbItem.classLevel) &&
+            c.subject?.toLowerCase() === dbItem.subject?.toLowerCase() &&
+            c.resourceType === effectiveType)
       );
 
       if (existingIndex !== -1) {
@@ -315,6 +331,7 @@ const NotesAndPdfsPage = () => {
           id: dbItem._id,
           _id: dbItem._id,
           title: dbItem.title || combined[existingIndex].title,
+          chapterTitle: dbItem.chapterTitle || combined[existingIndex].chapterTitle,
           fileUrl: dbItem.fileUrl || `/api/study-resources/stream/${dbItem._id}`,
           fileReference: dbItem.fileReference,
         };
@@ -322,8 +339,8 @@ const NotesAndPdfsPage = () => {
         combined.push({
           id: dbItem._id,
           _id: dbItem._id,
-          chapterNumber: dbItem.chapterNumber || 1,
-          chapter: dbItem.chapter || `Chapter ${dbItem.chapterNumber || 1}`,
+          chapterNumber: chNum,
+          chapter: dbItem.chapter || `Chapter ${chNum}`,
           chapterTitle: dbItem.chapterTitle || dbItem.title,
           title: dbItem.title,
           classLevel: String(dbItem.classLevel || '9'),
@@ -333,6 +350,7 @@ const NotesAndPdfsPage = () => {
           downloadPrice: price,
           viewsCount: '1.2K',
           fileUrl: dbItem.fileUrl || `/api/study-resources/stream/${dbItem._id}`,
+          fileReference: dbItem.fileReference,
         });
       }
     });
@@ -494,7 +512,10 @@ const NotesAndPdfsPage = () => {
       resource: {
         _id: targetId,
         id: targetId,
-        title: res.title || (res.chapterTitle ? `${res.chapter || 'Chapter'} – ${res.chapterTitle}` : 'Study Resource PDF'),
+        title:
+          (String(res.classLevel) === '10' && res.subject?.toLowerCase() === 'mathematics' && (Number(res.chapterNumber) === 1 || res.chapterTitle?.toLowerCase() === 'real numbers') && !isFormula)
+            ? 'Class 10 Mathematics – Real Numbers – Notes'
+            : res.title || (res.chapterTitle ? `${res.chapter || 'Chapter'} – ${res.chapterTitle}` : 'Study Resource PDF'),
         chapter: res.chapter,
         chapterTitle: res.chapterTitle || res.title,
         classLevel: String(res.classLevel || '9'),
@@ -520,18 +541,16 @@ const NotesAndPdfsPage = () => {
     if (!rId) return;
     try {
       if (showToast) showToast('📥 Preparing free PDF download...', 'info');
-      const { downloadWatermarkedNote } = await import('../../api/notes');
-      const apiRes = await downloadWatermarkedNote(rId);
-      const blob = new Blob([apiRes.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
+      const downloadData = await downloadStudyResourceFile(rId);
+      const url = downloadData?.downloadUrl || downloadData?.data?.downloadUrl || res.fileUrl || `/api/study-resources/stream/${rId}?download=true`;
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `MentorNearby_${(res.title || 'study_notes').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url);
-      if (showToast) showToast('✅ Download complete (100% Free)', 'success');
+      if (showToast) showToast('✅ Download started (100% Free)', 'success');
     } catch (err) {
       const targetUrl = res.fileUrl || `/api/study-resources/stream/${rId}?download=true`;
       const link = document.createElement('a');

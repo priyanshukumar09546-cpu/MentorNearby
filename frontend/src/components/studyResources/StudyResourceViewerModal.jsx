@@ -401,7 +401,14 @@ const StudyResourceViewerModalInner = ({
           setPdfBlobUrl(localBlobUrl);
         }
       } catch (err) {
-        console.warn('[Reader] Fetch blob failed, using fallback direct URL:', err);
+        console.warn('[Reader] Fetch blob failed:', err);
+        if (err.message && (err.message.includes('404') || err.message.includes('not found') || err.message.includes('unavailable'))) {
+          if (isMounted) {
+            setErrorMsg('PDF currently unavailable');
+            setLoading(false);
+          }
+          return;
+        }
         const resolvedUrl = getFullDocUrl(streamFileUrl);
         const lowerRes = resolvedUrl.toLowerCase();
         if (lowerRes.includes('.jpg') || lowerRes.includes('.jpeg') || lowerRes.includes('.png') || lowerRes.includes('.webp')) {

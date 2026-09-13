@@ -405,6 +405,8 @@ exports.getSubjectStudyResources = asyncHandler(async (req, res, next) => {
   let qaCount = 0;
 
   resources.forEach((r) => {
+    const chNum = r.chapterNumber !== undefined && r.chapterNumber !== null ? Number(r.chapterNumber) : 1;
+    if (chNum <= 0) return;
     const isFormula = r.resourceType === 'FORMULA_SHEET';
     const defaultSinglePrice = isFormula ? standardPrices.singleFormulaPrice : standardPrices.singleNotesPrice;
     const downloadPrice = Number(r.downloadPrice || r.salePrice) || defaultSinglePrice;
@@ -461,7 +463,8 @@ exports.getSubjectStudyResources = asyncHandler(async (req, res, next) => {
   };
 
   resources.forEach((r) => {
-    const chNum = r.chapterNumber || 1;
+    const chNum = r.chapterNumber !== undefined && r.chapterNumber !== null ? Number(r.chapterNumber) : 1;
+    if (chNum <= 0) return;
     const isFormula = r.resourceType === 'FORMULA_SHEET';
     const defaultSinglePrice = isFormula ? standardPrices.singleFormulaPrice : standardPrices.singleNotesPrice;
     const individualPrice = Number(r.downloadPrice || r.salePrice) || defaultSinglePrice;
@@ -1071,7 +1074,7 @@ exports.streamStudyResourceCombo = asyncHandler(async (req, res, next) => {
 exports.downloadStudyResource = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  const resource = await StudyResource.findById(id).lean();
+  const resource = await findStudyResourceByIdOrSlug(id);
   if (!resource || !resource.published) {
     return error(res, 'Study resource not found', 404);
   }
@@ -1090,7 +1093,9 @@ exports.downloadStudyResource = asyncHandler(async (req, res, next) => {
   }
 
   // Increment download counter
-  await StudyResource.findByIdAndUpdate(id, { $inc: { downloadsCount: 1 } });
+  if (mongoose.Types.ObjectId.isValid(resource._id)) {
+    await StudyResource.findByIdAndUpdate(resource._id, { $inc: { downloadsCount: 1 } }).catch(() => {});
+  }
 
   const cleanTitle = (resource.title || 'study-material').replace(/[^a-zA-Z0-9_-]/g, '_');
   const fileName = resource.fileName || resource.fileReference?.filename || `MentorNearby_Class_${resource.classLevel}_${resource.subject}_${cleanTitle}.pdf`;

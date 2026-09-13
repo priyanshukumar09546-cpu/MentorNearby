@@ -20,19 +20,30 @@ class OfficialApiProvider extends BaseProvider {
   }
 
   /**
+   * Check if official partner API is connected
+   * @returns {boolean}
+   */
+  isConnected() {
+    return Boolean(this.apiUrl);
+  }
+
+  /**
    * Search official partner API if configured
    * @param {string} city
    * @param {Object} options
    */
   async search(city, options = {}) {
-    if (!this.apiUrl) {
-      // Gracefully skip when no official partner API URL is set in .env
+    const targetCity = (city || '').trim();
+    if (!targetCity) return [];
+
+    if (!this.isConnected()) {
+      console.log(`[${this.name}] Source not connected (DISCOVERY_OFFICIAL_API_URL not configured). Returning 0 leads.`);
       return [];
     }
 
     const candidates = [];
     try {
-      const url = `${this.apiUrl}/tutors?city=${encodeURIComponent(city)}&limit=${options.limit || 50}`;
+      const url = `${this.apiUrl}/tutors?city=${encodeURIComponent(targetCity)}&limit=${options.limit || 50}`;
       const headers = {
         'Authorization': `Bearer ${this.apiKey}`,
         'Accept': 'application/json',
@@ -41,7 +52,7 @@ class OfficialApiProvider extends BaseProvider {
       const res = await this.safeFetch(url, { headers });
       if (res.ok && res.isJson && Array.isArray(res.data?.tutors)) {
         for (const item of res.data.tutors) {
-          const normalized = this.normalizeResult(item, city);
+          const normalized = this.normalizeResult(item, targetCity);
           if (normalized && this.validateResult(normalized)) {
             candidates.push(normalized);
           }
@@ -59,20 +70,20 @@ class OfficialApiProvider extends BaseProvider {
 
     return {
       name: raw.name.trim(),
-      city: city || raw.city,
+      city: city || raw.city || '',
       locality: raw.locality || '',
-      subjects: Array.isArray(raw.subjects) ? raw.subjects : [raw.subject || 'Academics'],
-      classes: Array.isArray(raw.classes) ? raw.classes : ['Class 1-12'],
-      qualification: raw.qualification || 'Verified Degree',
-      experience: raw.experience || 'Experienced',
-      teachingMode: raw.teachingMode || 'Online',
+      subjects: Array.isArray(raw.subjects) ? raw.subjects : (raw.subject ? [raw.subject] : []),
+      classes: Array.isArray(raw.classes) ? raw.classes : (raw.classLevel ? [raw.classLevel] : []),
+      qualification: raw.qualification || '',
+      experience: raw.experience || '',
+      teachingMode: raw.teachingMode || 'Not Specified',
       fee: {
-        amount: raw.feeAmount || 500,
-        frequency: raw.feeFrequency || 'PER_HOUR',
-        rawText: raw.feeText || '',
+        amount: typeof raw.feeAmount === 'number' ? raw.feeAmount : (raw.fee?.amount || null),
+        frequency: raw.feeFrequency || raw.fee?.frequency || 'PER_MONTH',
+        rawText: raw.feeText || raw.fee?.rawText || '',
       },
       source: 'Official Education Partner API',
-      sourceUrl: raw.sourceUrl || `${this.apiUrl}/tutors/${raw.id || raw._id}`,
+      sourceUrl: raw.sourceUrl || (this.apiUrl ? `${this.apiUrl}/tutors/${raw.id || raw._id}` : ''),
       sourceProvider: this.name,
       rawSourceData: raw,
       phone: raw.phone || '',
@@ -82,3 +93,4 @@ class OfficialApiProvider extends BaseProvider {
 }
 
 module.exports = OfficialApiProvider;
+

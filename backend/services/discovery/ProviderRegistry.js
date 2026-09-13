@@ -42,12 +42,20 @@ class ProviderRegistry {
    * Return list of all registered providers with status
    */
   getAll() {
-    return Array.from(this.providers.values()).map((p) => ({
-      name: p.name,
-      attribution: p.attribution,
-      isEnabled: p.isEnabled,
-      rateLimitMs: p.rateLimitMs,
-    }));
+    return Array.from(this.providers.values()).map((p) => {
+      const isConnected = typeof p.isConnected === 'function' ? p.isConnected() : false;
+      return {
+        id: p.name,
+        name: p.name,
+        attribution: p.attribution,
+        description: p.attribution,
+        sourceType: p.name === 'OfficialApiProvider' ? 'Authorized Partner API' : p.name === 'OpenRegistryProvider' ? 'Open Registry API' : 'Public Directory Index API',
+        isEnabled: p.isEnabled,
+        isConnected,
+        connectionStatus: isConnected ? 'Connected' : 'Source not connected',
+        rateLimitMs: p.rateLimitMs,
+      };
+    });
   }
 
   /**

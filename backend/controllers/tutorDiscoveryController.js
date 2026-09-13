@@ -212,9 +212,10 @@ exports.getProviders = asyncHandler(async (req, res) => {
 
 // ── 13. TOGGLE PROVIDER ──
 exports.toggleProvider = asyncHandler(async (req, res) => {
-  const { name, isEnabled } = req.body;
-  const updated = providerRegistry.setEnabled(name, isEnabled);
-  return success(res, `Provider [${name}] set to ${isEnabled ? 'enabled' : 'disabled'}`, updated);
+  const { name, providerId, isEnabled } = req.body;
+  const targetName = name || providerId;
+  const updated = providerRegistry.setEnabled(targetName, isEnabled);
+  return success(res, `Provider [${targetName}] set to ${isEnabled ? 'enabled' : 'disabled'}`, updated);
 });
 
 // ── 14. PUBLIC CLAIM ENDPOINT: GET CLAIM DETAILS ──

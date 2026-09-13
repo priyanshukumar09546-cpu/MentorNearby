@@ -836,8 +836,8 @@ const AdminTutorDiscoveryPage = () => {
                   <tr>
                     <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem' }}>
                       <AdminEmptyState
-                        title="No tutor leads match criteria"
-                        subtitle="Run discovery for cities like Hapur, Ghaziabad, or Delhi to acquire real tutor leads."
+                        title="No tutor leads discovered yet"
+                        description="Connect an authorized provider or feed to discover real tutor profiles."
                       />
                     </td>
                   </tr>
@@ -1096,21 +1096,37 @@ const AdminTutorDiscoveryPage = () => {
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.25rem' }}>
                     <h4 style={{ fontWeight: 700, fontSize: '1rem' }}>{p.name}</h4>
-                    <span
-                      className={`admin-badge ${
-                        p.isEnabled ? 'admin-badge-success' : 'admin-badge-amber'
-                      }`}
-                    >
-                      {p.isEnabled ? 'ACTIVE' : 'DISABLED'}
-                    </span>
+                    <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                      <span
+                        className={`admin-badge ${
+                          p.isEnabled ? 'admin-badge-success' : 'admin-badge-amber'
+                        }`}
+                      >
+                        {p.isEnabled ? 'ENABLED' : 'DISABLED'}
+                      </span>
+                      <span
+                        className={`admin-badge ${
+                          p.isConnected ? 'admin-badge-success' : 'admin-badge-amber'
+                        }`}
+                        title={p.isConnected ? 'API / feed endpoint is configured' : 'External feed URL not configured'}
+                      >
+                        {p.connectionStatus || (p.isConnected ? 'CONNECTED' : 'Source not connected')}
+                      </span>
+                    </div>
                   </div>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     {p.description}
                   </p>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
-                    Source Type: <strong>{p.sourceType}</strong>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div>Source Type: <strong>{p.sourceType}</strong></div>
+                    <div>
+                      Feed Status:{' '}
+                      <strong style={{ color: p.isConnected ? '#10b981' : '#f59e0b' }}>
+                        {p.connectionStatus || (p.isConnected ? 'Connected' : 'Source not connected')}
+                      </strong>
+                    </div>
                   </div>
                 </div>
 
@@ -1119,7 +1135,7 @@ const AdminTutorDiscoveryPage = () => {
                     className={`admin-btn admin-btn-sm ${p.isEnabled ? 'admin-btn-secondary' : 'admin-btn-primary'}`}
                     onClick={async () => {
                       try {
-                        await toggleDiscoveryProvider({ providerId: p.id, isEnabled: !p.isEnabled });
+                        await toggleDiscoveryProvider({ name: p.name, providerId: p.id || p.name, isEnabled: !p.isEnabled });
                         showToast?.(`Provider "${p.name}" updated`, 'success');
                         fetchProviders();
                       } catch (err) {

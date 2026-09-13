@@ -46,6 +46,18 @@ const ContactUnlockSchema = new mongoose.Schema({
     enum: ['REQUESTED', 'CONTACT_UNLOCKED', 'ACCEPTED', 'REJECTED', 'COMPLETED', 'CANCELLED'],
     default: 'REQUESTED'
   },
+  targetId: {
+    type: String,
+    index: true
+  },
+  plan: {
+    type: String,
+    default: '₹99 Contact Unlock'
+  },
+  paymentDetails: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   studentArea: String,
   tutorArea: String,
   requestDetails: String,
@@ -54,7 +66,8 @@ const ContactUnlockSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// One unlock per user-tutor pair
-ContactUnlockSchema.index({ user: 1, tutor: 1 }, { unique: true });
+// Indexes for fast, reliable entitlement queries
+ContactUnlockSchema.index({ user: 1, tutor: 1 });
+ContactUnlockSchema.index({ user: 1, targetId: 1 });
 
 module.exports = mongoose.model('ContactUnlock', ContactUnlockSchema);

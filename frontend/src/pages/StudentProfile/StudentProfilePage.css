@@ -387,3 +387,627 @@
   align-items: center;
   gap: 8px;
 }
+
+/* ============================================================
+   Enhanced Budget, Contact Unlock & Modal Styles
+============================================================ */
+
+.mn-sp-unlocked-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.mn-sp-budget-card-box {
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  background: rgba(245, 158, 11, 0.04) !important;
+}
+
+.mn-sp-info-hint {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #f59e0b;
+  margin-top: 4px;
+}
+
+.mn-sp-budget-pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.dark .mn-sp-budget-pill {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.mn-sp-budget-desc {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 6px 0 0 0;
+  line-height: 1.4;
+}
+
+.dark .mn-sp-budget-desc {
+  color: #a1a1aa;
+}
+
+/* Locked Container */
+.mn-sp-locked-container {
+  margin-bottom: 16px;
+}
+
+.mn-sp-locked-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(241, 245, 249, 0.8);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.dark .mn-sp-locked-info {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.mn-sp-locked-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.mn-sp-locked-heading {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.dark .mn-sp-locked-heading {
+  color: #ffffff;
+}
+
+.mn-sp-locked-sub {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.dark .mn-sp-locked-sub {
+  color: #a1a1aa;
+}
+
+/* Unlocked Container */
+.mn-sp-unlocked-container {
+  margin-bottom: 16px;
+}
+
+.mn-sp-unlocked-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.mn-sp-unlocked-box {
+  background: rgba(240, 253, 244, 0.7);
+  border: 1px solid rgba(187, 247, 208, 0.9);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.dark .mn-sp-unlocked-box {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.mn-sp-unlocked-meta-lbl {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #059669;
+}
+
+.dark .mn-sp-unlocked-meta-lbl {
+  color: #34d399;
+}
+
+.mn-sp-unlocked-person-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 4px 0 10px 0;
+}
+
+.dark .mn-sp-unlocked-person-name {
+  color: #ffffff;
+}
+
+.mn-sp-unlocked-phone-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+}
+
+.dark .mn-sp-unlocked-phone-display {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fbbf24;
+}
+
+.mn-sp-action-btns-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mn-sp-btn-call {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000000;
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 14px 18px;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mn-sp-btn-call:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+}
+
+.mn-sp-btn-whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #25d366, #128c7e);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 14px 18px;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mn-sp-btn-whatsapp:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.45);
+}
+
+.mn-sp-unlocked-email-tag {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dark .mn-sp-unlocked-email-tag {
+  color: #a1a1aa;
+}
+
+.mn-sp-unlocked-permanent-note {
+  font-size: 0.75rem;
+  color: #059669;
+  margin-top: 12px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.dark .mn-sp-unlocked-permanent-note {
+  color: #34d399;
+}
+
+/* ============================================================
+   Teacher Contact Unlock Modal
+============================================================ */
+.mn-sp-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+}
+
+.mn-sp-modal-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: mnSpModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 28px;
+}
+
+.dark .mn-sp-modal-card {
+  background: #141416;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+}
+
+@keyframes mnSpModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.mn-sp-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.mn-sp-modal-title {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+}
+
+.dark .mn-sp-modal-title {
+  color: #ffffff;
+}
+
+.mn-sp-modal-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+
+.dark .mn-sp-modal-subtitle {
+  color: #a1a1aa;
+}
+
+.mn-sp-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+
+.mn-sp-modal-close-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #0f172a;
+}
+
+.dark .mn-sp-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Modal Lead Summary */
+.mn-sp-modal-lead-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.dark .mn-sp-modal-lead-summary {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.mn-sp-mls-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.mn-sp-mls-lbl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.dark .mn-sp-mls-lbl {
+  color: #a1a1aa;
+}
+
+.mn-sp-mls-val {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 2px;
+}
+
+.dark .mn-sp-mls-val {
+  color: #ffffff;
+}
+
+.mn-sp-mls-val.highlight {
+  color: #d97706;
+}
+
+.dark .mn-sp-mls-val.highlight {
+  color: #fbbf24;
+}
+
+.mn-sp-modal-budget-clarification {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: #b45309;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.dark .mn-sp-modal-budget-clarification {
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* Modal Plan Cards */
+.mn-sp-modal-plans {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.mn-sp-plan-option {
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 18px;
+  padding: 20px;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.mn-sp-plan-option.featured {
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, rgba(245, 158, 11, 0.01) 100%);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.12);
+}
+
+.dark .mn-sp-plan-option {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dark .mn-sp-plan-option.featured {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+}
+
+.mn-sp-plan-badge-free {
+  display: inline-block;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.mn-sp-plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.mn-sp-plan-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.dark .mn-sp-plan-title {
+  color: #ffffff;
+}
+
+.mn-sp-plan-sub {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+
+.dark .mn-sp-plan-sub {
+  color: #a1a1aa;
+}
+
+.mn-sp-plan-price-block {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.mn-sp-orig-strikethrough {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-decoration: line-through;
+  margin-right: 8px;
+}
+
+.mn-sp-free-price {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #10b981;
+}
+
+.mn-sp-pro-price {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.dark .mn-sp-pro-price {
+  color: #ffffff;
+}
+
+.mn-sp-pro-price small {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.dark .mn-sp-pro-price small {
+  color: #a1a1aa;
+}
+
+.mn-sp-plan-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+  font-size: 0.82rem;
+  color: #475569;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dark .mn-sp-plan-feature-list {
+  color: #cbd5e1;
+}
+
+.mn-sp-modal-unlock-act-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #f59e0b, #eab308);
+  color: #000000;
+  font-weight: 900;
+  font-size: 1rem;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mn-sp-modal-unlock-act-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.45);
+}
+
+.mn-sp-modal-unlock-act-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.mn-sp-modal-browse-sub-btn {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  background: transparent;
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.dark .mn-sp-modal-browse-sub-btn {
+  color: #fbbf24;
+}
+
+.mn-sp-modal-browse-sub-btn:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.mn-sp-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mn-sp-modal-cancel-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+
+.mn-sp-modal-cancel-btn:hover {
+  color: #0f172a;
+}
+
+.dark .mn-sp-modal-cancel-btn:hover {
+  color: #ffffff;
+}
+

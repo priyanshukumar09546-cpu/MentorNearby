@@ -224,9 +224,13 @@ exports.getTutorDashboard = asyncHandler(async (req, res, next) => {
 });
 
 exports.updateAvailability = asyncHandler(async (req, res, next) => {
-  const mf = req.body.mondayFridayHours || req.body['Monday - Friday Hours'] || req.body.mondayFriday || req.body.weekdays || '05:00 PM - 09:00 PM';
-  const sat = req.body.saturdayHours || req.body['Saturday Hours'] || req.body.saturday || 'Not Available';
-  const sun = req.body.sundayHours || req.body['Sunday Status / Hours'] || req.body.sunday || 'Not Available';
+  const body = req.body.availability && typeof req.body.availability === 'object' && !Array.isArray(req.body.availability)
+    ? { ...req.body.availability, ...req.body }
+    : req.body;
+
+  const mf = body.mondayFridayHours || body['Monday - Friday Hours'] || body.mondayFriday || body.weekdays || '05:00 PM - 09:00 PM';
+  const sat = body.saturdayHours || body['Saturday Hours'] || body.saturday || 'Not Available';
+  const sun = body.sundayHours || body['Sunday Status / Hours'] || body.sunday || 'Not Available';
 
   const isSatAvail = Boolean(sat && sat.toLowerCase() !== 'not available' && sat.toLowerCase() !== 'off' && sat.toLowerCase() !== 'none' && sat.trim() !== '');
   const isSunAvail = Boolean(sun && sun.toLowerCase() !== 'not available' && sun.toLowerCase() !== 'off' && sun.toLowerCase() !== 'none' && sun.trim() !== '');
@@ -242,6 +246,8 @@ exports.updateAvailability = asyncHandler(async (req, res, next) => {
     saturdayHours: satVal,
     sunday: sunVal,
     sundayHours: sunVal,
+    isSundayAvailable: isSunAvail,
+    isSaturdayAvailable: isSatAvail,
     monday: { available: true, slots: [mf] },
     tuesday: { available: true, slots: [mf] },
     wednesday: { available: true, slots: [mf] },
@@ -252,12 +258,21 @@ exports.updateAvailability = asyncHandler(async (req, res, next) => {
   };
 
   const userId = req.user?._id || req.user?.id;
+  if (!userId) {
+    return error(res, 'Authentication required to update availability', 401);
+  }
 
-  const tutorProfile = await TutorProfile.findOneAndUpdate(
-    { $or: [{ user: userId }, { userId: userId }, { _id: userId }] },
-    { $set: { availability: structuredAvailability } },
-    { new: true, upsert: true }
-  );
+  let tutorProfile = await TutorProfile.findOne({ user: userId });
+
+  if (!tutorProfile) {
+    tutorProfile = await TutorProfile.create({
+      user: userId,
+      availability: structuredAvailability
+    });
+  } else {
+    tutorProfile.availability = structuredAvailability;
+    await tutorProfile.save();
+  }
 
   return success(res, 'Availability schedule updated successfully', {
     success: true,

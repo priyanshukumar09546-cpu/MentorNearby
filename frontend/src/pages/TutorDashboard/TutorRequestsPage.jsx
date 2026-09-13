@@ -306,9 +306,11 @@ const TutorRequestsPage = () => {
                           </span>
                         </div>
 
-                        <h3 className="mn-tr-card-title">
-                          {req.title || `Tuition Requirement for ${classText}`}
-                        </h3>
+                        <Link to={`/students/${reqId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                          <h3 className="mn-tr-card-title hover:underline">
+                            {req.title || `Tuition Requirement for ${classText}`}
+                          </h3>
+                        </Link>
 
                         <div className="mn-tr-card-user">
                           <span>👤</span>
@@ -339,9 +341,20 @@ const TutorRequestsPage = () => {
                       </div>
 
                       <div className="mn-tr-card-footer">
-                        <span className="mn-tr-time">
-                          Posted {new Date(req.createdAt || Date.now()).toLocaleDateString()}
-                        </span>
+                        <Link
+                          to={`/students/${reqId}`}
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            color: '#F59E0B',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          👁️ View &amp; Unlock Contact →
+                        </Link>
 
                         {isApplied ? (
                           <button type="button" disabled className="mn-tr-btn-applied">

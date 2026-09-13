@@ -160,6 +160,15 @@ const EditTutorProfilePage = () => {
             ? tProfile.grades
             : []
         );
+
+        if (tProfile.availability) {
+          const avail = tProfile.availability;
+          setAvailabilityForm({
+            weekdays: avail.mondayFridayHours || avail.weekdays || avail.mondayFriday || (avail.monday?.slots?.[0]) || '05:00 PM - 09:00 PM',
+            saturday: avail.saturdayHours || avail.saturday || (avail.saturdaySlot?.slots?.[0]) || 'Not Available',
+            sunday: avail.sundayHours || avail.sunday || (avail.sundaySlot?.slots?.[0]) || 'Not Available'
+          });
+        }
       }
     } catch (err) {
       console.warn('Failed to load profile details:', err);
@@ -1776,9 +1785,15 @@ const EditTutorProfilePage = () => {
                         sunday: { available: Boolean(availabilityForm.sunday && availabilityForm.sunday !== 'Not Available'), slots: availabilityForm.sunday ? [availabilityForm.sunday] : [] }
                       }
                     };
-                    console.log('Saving tutor availability payload:', payload);
                     const res = await updateAvailability(payload);
-                    console.log('Availability save response:', res);
+                    const updatedAvail = res.data?.data?.availability || res.data?.availability || payload;
+                    setProfileData(prev => ({
+                      ...prev,
+                      profile: {
+                        ...prev.profile,
+                        availability: updatedAvail
+                      }
+                    }));
                     setActiveModal(null);
                     showToast('Availability schedule saved successfully!', 'success');
                   } catch (err) {

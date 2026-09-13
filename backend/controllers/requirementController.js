@@ -95,7 +95,7 @@ exports.getMyRequirements = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.getRequirementById = asyncHandler(async (req, res, next) => {
   const requirement = await TuitionRequirement.findById(req.params.id)
-    .populate('student', 'name email phone avatar')
+    .populate('student', 'name email avatar')
     .lean();
 
   if (!requirement) {

@@ -1484,5 +1484,135 @@ html.dark .mn-seo-section,
   border-top-color: rgba(255, 255, 255, 0.08) !important;
 }
 
+/* ============================================================
+   PREMIUM SCROLL & ENTRANCE ANIMATIONS (GPU Accelerated)
+   ============================================================ */
+
+/* Hero Entrance Animation */
+@keyframes mnHeroEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mn-hero-left-col {
+  animation: mnHeroEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.mn-hero-center-col {
+  animation: mnHeroEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+  opacity: 0;
+}
+
+.mn-hero-right-col {
+  animation: mnHeroEntrance 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+  opacity: 0;
+}
+
+/* Viewport Scroll Reveal */
+.mn-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.mn-reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(var(--stagger, 0) * 55ms);
+}
+
+/* Micro-Interactions on Interactive Elements */
+.mn-subject-tile {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+}
+
+.mn-subject-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .mn-subject-tile:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.mn-featured-tutor-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.mn-featured-tutor-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .mn-featured-tutor-card:hover {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+.mn-resource-row-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.mn-resource-row-card:hover {
+  transform: translateX(3px);
+  border-color: var(--color-gold, #D97706);
+}
+
+.mn-cta-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.mn-cta-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.mn-stat-vertical-card {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+}
+
+.mn-stat-vertical-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.mn-trust-strip-card {
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.mn-trust-strip-card:hover {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.07);
+}
+
+.mn-faq-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Accessibility: strictly respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .mn-hero-left-col,
+  .mn-hero-center-col,
+  .mn-hero-right-col,
+  .mn-reveal,
+  .mn-reveal.is-revealed,
+  .mn-subject-tile,
+  .mn-featured-tutor-card,
+  .mn-resource-row-card,
+  .mn-cta-card,
+  .mn-stat-vertical-card,
+  .mn-trust-strip-card {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 
 

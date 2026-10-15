@@ -180,6 +180,33 @@ const HomePage = () => {
     };
   }, []);
 
+  // Premium viewport reveal animation on scroll for key sections
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
+
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('.mn-reveal').forEach((el) => el.classList.add('is-revealed'));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -30px 0px' }
+    );
+
+    const elements = document.querySelectorAll('.mn-reveal:not(.is-revealed)');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [featuredTutors, loadingTutors]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
@@ -373,7 +400,7 @@ const HomePage = () => {
 
             {/* CENTER COLUMN: FRAMED HERO VISUAL (EXACT PROVIDED ARTWORK) */}
             <div className="mn-hero-center-col">
-              <div className="mn-hero-visual-frame">
+              <div className="mn-hero-visual-frame mn-reveal">
                 <img
                   src="/hero-illustration.png"
                   alt="KYC Verified Tutors and Students studying on MentorNearby"
@@ -385,7 +412,7 @@ const HomePage = () => {
             {/* RIGHT COLUMN: 3 STATS CARDS STACKED VERTICALLY */}
             <div className="mn-hero-right-col">
               {/* Stat Card 1: Happy Students */}
-              <div className="mn-stat-vertical-card">
+              <div className="mn-stat-vertical-card mn-reveal" style={{ '--stagger': 0 }}>
                 <div className="mn-stat-v-header">
                   <div className="mn-stat-v-icon-box mn-stat-purple">
                     <span className="mn-stat-icon">👥</span>
@@ -407,7 +434,7 @@ const HomePage = () => {
               </div>
 
               {/* Stat Card 2: Verified Tutors */}
-              <div className="mn-stat-vertical-card">
+              <div className="mn-stat-vertical-card mn-reveal" style={{ '--stagger': 1 }}>
                 <div className="mn-stat-v-header">
                   <div className="mn-stat-v-icon-box mn-stat-green">
                     <span className="mn-stat-icon">🛡️</span>
@@ -431,7 +458,7 @@ const HomePage = () => {
               </div>
 
               {/* Stat Card 3: Average Rating */}
-              <div className="mn-stat-vertical-card">
+              <div className="mn-stat-vertical-card mn-reveal" style={{ '--stagger': 2 }}>
                 <div className="mn-stat-v-header">
                   <div className="mn-stat-v-icon-box mn-stat-gold">
                     <span className="mn-stat-icon">⭐</span>
@@ -467,11 +494,12 @@ const HomePage = () => {
               </div>
 
               <div className="mn-subjects-2x4-grid">
-                {POPULAR_SUBJECTS.map((sub) => (
+                {POPULAR_SUBJECTS.map((sub, idx) => (
                   <button
                     key={sub.name}
                     type="button"
-                    className="mn-subject-tile"
+                    className="mn-subject-tile mn-reveal"
+                    style={{ '--stagger': idx }}
                     onClick={() => handleSubjectClick(sub.name)}
                     aria-label={`Browse ${sub.name} tutors`}
                   >
@@ -495,7 +523,7 @@ const HomePage = () => {
               {loadingTutors ? (
                 <div className="mn-featured-tutors-grid">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="mn-featured-tutor-card" style={{ opacity: 0.6 }}>
+                    <div key={i} className="mn-featured-tutor-card mn-reveal" style={{ opacity: 0.6, '--stagger': i }}>
                       <div className="mn-tutor-photo-wrap" style={{ background: '#E2E8F0' }}></div>
                       <div className="mn-tutor-card-body">
                         <div style={{ height: '14px', background: '#E2E8F0', borderRadius: '4px', marginBottom: '6px' }}></div>
@@ -506,7 +534,7 @@ const HomePage = () => {
                 </div>
               ) : featuredTutors.length > 0 ? (
                 <div className="mn-featured-tutors-grid">
-                  {featuredTutors.slice(0, 3).map((tutor) => {
+                  {featuredTutors.slice(0, 3).map((tutor, idx) => {
                     const tutorId = tutor._id || tutor.user?._id || tutor.userId || tutor.id || tutor.user;
                     const name = tutor.user?.name || tutor.name || 'Verified Tutor';
                     const photo = tutor.profilePhoto?.url || tutor.profilePhoto || tutor.profilePic || tutor.user?.avatar || tutor.user?.profilePic || '';
@@ -526,7 +554,7 @@ const HomePage = () => {
                     const isVerified = tutor.kycStatus === 'VERIFIED' || tutor.verificationStatus === 'approved' || tutor.verificationStatus === 'VERIFIED' || tutor.isApproved === true || tutor.isVerified === true;
 
                     return (
-                      <div key={tutorId} className="mn-featured-tutor-card">
+                      <div key={tutorId} className="mn-featured-tutor-card mn-reveal" style={{ '--stagger': idx }}>
                         {/* Tutor Image & Verified Badge */}
                         <Link to={`/tutor/${tutorId}`} state={{ tutor }} className="mn-tutor-photo-wrap block" style={{ textDecoration: 'none' }}>
                           {isVerified && <span className="mn-verified-badge">VERIFIED</span>}
@@ -596,8 +624,8 @@ const HomePage = () => {
               </div>
 
               <div className="mn-study-resources-list">
-                {STUDY_RESOURCES_LIST.map((res) => (
-                  <Link key={res.title} to={res.path} className="mn-resource-row-card">
+                {STUDY_RESOURCES_LIST.map((res, idx) => (
+                  <Link key={res.title} to={res.path} className="mn-resource-row-card mn-reveal" style={{ '--stagger': idx }}>
                     <div className="mn-resource-left">
                       <span className="mn-resource-icon">{res.icon}</span>
                       <div>
@@ -620,7 +648,7 @@ const HomePage = () => {
       {/* ============================================================ */}
       <section className="mn-trust-platform-strip" aria-label="Platform Trust Guarantee">
         <div className="mn-container">
-          <div className="mn-trust-strip-card">
+          <div className="mn-trust-strip-card mn-reveal">
             <div className="mn-trust-strip-left">
               <div className="mn-trust-shield-large">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -671,7 +699,8 @@ const HomePage = () => {
             {FAQS.map((faq, i) => (
               <div
                 key={i}
-                className={`mn-faq-card ${openFaq === i ? 'open' : ''}`}
+                className={`mn-faq-card mn-reveal ${openFaq === i ? 'open' : ''}`}
+                style={{ '--stagger': i }}
                 role="listitem"
               >
                 <button

@@ -24,31 +24,34 @@ const seedAdmin = async () => {
       await mongoose.connect(mongoUri);
     }
 
-    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@tutornearby.in').toLowerCase().trim();
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
+    const adminEmails = Array.from(new Set([
+      (process.env.ADMIN_EMAIL || 'admin@mentornearby.com').toLowerCase().trim(),
+      'admin@mentornearby.com',
+      'admin@tutornearby.in'
+    ]));
+    const adminPassword = process.env.ADMIN_PASSWORD || 'LoveMM@1913';
     const adminMobile = process.env.ADMIN_MOBILE || '7668016628';
     const hashed = await bcrypt.hash(adminPassword, 10);
 
-    // Upsert admin user with direct hashed password to guarantee exact bcrypt match
-    const adminUser = await User.findOneAndUpdate(
-      { email: adminEmail },
-      {
-        $set: {
-          name: 'Admin',
-          password: hashed,
-          phone: adminMobile,
-          role: 'ADMIN',
-          emailVerified: true,
-          phoneVerified: true,
-          isActive: true,
-          isSuspended: false,
-        }
-      },
-      { upsert: true, new: true }
-    );
-
-    console.log(`✅ [SEED_ADMIN] Admin created/reset successfully: ${adminEmail} / ${adminPassword} (Role: ${adminUser.role}, ID: ${adminUser._id})`);
-    return adminUser;
+    for (const email of adminEmails) {
+      const adminUser = await User.findOneAndUpdate(
+        { email },
+        {
+          $set: {
+            name: 'MentorNearby Admin',
+            password: hashed,
+            phone: adminMobile,
+            role: 'ADMIN',
+            emailVerified: true,
+            phoneVerified: true,
+            isActive: true,
+            isSuspended: false,
+          }
+        },
+        { upsert: true, new: true }
+      );
+      console.log(`✅ [SEED_ADMIN] Admin account ready: ${email} (Role: ${adminUser.role}, ID: ${adminUser._id})`);
+    }
   } catch (err) {
     console.error('❌ [SEED_ADMIN ERROR]:', err.message);
   }

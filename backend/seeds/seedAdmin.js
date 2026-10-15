@@ -42,26 +42,35 @@ const seed = async () => {
     process.exit(1);
   }
 
-  // ---- Admin User ----
-  let admin = await User.findOne({ email: adminEmail });
+  const adminEmails = Array.from(new Set([
+    (adminEmail || 'admin@mentornearby.com').toLowerCase().trim(),
+    'admin@mentornearby.com',
+    'admin@tutornearby.in'
+  ]));
 
-  if (admin) {
-    admin.password = adminPassword;
-    admin.role = 'ADMIN';
-    admin.emailVerified = true;
-    admin.isActive = true;
-    await admin.save();
-    console.log(`✅ Admin user updated with current .env credentials: ${adminEmail}`);
-  } else {
-    admin = await User.create({
-      name: adminName,
-      email: adminEmail,
-      password: adminPassword, // Pre-save hook will hash it
-      role: 'ADMIN',
-      emailVerified: true,
-      isActive: true,
-    });
-    console.log(`✅ Admin created: ${adminEmail}`);
+  // ---- Admin Users ----
+  for (const email of adminEmails) {
+    let admin = await User.findOne({ email });
+    if (admin) {
+      admin.password = adminPassword;
+      admin.role = 'ADMIN';
+      admin.emailVerified = true;
+      admin.isActive = true;
+      admin.isSuspended = false;
+      await admin.save();
+      console.log(`✅ Admin user updated: ${email}`);
+    } else {
+      admin = await User.create({
+        name: adminName,
+        email,
+        password: adminPassword,
+        role: 'ADMIN',
+        emailVerified: true,
+        isActive: true,
+        isSuspended: false,
+      });
+      console.log(`✅ Admin created: ${email}`);
+    }
   }
 
   // ---- Default Admin Config ----

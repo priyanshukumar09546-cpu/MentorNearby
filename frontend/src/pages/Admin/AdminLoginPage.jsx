@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -20,7 +21,7 @@ const AdminLoginPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
 
   const navigate = useNavigate();
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, setUser, isAuthenticated, refreshUser } = useAuth();
   const { showToast } = useToast();
 
   // If already logged in as ADMIN, redirect straight to /admin/dashboard
@@ -34,21 +35,30 @@ const AdminLoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     if (loading) return;
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      const msg = 'Please enter both admin email and password.';
+      setErrorMsg(msg);
+      showToast(msg, 'error');
+      return;
+    }
+
     setLoading(true);
     setErrorMsg('');
 
     try {
-      console.log('[AdminLogin] Submitting admin credentials:', { email: email.trim() });
+      console.log('[AdminLogin] Submitting admin credentials:', { email: trimmedEmail });
       let response;
       try {
         response = await client.post('/auth/admin/login', {
-          email: email.trim(),
+          email: trimmedEmail,
           password,
         });
       } catch (firstErr) {
         if (firstErr.response?.status === 404) {
           response = await client.post('/admin/login', {
-            email: email.trim(),
+            email: trimmedEmail,
             password,
           });
         } else {
@@ -58,7 +68,7 @@ const AdminLoginPage = () => {
 
       console.log('[AdminLogin] Response received:', response.status, response.data);
 
-      if (response.data.success) {
+      if (response.data?.success) {
         const token = response.data.token || response.data.data?.token;
         const userObj = response.data.user || response.data.data?.user;
 
@@ -66,6 +76,7 @@ const AdminLoginPage = () => {
           try {
             localStorage.setItem('token', token);
             localStorage.setItem('mn_token', token);
+            Cookies.set('token', token, { expires: 7, path: '/', secure: true, sameSite: 'none' });
           } catch (_) {}
         }
         if (userObj) {
@@ -73,10 +84,19 @@ const AdminLoginPage = () => {
             localStorage.setItem('user', JSON.stringify(userObj));
             localStorage.setItem('role', 'admin');
             localStorage.setItem('mn_role', 'ADMIN');
+            Cookies.set('role', 'ADMIN', { expires: 7, path: '/', secure: true, sameSite: 'none' });
           } catch (_) {}
         }
 
-        await refreshUser();
+        const cleanAdmin = { ...userObj, role: 'admin' };
+        if (setUser) {
+          setUser(cleanAdmin);
+        }
+
+        try {
+          await refreshUser();
+        } catch (_) {}
+
         showToast('Admin authenticated successfully', 'success');
         navigate('/admin/dashboard', { replace: true });
         
@@ -86,17 +106,30 @@ const AdminLoginPage = () => {
             window.location.replace('/admin/dashboard');
           }
         }, 300);
+      } else {
+        throw new Error(response.data?.message || 'Authentication failed');
       }
     } catch (err) {
       console.error('[AdminLogin Error]:', err.response?.status, err.response?.data || err.message);
-      let msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Invalid admin credentials. Access restricted.';
-      if (
-        msg.includes('Network Error') ||
-        msg.includes('Unable to connect') ||
+      const status = err.response?.status;
+      let msg = '';
+      if (status === 400) {
+        msg = err.response?.data?.message || 'Please provide both email and password.';
+      } else if (status === 401) {
+        msg = 'Invalid admin email or password. Please verify your credentials.';
+      } else if (status === 403) {
+        msg = err.response?.data?.message || 'Access restricted. This account does not have administrative privileges.';
+      } else if (status === 429) {
+        msg = 'Too many failed login attempts. Please wait a few minutes before trying again.';
+      } else if (
+        !err.response ||
         err.code === 'ERR_NETWORK' ||
-        !err.response
+        err.message?.includes('Network Error') ||
+        status >= 500
       ) {
-        msg = 'Server starting hai, 30 second wait karke retry karo. Render sleep me hai.';
+        msg = 'Unable to reach the authentication service. The server may be starting up, please wait a few seconds and try again.';
+      } else {
+        msg = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.';
       }
       setErrorMsg(msg);
       showToast(msg, 'error');
@@ -326,7 +359,7 @@ const AdminLoginPage = () => {
                   id="admin-email"
                   type="email"
                   required
-                  autoComplete="email"
+                  autoComplete="off"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your admin email"
@@ -351,7 +384,7 @@ const AdminLoginPage = () => {
                   id="admin-password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"

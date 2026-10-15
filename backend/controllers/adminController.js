@@ -46,6 +46,11 @@ exports.adminLogin = asyncHandler(async (req, res, next) => {
     return error(res, 'Invalid admin credentials', 401);
   }
 
+  if (user.isSuspended) {
+    console.warn(`Admin login blocked: Account is suspended (${cleanEmail})`);
+    return error(res, 'Admin account has been suspended. Please contact support.', 403);
+  }
+
   await User.updateOne(
     { _id: user._id },
     { $set: { lastLogin: Date.now() } }

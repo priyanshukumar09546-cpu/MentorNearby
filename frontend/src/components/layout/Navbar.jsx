@@ -14,6 +14,7 @@ const Navbar = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const unreadCount = 0;
+  const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const navRef = useRef(null);
@@ -21,6 +22,23 @@ const Navbar = () => {
   const toggleNotifDropdown = () => {
     navigate('/notifications');
   };
+
+  // Passive scroll listener for smooth navbar background & elevation transition
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 15);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Close dropdowns on outside click or route change
   useEffect(() => {
@@ -103,7 +121,7 @@ const Navbar = () => {
     location.pathname.startsWith('/tutor/');
 
   return (
-    <header className={`navbar ${isDarkMode ? 'navbar-dark' : ''} ${isExploreOrTutor ? 'is-explore-page' : ''}`} ref={navRef}>
+    <header className={`navbar ${isDarkMode ? 'navbar-dark' : ''} ${isExploreOrTutor ? 'is-explore-page' : ''} ${isScrolled ? 'navbar-scrolled' : ''}`} ref={navRef}>
       {isDarkMode && (
         <div
           className="navbar-glow-line"
@@ -171,7 +189,11 @@ const Navbar = () => {
                 onMouseEnter={() => setActiveDropdown('findStudents')}
               >
                 <span>Find Students</span>
-                <span className="nav-chevron">▾</span>
+                <span className="nav-chevron">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
               </button>
             ) : (
               <button
@@ -184,7 +206,11 @@ const Navbar = () => {
                 onMouseEnter={() => setActiveDropdown('findTutors')}
               >
                 <span>Find Tutors</span>
-                <span className="nav-chevron">▾</span>
+                <span className="nav-chevron">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
               </button>
             )}
 
@@ -271,7 +297,11 @@ const Navbar = () => {
               onMouseEnter={() => setActiveDropdown('studyResources')}
             >
               <span>Study Resources</span>
-              <span className="nav-chevron">▾</span>
+              <span className="nav-chevron">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
             </button>
             {activeDropdown === 'studyResources' && (
               <div
@@ -335,7 +365,11 @@ const Navbar = () => {
               onMouseEnter={() => setActiveDropdown('helpSupport')}
             >
               <span>Help &amp; Support</span>
-              <span className="nav-chevron">▾</span>
+              <span className="nav-chevron">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
             </button>
             {activeDropdown === 'helpSupport' && (
               <div
@@ -376,7 +410,11 @@ const Navbar = () => {
               onMouseEnter={() => setActiveDropdown('moreMenu')}
             >
               <span>More</span>
-              <span className="nav-chevron">▾</span>
+              <span className="nav-chevron">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
             </button>
             {activeDropdown === 'moreMenu' && (
               <div
@@ -415,7 +453,11 @@ const Navbar = () => {
           <div className="nav-lang-pill" title="Language: English">
             <span className="nav-lang-globe">🌐</span>
             <span className="nav-lang-text">English</span>
-            <span className="nav-chevron">▾</span>
+            <span className="nav-chevron">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </span>
           </div>
 
           {/* Theme Switcher Toggle */}

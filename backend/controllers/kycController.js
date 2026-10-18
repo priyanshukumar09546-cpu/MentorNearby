@@ -1,3 +1,6 @@
+const path = require('path');
+const fs = require('fs');
+const mongoose = require('mongoose');
 const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const KYC = require('../models/KYC');
@@ -119,7 +122,7 @@ exports.adminGetKycList = asyncHandler(async (req, res, next) => {
 
   let kycRecords = await KYC.find(query)
     .populate('user', 'name email phone role createdAt')
-    .populate('tutorProfile', 'professionalHeadline bio teachingPhilosophy profilePhoto introVideo education subjects grades languages teachingModes experience fees location serviceAreas availability verificationStatus kycStatus profileCompletionPercentage')
+    .populate('tutorProfile', 'professionalHeadline bio teachingPhilosophy profilePhoto introVideo education subjects grades languages teachingModes experience fees location serviceAreas availability verificationStatus kycStatus profileCompletionPercentage idPhotoPath aadhaarLast4 aadhaarVerhoeffPass')
     .sort({ createdAt: -1 });
 
   // In-memory filter if search query is provided
@@ -378,4 +381,166 @@ exports.verifyDigilockerOtp = asyncHandler(async (req, res) => {
     status: 'VERIFIED'
   });
 });
+
+// @desc    Securely retrieve tutor's Aadhaar / Govt ID document for Admin Viewer
+// @route   GET /api/admin/kyc/:id/document, GET /api/kyc/admin/:id/document
+// @access  Private (Admin only)
+exports.adminGetAadhaarDocument = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  let kyc = null;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    kyc = await KYC.findById(id)
+      .populate('user', 'name email phone')
+      .populate('tutorProfile');
+  }
+
+  if (!kyc && mongoose.Types.ObjectId.isValid(id)) {
+    kyc = await KYC.findOne({ user: id })
+      .populate('user', 'name email phone')
+      .populate('tutorProfile');
+  }
+
+  let tutorProfile = kyc?.tutorProfile;
+  if (!tutorProfile && mongoose.Types.ObjectId.isValid(id)) {
+    tutorProfile = await TutorProfile.findById(id).populate('user', 'name email phone');
+    if (!tutorProfile) {
+      tutorProfile = await TutorProfile.findOne({ user: id }).populate('user', 'name email phone');
+    }
+  }
+
+  if (!kyc && !tutorProfile) {
+    return error(res, 'KYC or Tutor record not found', 404);
+  }
+
+  const tutorUser = kyc?.user || tutorProfile?.user;
+  const tutorName = tutorUser?.name || 'Tutor';
+  const last4 = kyc?.govtIdLast4 || tutorProfile?.aadhaarLast4 || kyc?.digilockerData?.last4 || '';
+  const maskedAadhaar = last4 ? `•••• •••• ${last4}` : 'Not Specified';
+  const kycStatus = kyc?.status || tutorProfile?.kycStatus || 'NOT_SUBMITTED';
+  const verhoeffPass = kyc?.aadhaarVerhoeffPass ?? tutorProfile?.aadhaarVerhoeffPass ?? null;
+  const kycMode = kyc?.kycMode || (kyc?.digilockerVerified ? 'DIGILOCKER' : 'MANUAL');
+
+  // Helper to format secure document URLs
+  const formatSecureUrl = (rawUrl) => {
+    if (!rawUrl || typeof rawUrl !== 'string') return null;
+    if (rawUrl.startsWith('/secure-ids/private/')) {
+      const filename = path.basename(rawUrl);
+      return `/api/admin/kyc/file/${filename}`;
+    }
+    return rawUrl;
+  };
+
+  const documentList = [];
+
+  // 1. Check KYC.idPhotoPath
+  if (kyc?.idPhotoPath) {
+    const formatted = formatSecureUrl(kyc.idPhotoPath);
+    if (formatted) {
+      documentList.push({
+        label: 'Aadhaar Document (Front Side)',
+        url: formatted,
+        side: 'front',
+        isLocalPrivate: kyc.idPhotoPath.startsWith('/secure-ids/private/'),
+      });
+    }
+  }
+
+  // 2. Check TutorProfile.idPhotoPath if distinct
+  if (tutorProfile?.idPhotoPath && tutorProfile.idPhotoPath !== kyc?.idPhotoPath) {
+    const formatted = formatSecureUrl(tutorProfile.idPhotoPath);
+    if (formatted && !documentList.some(d => d.url === formatted)) {
+      documentList.push({
+        label: documentList.length === 0 ? 'Aadhaar Document (Front Side)' : 'Aadhaar Document (Back Side)',
+        url: formatted,
+        side: documentList.length === 0 ? 'front' : 'back',
+        isLocalPrivate: tutorProfile.idPhotoPath.startsWith('/secure-ids/private/'),
+      });
+    }
+  }
+
+  // 3. Check KYC.documents array
+  if (Array.isArray(kyc?.documents) && kyc.documents.length > 0) {
+    const idDocs = kyc.documents.filter(d => d.type === 'GOVT_ID' || d.type === 'ADDRESS_PROOF');
+    idDocs.forEach((d, idx) => {
+      const formatted = formatSecureUrl(d.url);
+      if (formatted && !documentList.some(existing => existing.url === formatted)) {
+        const sideLabel = idx === 0 && documentList.length === 0
+          ? 'Aadhaar Document (Front Side)'
+          : idx === 1 || documentList.length === 1
+          ? 'Aadhaar Document (Back Side)'
+          : `Document #${documentList.length + 1} (${d.type === 'ADDRESS_PROOF' ? 'Address Proof' : 'Govt ID'})`;
+
+        documentList.push({
+          label: sideLabel,
+          url: formatted,
+          side: idx === 0 ? 'front' : 'back',
+          type: d.type,
+          uploadedAt: d.uploadedAt,
+          isLocalPrivate: (d.url || '').startsWith('/secure-ids/private/'),
+        });
+      }
+    });
+  }
+
+  const isDigilocker = Boolean(kyc?.digilockerVerified || kyc?.digilockerData?.verifiedAt);
+
+  // Audit view action without modifying approval status
+  try {
+    await logAuditAction({
+      adminId: req.user?._id || req.user?.id,
+      action: 'ADMIN_VIEW_AADHAAR_DOCUMENT',
+      targetType: 'KYC',
+      targetId: kyc?._id || tutorProfile?._id,
+      details: `Admin viewed Aadhaar document for tutor ${tutorName} (${tutorUser?._id || 'unknown'}). Total documents: ${documentList.length}.`,
+      req,
+    });
+  } catch (_) {}
+
+  return success(res, 'Aadhaar document retrieved', {
+    hasDocument: documentList.length > 0,
+    tutorName,
+    tutorEmail: tutorUser?.email,
+    tutorPhone: tutorUser?.phone,
+    govtIdType: kyc?.govtIdType || 'AADHAAR',
+    govtIdLast4: last4,
+    maskedAadhaar,
+    kycStatus,
+    verhoeffPass,
+    kycMode,
+    isDigilocker,
+    digilockerDetails: kyc?.digilockerData || null,
+    documents: documentList,
+  });
+});
+
+// @desc    Securely stream local private KYC file to authorized Admin
+// @route   GET /api/admin/kyc/file/:filename
+// @access  Private (Admin only)
+exports.adminStreamSecureFile = asyncHandler(async (req, res, next) => {
+  const { filename } = req.params;
+  const sanitized = path.basename(filename);
+  const filePath = path.join(__dirname, '..', 'secure-ids', 'private', sanitized);
+
+  if (!fs.existsSync(filePath)) {
+    return error(res, 'Requested file not found or expired on server storage', 404);
+  }
+
+  const ext = path.extname(sanitized).toLowerCase();
+  const mimeTypes = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.webp': 'image/webp',
+    '.pdf': 'application/pdf',
+  };
+
+  const contentType = mimeTypes[ext] || 'application/octet-stream';
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Content-Disposition', `inline; filename="${sanitized}"`);
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+
+  return res.sendFile(filePath);
+});
+
 

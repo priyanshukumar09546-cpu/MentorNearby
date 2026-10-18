@@ -52,7 +52,9 @@ const {
 const {
   adminGetKycList,
   adminGetKycDetail,
-  adminUpdateKycStatus
+  adminUpdateKycStatus,
+  adminGetAadhaarDocument,
+  adminStreamSecureFile,
 } = require('../controllers/kycController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -126,6 +128,9 @@ router.delete('/tutors/:id', deleteTutorPermanently);
 // KYC Verification Center
 router.get('/kyc', adminGetKycList);
 router.get('/kyc-pending', adminGetKycList);
+router.get('/kyc/file/:filename', adminStreamSecureFile);
+router.get('/kyc/:id/document', adminGetAadhaarDocument);
+router.get('/kyc/:id/aadhaar', adminGetAadhaarDocument);
 router.get('/kyc/:id', adminGetKycDetail);
 router.put('/kyc/:id', adminUpdateKycStatus);
 router.post('/kyc/:id', adminUpdateKycStatus);

@@ -9,6 +9,7 @@ const {
   getMyKycStatus,
   adminGetKycList,
   adminGetKycDetail,
+  adminGetAadhaarDocument,
   adminUpdateKycStatus,
   sendDigilockerOtp,
   verifyDigilockerOtp,
@@ -31,6 +32,7 @@ router.get('/my-status', authorize('TUTOR'), getMyKycStatus);
 
 // Admin routes
 router.get('/admin/list', authorize('ADMIN'), adminGetKycList);
+router.get('/admin/:id/document', authorize('ADMIN'), adminGetAadhaarDocument);
 router.get('/admin/:id', authorize('ADMIN'), adminGetKycDetail);
 router.put('/admin/:id/status', authorize('ADMIN'), adminUpdateKycStatus);
 

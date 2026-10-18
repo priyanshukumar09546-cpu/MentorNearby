@@ -509,23 +509,36 @@ const TRUSTED_RESET_ORIGINS = [
 ];
 
 function resolveResetOrigin(req) {
-  const originHeader = req.headers.origin;
-  if (originHeader && TRUSTED_RESET_ORIGINS.includes(originHeader.toLowerCase().trim())) {
-    return originHeader.replace(/\/+$/, '');
+  const configuredOrigins = (process.env.TRUSTED_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim().toLowerCase())
+    .filter(Boolean);
+
+  const allowedOrigins = Array.from(new Set([...TRUSTED_RESET_ORIGINS, ...configuredOrigins]));
+
+  const originHeader = req.headers?.origin;
+  if (originHeader) {
+    const cleanOrigin = originHeader.toLowerCase().trim();
+    if (allowedOrigins.includes(cleanOrigin)) {
+      return cleanOrigin.replace(/\/+$/, '');
+    }
   }
 
-  const refererHeader = req.headers.referer;
+  const refererHeader = req.headers?.referer;
   if (refererHeader) {
     try {
       const parsedOrigin = new URL(refererHeader).origin.toLowerCase().trim();
-      if (TRUSTED_RESET_ORIGINS.includes(parsedOrigin)) {
+      if (allowedOrigins.includes(parsedOrigin)) {
         return parsedOrigin.replace(/\/+$/, '');
       }
     } catch (_) {}
   }
 
   if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.trim()) {
-    return process.env.FRONTEND_URL.trim().replace(/\/+$/, '');
+    const cleanFrontend = process.env.FRONTEND_URL.trim().toLowerCase();
+    if (allowedOrigins.includes(cleanFrontend)) {
+      return cleanFrontend.replace(/\/+$/, '');
+    }
   }
 
   return 'https://mentornearby.com';

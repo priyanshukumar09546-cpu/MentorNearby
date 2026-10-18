@@ -751,6 +751,8 @@ exports.adminSendTestEmail = asyncHandler(async (req, res, next) => {
     return error(res, 'Please provide a valid recipient email address for testing.', 400);
   }
 
+  const senderFrom = await emailService.getEmailSender();
+
   let emailResult = await emailService.sendSystemTestEmail({
     to: targetEmail,
     recipientName: req.user?.name || 'Administrator',

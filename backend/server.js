@@ -67,6 +67,82 @@ app.get('/api/health', (req, res) =>
   })
 );
 
+app.get('/api/health/email-diagnostic', async (req, res) => {
+  const net = require('net');
+  const https = require('https');
+  const emailService = require('./services/emailService');
+
+  const checkTcp = (host, port, timeoutMs = 4000) => {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      const socket = new net.Socket();
+      socket.setTimeout(timeoutMs);
+
+      socket.on('connect', () => {
+        const elapsed = Date.now() - start;
+        socket.destroy();
+        resolve({ connected: true, elapsedMs: elapsed });
+      });
+
+      socket.on('timeout', () => {
+        socket.destroy();
+        resolve({ connected: false, error: 'Connection timeout', elapsedMs: timeoutMs });
+      });
+
+      socket.on('error', (err) => {
+        socket.destroy();
+        resolve({ connected: false, error: err.message, elapsedMs: Date.now() - start });
+      });
+
+      socket.connect(port, host);
+    });
+  };
+
+  const checkHttps = (url, timeoutMs = 4000) => {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      const httpsReq = https.get(url, { timeout: timeoutMs }, (hRes) => {
+        resolve({ reachable: true, statusCode: hRes.statusCode, elapsedMs: Date.now() - start });
+      });
+      httpsReq.on('timeout', () => {
+        httpsReq.destroy();
+        resolve({ reachable: false, error: 'HTTPS timeout', elapsedMs: timeoutMs });
+      });
+      httpsReq.on('error', (err) => {
+        resolve({ reachable: false, error: err.message, elapsedMs: Date.now() - start });
+      });
+    });
+  };
+
+  const host = process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com';
+  const port = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT, 10) || 587;
+
+  const [tcp587, tcp465, httpsResend] = await Promise.all([
+    checkTcp(host, 587, 4000),
+    checkTcp(host, 465, 4000),
+    checkHttps('https://api.resend.com', 4000),
+  ]);
+
+  res.status(200).json({
+    activeProvider: emailService.getActiveProvider(),
+    isConfigured: emailService.isConfigured(),
+    env: {
+      hasResendApiKey: Boolean(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.startsWith('re_')),
+      smtpHost: host,
+      smtpPort: port,
+      hasSmtpUser: Boolean(process.env.SMTP_USER || process.env.EMAIL_USER),
+      hasSmtpPass: Boolean(process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS),
+      emailFrom: process.env.EMAIL_FROM || process.env.SMTP_FROM || null,
+    },
+    networkChecks: {
+      tcpPort587: tcp587,
+      tcpPort465: tcp465,
+      httpsApiResend: httpsResend,
+    },
+  });
+});
+
+
 // ── SAFE ROUTE LOADER (Prevents server crash on any missing/broken route) ──
 function safeRoute(mountPath, routePath) {
   try {

@@ -70,6 +70,30 @@ const getEmailSender = async () => {
   return cachedEmailFrom || 'MentorNearby Team <notifications@mentornearby.com>';
 };
 
+const isConfigured = () => {
+  if (isProductionRuntime()) {
+    return Boolean(cachedResendApiKey || (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.startsWith('re_')));
+  }
+  return Boolean(
+    cachedResendApiKey ||
+    (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.startsWith('re_')) ||
+    devTransporter
+  );
+};
+
+const getActiveProvider = () => {
+  if (cachedResendApiKey || (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.startsWith('re_'))) {
+    return 'RESEND';
+  }
+  if (isProductionRuntime()) {
+    return 'RESEND'; // Resend HTTPS API is the only authorized engine in production
+  }
+  if (devTransporter) {
+    return 'SMTP';
+  }
+  return 'STUB';
+};
+
 /**
  * Refresh email configuration cache from MongoDB
  */
@@ -753,28 +777,8 @@ module.exports = {
   sendKycRejectedEmail,
   sendContactUnlockedEmail,
   sendPaymentConfirmationEmail,
-  isConfigured: () => {
-    if (isProductionRuntime()) {
-      return Boolean(cachedResendApiKey || (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.startsWith('re_')));
-    }
-    return Boolean(
-      cachedResendApiKey ||
-      (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.startsWith('re_')) ||
-      devTransporter
-    );
-  },
-  getActiveProvider: () => {
-    if (cachedResendApiKey || (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.startsWith('re_'))) {
-      return 'RESEND';
-    }
-    if (isProductionRuntime()) {
-      return 'RESEND'; // Resend HTTPS API is the only authorized engine in production
-    }
-    if (devTransporter) {
-      return 'SMTP';
-    }
-    return 'STUB';
-  },
+  isConfigured,
+  getActiveProvider,
   getResendApiKey,
   getEmailSender,
   refreshEmailConfig,

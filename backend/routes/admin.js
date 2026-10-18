@@ -41,6 +41,8 @@ const {
   suspendTutor,
   reactivateTutor,
   deleteTutorPermanently,
+  getTutorProfileAnalysis,
+  resendTutorEmail,
   adminGetSubscriptions,
   adminGrantSubscription,
   adminRevokeSubscription,
@@ -100,6 +102,8 @@ router.delete('/students/:id', deleteStudentPermanently);
 // Tutor specialized views & actions
 router.get('/tutors', getTutors);
 router.get('/tutors/:id', getTutorDetail);
+router.get('/tutors/:id/analysis', getTutorProfileAnalysis);
+router.post('/tutors/:id/resend-email', resendTutorEmail);
 router.put('/tutors/:id/approve', approveTutor);
 router.post('/tutors/:id/approve', approveTutor);
 router.patch('/tutors/:id/approve', approveTutor);

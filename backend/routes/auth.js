@@ -59,6 +59,19 @@ const resetPasswordValidation = [
     .withMessage('Password must contain uppercase, lowercase, and a number'),
 ];
 
+const rateLimit = require('express-rate-limit');
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // max 10 attempts per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many password reset requests. Please try again after 15 minutes.',
+  },
+});
+
 // Routes
 router.post('/register', validate(registerValidation), register);
 router.post('/login', validate(loginValidation), login);
@@ -70,8 +83,9 @@ router.post('/google', googleAuth);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);
 router.get('/verify-email/:token', verifyEmail);
-router.post('/forgot-password', validate(forgotPasswordValidation), forgotPassword);
+router.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswordValidation), forgotPassword);
 router.post('/reset-password/:token', validate(resetPasswordValidation), resetPassword);
+router.post('/reset-password', validate(resetPasswordValidation), resetPassword);
 router.put('/update-password', protect, updatePassword);
 
 // OTP & Identity Verification Routes

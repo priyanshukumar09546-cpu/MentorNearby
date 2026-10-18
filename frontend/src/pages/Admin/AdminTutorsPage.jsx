@@ -53,6 +53,29 @@ const AdminTutorsPage = () => {
     submitting: false,
   });
 
+  // Approval Modal with Email Preview & Missing Fields Inspection
+  const [approveModalData, setApproveModalData] = useState({
+    isOpen: false,
+    tutor: null,
+    missingDetails: [],
+    customMessage: '',
+    subject: 'Congratulations! Your MentorNearby Tutor Profile Has Been Approved 🎉',
+    includeMissingDetails: true,
+    submitting: false,
+  });
+
+  // Unapproval / Action Required Modal with Reason & Email Preview
+  const [unapproveModalData, setUnapproveModalData] = useState({
+    isOpen: false,
+    tutor: null,
+    reason: 'Required documents missing',
+    explanation: 'Please provide valid identity verification and qualification documents to complete your profile verification.',
+    correctionChecklist: ['Government Identity Proof (Aadhaar / Voter ID / Passport)'],
+    customMessage: '',
+    subject: 'Action Required: Please Update Your MentorNearby Tutor Profile',
+    submitting: false,
+  });
+
   const fetchTutors = async () => {
     try {
       setLoading(true);
@@ -93,16 +116,218 @@ const AdminTutorsPage = () => {
   };
 
   // ------------------------------------------------------------
-  // ACTION 0: ✓ APPROVE / ✕ REJECT TUTOR & SEND EMAIL
+  // HELPER: Analyze Tutor Incomplete Optional Fields
   // ------------------------------------------------------------
-  const handleApprove = async (tutorId) => {
-    if (!window.confirm('Approve this tutor profile? A congratulation email will be sent to the tutor.')) return;
+  const analyzeTutorMissingDetails = (tutor) => {
+    const prof = tutor?.profile || tutor || {};
+    const missing = [];
+
+    if (!prof.profilePhoto?.url) {
+      missing.push({
+        key: 'profilePhoto',
+        title: 'Profile Photo',
+        tip: 'Upload a clear, friendly portrait photo to establish trust with parents and students.',
+      });
+    }
+
+    if (!prof.professionalHeadline || !prof.professionalHeadline.trim()) {
+      missing.push({
+        key: 'headline',
+        title: 'Professional Headline',
+        tip: 'Add a catchy headline summarizing your teaching expertise (e.g. "Senior CBSE Math Tutor | 8+ Yrs Exp").',
+      });
+    }
+
+    if (!prof.bio || prof.bio.trim().length < 40) {
+      missing.push({
+        key: 'bio',
+        title: 'Detailed Bio / About You',
+        tip: 'Share your background, teaching philosophy, and academic journey.',
+      });
+    }
+
+    if (!prof.subjects || prof.subjects.length === 0) {
+      missing.push({
+        key: 'subjects',
+        title: 'Subjects & Classes',
+        tip: 'Specify all subjects and grade levels you teach so matching students can find you.',
+      });
+    }
+
+    if (!prof.experience?.years) {
+      missing.push({
+        key: 'experience',
+        title: 'Teaching Experience',
+        tip: 'Specify your years of tutoring or classroom experience.',
+      });
+    }
+
+    const hasEducation = Array.isArray(prof.education) && prof.education.length > 0;
+    const hasCertificates = Array.isArray(prof.certificates) && prof.certificates.length > 0;
+    if (!hasEducation && !hasCertificates) {
+      missing.push({
+        key: 'education',
+        title: 'Education & Qualifications',
+        tip: 'List your highest degrees, college, or subject certifications.',
+      });
+    }
+
+    if (!prof.teachingModes || prof.teachingModes.length === 0) {
+      missing.push({
+        key: 'teachingModes',
+        title: 'Teaching Modes (Online / Home Tuition / Hybrid)',
+        tip: 'Indicate whether you teach Online, In-Person Home Tuition, or Both.',
+      });
+    }
+
+    if (!prof.location?.city && !prof.location?.locality) {
+      missing.push({
+        key: 'location',
+        title: 'City & Service Area',
+        tip: 'Specify your neighborhood and city for hyper-local student matching.',
+      });
+    }
+
+    if (!prof.fees?.amount) {
+      missing.push({
+        key: 'fees',
+        title: 'Tuition Fee Rates',
+        tip: 'Set your hourly or monthly pricing rate so parents know what to expect.',
+      });
+    }
+
+    if (!prof.introVideo?.url) {
+      missing.push({
+        key: 'introVideo',
+        title: 'Intro Video (Optional)',
+        tip: 'Record and upload a 60-second video introduction to boost student inquiries.',
+      });
+    }
+
+    return missing;
+  };
+
+  // ------------------------------------------------------------
+  // ACTION 0: ✓ APPROVE TUTOR CONFIRMATION MODAL & SEND EMAIL
+  // ------------------------------------------------------------
+  const openApproveModal = (tutor) => {
+    const missing = analyzeTutorMissingDetails(tutor);
+    setApproveModalData({
+      isOpen: true,
+      tutor,
+      missingDetails: missing,
+      customMessage: '',
+      subject: 'Congratulations! Your MentorNearby Tutor Profile Has Been Approved 🎉',
+      includeMissingDetails: missing.length > 0,
+      submitting: false,
+    });
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!approveModalData.tutor) return;
+    const tutorId = approveModalData.tutor._id;
+    setApproveModalData((prev) => ({ ...prev, submitting: true }));
+
     try {
-      await approveTutor(tutorId);
-      showToast('Tutor Approved & Congratulation Email Sent!', 'success');
+      const payload = {
+        customSubject: approveModalData.subject,
+        customMessage: approveModalData.customMessage,
+        missingDetailsList: approveModalData.includeMissingDetails ? approveModalData.missingDetails : [],
+        sendEmailNotification: true,
+        idempotencyKey: `appr_${tutorId}_${Date.now()}`,
+      };
+
+      const res = await approveTutor(tutorId, payload);
+      const data = res.data?.data || {};
+
+      if (data.emailSent) {
+        showToast('Tutor Approved & Congratulation Email Delivered! 🎉', 'success');
+      } else {
+        showToast(
+          res.data?.message || 'Tutor profile approved, but email delivery failed. You can resend anytime.',
+          'warning'
+        );
+      }
+
+      setApproveModalData({
+        isOpen: false,
+        tutor: null,
+        missingDetails: [],
+        customMessage: '',
+        subject: '',
+        includeMissingDetails: true,
+        submitting: false,
+      });
       fetchTutors();
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to approve tutor', 'error');
+      setApproveModalData((prev) => ({ ...prev, submitting: false }));
+    }
+  };
+
+  // ------------------------------------------------------------
+  // ACTION 1: ✕ UNAPPROVE / CORRECTION REQUIRED MODAL & SEND EMAIL
+  // ------------------------------------------------------------
+  const openUnapproveModal = (tutor) => {
+    setUnapproveModalData({
+      isOpen: true,
+      tutor,
+      reason: 'Required documents missing',
+      explanation: 'Please provide valid identity verification and qualification documents to complete your profile verification.',
+      correctionChecklist: ['Government Identity Proof (Aadhaar / Voter ID / Passport)'],
+      customMessage: '',
+      subject: 'Action Required: Please Update Your MentorNearby Tutor Profile',
+      submitting: false,
+    });
+  };
+
+  const handleConfirmUnapprove = async () => {
+    if (!unapproveModalData.tutor) return;
+    if (!unapproveModalData.explanation.trim()) {
+      showToast('Please provide an explanation for unapproving this tutor profile.', 'error');
+      return;
+    }
+
+    const tutorId = unapproveModalData.tutor._id;
+    setUnapproveModalData((prev) => ({ ...prev, submitting: true }));
+
+    try {
+      const payload = {
+        reason: unapproveModalData.reason,
+        explanation: unapproveModalData.explanation.trim(),
+        correctionChecklist: unapproveModalData.correctionChecklist,
+        customMessage: unapproveModalData.customMessage,
+        customSubject: unapproveModalData.subject,
+        sendEmailNotification: true,
+        idempotencyKey: `unappr_${tutorId}_${Date.now()}`,
+      };
+
+      const res = await unapproveTutor(tutorId, payload);
+      const data = res.data?.data || {};
+
+      if (data.emailSent) {
+        showToast('Tutor approval cancelled and action required email sent.', 'success');
+      } else {
+        showToast(
+          res.data?.message || 'Tutor approval cancelled, but notification email could not be sent.',
+          'warning'
+        );
+      }
+
+      setUnapproveModalData({
+        isOpen: false,
+        tutor: null,
+        reason: 'Required documents missing',
+        explanation: '',
+        correctionChecklist: [],
+        customMessage: '',
+        subject: '',
+        submitting: false,
+      });
+      fetchTutors();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to cancel tutor approval', 'error');
+      setUnapproveModalData((prev) => ({ ...prev, submitting: false }));
     }
   };
 
@@ -115,17 +340,6 @@ const AdminTutorsPage = () => {
       fetchTutors();
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to reject tutor', 'error');
-    }
-  };
-
-  const handleUnapprove = async (tutorId) => {
-    if (!window.confirm('Are you sure you want to remove this tutor from website? Their approval will be cancelled and their profile will immediately disappear from search and homepage.')) return;
-    try {
-      await unapproveTutor(tutorId, { reason: 'Approval cancelled by admin' });
-      showToast('Tutor approval cancelled and removed from website listings!', 'success');
-      fetchTutors();
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to cancel tutor approval', 'error');
     }
   };
 
@@ -598,9 +812,9 @@ const AdminTutorsPage = () => {
                           {profile.kycStatus !== 'VERIFIED' && !profile.isApproved && !tutor.isApproved ? (
                             <div className="flex items-center gap-1">
                               <button
-                                onClick={() => handleApprove(tutor._id)}
+                                onClick={() => openApproveModal(tutor)}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-2xs transition cursor-pointer"
-                                title="Approve Tutor Profile & Send Congratulation Email"
+                                title="Approve Tutor Profile & Review Notification Email"
                               >
                                 ✓ Approve
                               </button>
@@ -618,7 +832,7 @@ const AdminTutorsPage = () => {
                                 ✓ Approved
                               </span>
                               <button
-                                onClick={() => handleUnapprove(tutor._id)}
+                                onClick={() => openUnapproveModal(tutor)}
                                 className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-2 py-1 rounded-full text-[11px] font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
                                 title="Cancel Approval / Remove from Website Listings"
                               >
@@ -875,8 +1089,9 @@ const AdminTutorsPage = () => {
                 {viewModalData.tutor?.profile?.kycStatus === 'VERIFIED' || viewModalData.tutor?.profile?.isApproved || viewModalData.tutor?.isApproved ? (
                   <button
                     onClick={() => {
-                      handleUnapprove(viewModalData.tutor._id);
+                      const t = viewModalData.tutor;
                       setViewModalData({ isOpen: false, tutor: null, loading: false });
+                      openUnapproveModal(t);
                     }}
                     className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
                   >
@@ -886,8 +1101,9 @@ const AdminTutorsPage = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
-                        handleApprove(viewModalData.tutor._id);
+                        const t = viewModalData.tutor;
                         setViewModalData({ isOpen: false, tutor: null, loading: false });
+                        openApproveModal(t);
                       }}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
                     >
@@ -1270,6 +1486,348 @@ const AdminTutorsPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL: ✓ TUTOR APPROVAL & EMAIL NOTIFICATION MODAL           */}
+      {/* ============================================================ */}
+      {approveModalData.isOpen && approveModalData.tutor && (
+        <div className="admin-modal-overlay" onClick={() => !approveModalData.submitting && setApproveModalData({ ...approveModalData, isOpen: false })}>
+          <div className="admin-modal-box max-w-2xl text-left" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-[#E2E8F0] pb-4 mb-4">
+              <div className="flex items-center gap-3">
+                <ProfileAvatar
+                  src={approveModalData.tutor?.profile?.profilePhoto?.url}
+                  name={approveModalData.tutor?.name}
+                  size="md"
+                />
+                <div>
+                  <h3 className="text-lg font-black text-[#0F172A] flex items-center gap-2">
+                    Approve Tutor Profile
+                    <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                      Pending Review
+                    </span>
+                  </h3>
+                  <p className="text-xs text-[#64748B]">
+                    <strong>{approveModalData.tutor?.name}</strong> • {approveModalData.tutor?.email || approveModalData.tutor?.profile?.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => !approveModalData.submitting && setApproveModalData({ ...approveModalData, isOpen: false })}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold p-1 cursor-pointer"
+                disabled={approveModalData.submitting}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Incomplete Fields Inspection Section */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Profile Details Inspection
+                </label>
+                {approveModalData.missingDetails.length > 0 && (
+                  <label className="text-xs text-slate-600 flex items-center gap-1.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={approveModalData.includeMissingDetails}
+                      onChange={(e) => setApproveModalData({ ...approveModalData, includeMissingDetails: e.target.checked })}
+                      className="rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                    />
+                    <span>Include recommendations in email</span>
+                  </label>
+                )}
+              </div>
+
+              {approveModalData.missingDetails.length > 0 ? (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-2">
+                  <div className="font-semibold text-amber-950 flex items-center gap-1.5">
+                    <span>💡</span>
+                    <span>
+                      {approveModalData.missingDetails.length} optional details are currently empty:
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                    {approveModalData.missingDetails.map((item) => (
+                      <div key={item.key} className="bg-white/80 border border-amber-200/80 rounded-lg p-2 text-[11.5px] leading-snug">
+                        <span className="font-bold text-amber-950">{item.title}:</span>{' '}
+                        <span className="text-amber-800">{item.tip}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2">
+                  <span className="text-base">✨</span>
+                  <span><strong>100% Complete Profile:</strong> All profile fields, qualifications, and teaching details are filled.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Editable Subject */}
+            <div className="mb-3">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Email Subject Line
+              </label>
+              <input
+                type="text"
+                value={approveModalData.subject}
+                onChange={(e) => setApproveModalData({ ...approveModalData, subject: e.target.value })}
+                className="admin-input w-full text-xs font-medium"
+                placeholder="Congratulations! Your MentorNearby Tutor Profile Has Been Approved 🎉"
+              />
+            </div>
+
+            {/* Optional Personal Note */}
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Custom Review Note to Teacher (Optional)
+              </label>
+              <textarea
+                value={approveModalData.customMessage}
+                onChange={(e) => setApproveModalData({ ...approveModalData, customMessage: e.target.value })}
+                rows={2}
+                className="admin-input w-full text-xs"
+                placeholder="e.g. Welcome! Your profile is verified and set to live status. We look forward to your student sessions."
+              />
+            </div>
+
+            {/* Live Email Preview Box */}
+            <div className="mb-5">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Personalized Email Preview
+              </label>
+              <div className="bg-[#0f172a] text-slate-200 p-4 rounded-xl text-xs font-mono leading-relaxed max-h-48 overflow-y-auto border border-slate-800 shadow-inner">
+                <div className="text-amber-400 font-bold mb-2">Subject: {approveModalData.subject}</div>
+                <div className="text-slate-300">
+                  Hi {approveModalData.tutor?.name || 'Tutor'},<br/><br/>
+                  Congratulations!<br/><br/>
+                  Your tutor profile has been reviewed and approved by the MentorNearby team.<br/><br/>
+                  You can now be discovered by students looking for tutors in your area.<br/><br/>
+                  {approveModalData.includeMissingDetails && approveModalData.missingDetails.length > 0 && (
+                    <div className="p-2 bg-slate-900/80 border border-amber-500/40 rounded my-2 text-amber-200">
+                      <strong>To make your profile more useful to prospective students, please review any incomplete details listed below:</strong><br/>
+                      {approveModalData.missingDetails.map((m) => `• ${m.title} — ${m.tip}`).join('\n')}<br/><br/>
+                      You can update these details from your MentorNearby account.
+                    </div>
+                  )}
+                  {approveModalData.customMessage && (
+                    <div className="p-2 bg-blue-950/60 border border-blue-500/40 rounded my-2 text-blue-200">
+                      <strong>Note from MentorNearby Review Team:</strong><br/>
+                      {approveModalData.customMessage}
+                    </div>
+                  )}
+                  Thank you for joining MentorNearby.<br/><br/>
+                  Best wishes,<br/>
+                  Team MentorNearby<br/>
+                  Find. Learn. Grow.<br/>
+                  https://mentornearby.com
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-3 border-t border-[#E2E8F0] flex justify-end items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setApproveModalData({ ...approveModalData, isOpen: false })}
+                className="admin-btn admin-btn-secondary text-xs"
+                disabled={approveModalData.submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmApprove}
+                disabled={approveModalData.submitting}
+                className="admin-btn bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                {approveModalData.submitting ? 'Approving & Sending...' : '✓ Approve & Send Email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL: ✕ TUTOR UNAPPROVE / CORRECTION POPUP & EMAIL MODAL    */}
+      {/* ============================================================ */}
+      {unapproveModalData.isOpen && unapproveModalData.tutor && (
+        <div className="admin-modal-overlay" onClick={() => !unapproveModalData.submitting && setUnapproveModalData({ ...unapproveModalData, isOpen: false })}>
+          <div className="admin-modal-box max-w-2xl text-left" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-[#E2E8F0] pb-4 mb-4">
+              <div className="flex items-center gap-3">
+                <ProfileAvatar
+                  src={unapproveModalData.tutor?.profile?.profilePhoto?.url}
+                  name={unapproveModalData.tutor?.name}
+                  size="md"
+                />
+                <div>
+                  <h3 className="text-lg font-black text-rose-700 flex items-center gap-2">
+                    Action Required / Unapprove Tutor
+                  </h3>
+                  <p className="text-xs text-[#64748B]">
+                    <strong>{unapproveModalData.tutor?.name}</strong> • {unapproveModalData.tutor?.email || unapproveModalData.tutor?.profile?.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => !unapproveModalData.submitting && setUnapproveModalData({ ...unapproveModalData, isOpen: false })}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold p-1 cursor-pointer"
+                disabled={unapproveModalData.submitting}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Warning Banner */}
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 mb-4">
+              <strong>Notice:</strong> Cancelling approval will set this tutor's profile status to <em>Pending</em> and remove them from search listings and the homepage until requested corrections are completed.
+            </div>
+
+            {/* Reason Selector */}
+            <div className="mb-3">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Primary Reason <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={unapproveModalData.reason}
+                onChange={(e) => setUnapproveModalData({ ...unapproveModalData, reason: e.target.value })}
+                className="admin-select w-full text-xs font-medium"
+              >
+                <option value="Required documents missing">Required documents missing</option>
+                <option value="Uploaded documents are unclear or invalid">Uploaded documents are unclear or invalid</option>
+                <option value="Qualification requires further verification">Qualification requires further verification</option>
+                <option value="Profile information is incomplete">Profile information is incomplete</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            {/* Required Explanation Field */}
+            <div className="mb-3">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Explanation for Teacher <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                value={unapproveModalData.explanation}
+                onChange={(e) => setUnapproveModalData({ ...unapproveModalData, explanation: e.target.value })}
+                rows={3}
+                required
+                className="admin-input w-full text-xs"
+                placeholder="State clearly what information or document needs to be corrected or verified..."
+              />
+            </div>
+
+            {/* Optional Correction Checklist */}
+            <div className="mb-3">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Correction Checklist (Select all that apply)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                {[
+                  'Government Identity Proof (Aadhaar / Voter ID / Passport)',
+                  'Address Proof / Current Location Verification',
+                  'Educational Degree / Qualification Certificates',
+                  'Clear Professional Profile Photograph',
+                  'Detailed Teaching Bio & Experience Summary',
+                  'Tuition Subject Selection & Accurate Fee Rates',
+                ].map((item) => {
+                  const checked = unapproveModalData.correctionChecklist.includes(item);
+                  return (
+                    <label key={item} className="flex items-center gap-2 cursor-pointer text-[11.5px] text-slate-700 select-none">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setUnapproveModalData({
+                              ...unapproveModalData,
+                              correctionChecklist: [...unapproveModalData.correctionChecklist, item],
+                            });
+                          } else {
+                            setUnapproveModalData({
+                              ...unapproveModalData,
+                              correctionChecklist: unapproveModalData.correctionChecklist.filter((c) => c !== item),
+                            });
+                          }
+                        }}
+                        className="rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
+                      />
+                      <span>{item}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Editable Subject */}
+            <div className="mb-3">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Email Subject Line
+              </label>
+              <input
+                type="text"
+                value={unapproveModalData.subject}
+                onChange={(e) => setUnapproveModalData({ ...unapproveModalData, subject: e.target.value })}
+                className="admin-input w-full text-xs font-medium"
+              />
+            </div>
+
+            {/* Live Email Preview Box */}
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Email Preview
+              </label>
+              <div className="bg-[#0f172a] text-slate-200 p-4 rounded-xl text-xs font-mono leading-relaxed max-h-40 overflow-y-auto border border-slate-800 shadow-inner">
+                <div className="text-amber-400 font-bold mb-1">Subject: {unapproveModalData.subject}</div>
+                <div className="text-slate-300">
+                  Hi {unapproveModalData.tutor?.name || 'Tutor'},<br/><br/>
+                  Thank you for registering with MentorNearby.<br/><br/>
+                  During our review, we found that some information needs to be corrected or verified before your profile can be approved.<br/><br/>
+                  <div className="p-2 bg-rose-950/60 border border-rose-500/40 rounded my-1 text-rose-200">
+                    <strong>Required corrections:</strong><br/>
+                    • {unapproveModalData.reason}<br/>
+                    {unapproveModalData.explanation && <span>Details: {unapproveModalData.explanation}<br/></span>}
+                    {unapproveModalData.correctionChecklist.length > 0 && (
+                      <span>Items to update:<br/>{unapproveModalData.correctionChecklist.map((c) => `  - ${c}`).join('\n')}<br/></span>
+                    )}
+                  </div>
+                  Please log in to your MentorNearby account and update the requested information. Once the corrections are complete, follow the available resubmission process, or contact the MentorNearby team if you need assistance.<br/><br/>
+                  We appreciate your cooperation.<br/><br/>
+                  Best wishes,<br/>
+                  Team MentorNearby<br/>
+                  https://mentornearby.com
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-3 border-t border-[#E2E8F0] flex justify-end items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setUnapproveModalData({ ...unapproveModalData, isOpen: false })}
+                className="admin-btn admin-btn-secondary text-xs"
+                disabled={unapproveModalData.submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmUnapprove}
+                disabled={unapproveModalData.submitting || !unapproveModalData.explanation.trim()}
+                className="admin-btn bg-rose-600 text-white hover:bg-rose-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                {unapproveModalData.submitting ? 'Updating & Sending...' : '✕ Confirm & Send Email'}
+              </button>
+            </div>
           </div>
         </div>
       )}

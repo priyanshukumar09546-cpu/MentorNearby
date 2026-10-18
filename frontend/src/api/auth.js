@@ -7,9 +7,12 @@ export const logout = () => client.post('/auth/logout');
 export const getMe = () => client.get(`/auth/me?t=${new Date().getTime()}`);
 export const forgotPassword = (data) => client.post('/auth/forgot-password', data);
 
-// token is passed in URL path, password in body
-export const resetPassword = ({ token, password }) =>
-  client.post(`/auth/reset-password/${token}`, { password });
+// token is passed in URL path and body for maximum compatibility
+export const resetPassword = ({ token, password }) => {
+  const cleanToken = (token || '').toString().trim();
+  const url = cleanToken ? `/auth/reset-password/${encodeURIComponent(cleanToken)}` : '/auth/reset-password';
+  return client.post(url, { password, token: cleanToken });
+};
 
 export const updatePassword = (data) => client.put('/auth/update-password', data);
 

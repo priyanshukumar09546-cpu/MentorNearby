@@ -23,8 +23,10 @@ export const unsuspendUser = (id) => client.post(`/admin/users/${id}/unsuspend`)
 // Specialized Tutor Management APIs
 export const getAdminTutors = (params) => client.get('/admin/tutors', { params });
 export const getAdminTutorDetail = (id) => client.get(`/admin/tutors/${id}`);
-export const approveTutor = (id) => client.put(`/admin/tutors/${id}/approve`);
+export const getAdminTutorAnalysis = (id) => client.get(`/admin/tutors/${id}/analysis`);
+export const approveTutor = (id, data) => client.put(`/admin/tutors/${id}/approve`, data);
 export const unapproveTutor = (id, data) => client.put(`/admin/tutors/${id}/unapprove`, data);
+export const resendTutorNotificationEmail = (id, data) => client.post(`/admin/tutors/${id}/resend-email`, data);
 export const rejectTutor = (id, data) => client.put(`/admin/tutors/${id}/reject`, data);
 export const suspendTutor = (id, data) => client.post(`/admin/tutors/${id}/suspend`, data);
 export const reactivateTutor = (id) => client.post(`/admin/tutors/${id}/reactivate`);

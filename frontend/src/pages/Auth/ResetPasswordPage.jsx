@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { resetPassword } from '../../api/auth';
 import './LoginPage.css';
@@ -21,11 +21,22 @@ const EyeOffIcon = () => (
   </svg>
 );
 
+const CheckIcon = () => (
+  <svg className="w-4 h-4 text-emerald-600 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+  </svg>
+);
+
+const BulletIcon = () => (
+  <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-300 mr-2 align-middle"></span>
+);
+
 const ResetPasswordPage = () => {
   const { token: routeToken } = useParams();
   const [searchParams] = useSearchParams();
   const token = routeToken || searchParams.get('token') || searchParams.get('access_token') || '';
   const navigate = useNavigate();
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,12 +44,32 @@ const ResetPasswordPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Password rules validation
+  const rules = useMemo(() => {
+    return {
+      minLength: password.length >= 8,
+      hasUpper: /[A-Z]/.test(password),
+      hasLower: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      passwordsMatch: password && confirmPassword && password === confirmPassword,
+    };
+  }, [password, confirmPassword]);
+
+  const isValidPassword = rules.minLength && rules.hasUpper && rules.hasLower && rules.hasNumber;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!password || password.length < 8) {
-      setErrorMsg('Password must be at least 8 characters long.');
+
+    if (!token) {
+      setErrorMsg('Password reset token is missing. Please request a new password reset link.');
       return;
     }
+
+    if (!isValidPassword) {
+      setErrorMsg('Please ensure your password meets all complexity requirements below.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setErrorMsg('Passwords do not match.');
       return;
@@ -54,7 +85,10 @@ const ResetPasswordPage = () => {
         navigate('/login');
       }, 2000);
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || 'Failed to reset password. The link may have expired.');
+      setErrorMsg(
+        err?.response?.data?.message ||
+          'Failed to reset password. The reset link may have expired or was already used.'
+      );
     } finally {
       setLoading(false);
     }
@@ -63,7 +97,6 @@ const ResetPasswordPage = () => {
   return (
     <div className="auth-page-wrapper">
       <div className="auth-split-card">
-        
         {/* LEFT PANEL */}
         <div className="auth-left-panel">
           <div className="auth-panel-glow"></div>
@@ -91,7 +124,7 @@ const ResetPasswordPage = () => {
               </div>
               <div className="auth-trust-item">
                 <span className="auth-trust-icon-box bg-emerald-500/20 text-emerald-400">🛡️</span>
-                <span>Secure Session Handling</span>
+                <span>Single-Use Secure Recovery</span>
               </div>
             </div>
           </div>
@@ -104,14 +137,13 @@ const ResetPasswordPage = () => {
         {/* RIGHT PANEL */}
         <div className="auth-right-panel">
           <div className="auth-form-container">
-            
             <div className="auth-form-header">
               <h1 className="auth-form-title">Set New Password ✨</h1>
               <p className="auth-form-subtitle">Choose a new password for your MentorNearby account</p>
             </div>
 
             {errorMsg && (
-              <div className="auth-alert-error" role="alert">
+              <div className="auth-alert-error" role="alert" style={{ marginBottom: '16px' }}>
                 <span className="auth-alert-icon">⚠️</span>
                 <span>{errorMsg}</span>
               </div>
@@ -120,60 +152,105 @@ const ResetPasswordPage = () => {
             {successMsg && (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-sm mb-6">
                 <p className="font-bold text-base mb-1">🎉 Success!</p>
-                {successMsg}
+                <p>{successMsg}</p>
+                <div className="mt-3">
+                  <Link to="/login" className="text-xs font-bold text-emerald-700 underline">
+                    Click here if you are not redirected automatically
+                  </Link>
+                </div>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} noValidate className="auth-form-body">
-              <div className="auth-input-group">
-                <label className="auth-input-label" htmlFor="new-password">New Password</label>
-                <div className="auth-input-box">
-                  <LockIcon />
-                  <input
-                    id="new-password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="auth-input-element"
-                    placeholder="At least 8 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoFocus
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="auth-toggle-pw-btn"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
+            {!token ? (
+              <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-950 text-sm mb-6 text-left">
+                <div className="font-bold text-base text-amber-900 mb-2 flex items-center gap-2">
+                  <span>⚠️</span> <span>Missing Reset Link</span>
                 </div>
+                <p className="leading-relaxed mb-4 text-amber-800">
+                  No password reset token was detected in your URL. Please make sure you clicked the full link sent to your email.
+                </p>
+                <Link
+                  to="/forgot-password"
+                  className="auth-primary-btn text-center block"
+                  style={{ textDecoration: 'none' }}
+                >
+                  Request New Password Reset Link →
+                </Link>
               </div>
-
-              <div className="auth-input-group">
-                <label className="auth-input-label" htmlFor="confirm-new-password">Confirm New Password</label>
-                <div className="auth-input-box">
-                  <LockIcon />
-                  <input
-                    id="confirm-new-password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="auth-input-element"
-                    placeholder="Re-enter your new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
+            ) : (
+              <form onSubmit={handleSubmit} noValidate className="auth-form-body">
+                <div className="auth-input-group">
+                  <label className="auth-input-label" htmlFor="new-password">New Password</label>
+                  <div className="auth-input-box">
+                    <LockIcon />
+                    <input
+                      id="new-password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="auth-input-element"
+                      placeholder="At least 8 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoFocus
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="auth-toggle-pw-btn"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                className="auth-primary-btn"
-                disabled={loading}
-              >
-                {loading ? 'Updating password...' : 'Update Password →'}
-              </button>
-            </form>
+                <div className="auth-input-group">
+                  <label className="auth-input-label" htmlFor="confirm-new-password">Confirm New Password</label>
+                  <div className="auth-input-box">
+                    <LockIcon />
+                    <input
+                      id="confirm-new-password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="auth-input-element"
+                      placeholder="Re-enter your new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password Criteria Checklist */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-600 mb-4 space-y-1.5">
+                  <div className="font-semibold text-slate-700 mb-1">Password must include:</div>
+                  <div className={rules.minLength ? 'text-emerald-700 font-medium' : 'text-slate-500'}>
+                    {rules.minLength ? <CheckIcon /> : <BulletIcon />} Minimum 8 characters
+                  </div>
+                  <div className={rules.hasUpper ? 'text-emerald-700 font-medium' : 'text-slate-500'}>
+                    {rules.hasUpper ? <CheckIcon /> : <BulletIcon />} At least one uppercase letter (A-Z)
+                  </div>
+                  <div className={rules.hasLower ? 'text-emerald-700 font-medium' : 'text-slate-500'}>
+                    {rules.hasLower ? <CheckIcon /> : <BulletIcon />} At least one lowercase letter (a-z)
+                  </div>
+                  <div className={rules.hasNumber ? 'text-emerald-700 font-medium' : 'text-slate-500'}>
+                    {rules.hasNumber ? <CheckIcon /> : <BulletIcon />} At least one number (0-9)
+                  </div>
+                  {confirmPassword && (
+                    <div className={rules.passwordsMatch ? 'text-emerald-700 font-medium' : 'text-rose-600'}>
+                      {rules.passwordsMatch ? <CheckIcon /> : <BulletIcon />} Passwords match
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  className="auth-primary-btn"
+                  disabled={loading || !isValidPassword || password !== confirmPassword}
+                >
+                  {loading ? 'Updating password...' : 'Update Password →'}
+                </button>
+              </form>
+            )}
 
             <div className="auth-footer-nav" style={{ marginTop: '28px' }}>
               <span>Remembered your password?</span>
@@ -182,16 +259,13 @@ const ResetPasswordPage = () => {
 
             <div className="auth-security-pill">
               <span className="auth-security-icon">🛡️</span>
-              <span>Your data is protected and never shared with anyone.</span>
+              <span>Your account security is protected with end-to-end encryption.</span>
             </div>
-
           </div>
         </div>
-
       </div>
     </div>
   );
 };
 
 export default ResetPasswordPage;
-

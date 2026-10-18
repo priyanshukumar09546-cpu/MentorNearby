@@ -7,6 +7,7 @@ import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import MobileBottomNav from './components/layout/MobileBottomNav';
+import MobileShareInstallWidget from './components/common/MobileShareInstallWidget';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import CookieConsent from './components/common/CookieConsent';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -393,6 +394,7 @@ const AppContent = () => {
                         </div>
                         {!isChatRoute && <Footer />}
                         <MobileBottomNav />
+                        <MobileShareInstallWidget />
                         {!isChatRoute && <CookieConsent />}
                       </div>
                     }

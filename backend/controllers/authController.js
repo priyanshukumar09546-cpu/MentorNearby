@@ -7,6 +7,7 @@ const { generateToken, sendTokenResponse, setTokenCookie } = require('../utils/g
 const User = require('../models/User');
 const TutorProfile = require('../models/TutorProfile');
 const emailService = require('../services/emailService');
+const EmailLog = require('../models/EmailLog');
 const riskService = require('../services/riskService');
 const otpService = require('../services/otpService');
 
@@ -496,54 +497,124 @@ exports.verifyEmail = asyncHandler(async (req, res, next) => {
   return success(res, 'Email verified successfully');
 });
 
-exports.forgotPassword = asyncHandler(async (req, res, next) => {
-  const user = await User.findOne({ email: req.body.email });
+// Explicit trusted origins for secure password reset links
+const TRUSTED_RESET_ORIGINS = [
+  'https://mentornearby.com',
+  'https://www.mentornearby.com',
+  'https://mentornearby-1t2o.vercel.app',
+  'https://mentor-nearby-frontend.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5174',
+];
 
-  if (!user) {
-    return success(res, 'If your email is registered, a password reset link has been sent.');
+function resolveResetOrigin(req) {
+  const originHeader = req.headers.origin;
+  if (originHeader && TRUSTED_RESET_ORIGINS.includes(originHeader.toLowerCase().trim())) {
+    return originHeader.replace(/\/+$/, '');
   }
 
-  const resetToken = crypto.randomBytes(20).toString('hex');
+  const refererHeader = req.headers.referer;
+  if (refererHeader) {
+    try {
+      const parsedOrigin = new URL(refererHeader).origin.toLowerCase().trim();
+      if (TRUSTED_RESET_ORIGINS.includes(parsedOrigin)) {
+        return parsedOrigin.replace(/\/+$/, '');
+      }
+    } catch (_) {}
+  }
+
+  if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.trim()) {
+    return process.env.FRONTEND_URL.trim().replace(/\/+$/, '');
+  }
+
+  return 'https://mentornearby.com';
+}
+
+exports.forgotPassword = asyncHandler(async (req, res, next) => {
+  const cleanEmail = (req.body.email || '').toString().trim().toLowerCase();
+
+  // Consistent public response message to protect against user enumeration
+  const PUBLIC_RESPONSE = 'If an account exists for this email address, you will receive password-reset instructions.';
+
+  if (!cleanEmail) {
+    return success(res, PUBLIC_RESPONSE);
+  }
+
+  const user = await User.findOne({ email: cleanEmail });
+
+  if (!user) {
+    // Return same public response so unknown emails cannot be enumerated
+    return success(res, PUBLIC_RESPONSE);
+  }
+
+  // Generate cryptographically secure random token (32 bytes / 64 hex chars)
+  const resetToken = crypto.randomBytes(32).toString('hex');
   user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-  user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // Strictly 10 minutes
 
   await user.save({ validateBeforeSave: false });
 
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+  const resetOrigin = resolveResetOrigin(req);
+  const resetUrl = `${resetOrigin}/reset-password/${resetToken}`;
 
   try {
-    await emailService.sendEmail({
+    const emailResult = await emailService.sendPasswordResetEmail({
       to: user.email,
-      subject: 'Password Reset for MentorNearby',
-      text: `Reset your password by clicking: ${resetUrl}`
+      userName: user.name || 'Learner',
+      resetUrl,
+      expiryMinutes: 10,
+    });
+
+    await EmailLog.create({
+      type: 'PASSWORD_RESET',
+      recipient: user.email,
+      recipientName: user.name,
+      user: user._id,
+      subject: 'Reset Your MentorNearby Password',
+      status: emailResult.success ? (emailResult.stub ? 'STUB' : 'SENT') : 'FAILED',
+      provider: emailResult.provider || emailService.getActiveProvider(),
+      providerMessageId: emailResult.messageId,
+      error: emailResult.error,
     });
   } catch (err) {
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-    return error(res, 'Email could not be sent', 500);
+    console.error('⚠️ [FORGOT PASSWORD] Failed to dispatch reset email:', err.message);
   }
 
-  return success(res, 'If your email is registered, a password reset link has been sent.');
+  return success(res, PUBLIC_RESPONSE);
 });
 
 exports.resetPassword = asyncHandler(async (req, res, next) => {
-  const resetToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+  const rawToken = req.params.token || req.body.token;
 
+  if (!rawToken || typeof rawToken !== 'string') {
+    return error(res, 'Invalid or missing password reset token. Please request a new link.', 400);
+  }
+
+  const resetToken = crypto.createHash('sha256').update(rawToken.trim()).digest('hex');
+
+  // Verify token hash, expiry, and single-use status
   const user = await User.findOne({
     passwordResetToken: resetToken,
-    passwordResetExpires: { $gt: Date.now() }
-  });
+    passwordResetExpires: { $gt: Date.now() },
+  }).select('+password');
 
   if (!user) {
-    return error(res, 'Invalid or expired reset token', 400);
+    return error(res, 'This password reset link is invalid, has expired, or has already been used. Please request a new reset link.', 400);
   }
 
-  if (req.body.password.length < 8) {
-    return error(res, 'Password must be at least 8 characters long', 400);
+  const newPassword = req.body.password;
+
+  if (!newPassword || newPassword.length < 8) {
+    return error(res, 'Password must be at least 8 characters long.', 400);
   }
 
-  user.password = req.body.password;
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+    return error(res, 'Password must contain at least one uppercase letter, one lowercase letter, and one number.', 400);
+  }
+
+  // Update password and invalidate token immediately (single-use enforcement)
+  user.password = newPassword;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();

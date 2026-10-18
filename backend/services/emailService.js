@@ -1,32 +1,40 @@
 // ============================================================
 // services/emailService.js
-// Email notifications via Nodemailer
-// Supports: Gmail SMTP (dev), any SMTP provider (prod)
-// Falls back to stub/console mode when credentials not set
+// Production-Grade Email Notification Service for MentorNearby
+// Supports:
+// 1. Resend API (HTTPS-based, resilient on Render/Vercel) via RESEND_API_KEY
+// 2. SMTP via Nodemailer (Gmail, Amazon SES, Brevo, SendGrid, Postmark, etc.)
+// 3. Graceful Development Stub Mode (when neither credential is provided)
 // ============================================================
 
 const nodemailer = require('nodemailer');
 
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const SMTP_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST;
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT, 10) || 587;
 const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
 const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS;
 const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || process.env.EMAIL_SECURE === 'true' || SMTP_PORT === 465;
 
-const EMAIL_CONFIGURED = !!(SMTP_HOST && SMTP_USER && SMTP_PASS);
+const EMAIL_FROM_ENV = process.env.EMAIL_FROM || process.env.SMTP_FROM || process.env.RESEND_FROM;
+
+// Determine active provider
+const IS_RESEND_CONFIGURED = Boolean(RESEND_API_KEY && RESEND_API_KEY.startsWith('re_'));
+const IS_SMTP_CONFIGURED = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
+const IS_CONFIGURED = IS_RESEND_CONFIGURED || IS_SMTP_CONFIGURED;
 
 let transporter = null;
 
-if (EMAIL_CONFIGURED) {
+if (IS_SMTP_CONFIGURED) {
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,
-    secure: SMTP_SECURE, // for 587 false, for 465 true
+    secure: SMTP_SECURE,
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS,
     },
-    family: 4, // FIX: Force IPv4, do not use IPv6 on Render
+    family: 4, // Force IPv4 to prevent IPv6 timeout on cloud hosts
     tls: {
       ciphers: 'SSLv3',
       rejectUnauthorized: false,
@@ -36,106 +44,498 @@ if (EMAIL_CONFIGURED) {
     socketTimeout: 15000,
   });
 
-  // Verify connection on startup (non-blocking)
-  transporter.verify().then(() => {
-    console.log('✅ Email service ready (IPv4)');
-  }).catch((err) => {
-    console.warn('⚠️  Email service connection warning (non-blocking):', err.message);
-  });
+  transporter
+    .verify()
+    .then(() => {
+      console.log('✅ SMTP Email service ready (IPv4)');
+    })
+    .catch((err) => {
+      console.warn('⚠️  SMTP connection warning (non-blocking):', err.message);
+    });
+} else if (IS_RESEND_CONFIGURED) {
+  console.log('✅ Resend Email API configured');
 } else {
   console.warn('⚠️  [DEV STUB] Email credentials not configured. Emails will be logged to console only.');
 }
 
 /**
- * Send an email
- * @param {Object} options - { to, subject, html, text }
+ * Format default sender identity
+ */
+const getDefaultFrom = () => {
+  if (EMAIL_FROM_ENV && EMAIL_FROM_ENV.trim()) {
+    return EMAIL_FROM_ENV.trim();
+  }
+  if (SMTP_USER) {
+    return `MentorNearby Team <${SMTP_USER}>`;
+  }
+  return 'MentorNearby Team <noreply@mentornearby.com>';
+};
+
+/**
+ * Primary sendEmail dispatcher
+ * @param {Object} options - { to, subject, html, text, from, replyTo }
+ * @returns {Promise<{ success: boolean, messageId?: string, provider?: string, stub?: boolean, error?: string }>}
  */
 const sendEmail = async (options) => {
-  const { to, subject, html, text } = options;
+  const { to, subject, html, text, from = getDefaultFrom(), replyTo } = options;
 
-  if (!EMAIL_CONFIGURED || !transporter) {
-    // Stub mode — log to console
-    console.log('\n📧 [EMAIL STUB] Would send email:');
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}`);
-    console.log(`  Body (text): ${text || '(html only)'}`);
-    return { messageId: `stub_${Date.now()}`, stub: true };
+  if (!to) {
+    return { success: false, error: 'Recipient email address (to) is required' };
   }
 
+  // Handle suppression for test domains
   if (to.endsWith('@example.com') || to.endsWith('@test.com')) {
     console.log(`\n📧 [TEST MODE] Suppressed email to test domain: ${to}`);
-    return { messageId: `test_${Date.now()}`, stub: true };
+    return { success: true, messageId: `test_${Date.now()}`, stub: true, provider: 'TEST' };
   }
 
-  try {
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.SMTP_FROM || `MentorNearby <${SMTP_USER || 'noreply@mentornearby.com'}>`,
-      to,
-      subject,
-      html,
-      text: text || (html ? html.replace(/<[^>]*>/g, '') : ''), // Fallback text
+  // If not configured, use STUB mode
+  if (!IS_CONFIGURED) {
+    console.log('\n📧 [EMAIL STUB] Outbound email:');
+    console.log(`  To: ${to}`);
+    console.log(`  From: ${from}`);
+    console.log(`  Subject: ${subject}`);
+    console.log(`  Text: ${text || (html ? html.replace(/<[^>]*>/g, '').slice(0, 150) + '...' : '')}`);
+    return {
+      success: true,
+      messageId: `stub_${Date.now()}`,
+      stub: true,
+      provider: 'STUB',
     };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ [EMAIL SENT] Message ID: ${info.messageId} to ${to}`);
-    return info;
-  } catch (err) {
-    console.error('⚠️  [EMAIL SEND ERROR] (non-blocking):', err.message);
-    return { error: err.message, failed: true };
   }
+
+  // 1. Resend HTTP API Strategy (if RESEND_API_KEY is available)
+  if (IS_RESEND_CONFIGURED) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from,
+          to: [to],
+          subject,
+          html,
+          text: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
+          reply_to: replyTo,
+        }),
+      });
+
+      const resData = await response.json();
+      if (!response.ok) {
+        throw new Error(resData?.message || `Resend API returned status ${response.status}`);
+      }
+
+      console.log(`✅ [RESEND EMAIL SENT] Message ID: ${resData.id} to ${to}`);
+      return {
+        success: true,
+        messageId: resData.id,
+        provider: 'RESEND',
+      };
+    } catch (resendErr) {
+      console.error('⚠️ [RESEND SEND ERROR]:', resendErr.message);
+      // If SMTP is also configured, fall through to SMTP
+      if (!IS_SMTP_CONFIGURED || !transporter) {
+        return {
+          success: false,
+          error: resendErr.message,
+          provider: 'RESEND',
+          failed: true,
+        };
+      }
+      console.log('🔄 Falling back to SMTP transport...');
+    }
+  }
+
+  // 2. SMTP Transport Strategy
+  if (IS_SMTP_CONFIGURED && transporter) {
+    try {
+      const mailOptions = {
+        from,
+        to,
+        subject,
+        html,
+        text: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
+        replyTo,
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✅ [SMTP EMAIL SENT] Message ID: ${info.messageId} to ${to}`);
+      return {
+        success: true,
+        messageId: info.messageId,
+        provider: 'SMTP',
+      };
+    } catch (smtpErr) {
+      console.error('⚠️ [SMTP SEND ERROR]:', smtpErr.message);
+      return {
+        success: false,
+        error: smtpErr.message,
+        provider: 'SMTP',
+        failed: true,
+      };
+    }
+  }
+
+  return {
+    success: false,
+    error: 'No active email provider available to send email',
+    provider: 'NONE',
+    failed: true,
+  };
 };
 
 // ============================================================
-// Email Templates
+// Email Templates & Themes
 // ============================================================
 
 const emailTemplates = {
-  base: (content) => `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>MentorNearby</title>
-      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f8fafc; color: #1e293b; }
-        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-        .header { background: #1e3a5f; padding: 32px 40px; text-align: center; }
-        .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-        .header p { color: #94a3b8; margin: 4px 0 0; font-size: 14px; }
-        .body { padding: 40px; }
-        .body h2 { font-size: 20px; color: #1e293b; margin: 0 0 16px; }
-        .body p { font-size: 15px; color: #475569; line-height: 1.6; margin: 0 0 16px; }
-        .btn { display: inline-block; background: #1e3a5f; color: #ffffff !important; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; margin: 8px 0 24px; }
-        .btn-accent { background: #f59e0b; }
-        .divider { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
-        .footer { background: #f8fafc; padding: 24px 40px; text-align: center; }
-        .footer p { font-size: 12px; color: #94a3b8; margin: 4px 0; }
-        .code { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 24px; font-size: 28px; font-weight: 700; letter-spacing: 8px; color: #1e3a5f; text-align: center; margin: 16px 0; }
-        .badge { display: inline-block; background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>MentorNearby</h1>
-          <p>Find Trusted Tutors Near You</p>
+  base: (content, meta = {}) => {
+    const previewText = meta.previewText
+      ? `<div style="display:none;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${meta.previewText}</div>`
+      : '';
+
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MentorNearby</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #0b1329; color: #1e293b; -webkit-font-smoothing: antialiased; }
+          .wrapper { width: 100%; background: #0b1329; padding: 36px 12px; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,0.25); border: 1px solid rgba(255, 255, 255, 0.1); }
+          .header { background: #0f172a; padding: 32px 36px; text-align: center; border-bottom: 2px solid #f59e0b; }
+          .header-brand { font-size: 24px; font-weight: 800; color: #ffffff; text-decoration: none; letter-spacing: -0.5px; }
+          .header-brand span { color: #f59e0b; }
+          .header-tagline { color: #94a3b8; margin: 6px 0 0; font-size: 13px; font-weight: 500; }
+          .body { padding: 36px 36px 28px; line-height: 1.65; color: #334155; }
+          .body h2 { font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 16px; line-height: 1.3; }
+          .body p { font-size: 15px; color: #334155; line-height: 1.65; margin: 0 0 16px; }
+          .btn { display: inline-block; background: #0f172a; color: #ffffff !important; padding: 13px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 15px; margin: 12px 0 20px; text-align: center; border: 1px solid #1e293b; }
+          .btn-accent { background: #f59e0b; color: #0f172a !important; border: none; }
+          .info-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0; }
+          .alert-card-success { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 20px 0; color: #166534; }
+          .alert-card-warning { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 20px; margin: 20px 0; color: #92400e; }
+          .alert-card-danger { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin: 20px 0; color: #991b1b; }
+          .divider { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+          .footer { background: #f8fafc; padding: 24px 36px; text-align: center; border-top: 1px solid #e2e8f0; }
+          .footer p { font-size: 12px; color: #64748b; margin: 4px 0; line-height: 1.5; }
+          .footer a { color: #0284c7; text-decoration: none; }
+          .tag-badge { display: inline-block; background: #e2e8f0; color: #334155; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin: 2px 4px 2px 0; }
+        </style>
+      </head>
+      <body>
+        ${previewText}
+        <div class="wrapper">
+          <div class="container">
+            <div class="header">
+              <a href="https://mentornearby.com" class="header-brand">Mentor<span>Nearby</span></a>
+              <p class="header-tagline">Find. Learn. Grow. • Home & Online Tuition</p>
+            </div>
+            <div class="body">${content}</div>
+            <div class="footer">
+              <p><strong>MentorNearby</strong> — India's trusted platform for finding verified home and online tutors.</p>
+              <p>© ${new Date().getFullYear()} MentorNearby. All rights reserved.</p>
+              <p>Website: <a href="https://mentornearby.com">https://mentornearby.com</a> | <a href="https://mentornearby.com/contact">Contact Support</a></p>
+              <p style="font-size: 11px; color: #94a3b8; margin-top: 8px;">You received this transactional email in relation to your MentorNearby account.</p>
+            </div>
+          </div>
         </div>
-        <div class="body">${content}</div>
-        <div class="footer">
-          <p>© ${new Date().getFullYear()} MentorNearby. All rights reserved.</p>
-          <p>This email was sent to you because you have an account on MentorNearby.</p>
-          <p>If you didn't request this, please ignore this email or <a href="${process.env.FRONTEND_URL}/contact" style="color: #1e3a5f;">contact support</a>.</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `,
+      </body>
+      </html>
+    `;
+  },
 };
 
-// Individual email senders
+// ============================================================
+// Specialized Transactional Email Senders
+// ============================================================
+
+/**
+ * TASK 1: Admin Tutor Approval Email
+ */
+const sendTutorApprovalEmail = async ({
+  to,
+  teacherName = 'Tutor',
+  missingDetailsList = [],
+  customMessage = '',
+  actionUrl = 'https://mentornearby.com/tutor/dashboard',
+}) => {
+  const missingSectionHtml =
+    missingDetailsList && missingDetailsList.length > 0
+      ? `
+      <div class="alert-card-warning" style="margin-top: 20px;">
+        <h4 style="margin: 0 0 8px; font-size: 14px; color: #92400e;">💡 Profile Completion Recommendations</h4>
+        <p style="margin: 0 0 10px; font-size: 13.5px; color: #78350f;">
+          To make your profile more useful to prospective students and rank higher in search, please review any incomplete details listed below:
+        </p>
+        <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; color: #78350f; line-height: 1.6;">
+          ${missingDetailsList.map((item) => `<li><strong>${item.title || item}</strong>${item.tip ? ` — ${item.tip}` : ''}</li>`).join('')}
+        </ul>
+        <p style="margin: 10px 0 0; font-size: 13px; color: #78350f;">
+          You can update these details anytime from your MentorNearby account.
+        </p>
+      </div>
+    `
+      : '';
+
+  const missingSectionText =
+    missingDetailsList && missingDetailsList.length > 0
+      ? `\nTo make your profile more useful to prospective students, please review any incomplete details listed below:\n` +
+        missingDetailsList.map((item) => `- ${item.title || item}${item.tip ? ` (${item.tip})` : ''}`).join('\n') +
+        `\nYou can update these details from your MentorNearby account.\n`
+      : '';
+
+  const customNotesHtml = customMessage
+    ? `
+      <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 4px; margin: 18px 0; font-size: 14px; color: #1e40af;">
+        <strong>Note from MentorNearby Review Team:</strong><br/>
+        ${customMessage.replace(/\n/g, '<br/>')}
+      </div>
+    `
+    : '';
+
+  const contentHtml = `
+    <h2>Congratulations! 🎉</h2>
+    <p>Hi <strong>${teacherName}</strong>,</p>
+    <p>Congratulations!</p>
+    <p>Your tutor profile has been reviewed and approved by the MentorNearby team.</p>
+    <p>You can now be discovered by students looking for tutors in your area.</p>
+
+    <div class="alert-card-success">
+      <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px;">✅ What happens next?</div>
+      <div style="font-size: 13.5px; line-height: 1.5;">
+        • Your profile is now visible on the MentorNearby tutor directory and local search.<br/>
+        • Students in your city can discover your teaching offerings and contact you.<br/>
+        • You can manage your availability schedule and subject rates from your dashboard.
+      </div>
+    </div>
+
+    ${missingSectionHtml}
+    ${customNotesHtml}
+
+    <div style="text-align: center; margin: 28px 0;">
+      <a href="${actionUrl}" class="btn btn-accent" style="font-size: 16px; padding: 14px 32px;">Go to Tutor Dashboard →</a>
+    </div>
+
+    <p style="margin-top: 24px;">Thank you for joining MentorNearby.</p>
+    <p style="margin-bottom: 0;">
+      Best wishes,<br/>
+      <strong>Team MentorNearby</strong><br/>
+      <em>Find. Learn. Grow.</em><br/>
+      <a href="https://mentornearby.com" style="color: #f59e0b; text-decoration: none;">https://mentornearby.com</a>
+    </p>
+  `;
+
+  const textContent = `
+Hi ${teacherName},
+
+Congratulations!
+
+Your tutor profile has been reviewed and approved by the MentorNearby team.
+
+You can now be discovered by students looking for tutors in your area.
+${missingSectionText}
+${customMessage ? `\nNote from Review Team:\n${customMessage}\n` : ''}
+Manage your profile and dashboard here: ${actionUrl}
+
+Thank you for joining MentorNearby.
+
+Best wishes,
+Team MentorNearby
+Find. Learn. Grow.
+https://mentornearby.com
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject: 'Congratulations! Your MentorNearby Tutor Profile Has Been Approved 🎉',
+    html: emailTemplates.base(contentHtml, {
+      previewText: `Congratulations ${teacherName}! Your tutor profile has been approved on MentorNearby.`,
+    }),
+    text: textContent,
+  });
+};
+
+/**
+ * TASK 1: Admin Tutor Unapproval / Action Required Email
+ */
+const sendTutorUnapprovalEmail = async ({
+  to,
+  teacherName = 'Tutor',
+  reasonsList = [],
+  adminExplanation = '',
+  correctionChecklist = [],
+  customMessage = '',
+  actionUrl = 'https://mentornearby.com/tutor/profile',
+}) => {
+  const formattedReasons =
+    reasonsList && reasonsList.length > 0
+      ? reasonsList.map((r) => `<li><strong>${r}</strong></li>`).join('')
+      : adminExplanation
+      ? `<li><strong>${adminExplanation}</strong></li>`
+      : '<li><strong>Profile information requires review and correction</strong></li>';
+
+  const checklistHtml =
+    correctionChecklist && correctionChecklist.length > 0
+      ? `
+      <div style="margin: 16px 0; padding: 14px 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <div style="font-weight: 700; font-size: 13px; color: #0f172a; margin-bottom: 8px;">Requested Updates:</div>
+        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
+          ${correctionChecklist.map((c) => `<li>${c}</li>`).join('')}
+        </ul>
+      </div>
+    `
+      : '';
+
+  const contentHtml = `
+    <h2>Profile Update Required</h2>
+    <p>Hi <strong>${teacherName}</strong>,</p>
+    <p>Thank you for registering with MentorNearby.</p>
+    <p>During our review, we found that some information needs to be corrected or verified before your profile can be approved.</p>
+
+    <div class="alert-card-danger">
+      <div style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">Required corrections:</div>
+      <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.6;">
+        ${formattedReasons}
+      </ul>
+      ${
+        adminExplanation && !reasonsList.includes(adminExplanation)
+          ? `<p style="margin: 10px 0 0; font-size: 13.5px;"><em>Details:</em> ${adminExplanation}</p>`
+          : ''
+      }
+      ${checklistHtml}
+    </div>
+
+    ${
+      customMessage
+        ? `<div style="background: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; margin: 18px 0; font-size: 13.5px; color: #334155;">${customMessage.replace(/\n/g, '<br/>')}</div>`
+        : ''
+    }
+
+    <p>Please log in to your MentorNearby account and update the requested information. Once the corrections are complete, follow the available resubmission process, or contact the MentorNearby team if you need assistance.</p>
+
+    <div style="text-align: center; margin: 28px 0;">
+      <a href="${actionUrl}" class="btn" style="background: #0f172a; font-size: 15px; padding: 14px 28px;">Update Profile & Resubmit →</a>
+    </div>
+
+    <p>We appreciate your cooperation.</p>
+    <p style="margin-bottom: 0;">
+      Best wishes,<br/>
+      <strong>Team MentorNearby</strong><br/>
+      <em>Find. Learn. Grow.</em><br/>
+      <a href="https://mentornearby.com" style="color: #f59e0b; text-decoration: none;">https://mentornearby.com</a>
+    </p>
+  `;
+
+  const textContent = `
+Hi ${teacherName},
+
+Thank you for registering with MentorNearby.
+
+During our review, we found that some information needs to be corrected or verified before your profile can be approved.
+
+Required corrections:
+${reasonsList.length > 0 ? reasonsList.map((r) => `- ${r}`).join('\n') : `- ${adminExplanation || 'Profile information requires review'}`}
+${adminExplanation && !reasonsList.includes(adminExplanation) ? `\nDetails: ${adminExplanation}\n` : ''}
+${correctionChecklist.length > 0 ? `\nItems to update:\n` + correctionChecklist.map((c) => `- ${c}`).join('\n') : ''}
+
+Please log in to your MentorNearby account and update the requested information. Once the corrections are complete, follow the available resubmission process, or contact the MentorNearby team if you need assistance:
+${actionUrl}
+
+We appreciate your cooperation.
+
+Best wishes,
+Team MentorNearby
+Find. Learn. Grow.
+https://mentornearby.com
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject: 'Action Required: Please Update Your MentorNearby Tutor Profile',
+    html: emailTemplates.base(contentHtml, {
+      previewText: `Action Required: Please update your MentorNearby tutor profile.`,
+    }),
+    text: textContent,
+  });
+};
+
+/**
+ * TASK 2: Password Reset Email
+ */
+const sendPasswordResetEmail = async ({
+  to,
+  userName,
+  resetUrl,
+  expiryMinutes = 10,
+}) => {
+  const recipientName = userName && userName.trim() ? userName.trim() : 'there';
+
+  const contentHtml = `
+    <h2>Reset Your MentorNearby Password</h2>
+    <p>Hi <strong>${recipientName}</strong>,</p>
+    <p>We received a request to reset your MentorNearby password.</p>
+    <p>Use the secure link below to choose a new password:</p>
+
+    <div style="text-align: center; margin: 28px 0;">
+      <a href="${resetUrl}" class="btn btn-accent" style="font-size: 16px; padding: 14px 32px; font-weight: 700;">Reset Password →</a>
+    </div>
+
+    <div class="info-card" style="font-size: 13px; color: #475569;">
+      <p style="margin: 0 0 6px;">🔒 <strong>Security Notice:</strong></p>
+      <p style="margin: 0 0 6px;">• If you did not request this change, you can ignore this email. Your password will not change unless the reset process is completed.</p>
+      <p style="margin: 0;">• For your security, this link expires after <strong>${expiryMinutes} minutes</strong> and can only be used once.</p>
+    </div>
+
+    <p style="font-size: 13px; color: #64748b; word-break: break-all; margin-top: 24px;">
+      If the button above does not work, copy and paste this link into your browser:<br/>
+      <a href="${resetUrl}" style="color: #0284c7;">${resetUrl}</a>
+    </p>
+
+    <p style="margin-top: 24px; margin-bottom: 0;">
+      Best wishes,<br/>
+      <strong>Team MentorNearby</strong>
+    </p>
+  `;
+
+  const textContent = `
+Subject: Reset Your MentorNearby Password
+
+Hi ${recipientName},
+
+We received a request to reset your MentorNearby password.
+
+Use the secure link below to choose a new password:
+
+${resetUrl}
+
+If you did not request this change, you can ignore this email. Your password will not change unless the reset process is completed.
+
+For your security, this link expires after ${expiryMinutes} minutes and can only be used once.
+
+Best wishes,
+Team MentorNearby
+https://mentornearby.com
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject: 'Reset Your MentorNearby Password',
+    html: emailTemplates.base(contentHtml, {
+      previewText: `MentorNearby password reset request for your account.`,
+    }),
+    text: textContent,
+  });
+};
+
+// ============================================================
+// Other Existing Transactional Notifications (Preserved)
+// ============================================================
 
 const sendWelcomeEmail = async (user) => {
   const content = `
@@ -148,11 +548,15 @@ const sendWelcomeEmail = async (user) => {
       <li>Compare tutors by subject, location, and fees</li>
       <li>Unlock tutor contact information</li>
     </ul>
-    <a href="${process.env.FRONTEND_URL}/search" class="btn">Find a Tutor</a>
+    <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/search" class="btn">Find a Tutor</a>
     <hr class="divider" />
-    <p style="font-size: 13px; color: #94a3b8;">If you have any questions, visit our <a href="${process.env.FRONTEND_URL}/contact" style="color: #1e3a5f;">support page</a>.</p>
+    <p style="font-size: 13px; color: #94a3b8;">If you have any questions, visit our <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/contact" style="color: #1e3a5f;">support page</a>.</p>
   `;
-  return sendEmail({ to: user.email, subject: 'Welcome to MentorNearby!', html: emailTemplates.base(content) });
+  return sendEmail({
+    to: user.email,
+    subject: 'Welcome to MentorNearby!',
+    html: emailTemplates.base(content),
+  });
 };
 
 const sendEmailVerification = async (user, verificationUrl) => {
@@ -164,19 +568,11 @@ const sendEmailVerification = async (user, verificationUrl) => {
     <hr class="divider" />
     <p style="font-size: 13px; color: #94a3b8;">Or copy this link: <br/><a href="${verificationUrl}" style="color: #1e3a5f; word-break: break-all;">${verificationUrl}</a></p>
   `;
-  return sendEmail({ to: user.email, subject: 'Verify your MentorNearby email address', html: emailTemplates.base(content) });
-};
-
-const sendPasswordResetEmail = async (user, resetUrl) => {
-  const content = `
-    <h2>Reset your password</h2>
-    <p>Hi ${user.name}, we received a request to reset your MentorNearby password.</p>
-    <a href="${resetUrl}" class="btn">Reset Password</a>
-    <p style="font-size: 13px; color: #94a3b8;">This link expires in 10 minutes. If you didn't request a password reset, please ignore this email — your password will not be changed.</p>
-    <hr class="divider" />
-    <p style="font-size: 13px; color: #94a3b8;">Or copy this link: <br/><a href="${resetUrl}" style="color: #1e3a5f; word-break: break-all;">${resetUrl}</a></p>
-  `;
-  return sendEmail({ to: user.email, subject: 'Reset your MentorNearby password', html: emailTemplates.base(content) });
+  return sendEmail({
+    to: user.email,
+    subject: 'Verify your MentorNearby email address',
+    html: emailTemplates.base(content),
+  });
 };
 
 const sendKycSubmittedEmail = async (user) => {
@@ -184,30 +580,38 @@ const sendKycSubmittedEmail = async (user) => {
     <h2>KYC Submitted Successfully</h2>
     <p>Hi ${user.name}, your KYC documents have been submitted for review.</p>
     <p>Our team will review your documents within <strong>2-3 business days</strong>. You'll receive an email once the review is complete.</p>
-    <span class="badge badge-warning">⏳ Under Review</span>
+    <span class="tag-badge" style="background:#fef3c7; color:#92400e;">⏳ Under Review</span>
     <hr class="divider" />
     <p>You can check your verification status anytime from your dashboard.</p>
-    <a href="${process.env.FRONTEND_URL}/tutor/dashboard" class="btn">View Dashboard</a>
+    <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/dashboard" class="btn">View Dashboard</a>
   `;
-  return sendEmail({ to: user.email, subject: 'KYC Documents Submitted — MentorNearby', html: emailTemplates.base(content) });
+  return sendEmail({
+    to: user.email,
+    subject: 'KYC Documents Submitted — MentorNearby',
+    html: emailTemplates.base(content),
+  });
 };
 
 const sendKycApprovedEmail = async (user) => {
   const content = `
     <h2>🎉 KYC Verification Approved!</h2>
     <p>Hi ${user.name}, great news! Your identity verification has been approved.</p>
-    <span class="badge">✅ Verified</span>
+    <span class="tag-badge" style="background:#dcfce7; color:#166534;">✅ Verified</span>
     <p style="margin-top: 16px;">Your tutor profile now shows a verification badge, helping students and parents trust your profile.</p>
-    <a href="${process.env.FRONTEND_URL}/tutor/dashboard" class="btn">View Your Profile</a>
+    <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/dashboard" class="btn">View Your Profile</a>
   `;
-  return sendEmail({ to: user.email, subject: 'KYC Approved — You are now verified on MentorNearby!', html: emailTemplates.base(content) });
+  return sendEmail({
+    to: user.email,
+    subject: 'KYC Approved — You are now verified on MentorNearby!',
+    html: emailTemplates.base(content),
+  });
 };
 
 const sendKycRejectedEmail = async (user, reason) => {
   const content = `
     <h2>KYC Verification — Action Required</h2>
     <p>Hi ${user.name}, unfortunately we were unable to verify your identity documents.</p>
-    <span class="badge badge-danger">❌ Rejected</span>
+    <span class="tag-badge" style="background:#fee2e2; color:#991b1b;">❌ Rejected</span>
     ${reason ? `<p style="margin-top: 16px;"><strong>Reason:</strong> ${reason}</p>` : ''}
     <p>You can resubmit your documents from your dashboard. Please ensure:</p>
     <ul style="color: #475569; line-height: 2;">
@@ -215,9 +619,13 @@ const sendKycRejectedEmail = async (user, reason) => {
       <li>Documents are not expired</li>
       <li>All required fields are visible</li>
     </ul>
-    <a href="${process.env.FRONTEND_URL}/tutor/kyc" class="btn">Resubmit Documents</a>
+    <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/kyc" class="btn">Resubmit Documents</a>
   `;
-  return sendEmail({ to: user.email, subject: 'KYC Verification — Action Required — MentorNearby', html: emailTemplates.base(content) });
+  return sendEmail({
+    to: user.email,
+    subject: 'KYC Verification — Action Required — MentorNearby',
+    html: emailTemplates.base(content),
+  });
 };
 
 const sendContactUnlockedEmail = async (student, tutor) => {
@@ -226,11 +634,15 @@ const sendContactUnlockedEmail = async (student, tutor) => {
     <p>Hi ${student.name}, you have successfully unlocked contact information for:</p>
     <p><strong>${tutor.name}</strong></p>
     <p>You can now view and use the tutor's contact details from your contact history.</p>
-    <a href="${process.env.FRONTEND_URL}/dashboard/contacts" class="btn">View Contact Details</a>
+    <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/dashboard/contacts" class="btn">View Contact Details</a>
     <hr class="divider" />
     <p style="font-size: 13px; color: #94a3b8;">Remember: Please only contact tutors for genuine educational purposes. Misuse may result in account suspension.</p>
   `;
-  return sendEmail({ to: student.email, subject: `Contact Unlocked — ${tutor.name} — MentorNearby`, html: emailTemplates.base(content) });
+  return sendEmail({
+    to: student.email,
+    subject: `Contact Unlocked — ${tutor.name} — MentorNearby`,
+    html: emailTemplates.base(content),
+  });
 };
 
 const sendPaymentConfirmationEmail = async (user, paymentDetails) => {
@@ -243,19 +655,27 @@ const sendPaymentConfirmationEmail = async (user, paymentDetails) => {
       <p style="margin: 4px 0; font-size: 14px;"><strong>Transaction ID:</strong> ${paymentDetails.paymentId}</p>
       <p style="margin: 4px 0; font-size: 14px;"><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
     </div>
-    <a href="${process.env.FRONTEND_URL}/dashboard" class="btn">Go to Dashboard</a>
+    <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/dashboard" class="btn">Go to Dashboard</a>
   `;
-  return sendEmail({ to: user.email, subject: 'Payment Confirmed — MentorNearby', html: emailTemplates.base(content) });
+  return sendEmail({
+    to: user.email,
+    subject: 'Payment Confirmed — MentorNearby',
+    html: emailTemplates.base(content),
+  });
 };
 
 module.exports = {
   sendEmail,
+  sendTutorApprovalEmail,
+  sendTutorUnapprovalEmail,
+  sendPasswordResetEmail,
   sendWelcomeEmail,
   sendEmailVerification,
-  sendPasswordResetEmail,
   sendKycSubmittedEmail,
   sendKycApprovedEmail,
   sendKycRejectedEmail,
   sendContactUnlockedEmail,
   sendPaymentConfirmationEmail,
+  isConfigured: () => IS_CONFIGURED,
+  getActiveProvider: () => (IS_RESEND_CONFIGURED ? 'RESEND' : IS_SMTP_CONFIGURED ? 'SMTP' : 'STUB'),
 };

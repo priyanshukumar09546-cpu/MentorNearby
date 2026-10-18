@@ -22,6 +22,8 @@ const EducationalResource = require('../models/EducationalResource');
 const logAuditAction = require('../utils/auditLogger');
 const { deleteFromCloudinary } = require('../services/cloudinaryService');
 const { generateToken, sendTokenResponse } = require('../utils/generateToken');
+const EmailLog = require('../models/EmailLog');
+const emailService = require('../services/emailService');
 
 exports.adminLogin = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
@@ -1545,17 +1547,196 @@ exports.deleteTutorPermanently = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    Approve tutor profile & send congratulation email
-// @route   PUT /api/admin/tutors/:id/approve
+// Helper: Inspect tutor profile fields to detect any missing optional details
+function inspectMissingProfileDetails(tutorProfile) {
+  const missing = [];
+  if (!tutorProfile) return missing;
+
+  const hasPhoto = Boolean(
+    (tutorProfile.profilePhoto && tutorProfile.profilePhoto.url) ||
+    tutorProfile.avatar ||
+    tutorProfile.profilePicture
+  );
+  if (!hasPhoto) {
+    missing.push({
+      key: 'profilePhoto',
+      title: 'Profile Photo',
+      tip: 'Upload a clear, friendly portrait photo to establish immediate trust with students.',
+    });
+  }
+
+  const headline = tutorProfile.professionalHeadline || tutorProfile.headline || '';
+  if (!headline || headline.trim().length === 0) {
+    missing.push({
+      key: 'headline',
+      title: 'Professional Headline',
+      tip: 'Add a professional headline summarizing your expertise (e.g. "Senior Mathematics & Physics Mentor | 8+ Yrs Exp").',
+    });
+  }
+
+  const bio = tutorProfile.bio || '';
+  if (!bio || bio.trim().length < 40) {
+    missing.push({
+      key: 'bio',
+      title: 'Detailed Bio / About You',
+      tip: 'Share your teaching philosophy, methodology, and academic journey.',
+    });
+  }
+
+  const subjects = tutorProfile.subjects || [];
+  if (!Array.isArray(subjects) || subjects.length === 0) {
+    missing.push({
+      key: 'subjects',
+      title: 'Subjects & Classes',
+      tip: 'Specify all subjects and grade levels you teach so matching students can find you.',
+    });
+  }
+
+  const hasExp = Boolean(
+    (tutorProfile.experience && tutorProfile.experience.years) ||
+    tutorProfile.experienceYears
+  );
+  if (!hasExp) {
+    missing.push({
+      key: 'experience',
+      title: 'Teaching Experience',
+      tip: 'Specify your years of tutoring or classroom experience.',
+    });
+  }
+
+  const hasEducation = Array.isArray(tutorProfile.education) && tutorProfile.education.length > 0;
+  const hasCertificates = Array.isArray(tutorProfile.certificates) && tutorProfile.certificates.length > 0;
+  if (!hasEducation && !hasCertificates) {
+    missing.push({
+      key: 'education',
+      title: 'Education & Qualifications',
+      tip: 'List your highest degrees, college, or subject certifications.',
+    });
+  }
+
+  const teachingModes = tutorProfile.teachingModes || [];
+  if (!Array.isArray(teachingModes) || teachingModes.length === 0) {
+    missing.push({
+      key: 'teachingModes',
+      title: 'Teaching Modes (Online / Home Tuition / Hybrid)',
+      tip: 'Indicate whether you teach Online, In-Person Home Tuition, or Both.',
+    });
+  }
+
+  const hasLocation = Boolean(
+    (tutorProfile.location && (tutorProfile.location.city || tutorProfile.location.locality)) ||
+    tutorProfile.city
+  );
+  if (!hasLocation) {
+    missing.push({
+      key: 'location',
+      title: 'City & Service Area',
+      tip: 'Specify your neighborhood and city for hyper-local student matching.',
+    });
+  }
+
+  const hasFees = Boolean(
+    (tutorProfile.fees && tutorProfile.fees.amount) ||
+    tutorProfile.hourlyRate
+  );
+  if (!hasFees) {
+    missing.push({
+      key: 'fees',
+      title: 'Tuition Fee Rates',
+      tip: 'Set your hourly or monthly pricing rate so parents know what to expect.',
+    });
+  }
+
+  const hasVideo = Boolean(
+    (tutorProfile.introVideo && tutorProfile.introVideo.url) ||
+    tutorProfile.introVideoUrl
+  );
+  if (!hasVideo) {
+    missing.push({
+      key: 'introVideo',
+      title: 'Intro Video (Optional)',
+      tip: 'Record and upload a 60-second video introduction to boost student inquiries.',
+    });
+  }
+
+  return missing;
+}
+
+exports.inspectMissingProfileDetails = inspectMissingProfileDetails;
+
+// @desc    Get tutor profile analysis (missing optional fields, completion score)
+// @route   GET /api/admin/tutors/:id/analysis
 // @access  Private (Admin only)
-exports.approveTutor = asyncHandler(async (req, res, next) => {
+exports.getTutorProfileAnalysis = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
   let tutorProfile = await TutorProfile.findOne({
     $or: [
       { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
-      { user: mongoose.Types.ObjectId.isValid(id) ? id : null }
-    ]
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null },
+    ],
+  }).populate('user', 'name email phone avatar role isVerified');
+
+  let userDoc = null;
+  if (tutorProfile && tutorProfile.user) {
+    userDoc = tutorProfile.user;
+  } else {
+    userDoc = await User.findById(id);
+    if (userDoc) {
+      tutorProfile = await TutorProfile.findOne({ user: userDoc._id });
+    }
+  }
+
+  if (!userDoc && !tutorProfile) {
+    return error(res, 'Tutor not found', 404);
+  }
+
+  const missingDetails = inspectMissingProfileDetails(tutorProfile);
+
+  return success(res, 'Tutor profile analysis retrieved successfully', {
+    tutorId: tutorProfile?._id || userDoc?._id,
+    userId: userDoc?._id || tutorProfile?.user,
+    name: userDoc?.name || tutorProfile?.name || 'Tutor',
+    email: userDoc?.email || tutorProfile?.email || '',
+    isApproved: Boolean(tutorProfile?.isApproved),
+    profileStatus: tutorProfile?.profileStatus || (tutorProfile?.isApproved ? 'approved' : 'pending'),
+    missingDetails,
+    isComplete: missingDetails.length === 0,
+  });
+});
+
+// @desc    Approve tutor profile & send verified approval email
+// @route   PUT /api/admin/tutors/:id/approve
+// @access  Private (Admin only)
+exports.approveTutor = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const {
+    customMessage = '',
+    customSubject = '',
+    missingDetailsList: clientMissingDetails,
+    sendEmailNotification = true,
+    idempotencyKey,
+  } = req.body || {};
+
+  // Idempotency: prevent double-clicks & concurrent duplicate requests within 30 seconds
+  if (idempotencyKey) {
+    const recentLog = await EmailLog.findOne({
+      idempotencyKey,
+      createdAt: { $gt: new Date(Date.now() - 30 * 1000) },
+    });
+    if (recentLog) {
+      return success(res, 'Approval already processed (duplicate suppressed)', {
+        duplicateSuppressed: true,
+        emailSent: recentLog.status === 'SENT',
+      });
+    }
+  }
+
+  let tutorProfile = await TutorProfile.findOne({
+    $or: [
+      { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null },
+    ],
   }).populate('user', 'name email phone avatar role');
 
   let userDoc = null;
@@ -1574,6 +1755,7 @@ exports.approveTutor = asyncHandler(async (req, res, next) => {
 
   const userId = userDoc ? userDoc._id : tutorProfile.user;
 
+  // Persist authorized approval changes to DB
   if (tutorProfile) {
     tutorProfile.isApproved = true;
     tutorProfile.kycStatus = 'VERIFIED';
@@ -1581,6 +1763,7 @@ exports.approveTutor = asyncHandler(async (req, res, next) => {
     tutorProfile.profileStatus = 'approved';
     tutorProfile.profileVisibility = true;
     tutorProfile.isVerified = true;
+    tutorProfile.rejectionReason = undefined;
     await tutorProfile.save();
   } else {
     tutorProfile = await TutorProfile.create({
@@ -1590,7 +1773,7 @@ exports.approveTutor = asyncHandler(async (req, res, next) => {
       verificationStatus: 'approved',
       profileStatus: 'approved',
       profileVisibility: true,
-      isVerified: true
+      isVerified: true,
     });
   }
 
@@ -1630,34 +1813,44 @@ exports.approveTutor = asyncHandler(async (req, res, next) => {
   const recipientEmail = userDoc?.email || tutorProfile?.email;
   const recipientName = userDoc?.name || tutorProfile?.name || 'Tutor';
 
-  if (recipientEmail) {
+  // Automatically inspect tutor's actual saved fields for incomplete optional details
+  const detectedMissing = inspectMissingProfileDetails(tutorProfile);
+  const finalMissingDetails = Array.isArray(clientMissingDetails) ? clientMissingDetails : detectedMissing;
+
+  let emailResult = { success: false, error: 'Email delivery was disabled by admin' };
+
+  if (sendEmailNotification && recipientEmail) {
     try {
-      const sendEmail = require('../services/emailService').sendEmail;
-      await sendEmail({
+      emailResult = await emailService.sendTutorApprovalEmail({
         to: recipientEmail,
-        subject: '🎉 Congratulations! You are now a Verified Tutor on MentorNearby',
-        html: `
-          <div style="font-family: Arial, sans-serif; background: #FFFBF5; padding: 30px; border-radius: 12px; border: 1px solid #F0EAD6;">
-            <h2 style="color: #F59E0B; margin-top: 0;">Welcome to MentorNearby Family! 🎉</h2>
-            <p style="color: #333; font-size: 15px;">Hi <b>${recipientName}</b>,</p>
-            <p style="color: #333; font-size: 15px;"><b>Congratulations!</b> Your tutor profile has been <b>verified and approved</b> by our team.</p>
-            <p style="color: #333; font-size: 15px;">You are now officially a tutor on <b>MentorNearby.com</b> — India's trusted platform to find nearby tutors.</p>
-            <div style="background: #ffffff; border: 1px solid #F5EFE0; border-radius: 10px; padding: 16px; margin: 20px 0;">
-              <p style="margin: 8px 0; color: #166534;">✅ <b>Your profile is now live</b> and visible to thousands of students in your city.</p>
-              <p style="margin: 8px 0; color: #166534;">✅ <b>Students can now contact you</b> and book your classes.</p>
-            </div>
-            <br>
-            <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/dashboard" style="background: #000000; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Go to Your Dashboard</a>
-            <br><br>
-            <p style="color: #666; font-size: 13px;">Keep your profile updated and respond quickly to get more students!</p>
-            <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;" />
-            <p style="color: #888; font-size: 12px;">Best regards,<br><b>Team MentorNearby</b><br><a href="https://mentornearby.com" style="color: #F59E0B;">www.mentornearby.com</a></p>
-          </div>
-        `
+        teacherName: recipientName,
+        missingDetailsList: finalMissingDetails,
+        customMessage,
+        actionUrl: `${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/dashboard`,
       });
-      console.log(`✅ Congratulation email sent to approved tutor ${recipientEmail}`);
+
+      // Audit outbound notification in EmailLog
+      await EmailLog.create({
+        type: 'TUTOR_APPROVAL',
+        recipient: recipientEmail,
+        recipientName,
+        user: userId,
+        tutorProfile: tutorProfile._id,
+        admin: req.user._id,
+        subject: customSubject || 'Congratulations! Your MentorNearby Tutor Profile Has Been Approved 🎉',
+        status: emailResult.success ? (emailResult.stub ? 'STUB' : 'SENT') : 'FAILED',
+        provider: emailResult.provider || emailService.getActiveProvider(),
+        providerMessageId: emailResult.messageId,
+        error: emailResult.error,
+        idempotencyKey,
+        metadata: {
+          missingDetailsCount: finalMissingDetails.length,
+          customMessageProvided: Boolean(customMessage),
+        },
+      });
     } catch (emailErr) {
       console.error('⚠️ Failed to send tutor approval email:', emailErr);
+      emailResult = { success: false, error: emailErr.message };
     }
   }
 
@@ -1666,11 +1859,23 @@ exports.approveTutor = asyncHandler(async (req, res, next) => {
     action: 'TUTOR_APPROVED',
     targetType: 'USER',
     targetId: userId,
-    details: `Tutor ${recipientName} (${recipientEmail}) approved & email sent.`,
+    details: `Tutor ${recipientName} (${recipientEmail}) approved. Email sent: ${emailResult.success ? 'Yes' : 'No'}`,
     req,
   });
 
-  return success(res, 'Tutor approved and email sent successfully', { tutor: tutorProfile });
+  return success(
+    res,
+    emailResult.success
+      ? 'Tutor approved and congratulations email sent successfully'
+      : `Tutor approved, but notification email could not be sent: ${emailResult.error || 'Provider unavailable'}. You can retry sending email anytime.`,
+    {
+      tutor: tutorProfile,
+      emailSent: emailResult.success,
+      emailError: emailResult.error,
+      messageId: emailResult.messageId,
+      detectedMissingDetails: detectedMissing,
+    }
+  );
 });
 
 // @desc    Reject tutor profile
@@ -1678,82 +1883,13 @@ exports.approveTutor = asyncHandler(async (req, res, next) => {
 // @access  Private (Admin only)
 exports.rejectTutor = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const { reason = 'Document or profile criteria not met' } = req.body;
+  const { reason = 'Document or profile criteria not met', customMessage = '', sendEmailNotification = true } = req.body || {};
 
   let tutorProfile = await TutorProfile.findOne({
     $or: [
       { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
-      { user: mongoose.Types.ObjectId.isValid(id) ? id : null }
-    ]
-  }).populate('user', 'name email phone avatar role');
-
-  let userDoc = null;
-  if (tutorProfile && tutorProfile.user) {
-    userDoc = tutorProfile.user;
-  } else {
-    userDoc = await User.findById(id);
-    if (userDoc) {
-      tutorProfile = await TutorProfile.findOne({ user: userDoc._id });
-    }
-  }
-
-  if (!userDoc && !tutorProfile) {
-    return error(res, 'Tutor not found', 404);
-  }
-
-  if (tutorProfile) {
-    tutorProfile.isApproved = false;
-    tutorProfile.kycStatus = 'REJECTED';
-    tutorProfile.verificationStatus = 'REJECTED';
-    tutorProfile.rejectionReason = reason;
-    await tutorProfile.save();
-  }
-
-  const recipientEmail = userDoc?.email || tutorProfile?.email;
-  const recipientName = userDoc?.name || tutorProfile?.name || 'Tutor';
-
-  if (recipientEmail) {
-    try {
-      const sendEmail = require('../services/emailService').sendEmail;
-      await sendEmail({
-        to: recipientEmail,
-        subject: 'MentorNearby Profile Review Update',
-        html: `
-          <div style="font-family: Arial, sans-serif; background: #FFFBF5; padding: 30px; border-radius: 12px; border: 1px solid #F0EAD6;">
-            <h2 style="color: #DC2626; margin-top: 0;">Profile Review Update</h2>
-            <p style="color: #333; font-size: 15px;">Hi <b>${recipientName}</b>,</p>
-            <p style="color: #333; font-size: 15px;">Thank you for registering on MentorNearby.</p>
-            <p style="color: #333; font-size: 15px;">Upon reviewing your tutor profile, our team was unable to approve it at this time.</p>
-            <div style="background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 10px; padding: 16px; margin: 20px 0;">
-              <p style="margin: 0; color: #991B1B; font-size: 14px;"><b>Reason:</b> ${reason}</p>
-            </div>
-            <p style="color: #333; font-size: 14px;">Please update your profile details or resubmit valid verification documents to get verified.</p>
-            <a href="${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/kyc" style="background: #000000; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Update Profile & KYC</a>
-            <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;" />
-            <p style="color: #888; font-size: 12px;">Best regards,<br><b>Team MentorNearby</b></p>
-          </div>
-        `
-      });
-    } catch (e) {
-      console.error('⚠️ Failed to send tutor rejection email:', e);
-    }
-  }
-
-  return success(res, 'Tutor rejected successfully', { tutor: tutorProfile });
-});
-
-// @desc    Unapprove / Cancel approval for tutor (remove from website and search)
-// @route   PUT /api/admin/tutors/:id/unapprove
-// @access  Private (Admin only)
-exports.unapproveTutor = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  const { reason = 'Approval cancelled by admin' } = req.body;
-
-  let tutorProfile = await TutorProfile.findOne({
-    $or: [
-      { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
-      { user: mongoose.Types.ObjectId.isValid(id) ? id : null }
-    ]
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null },
+    ],
   }).populate('user', 'name email phone avatar role');
 
   let userDoc = null;
@@ -1774,9 +1910,9 @@ exports.unapproveTutor = asyncHandler(async (req, res, next) => {
 
   if (tutorProfile) {
     tutorProfile.isApproved = false;
-    tutorProfile.kycStatus = 'PENDING';
-    tutorProfile.verificationStatus = 'pending';
-    tutorProfile.profileStatus = 'pending';
+    tutorProfile.kycStatus = 'REJECTED';
+    tutorProfile.verificationStatus = 'REJECTED';
+    tutorProfile.profileStatus = 'rejected';
     tutorProfile.profileVisibility = false;
     tutorProfile.isVerified = false;
     tutorProfile.rejectionReason = reason;
@@ -1788,16 +1924,290 @@ exports.unapproveTutor = asyncHandler(async (req, res, next) => {
     await userDoc.save();
   }
 
+  const recipientEmail = userDoc?.email || tutorProfile?.email;
+  const recipientName = userDoc?.name || tutorProfile?.name || 'Tutor';
+
+  let emailResult = { success: false, error: 'Email sending skipped' };
+
+  if (sendEmailNotification && recipientEmail) {
+    try {
+      emailResult = await emailService.sendTutorUnapprovalEmail({
+        to: recipientEmail,
+        teacherName: recipientName,
+        reasonsList: [reason],
+        adminExplanation: reason,
+        customMessage,
+        actionUrl: `${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/profile`,
+      });
+
+      await EmailLog.create({
+        type: 'KYC_REJECTED',
+        recipient: recipientEmail,
+        recipientName,
+        user: userId,
+        tutorProfile: tutorProfile._id,
+        admin: req.user._id,
+        subject: 'Action Required: Please Update Your MentorNearby Tutor Profile',
+        status: emailResult.success ? (emailResult.stub ? 'STUB' : 'SENT') : 'FAILED',
+        provider: emailResult.provider || emailService.getActiveProvider(),
+        providerMessageId: emailResult.messageId,
+        error: emailResult.error,
+        metadata: { reason },
+      });
+    } catch (e) {
+      console.error('⚠️ Failed to send tutor rejection email:', e);
+      emailResult = { success: false, error: e.message };
+    }
+  }
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'TUTOR_REJECTED',
+    targetType: 'USER',
+    targetId: userId,
+    details: `Tutor ${recipientName} (${recipientEmail}) rejected. Reason: ${reason}.`,
+    req,
+  });
+
+  return success(res, 'Tutor rejected successfully', {
+    tutor: tutorProfile,
+    emailSent: emailResult.success,
+    emailError: emailResult.error,
+  });
+});
+
+// @desc    Unapprove / Cancel approval for tutor with popup reasons & email
+// @route   PUT /api/admin/tutors/:id/unapprove
+// @access  Private (Admin only)
+exports.unapproveTutor = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const {
+    reason = 'Profile information is incomplete',
+    explanation = '',
+    correctionChecklist = [],
+    customMessage = '',
+    customSubject = '',
+    sendEmailNotification = true,
+    idempotencyKey,
+  } = req.body || {};
+
+  if (!explanation && !reason) {
+    return error(res, 'Please provide an explanation or reason for unapproving this tutor profile.', 400);
+  }
+
+  // Idempotency: prevent double-clicks & concurrent duplicate unapprovals within 30 seconds
+  if (idempotencyKey) {
+    const recentLog = await EmailLog.findOne({
+      idempotencyKey,
+      createdAt: { $gt: new Date(Date.now() - 30 * 1000) },
+    });
+    if (recentLog) {
+      return success(res, 'Unapproval already processed (duplicate suppressed)', {
+        duplicateSuppressed: true,
+        emailSent: recentLog.status === 'SENT',
+      });
+    }
+  }
+
+  let tutorProfile = await TutorProfile.findOne({
+    $or: [
+      { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null },
+    ],
+  }).populate('user', 'name email phone avatar role');
+
+  let userDoc = null;
+  if (tutorProfile && tutorProfile.user) {
+    userDoc = tutorProfile.user;
+  } else {
+    userDoc = await User.findById(id);
+    if (userDoc) {
+      tutorProfile = await TutorProfile.findOne({ user: userDoc._id });
+    }
+  }
+
+  if (!userDoc && !tutorProfile) {
+    return error(res, 'Tutor not found', 404);
+  }
+
+  const userId = userDoc ? userDoc._id : tutorProfile.user;
+  const fullReason = explanation ? `${reason}: ${explanation}` : reason;
+
+  if (tutorProfile) {
+    tutorProfile.isApproved = false;
+    tutorProfile.kycStatus = 'PENDING';
+    tutorProfile.verificationStatus = 'pending';
+    tutorProfile.profileStatus = 'pending';
+    tutorProfile.profileVisibility = false;
+    tutorProfile.isVerified = false;
+    tutorProfile.rejectionReason = fullReason;
+    await tutorProfile.save();
+  }
+
+  if (userDoc) {
+    userDoc.isVerified = false;
+    await userDoc.save();
+  }
+
+  const recipientEmail = userDoc?.email || tutorProfile?.email;
+  const recipientName = userDoc?.name || tutorProfile?.name || 'Tutor';
+
+  let emailResult = { success: false, error: 'Email delivery was disabled by admin' };
+
+  if (sendEmailNotification && recipientEmail) {
+    try {
+      emailResult = await emailService.sendTutorUnapprovalEmail({
+        to: recipientEmail,
+        teacherName: recipientName,
+        reasonsList: [reason],
+        adminExplanation: explanation,
+        correctionChecklist: Array.isArray(correctionChecklist) ? correctionChecklist : [],
+        customMessage,
+        actionUrl: `${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/profile`,
+      });
+
+      // Audit outbound notification in EmailLog
+      await EmailLog.create({
+        type: 'TUTOR_UNAPPROVAL',
+        recipient: recipientEmail,
+        recipientName,
+        user: userId,
+        tutorProfile: tutorProfile._id,
+        admin: req.user._id,
+        subject: customSubject || 'Action Required: Please Update Your MentorNearby Tutor Profile',
+        status: emailResult.success ? (emailResult.stub ? 'STUB' : 'SENT') : 'FAILED',
+        provider: emailResult.provider || emailService.getActiveProvider(),
+        providerMessageId: emailResult.messageId,
+        error: emailResult.error,
+        idempotencyKey,
+        metadata: {
+          reason,
+          explanation,
+          checklistCount: correctionChecklist.length,
+        },
+      });
+    } catch (emailErr) {
+      console.error('⚠️ Failed to send tutor unapproval email:', emailErr);
+      emailResult = { success: false, error: emailErr.message };
+    }
+  }
+
   await logAuditAction({
     adminId: req.user._id,
     action: 'TUTOR_UNAPPROVED',
     targetType: 'USER',
     targetId: userId,
-    details: `Tutor ${userDoc?.name || tutorProfile?.name || 'Tutor'} approval cancelled and profile hidden from website.`,
+    details: `Tutor ${recipientName} (${recipientEmail}) unapproved. Reason: ${fullReason}. Email sent: ${emailResult.success ? 'Yes' : 'No'}`,
     req,
   });
 
-  return success(res, 'Tutor approval cancelled and removed from public website successfully', { tutor: tutorProfile });
+  return success(
+    res,
+    emailResult.success
+      ? 'Tutor approval cancelled and action required email sent successfully.'
+      : `Tutor approval cancelled, but notification email could not be sent: ${emailResult.error || 'Provider unavailable'}.`,
+    {
+      tutor: tutorProfile,
+      emailSent: emailResult.success,
+      emailError: emailResult.error,
+      messageId: emailResult.messageId,
+    }
+  );
+});
+
+// @desc    Resend approval or unapproval notification email directly
+// @route   POST /api/admin/tutors/:id/resend-email
+// @access  Private (Admin only)
+exports.resendTutorEmail = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const {
+    type = 'APPROVAL',
+    customMessage = '',
+    customSubject = '',
+    missingDetailsList = [],
+    reason = '',
+    explanation = '',
+    correctionChecklist = [],
+  } = req.body || {};
+
+  let tutorProfile = await TutorProfile.findOne({
+    $or: [
+      { _id: mongoose.Types.ObjectId.isValid(id) ? id : null },
+      { user: mongoose.Types.ObjectId.isValid(id) ? id : null },
+    ],
+  }).populate('user', 'name email phone avatar role');
+
+  let userDoc = null;
+  if (tutorProfile && tutorProfile.user) {
+    userDoc = tutorProfile.user;
+  } else {
+    userDoc = await User.findById(id);
+    if (userDoc) {
+      tutorProfile = await TutorProfile.findOne({ user: userDoc._id });
+    }
+  }
+
+  if (!userDoc && !tutorProfile) {
+    return error(res, 'Tutor not found', 404);
+  }
+
+  const recipientEmail = userDoc?.email || tutorProfile?.email;
+  const recipientName = userDoc?.name || tutorProfile?.name || 'Tutor';
+  const userId = userDoc ? userDoc._id : tutorProfile.user;
+
+  if (!recipientEmail) {
+    return error(res, 'Tutor does not have a registered email address', 400);
+  }
+
+  let emailResult;
+  if (type === 'APPROVAL') {
+    const missing = missingDetailsList.length > 0 ? missingDetailsList : inspectMissingProfileDetails(tutorProfile);
+    emailResult = await emailService.sendTutorApprovalEmail({
+      to: recipientEmail,
+      teacherName: recipientName,
+      missingDetailsList: missing,
+      customMessage,
+      actionUrl: `${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/dashboard`,
+    });
+  } else {
+    emailResult = await emailService.sendTutorUnapprovalEmail({
+      to: recipientEmail,
+      teacherName: recipientName,
+      reasonsList: reason ? [reason] : ['Profile information requires update'],
+      adminExplanation: explanation || tutorProfile.rejectionReason,
+      correctionChecklist,
+      customMessage,
+      actionUrl: `${process.env.FRONTEND_URL || 'https://mentornearby.com'}/tutor/profile`,
+    });
+  }
+
+  await EmailLog.create({
+    type: type === 'APPROVAL' ? 'TUTOR_APPROVAL' : 'TUTOR_UNAPPROVAL',
+    recipient: recipientEmail,
+    recipientName,
+    user: userId,
+    tutorProfile: tutorProfile._id,
+    admin: req.user._id,
+    subject:
+      customSubject ||
+      (type === 'APPROVAL'
+        ? 'Congratulations! Your MentorNearby Tutor Profile Has Been Approved 🎉'
+        : 'Action Required: Please Update Your MentorNearby Tutor Profile'),
+    status: emailResult.success ? (emailResult.stub ? 'STUB' : 'SENT') : 'FAILED',
+    provider: emailResult.provider || emailService.getActiveProvider(),
+    providerMessageId: emailResult.messageId,
+    error: emailResult.error,
+    metadata: { isResend: true },
+  });
+
+  if (!emailResult.success) {
+    return error(res, `Failed to send email: ${emailResult.error}`, 500);
+  }
+
+  return success(res, `Email dispatched successfully to ${recipientEmail}`, {
+    emailSent: true,
+    messageId: emailResult.messageId,
+  });
 });
 
 // ============================================================

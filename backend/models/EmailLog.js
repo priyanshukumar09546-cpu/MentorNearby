@@ -16,6 +16,7 @@ const EmailLogSchema = new mongoose.Schema(
         'KYC_REJECTED',
         'CONTACT_UNLOCKED',
         'PAYMENT_CONFIRMATION',
+        'ADMIN_TEST',
         'OTHER',
       ],
       index: true,
@@ -59,7 +60,7 @@ const EmailLogSchema = new mongoose.Schema(
     provider: {
       type: String,
       enum: ['RESEND', 'BREVO', 'SENDGRID', 'SMTP', 'STUB', 'TEST'],
-      default: 'SMTP',
+      default: 'RESEND',
     },
     providerMessageId: {
       type: String,

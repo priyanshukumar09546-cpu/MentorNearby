@@ -20,6 +20,8 @@ const {
   getRiskFlags,
   getAdminConfig,
   updateAdminConfig,
+  adminGetEmailStatus,
+  adminSendTestEmail,
   getRequirements,
   getConnections,
   getReviews,
@@ -140,6 +142,10 @@ router.get('/risk-flags', getRiskFlags);
 // Configuration & Pricing
 router.get('/config', getAdminConfig);
 router.put('/config/:key', updateAdminConfig);
+
+// Email Delivery System (Resend HTTPS API) & Diagnostics
+router.get('/email/status', adminGetEmailStatus);
+router.post('/email/test', adminSendTestEmail);
 
 // Market entities
 router.get('/requirements', getRequirements);

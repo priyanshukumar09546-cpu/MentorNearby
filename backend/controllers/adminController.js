@@ -680,8 +680,18 @@ exports.getRiskFlags = asyncHandler(async (req, res, next) => {
 });
 
 exports.getAdminConfig = asyncHandler(async (req, res, next) => {
-  const config = await AdminConfig.find({});
-  return success(res, 'Admin config retrieved', { config });
+  const configs = await AdminConfig.find({});
+  const sanitized = configs.map((c) => {
+    const doc = c.toObject();
+    if (doc.key === 'RESEND_API_KEY' && typeof doc.value === 'string') {
+      const v = doc.value.trim();
+      doc.hasValue = Boolean(v);
+      doc.preview = v.length > 8 ? `${v.slice(0, 5)}...${v.slice(-4)}` : '••••••••';
+      doc.value = doc.preview; // Never expose full key to client
+    }
+    return doc;
+  });
+  return success(res, 'Admin config retrieved', { config: sanitized });
 });
 
 exports.updateAdminConfig = asyncHandler(async (req, res, next) => {
@@ -690,13 +700,101 @@ exports.updateAdminConfig = asyncHandler(async (req, res, next) => {
     return error(res, 'Key and value are required', 400);
   }
 
+  // Validate RESEND_API_KEY if saving
+  if (key === 'RESEND_API_KEY' && typeof value === 'string' && value.trim()) {
+    const cleanKey = value.trim();
+    if (!cleanKey.startsWith('re_')) {
+      return error(res, 'Invalid Resend API Key. Resend API keys must start with "re_".', 400);
+    }
+  }
+
   const config = await AdminConfig.findOneAndUpdate(
     { key },
-    { value },
+    { value: typeof value === 'string' ? value.trim() : value, updatedBy: req.user?._id },
     { new: true, upsert: true }
   );
 
+  // If email configuration changed, refresh active cache
+  if (key === 'RESEND_API_KEY' || key === 'EMAIL_FROM') {
+    await emailService.refreshEmailConfig();
+  }
+
   return success(res, 'Admin config updated', { config });
+});
+
+// @desc    Get real-time email delivery system status
+// @route   GET /api/admin/email/status
+// @access  Private (Admin only)
+exports.adminGetEmailStatus = asyncHandler(async (req, res, next) => {
+  const status = await emailService.refreshEmailConfig();
+  const resendKey = await emailService.getResendApiKey();
+  const emailSender = await emailService.getEmailSender();
+
+  return success(res, 'Email system status retrieved', {
+    activeProvider: emailService.getActiveProvider(),
+    isConfigured: emailService.isConfigured(),
+    hasResendApiKey: Boolean(resendKey),
+    keyPreview: resendKey ? `${resendKey.slice(0, 5)}...${resendKey.slice(-4)}` : null,
+    emailSender,
+    isProduction: emailService.isProductionRuntime(),
+  });
+});
+
+// @desc    Send test email via Resend HTTPS API (Port 443)
+// @route   POST /api/admin/email/test
+// @access  Private (Admin only)
+exports.adminSendTestEmail = asyncHandler(async (req, res, next) => {
+  const { recipientEmail, testMessage = '' } = req.body || {};
+  const targetEmail = (recipientEmail || req.user?.email || '').trim().toLowerCase();
+
+  if (!targetEmail || !targetEmail.includes('@')) {
+    return error(res, 'Please provide a valid recipient email address for testing.', 400);
+  }
+
+  let emailResult = await emailService.sendSystemTestEmail({
+    to: targetEmail,
+    recipientName: req.user?.name || 'Administrator',
+    testMessage,
+  });
+
+  // Record test in EmailLog
+  await EmailLog.create({
+    type: 'ADMIN_TEST',
+    recipient: targetEmail,
+    recipientName: req.user?.name || 'Admin',
+    admin: req.user?._id,
+    subject: `MentorNearby System Test — Resend Delivery`,
+    status: emailResult.success ? (emailResult.stub ? 'STUB' : 'SENT') : 'FAILED',
+    provider: emailResult.provider || emailService.getActiveProvider(),
+    providerMessageId: emailResult.messageId,
+    error: emailResult.error,
+    metadata: {
+      testMessage,
+      senderFrom,
+    },
+  });
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'ADMIN_EMAIL_TEST',
+    targetType: 'SYSTEM',
+    details: `Admin initiated email test to ${targetEmail}. Provider: ${emailResult.provider}. Success: ${emailResult.success}`,
+    req,
+  });
+
+  return success(
+    res,
+    emailResult.success
+      ? 'Test email dispatched successfully via Resend HTTPS API!'
+      : `Test email could not be delivered: ${emailResult.error}`,
+    {
+      emailSent: emailResult.success,
+      provider: emailResult.provider,
+      messageId: emailResult.messageId,
+      emailError: emailResult.error,
+      recipient: targetEmail,
+    }
+  );
 });
 
 exports.getRequirements = asyncHandler(async (req, res, next) => {

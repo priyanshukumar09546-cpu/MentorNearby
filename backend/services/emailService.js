@@ -18,10 +18,16 @@ const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || process.env.EMAIL_SECU
 
 const EMAIL_FROM_ENV = process.env.EMAIL_FROM || process.env.SMTP_FROM || process.env.RESEND_FROM;
 
-// Determine active provider
+// Determine active providers
+const BREVO_API_KEY = process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY;
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+
 const IS_RESEND_CONFIGURED = Boolean(RESEND_API_KEY && RESEND_API_KEY.startsWith('re_'));
+const IS_BREVO_CONFIGURED = Boolean(BREVO_API_KEY && BREVO_API_KEY.length > 10);
+const IS_SENDGRID_CONFIGURED = Boolean(SENDGRID_API_KEY && SENDGRID_API_KEY.startsWith('SG.'));
+const IS_HTTPS_API_CONFIGURED = IS_RESEND_CONFIGURED || IS_BREVO_CONFIGURED || IS_SENDGRID_CONFIGURED;
 const IS_SMTP_CONFIGURED = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
-const IS_CONFIGURED = IS_RESEND_CONFIGURED || IS_SMTP_CONFIGURED;
+const IS_CONFIGURED = IS_HTTPS_API_CONFIGURED || IS_SMTP_CONFIGURED;
 
 let transporter = null;
 
@@ -39,9 +45,9 @@ if (IS_SMTP_CONFIGURED) {
       ciphers: 'SSLv3',
       rejectUnauthorized: false,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 4000, // Fail-fast so UI does not hang for 10-15s if cloud host blocks SMTP
+    greetingTimeout: 4000,
+    socketTimeout: 8000,
   });
 
   transporter
@@ -53,7 +59,11 @@ if (IS_SMTP_CONFIGURED) {
       console.warn('⚠️  SMTP connection warning (non-blocking):', err.message);
     });
 } else if (IS_RESEND_CONFIGURED) {
-  console.log('✅ Resend Email API configured');
+  console.log('✅ Resend Email API configured (Port 443 HTTPS)');
+} else if (IS_BREVO_CONFIGURED) {
+  console.log('✅ Brevo Email API configured (Port 443 HTTPS)');
+} else if (IS_SENDGRID_CONFIGURED) {
+  console.log('✅ SendGrid Email API configured (Port 443 HTTPS)');
 } else {
   console.warn('⚠️  [DEV STUB] Email credentials not configured. Emails will be logged to console only.');
 }
@@ -61,14 +71,19 @@ if (IS_SMTP_CONFIGURED) {
 /**
  * Format default sender identity
  */
-const getDefaultFrom = () => {
+const getDefaultFrom = (isHttpsProvider = false) => {
   if (EMAIL_FROM_ENV && EMAIL_FROM_ENV.trim()) {
-    return EMAIL_FROM_ENV.trim();
+    const rawFrom = EMAIL_FROM_ENV.trim();
+    // If using Resend or Brevo, sending from public @gmail.com is rejected by the API
+    if (isHttpsProvider && rawFrom.toLowerCase().includes('@gmail.com')) {
+      return 'MentorNearby Team <notifications@mentornearby.com>';
+    }
+    return rawFrom;
   }
-  if (SMTP_USER) {
+  if (!isHttpsProvider && SMTP_USER) {
     return `MentorNearby Team <${SMTP_USER}>`;
   }
-  return 'MentorNearby Team <noreply@mentornearby.com>';
+  return 'MentorNearby Team <notifications@mentornearby.com>';
 };
 
 /**
@@ -77,7 +92,7 @@ const getDefaultFrom = () => {
  * @returns {Promise<{ success: boolean, messageId?: string, provider?: string, stub?: boolean, error?: string }>}
  */
 const sendEmail = async (options) => {
-  const { to, subject, html, text, from = getDefaultFrom(), replyTo } = options;
+  const { to, subject, html, text, replyTo } = options;
 
   if (!to) {
     return { success: false, error: 'Recipient email address (to) is required' };
@@ -91,6 +106,7 @@ const sendEmail = async (options) => {
 
   // If not configured, use STUB mode
   if (!IS_CONFIGURED) {
+    const from = options.from || getDefaultFrom(false);
     console.log('\n📧 [EMAIL STUB] Outbound email:');
     console.log(`  To: ${to}`);
     console.log(`  From: ${from}`);
@@ -104,8 +120,9 @@ const sendEmail = async (options) => {
     };
   }
 
-  // 1. Resend HTTP API Strategy (if RESEND_API_KEY is available)
+  // 1. Resend HTTP API Strategy (Port 443 HTTPS — Highly resilient on Render/Vercel)
   if (IS_RESEND_CONFIGURED) {
+    const from = options.from || getDefaultFrom(true);
     try {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -136,7 +153,6 @@ const sendEmail = async (options) => {
       };
     } catch (resendErr) {
       console.error('⚠️ [RESEND SEND ERROR]:', resendErr.message);
-      // If SMTP is also configured, fall through to SMTP
       if (!IS_SMTP_CONFIGURED || !transporter) {
         return {
           success: false,
@@ -145,12 +161,61 @@ const sendEmail = async (options) => {
           failed: true,
         };
       }
-      console.log('🔄 Falling back to SMTP transport...');
+      console.log('🔄 Falling back to alternative transport...');
     }
   }
 
-  // 2. SMTP Transport Strategy
+  // 2. Brevo (Sendinblue) HTTP API Strategy (Port 443 HTTPS)
+  if (IS_BREVO_CONFIGURED) {
+    try {
+      const from = options.from || getDefaultFrom(true);
+      const fromEmail = from.includes('<') ? from.match(/<([^>]+)>/)?.[1] : from;
+      const fromName = from.includes('<') ? from.split('<')[0].trim() : 'MentorNearby Team';
+
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': BREVO_API_KEY,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: fromName, email: fromEmail },
+          to: [{ email: to }],
+          subject,
+          htmlContent: html,
+          textContent: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
+          replyTo: replyTo ? { email: replyTo } : undefined,
+        }),
+      });
+
+      const resData = await response.json();
+      if (!response.ok) {
+        throw new Error(resData?.message || `Brevo API returned status ${response.status}`);
+      }
+
+      console.log(`✅ [BREVO EMAIL SENT] Message ID: ${resData.messageId} to ${to}`);
+      return {
+        success: true,
+        messageId: resData.messageId,
+        provider: 'BREVO',
+      };
+    } catch (brevoErr) {
+      console.error('⚠️ [BREVO SEND ERROR]:', brevoErr.message);
+      if (!IS_SMTP_CONFIGURED || !transporter) {
+        return {
+          success: false,
+          error: brevoErr.message,
+          provider: 'BREVO',
+          failed: true,
+        };
+      }
+    }
+  }
+
+  // 3. SMTP Transport Strategy (Port 587 / 465)
   if (IS_SMTP_CONFIGURED && transporter) {
+    const from = options.from || getDefaultFrom(false);
     try {
       const mailOptions = {
         from,
@@ -170,9 +235,20 @@ const sendEmail = async (options) => {
       };
     } catch (smtpErr) {
       console.error('⚠️ [SMTP SEND ERROR]:', smtpErr.message);
+      
+      // Diagnose cloud host port blocking with actionable feedback
+      let diagnosticMessage = smtpErr.message;
+      if (
+        smtpErr.message.toLowerCase().includes('timeout') ||
+        smtpErr.message.includes('ETIMEDOUT') ||
+        smtpErr.message.includes('ECONNREFUSED')
+      ) {
+        diagnosticMessage = `SMTP connection timed out on port ${SMTP_PORT}. Cloud platforms (such as Render) block outbound SMTP ports 25/465/587 by default. Set RESEND_API_KEY in your hosting environment to deliver emails reliably over HTTPS port 443.`;
+      }
+
       return {
         success: false,
-        error: smtpErr.message,
+        error: diagnosticMessage,
         provider: 'SMTP',
         failed: true,
       };
@@ -677,5 +753,14 @@ module.exports = {
   sendContactUnlockedEmail,
   sendPaymentConfirmationEmail,
   isConfigured: () => IS_CONFIGURED,
-  getActiveProvider: () => (IS_RESEND_CONFIGURED ? 'RESEND' : IS_SMTP_CONFIGURED ? 'SMTP' : 'STUB'),
+  getActiveProvider: () =>
+    IS_RESEND_CONFIGURED
+      ? 'RESEND'
+      : IS_BREVO_CONFIGURED
+      ? 'BREVO'
+      : IS_SENDGRID_CONFIGURED
+      ? 'SENDGRID'
+      : IS_SMTP_CONFIGURED
+      ? 'SMTP'
+      : 'STUB',
 };

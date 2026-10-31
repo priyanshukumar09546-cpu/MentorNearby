@@ -398,14 +398,118 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* CENTER COLUMN: FRAMED HERO VISUAL (EXACT PROVIDED ARTWORK) */}
+            {/* CENTER COLUMN: FRAMED HERO VISUAL (COMPOSITION WITH MENTOR ASSET & FLOATING CARDS) */}
             <div className="mn-hero-center-col">
-              <div className="mn-hero-visual-frame mn-reveal">
-                <img
-                  src="/hero-illustration.png"
-                  alt="KYC Verified Tutors and Students studying on MentorNearby"
-                  className="mn-hero-visual-img"
-                />
+              <div className="mn-hero-composition-wrap mn-reveal" aria-label="MentorNearby Verified Mentorship Platform">
+                
+                {/* Decorative Yellow Arc & Sparkles SVG */}
+                <svg className="mn-hero-decor-svg" viewBox="0 0 460 380" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  {/* 3 Yellow Sparkles above head */}
+                  <line x1="202" y1="18" x2="210" y2="34" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" />
+                  <line x1="222" y1="12" x2="225" y2="30" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" />
+                  <line x1="242" y1="18" x2="236" y2="34" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" />
+                  
+                  {/* Golden perimeter orbit arc */}
+                  <path
+                    d="M 125 105 A 135 135 0 0 0 120 280 C 105 320 60 330 45 350"
+                    stroke="#F59E0B"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity="0.9"
+                  />
+                </svg>
+
+                {/* Native Burgundy Circular Background */}
+                <div className="mn-hero-burgundy-circle" aria-hidden="true"></div>
+
+                {/* Hero Mentor Subject Image */}
+                <div className="mn-hero-subject-container">
+                  <img
+                    src="/images/home/hero-mentor-student.png"
+                    alt="Verified Tutor Mentor on MentorNearby"
+                    className="mn-hero-subject-img"
+                    loading="eager"
+                  />
+                </div>
+
+                {/* 6 Native Floating Feature Cards (Pill Badges) */}
+                {/* 1. Top Left: Verified Tutors */}
+                <div className="mn-hero-pill-card mn-pill-top-left" style={{ '--pill-delay': '0ms' }}>
+                  <div className="mn-pill-icon-box mn-pill-icon-maroon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+                    </svg>
+                  </div>
+                  <div className="mn-pill-text-wrap">
+                    <span className="mn-pill-title">Verified Tutors</span>
+                    <span className="mn-pill-sub">KYC & Identity Checked</span>
+                  </div>
+                </div>
+
+                {/* 2. Middle Left: Nearby Tutors (Pointed at by finger) */}
+                <div className="mn-hero-pill-card mn-pill-mid-left" style={{ '--pill-delay': '60ms' }}>
+                  <div className="mn-pill-icon-box mn-pill-icon-brown">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                  </div>
+                  <div className="mn-pill-text-wrap">
+                    <span className="mn-pill-title">Nearby Tutors</span>
+                    <span className="mn-pill-sub">Within 5km Radius</span>
+                  </div>
+                </div>
+
+                {/* 3. Bottom Left: Instant Connect */}
+                <div className="mn-hero-pill-card mn-pill-bot-left" style={{ '--pill-delay': '120ms' }}>
+                  <div className="mn-pill-icon-box mn-pill-icon-gold">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+                    </svg>
+                  </div>
+                  <div className="mn-pill-text-wrap">
+                    <span className="mn-pill-title">Instant Connect</span>
+                    <span className="mn-pill-sub">Chat Before You Book</span>
+                  </div>
+                </div>
+
+                {/* 4. Top Right: Affordable Fees */}
+                <div className="mn-hero-pill-card mn-pill-top-right" style={{ '--pill-delay': '30ms' }}>
+                  <div className="mn-pill-icon-box mn-pill-icon-amber">
+                    <span className="mn-pill-rupee">₹</span>
+                  </div>
+                  <div className="mn-pill-text-wrap">
+                    <span className="mn-pill-title">Affordable Fees</span>
+                    <span className="mn-pill-sub">Transparent & Low Cost</span>
+                  </div>
+                </div>
+
+                {/* 5. Middle Right: All Subjects */}
+                <div className="mn-hero-pill-card mn-pill-mid-right" style={{ '--pill-delay': '90ms' }}>
+                  <div className="mn-pill-icon-box mn-pill-icon-orange">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
+                    </svg>
+                  </div>
+                  <div className="mn-pill-text-wrap">
+                    <span className="mn-pill-title">All Subjects</span>
+                    <span className="mn-pill-sub">Class 1 to College Level</span>
+                  </div>
+                </div>
+
+                {/* 6. Bottom Right: Safe & Trusted */}
+                <div className="mn-hero-pill-card mn-pill-bot-right" style={{ '--pill-delay': '150ms' }}>
+                  <div className="mn-pill-icon-box mn-pill-icon-maroon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/>
+                    </svg>
+                  </div>
+                  <div className="mn-pill-text-wrap">
+                    <span className="mn-pill-title">Safe & Trusted</span>
+                    <span className="mn-pill-sub">Your Safety, Our Priority</span>
+                  </div>
+                </div>
+
               </div>
             </div>
 

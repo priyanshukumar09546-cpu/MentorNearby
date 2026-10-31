@@ -22,6 +22,10 @@ const CourseVideoPlayer = ({
   title,
   thumbnail,
   chapter,
+  channelName,
+  videoVerificationStatus,
+  year,
+  durationMinutes,
   onProgressUpdate,
   onEnded,
   isFreeSample = false,
@@ -219,7 +223,7 @@ const CourseVideoPlayer = ({
             </div>
           </>
         ) : (
-          /* CASE 3: PRESENTATION CANVAS WITH YOUTUBE ACTION */
+          /* CASE 3: PRESENTATION CANVAS FOR UNAVAILABLE / COMING SOON VIDEOS */
           <div
             style={{
               height: '100%',
@@ -229,67 +233,71 @@ const CourseVideoPlayer = ({
               justifyContent: 'center',
               background: 'radial-gradient(circle at center, #1E293B 0%, #070E1C 100%)',
               color: '#FFFFFF',
-              padding: 28,
+              padding: '28px 20px',
               textAlign: 'center',
             }}
           >
             <div
               style={{
-                width: 60,
-                height: 60,
+                width: 64,
+                height: 64,
                 borderRadius: '50%',
-                background: 'rgba(245, 158, 11, 0.15)',
-                border: '2px solid #F59E0B',
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '2px solid rgba(239, 68, 68, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 26,
-                marginBottom: 12,
+                fontSize: 28,
+                marginBottom: 14,
               }}
             >
-              🎥
+              🎬
             </div>
-            <h4 style={{ fontSize: 17, fontWeight: 800, margin: '0 0 6px', color: '#F8FAFC' }}>
-              {title || 'Board Exam PYQ Video Solution'}
+            <div
+              style={{
+                display: 'inline-block',
+                background: 'rgba(245, 158, 11, 0.15)',
+                color: '#FBBF24',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                padding: '3px 12px',
+                borderRadius: 999,
+                fontSize: 11.5,
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                marginBottom: 10,
+              }}
+            >
+              VIDEO NOT AVAILABLE FOR THIS LESSON
+            </div>
+            <h4 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 8px', color: '#F8FAFC', maxWidth: 540 }}>
+              {title || 'Board Examination Paper Solution'}
             </h4>
-            <p style={{ fontSize: 14, color: '#FDE047', fontWeight: 700, margin: '0 0 8px' }}>
-              Video will be available soon.
+            <p style={{ fontSize: 13, color: '#94A3B8', maxWidth: 460, margin: '0 0 16px', lineHeight: 1.5 }}>
+              A verified video lecture for this specific board paper is currently unavailable. Step-by-step model solutions and CBSE marking breakdown are available below.
             </p>
-            {chapter && (
-              <p style={{ fontSize: 12.5, color: '#94A3B8', margin: '0 0 14px' }}>
-                📖 Chapter: {chapter}
-              </p>
-            )}
-            <p style={{ fontSize: 13, color: '#CBD5E1', maxWidth: 440, margin: '0 0 16px', lineHeight: 1.5 }}>
-              10+ years of previous board exam questions solved step-by-step with official CBSE marking scheme.
-            </p>
-            {youtubeWatchUrl ? (
-              <a
-                href={youtubeWatchUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  background: '#EF4444',
-                  color: '#FFFFFF',
-                  padding: '10px 20px',
-                  borderRadius: 10,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  textDecoration: 'none',
-                  boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)',
-                }}
-              >
-                <span>📺</span>
-                <span>Watch on YouTube ↗</span>
-              </a>
-            ) : (
-              <span style={{ fontSize: 12, background: '#ECFDF5', color: '#059669', fontWeight: 800, padding: '5px 14px', borderRadius: 8 }}>
-                ✓ 100% Free Classroom Access
-              </span>
-            )}
+            <a
+              href="#solution-notes-section"
+              onClick={(e) => {
+                e.preventDefault();
+                const el = document.getElementById('solution-notes-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: '#334155',
+                color: '#FFFFFF',
+                padding: '8px 18px',
+                borderRadius: 8,
+                fontWeight: 700,
+                fontSize: 13,
+                textDecoration: 'none',
+                border: '1px solid #475569',
+              }}
+            >
+              <span>📖 Read Solution Notes Below</span>
+            </a>
           </div>
         )}
 
@@ -325,17 +333,35 @@ const CourseVideoPlayer = ({
             background: '#F8FAFC',
             border: '1.5px solid #E2E8F0',
             borderRadius: 12,
-            padding: '10px 16px',
+            padding: '12px 16px',
+            flexWrap: 'wrap',
+            gap: 10,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 20 }}>📺</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 22 }}>📺</span>
             <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
-                Official Video Solution on YouTube
-              </p>
-              <p style={{ margin: 0, fontSize: 11.5, color: '#64748B' }}>
-                Open in YouTube app or new tab for high-definition playback
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>
+                  {title || 'Official Video Solution'}
+                </p>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    background: '#ECFDF5',
+                    color: '#059669',
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    border: '1px solid #A7F3D0',
+                  }}
+                >
+                  ✓ VERIFIED YOUTUBE EMBED
+                </span>
+              </div>
+              <p style={{ margin: '2px 0 0', fontSize: 11.5, color: '#64748B' }}>
+                {channelName ? `Educator / Channel: ${channelName}` : 'Curated Board Exam Video Solution'}
+                {durationMinutes ? ` • ~${durationMinutes} mins` : ''}
               </p>
             </div>
           </div>
@@ -357,6 +383,7 @@ const CourseVideoPlayer = ({
               textDecoration: 'none',
               transition: 'background 0.2s ease',
               flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)',
             }}
           >
             <span>Watch on YouTube</span>

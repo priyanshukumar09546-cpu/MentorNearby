@@ -77,6 +77,21 @@ const CourseSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    videoVerificationStatus: {
+      type: String,
+      enum: ['VERIFIED', 'UNAVAILABLE', 'PENDING'],
+      default: 'UNAVAILABLE',
+      index: true,
+    },
+    channelName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
     chapter: {
       type: String,
       default: '',

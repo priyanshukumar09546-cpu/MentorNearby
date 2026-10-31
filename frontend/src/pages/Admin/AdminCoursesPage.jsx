@@ -12,6 +12,11 @@ import {
   adminUpdateCourse,
   adminDeleteCourse,
   adminAddPaper,
+  adminGetCoursePapers,
+  adminUpdatePaper,
+  adminDeletePaper,
+  adminVerifyVideo,
+  adminRecheckCourseVideos,
   adminCreateBundle,
   adminUpdateBundle,
   adminDeleteBundle,
@@ -42,6 +47,17 @@ const AdminCoursesPage = () => {
 
   const [addPaperModalOpen, setAddPaperModalOpen] = useState(false);
   const [selectedCourseForPaper, setSelectedCourseForPaper] = useState(null);
+
+  // Manage Videos Modal State
+  const [manageVideosModalOpen, setManageVideosModalOpen] = useState(false);
+  const [selectedCourseForVideos, setSelectedCourseForVideos] = useState(null);
+  const [coursePapers, setCoursePapers] = useState([]);
+  const [loadingPapers, setLoadingPapers] = useState(false);
+  const [editingPaperId, setEditingPaperId] = useState(null);
+  const [paperVideoInput, setPaperVideoInput] = useState('');
+  const [verifyingVideo, setVerifyingVideo] = useState(false);
+  const [verifyResult, setVerifyResult] = useState(null);
+  const [recheckingAll, setRecheckingAll] = useState(false);
 
   const [createBundleModalOpen, setCreateBundleModalOpen] = useState(false);
   const [editBundleModalOpen, setEditBundleModalOpen] = useState(false);
@@ -349,6 +365,95 @@ const AdminCoursesPage = () => {
       fetchAdminData();
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Failed to add paper.');
+    }
+  };
+
+  // --- VIDEO MANAGEMENT ACTIONS ---
+  const handleOpenManageVideos = async (course) => {
+    setSelectedCourseForVideos(course);
+    setManageVideosModalOpen(true);
+    setEditingPaperId(null);
+    setPaperVideoInput('');
+    setVerifyResult(null);
+    try {
+      setLoadingPapers(true);
+      const res = await adminGetCoursePapers(course._id);
+      setCoursePapers(res.data?.papers || []);
+    } catch (err) {
+      setErrorMsg('Failed to load course lessons.');
+    } finally {
+      setLoadingPapers(false);
+    }
+  };
+
+  const handleStartEditPaperVideo = (paper) => {
+    setEditingPaperId(paper._id);
+    setPaperVideoInput(paper.youtubeUrl || (paper.youtubeVideoId ? `https://www.youtube.com/watch?v=${paper.youtubeVideoId}` : ''));
+    setVerifyResult(null);
+  };
+
+  const handleVerifyVideoLive = async () => {
+    if (!paperVideoInput.trim()) {
+      setErrorMsg('Please enter a YouTube video URL or ID.');
+      return;
+    }
+    try {
+      setVerifyingVideo(true);
+      setErrorMsg(null);
+      const res = await adminVerifyVideo({ url: paperVideoInput.trim() });
+      setVerifyResult(res.data);
+      setSuccessMsg('Video verified successfully with YouTube!');
+    } catch (err) {
+      setVerifyResult(null);
+      setErrorMsg(err.response?.data?.message || 'Video verification failed. Check URL or embedding permission.');
+    } finally {
+      setVerifyingVideo(false);
+    }
+  };
+
+  const handleSavePaperVideo = async (paperId) => {
+    try {
+      setErrorMsg(null);
+      await adminUpdatePaper(paperId, { youtubeUrl: paperVideoInput.trim() });
+      setSuccessMsg('Lesson video updated and verified successfully!');
+      setEditingPaperId(null);
+      setVerifyResult(null);
+      const res = await adminGetCoursePapers(selectedCourseForVideos._id);
+      setCoursePapers(res.data?.papers || []);
+      fetchAdminData();
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Failed to update video.');
+    }
+  };
+
+  const handleRemovePaperVideo = async (paperId) => {
+    if (!window.confirm('Remove this video from the lesson? The lesson will be marked as "Video Not Available".')) return;
+    try {
+      setErrorMsg(null);
+      await adminUpdatePaper(paperId, { youtubeUrl: '' });
+      setSuccessMsg('Video removed from lesson.');
+      const res = await adminGetCoursePapers(selectedCourseForVideos._id);
+      setCoursePapers(res.data?.papers || []);
+      fetchAdminData();
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Failed to remove video.');
+    }
+  };
+
+  const handleRecheckAllVideos = async () => {
+    if (!selectedCourseForVideos) return;
+    try {
+      setRecheckingAll(true);
+      setErrorMsg(null);
+      const res = await adminRecheckCourseVideos(selectedCourseForVideos._id);
+      setSuccessMsg(res.data?.message || res.message || 'Videos rechecked successfully!');
+      const pRes = await adminGetCoursePapers(selectedCourseForVideos._id);
+      setCoursePapers(pRes.data?.papers || []);
+      fetchAdminData();
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Failed to recheck course videos.');
+    } finally {
+      setRecheckingAll(false);
     }
   };
 
@@ -737,7 +842,17 @@ const AdminCoursesPage = () => {
                           </span>
                         </td>
                         <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: 6 }}>
+                          <div style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                            {/* 0. MANAGE VIDEOS BUTTON */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenManageVideos(c)}
+                              style={{ background: '#EEF2FF', color: '#4F46E5', border: '1px solid #C7D2FE', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                              title="Manage & verify course videos"
+                            >
+                              🎥 Manage Videos
+                            </button>
+
                             {/* 1. EDIT BUTTON */}
                             <button
                               type="button"
@@ -1557,6 +1672,404 @@ const AdminCoursesPage = () => {
                 🗑️ Delete Permanently
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL: MANAGE COURSE VIDEOS (LESSON-BY-LESSON YOUTUBE EDITOR) */}
+      {/* ============================================================ */}
+      {manageVideosModalOpen && selectedCourseForVideos && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }}>
+          <div style={{ background: '#FFFFFF', borderRadius: 20, maxWidth: 860, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden' }}>
+            
+            {/* Modal Header */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAFC' }}>
+              <div>
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  🎥 YouTube Video Management
+                </span>
+                <h3 style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', margin: '2px 0 0' }}>
+                  {selectedCourseForVideos.title}
+                </h3>
+                <span style={{ fontSize: 12, color: '#64748B' }}>
+                  Class {selectedCourseForVideos.classLevel} • {selectedCourseForVideos.subject} • {selectedCourseForVideos.board}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setManageVideosModalOpen(false);
+                  setSelectedCourseForVideos(null);
+                  setEditingPaperId(null);
+                  setVerifyResult(null);
+                }}
+                style={{ background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '50%', width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#475569' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Sub-Header Actions & Stats */}
+            <div style={{ padding: '12px 24px', background: '#FFFFFF', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', background: '#F8FAFC', borderRadius: 6, border: '1px solid #E2E8F0', color: '#334155' }}>
+                  📚 {coursePapers.length} Total Lessons
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', background: '#ECFDF5', borderRadius: 6, border: '1px solid #A7F3D0', color: '#059669' }}>
+                  ✓ {coursePapers.filter((p) => p.youtubeVideoId).length} Videos Verified
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', background: '#FEF2F2', borderRadius: 6, border: '1px solid #FECACA', color: '#DC2626' }}>
+                  ⚠️ {coursePapers.filter((p) => !p.youtubeVideoId).length} Missing / Unavailable
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRecheckAllVideos}
+                disabled={recheckingAll}
+                style={{
+                  background: recheckingAll ? '#CBD5E1' : '#F8FAFC',
+                  color: '#4338CA',
+                  border: '1.5px solid #C7D2FE',
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: recheckingAll ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <span>{recheckingAll ? '⏳ Rechecking...' : '🔄 Re-verify All Videos'}</span>
+              </button>
+            </div>
+
+            {/* Modal Body: Lesson / Paper List */}
+            <div style={{ padding: 24, overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {loadingPapers ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748B' }}>
+                  <div style={{ width: 32, height: 32, border: '3px solid #CBD5E1', borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }}></div>
+                  <p style={{ margin: 0, fontWeight: 600 }}>Loading course lessons &amp; video metadata...</p>
+                </div>
+              ) : coursePapers.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 40, color: '#64748B' }}>
+                  No lessons found for this course. Use "+ Add Year" to create lessons.
+                </div>
+              ) : (
+                coursePapers.map((paper) => {
+                  const isEditingThis = editingPaperId === paper._id;
+                  const hasVideo = Boolean(paper.youtubeVideoId);
+
+                  return (
+                    <div
+                      key={paper._id}
+                      style={{
+                        border: `1.5px solid ${hasVideo ? '#E2E8F0' : '#FECACA'}`,
+                        borderRadius: 14,
+                        padding: 16,
+                        background: hasVideo ? '#FFFFFF' : '#FFFBFB',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {/* Paper Main Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                          <span
+                            style={{
+                              background: '#4F46E5',
+                              color: '#FFFFFF',
+                              padding: '6px 12px',
+                              borderRadius: 8,
+                              fontWeight: 900,
+                              fontSize: 13,
+                            }}
+                          >
+                            {paper.year}
+                          </span>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: 14.5, fontWeight: 800, color: '#0F172A' }}>
+                              {paper.title}
+                            </h4>
+                            <span style={{ fontSize: 11.5, color: '#64748B' }}>
+                              ⏱️ {paper.durationMinutes || 45} mins • {paper.paperCode || 'Standard Set'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Status Badge & Actions */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {hasVideo ? (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                background: '#ECFDF5',
+                                color: '#059669',
+                                border: '1px solid #A7F3D0',
+                                padding: '3px 8px',
+                                borderRadius: 6,
+                              }}
+                            >
+                              ✓ VERIFIED
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                background: '#FEF2F2',
+                                color: '#DC2626',
+                                border: '1px solid #FECACA',
+                                padding: '3px 8px',
+                                borderRadius: 6,
+                              }}
+                            >
+                              ⚠️ VIDEO NOT AVAILABLE
+                            </span>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditPaperVideo(paper)}
+                            style={{
+                              background: '#EFF6FF',
+                              color: '#1D4ED8',
+                              border: '1px solid #BFDBFE',
+                              padding: '5px 12px',
+                              borderRadius: 6,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {hasVideo ? '✏️ Replace' : '+ Add Video'}
+                          </button>
+
+                          {hasVideo && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePaperVideo(paper._id)}
+                              style={{
+                                background: '#FEF2F2',
+                                color: '#DC2626',
+                                border: '1px solid #FECACA',
+                                padding: '5px 10px',
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                              title="Remove video assignment"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Video Details Card (When Video is Available) */}
+                      {hasVideo && !isEditingThis && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            background: '#F8FAFC',
+                            borderRadius: 10,
+                            padding: '8px 12px',
+                            border: '1px solid #E2E8F0',
+                            flexWrap: 'wrap',
+                            gap: 10,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <img
+                              src={`https://img.youtube.com/vi/${paper.youtubeVideoId}/hqdefault.jpg`}
+                              alt=""
+                              style={{ width: 68, height: 42, objectFit: 'cover', borderRadius: 6, border: '1px solid #CBD5E1' }}
+                            />
+                            <div>
+                              <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: '#1E293B', maxWidth: 440, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {paper.video?.title || paper.title}
+                              </p>
+                              <span style={{ fontSize: 11, color: '#64748B' }}>
+                                Channel: <strong>{paper.channelName || 'Verified Channel'}</strong> • ID: <code>{paper.youtubeVideoId}</code>
+                              </span>
+                            </div>
+                          </div>
+
+                          <a
+                            href={`https://www.youtube.com/watch?v=${paper.youtubeVideoId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: '#EF4444',
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <span>Watch ↗</span>
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Inline Video Edit Form */}
+                      {isEditingThis && (
+                        <div
+                          style={{
+                            background: '#F1F5F9',
+                            borderRadius: 12,
+                            padding: 14,
+                            border: '1.5px solid #818CF8',
+                            marginTop: 4,
+                          }}
+                        >
+                          <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#1E293B', marginBottom: 6 }}>
+                            Assign YouTube Video (URL or Video ID):
+                          </label>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                            <input
+                              type="text"
+                              value={paperVideoInput}
+                              onChange={(e) => setPaperVideoInput(e.target.value)}
+                              placeholder="e.g. https://www.youtube.com/watch?v=ABC123xyz89 or ABC123xyz89"
+                              style={{
+                                flex: 1,
+                                minWidth: 260,
+                                padding: '8px 12px',
+                                borderRadius: 8,
+                                border: '1px solid #CBD5E1',
+                                fontSize: 13,
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={handleVerifyVideoLive}
+                              disabled={verifyingVideo}
+                              style={{
+                                background: verifyingVideo ? '#94A3B8' : '#4F46E5',
+                                color: '#FFFFFF',
+                                border: 'none',
+                                padding: '8px 16px',
+                                borderRadius: 8,
+                                fontSize: 12.5,
+                                fontWeight: 800,
+                                cursor: verifyingVideo ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              {verifyingVideo ? 'Verifying...' : '🔍 Verify Video'}
+                            </button>
+                          </div>
+
+                          {/* Live Verification Preview Box */}
+                          {verifyResult && (
+                            <div
+                              style={{
+                                background: '#ECFDF5',
+                                border: '1px solid #A7F3D0',
+                                borderRadius: 8,
+                                padding: 10,
+                                marginBottom: 10,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10,
+                              }}
+                            >
+                              <img
+                                src={verifyResult.thumbnail}
+                                alt=""
+                                style={{ width: 60, height: 38, objectFit: 'cover', borderRadius: 6 }}
+                              />
+                              <div>
+                                <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: '#065F46' }}>
+                                  ✓ Video Valid &amp; Embed Ready
+                                </p>
+                                <p style={{ margin: 0, fontSize: 11.5, color: '#047857' }}>
+                                  "{verifyResult.title}" • Channel: {verifyResult.channel}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingPaperId(null);
+                                setVerifyResult(null);
+                              }}
+                              style={{
+                                background: '#FFFFFF',
+                                border: '1px solid #CBD5E1',
+                                padding: '6px 14px',
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSavePaperVideo(paper._id)}
+                              style={{
+                                background: '#059669',
+                                color: '#FFFFFF',
+                                border: 'none',
+                                padding: '6px 16px',
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Save &amp; Apply Video
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '14px 24px', borderTop: '1px solid #E2E8F0', background: '#F8FAFC', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setManageVideosModalOpen(false);
+                  setSelectedCourseForVideos(null);
+                  setEditingPaperId(null);
+                  setVerifyResult(null);
+                }}
+                style={{
+                  background: '#0F172A',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '8px 20px',
+                  borderRadius: 8,
+                  fontWeight: 800,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Done
+              </button>
+            </div>
+
           </div>
         </div>
       )}

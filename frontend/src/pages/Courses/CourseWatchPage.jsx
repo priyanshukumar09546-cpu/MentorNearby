@@ -211,14 +211,18 @@ const CourseWatchPage = () => {
             videoUrl={watchAccess?.paper?.video?.url || currentPaper?.video?.url || ''}
             youtubeUrl={watchAccess?.paper?.youtubeUrl || currentPaper?.youtubeUrl || currentPaper?.video?.youtubeUrl || course?.youtubeUrl || ''}
             youtubeVideoId={watchAccess?.paper?.youtubeVideoId || currentPaper?.youtubeVideoId || currentPaper?.video?.youtubeVideoId || ''}
-            title={currentPaper?.title || course?.title}
+            title={watchAccess?.paper?.video?.title || currentPaper?.title || course?.title}
             chapter={currentPaper?.chapter || course?.chapter || ''}
+            channelName={watchAccess?.paper?.channelName || currentPaper?.channelName || ''}
+            videoVerificationStatus={watchAccess?.paper?.videoVerificationStatus || currentPaper?.videoVerificationStatus || (currentPaper?.youtubeVideoId ? 'VERIFIED' : 'UNAVAILABLE')}
+            year={currentPaper?.year}
+            durationMinutes={currentPaper?.durationMinutes}
             isFreeSample={true}
             onProgressUpdate={handleProgress}
           />
 
           {/* Paper Info & Tabs */}
-          <div style={{ background: '#FFFFFF', borderRadius: 18, border: '1px solid #E2E8F0', padding: 24, marginTop: 20 }}>
+          <div id="solution-notes-section" style={{ background: '#FFFFFF', borderRadius: 18, border: '1px solid #E2E8F0', padding: 24, marginTop: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
               <div>
                 <span style={{ fontSize: 12, fontWeight: 800, color: '#4F46E5' }}>
@@ -334,17 +338,38 @@ const CourseWatchPage = () => {
                       </span>
                       <div>
                         <h5 style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0, maxWidth: 160, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {p.title}
+                          {p.youtubeVideoId ? '📹 ' : '📄 '}{p.title}
                         </h5>
                         <span style={{ fontSize: 11, color: '#94A3B8' }}>
-                          ⏱️ {p.durationMinutes || 48} mins
+                          ⏱️ {p.durationMinutes || 48} mins {p.channelName ? `• ${p.channelName}` : ''}
                         </span>
                       </div>
                     </div>
 
                     <div>
-                      <span style={{ fontSize: 12, color: isActive ? '#4F46E5' : '#059669', fontWeight: 800 }}>
-                        {isActive ? '▶ Playing' : '✓ Watch Free'}
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          padding: '3px 8px',
+                          borderRadius: 6,
+                          background: isActive
+                            ? '#4F46E5'
+                            : p.youtubeVideoId
+                            ? '#ECFDF5'
+                            : '#F1F5F9',
+                          color: isActive
+                            ? '#FFFFFF'
+                            : p.youtubeVideoId
+                            ? '#059669'
+                            : '#64748B',
+                        }}
+                      >
+                        {isActive
+                          ? '▶ Playing'
+                          : p.youtubeVideoId
+                          ? '▶ Video'
+                          : '📄 Notes'}
                       </span>
                     </div>
                   </div>

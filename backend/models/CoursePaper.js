@@ -53,6 +53,21 @@ const CoursePaperSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    videoVerificationStatus: {
+      type: String,
+      enum: ['VERIFIED', 'UNAVAILABLE', 'PENDING'],
+      default: 'UNAVAILABLE',
+      index: true,
+    },
+    channelName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
     durationMinutes: {
       type: Number,
       default: 45,

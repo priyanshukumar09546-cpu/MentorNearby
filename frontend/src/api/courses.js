@@ -141,6 +141,24 @@ export const adminAddPaper = async (courseId, data) => {
   return res.data;
 };
 
+// 15B. Admin: Get Papers for Course
+export const adminGetCoursePapers = async (courseId) => {
+  const res = await client.get(`/courses/admin/${courseId}/papers`);
+  return res.data;
+};
+
+// 15C. Admin: Real-time Verify YouTube Video
+export const adminVerifyVideo = async ({ url, videoId }) => {
+  const res = await client.post('/courses/admin/verify-video', { url, videoId });
+  return res.data;
+};
+
+// 15D. Admin: Recheck / Re-verify All Course Videos
+export const adminRecheckCourseVideos = async (courseId) => {
+  const res = await client.post(`/courses/admin/${courseId}/recheck-videos`);
+  return res.data;
+};
+
 // 16. Admin: Update Paper
 export const adminUpdatePaper = async (paperId, data) => {
   const res = await client.put(`/courses/admin/papers/${paperId}`, data);

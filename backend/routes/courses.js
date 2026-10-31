@@ -29,6 +29,9 @@ const {
   adminAddPaper,
   adminUpdatePaper,
   adminDeletePaper,
+  adminGetCoursePapers,
+  adminVerifyVideo,
+  adminRecheckCourseVideos,
   adminCreateBundle,
   adminUpdateBundle,
   adminDeleteBundle,
@@ -84,9 +87,12 @@ router.put('/admin/:id', protect, authorize('ADMIN'), adminUpdateCourse);
 router.delete('/admin/:id', protect, authorize('ADMIN'), adminDeleteCourse);
 
 // Admin Paper / Video Management
+router.get('/admin/:courseId/papers', protect, authorize('ADMIN'), adminGetCoursePapers);
 router.post('/admin/:courseId/papers', protect, authorize('ADMIN'), adminAddPaper);
 router.put('/admin/papers/:paperId', protect, authorize('ADMIN'), adminUpdatePaper);
 router.delete('/admin/papers/:paperId', protect, authorize('ADMIN'), adminDeletePaper);
+router.post('/admin/verify-video', protect, authorize('ADMIN'), adminVerifyVideo);
+router.post('/admin/:courseId/recheck-videos', protect, authorize('ADMIN'), adminRecheckCourseVideos);
 
 // Admin Bundle Management
 router.post('/admin/bundles', protect, authorize('ADMIN'), adminCreateBundle);

@@ -27,6 +27,30 @@ const getYouTubeVideoId = (url) => {
   return match && match[2].length === 11 ? match[2] : '';
 };
 
+// Helper: Verify YouTube video via official oEmbed API
+const checkYouTubeOembed = (videoId) => {
+  return new Promise((resolve) => {
+    if (!videoId) return resolve({ valid: false });
+    const https = require('https');
+    const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+    https.get(url, (res) => {
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try {
+            resolve({ valid: true, data: JSON.parse(data) });
+          } catch (_) {
+            resolve({ valid: false });
+          }
+        } else {
+          resolve({ valid: false, status: res.statusCode });
+        }
+      });
+    }).on('error', () => resolve({ valid: false }));
+  });
+};
+
 // ============================================================
 // 1. PUBLIC & STUDENT: GET COURSES CATALOG
 // ============================================================
@@ -267,6 +291,9 @@ exports.getCourseDetails = asyncHandler(async (req, res, next) => {
       pyqYears: p.pyqYears || `${p.year}`,
       youtubeUrl: paperYoutubeUrl,
       youtubeVideoId: paperYoutubeId,
+      videoVerificationStatus: p.videoVerificationStatus || (paperYoutubeId ? 'VERIFIED' : 'UNAVAILABLE'),
+      channelName: p.channelName || '',
+      verifiedAt: p.verifiedAt || null,
       isFreeSample: true, // Free class and reading access for all
       durationMinutes: p.durationMinutes,
       questionsCount: p.questionsCount,
@@ -349,6 +376,9 @@ exports.getPaperWatchAccess = asyncHandler(async (req, res, next) => {
       ...paper,
       youtubeUrl: paperYoutubeUrl,
       youtubeVideoId: paperYoutubeId,
+      videoVerificationStatus: paper.videoVerificationStatus || (paperYoutubeId ? 'VERIFIED' : 'UNAVAILABLE'),
+      channelName: paper.channelName || '',
+      verifiedAt: paper.verifiedAt || null,
       video: {
         ...paper.video,
         url: paperYoutubeUrl || paper.video?.url || '',
@@ -1006,7 +1036,32 @@ exports.adminUpdatePaper = asyncHandler(async (req, res, next) => {
   const updateData = { ...req.body };
 
   if (updateData.youtubeUrl !== undefined) {
-    updateData.youtubeVideoId = getYouTubeVideoId(updateData.youtubeUrl);
+    const vid = getYouTubeVideoId(updateData.youtubeUrl);
+    updateData.youtubeVideoId = vid;
+    if (vid) {
+      const oembed = await checkYouTubeOembed(vid);
+      if (oembed.valid) {
+        updateData.videoVerificationStatus = 'VERIFIED';
+        updateData.channelName = oembed.data?.author_name || '';
+        updateData.verifiedAt = new Date();
+        updateData['video.url'] = `https://www.youtube.com/watch?v=${vid}`;
+        updateData['video.youtubeUrl'] = `https://www.youtube.com/watch?v=${vid}`;
+        updateData['video.youtubeVideoId'] = vid;
+        updateData['video.title'] = oembed.data?.title || updateData.title || '';
+        updateData['video.thumbnail'] = `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
+      } else {
+        updateData.videoVerificationStatus = 'UNAVAILABLE';
+      }
+    } else {
+      updateData.youtubeUrl = '';
+      updateData.youtubeVideoId = '';
+      updateData.videoVerificationStatus = 'UNAVAILABLE';
+      updateData.channelName = '';
+      updateData['video.url'] = '';
+      updateData['video.youtubeUrl'] = '';
+      updateData['video.youtubeVideoId'] = '';
+      updateData['video.thumbnail'] = '';
+    }
   }
 
   if (updateData.downloadPrice !== undefined || updateData.pptPrice !== undefined) {
@@ -1042,6 +1097,87 @@ exports.adminDeletePaper = asyncHandler(async (req, res, next) => {
   }
 
   return success(res, 'Paper deleted successfully');
+});
+
+// ============================================================
+// 17A. ADMIN: GET PAPERS FOR A COURSE
+// ============================================================
+exports.adminGetCoursePapers = asyncHandler(async (req, res, next) => {
+  const { courseId } = req.params;
+  const papers = await CoursePaper.find({ course: courseId })
+    .sort({ year: -1, sortOrder: 1 })
+    .lean();
+
+  return success(res, 'Course papers retrieved', { papers });
+});
+
+// ============================================================
+// 17B. ADMIN: REAL-TIME VERIFY YOUTUBE VIDEO
+// ============================================================
+exports.adminVerifyVideo = asyncHandler(async (req, res, next) => {
+  const { url, videoId: propId } = req.body;
+  const videoId = propId || getYouTubeVideoId(url || '');
+
+  if (!videoId) {
+    return error(res, 'Valid YouTube URL or 11-character video ID is required.', 400);
+  }
+
+  const oembed = await checkYouTubeOembed(videoId);
+  if (!oembed.valid) {
+    return error(res, 'YouTube video does not exist, is private, or embedding is disabled.', 400);
+  }
+
+  return success(res, 'YouTube video is valid and embed-ready', {
+    videoId,
+    youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+    title: oembed.data.title,
+    channel: oembed.data.author_name,
+    thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+    isEmbeddable: true,
+  });
+});
+
+// ============================================================
+// 17C. ADMIN: RECHECK / RE-VERIFY ALL COURSE VIDEOS
+// ============================================================
+exports.adminRecheckCourseVideos = asyncHandler(async (req, res, next) => {
+  const { courseId } = req.params;
+  const papers = await CoursePaper.find({ course: courseId });
+
+  let verifiedCount = 0;
+  let unavailableCount = 0;
+
+  for (const paper of papers) {
+    const vid = paper.youtubeVideoId || getYouTubeVideoId(paper.youtubeUrl);
+    if (!vid) {
+      paper.videoVerificationStatus = 'UNAVAILABLE';
+      await paper.save();
+      unavailableCount++;
+      continue;
+    }
+
+    const oembed = await checkYouTubeOembed(vid);
+    if (oembed.valid) {
+      paper.videoVerificationStatus = 'VERIFIED';
+      paper.channelName = oembed.data.author_name || paper.channelName || '';
+      paper.verifiedAt = new Date();
+      if (!paper.video) paper.video = {};
+      paper.video.title = oembed.data.title || paper.title;
+      paper.video.thumbnail = `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
+      await paper.save();
+      verifiedCount++;
+    } else {
+      paper.videoVerificationStatus = 'UNAVAILABLE';
+      await paper.save();
+      unavailableCount++;
+    }
+  }
+
+  return success(res, `Rechecked ${papers.length} videos: ${verifiedCount} verified, ${unavailableCount} unavailable.`, {
+    total: papers.length,
+    verifiedCount,
+    unavailableCount,
+  });
 });
 
 // ============================================================

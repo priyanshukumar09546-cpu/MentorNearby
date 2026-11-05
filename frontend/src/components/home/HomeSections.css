@@ -21,17 +21,15 @@
 }
 
 .mn-courses-section-header {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  justify-content: center;
   margin-bottom: 28px;
-  flex-wrap: wrap;
 }
 
 .mn-courses-header-text {
   text-align: center;
-  flex: 1;
 }
 
 .mn-courses-main-title {
@@ -77,6 +75,10 @@
 }
 
 .mn-courses-all-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -96,7 +98,7 @@
   background: #EA580C;
   color: #FFFFFF;
   box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25);
-  transform: translateY(-1px);
+  transform: translateY(-50%) translateY(-1px);
 }
 
 .mn-courses-arrow {
@@ -117,52 +119,67 @@
   background: var(--color-surface, #FFFFFF);
   border: 1.5px solid var(--color-border, #E2E8F0);
   border-radius: 20px;
-  padding: 32px 20px;
-  text-align: center;
+  padding: 24px 20px 20px;
   text-decoration: none;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-between;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  position: relative;
+  overflow: hidden;
 }
 
 [data-theme="dark"] .mn-course-class-card {
   background: #14141A;
   border-color: #27272A;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .mn-course-class-card:hover {
   transform: translateY(-5px);
-  border-color: var(--card-accent, #EA580C);
-  box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 14px 32px -8px rgba(15, 23, 42, 0.14);
 }
 
 [data-theme="dark"] .mn-course-class-card:hover {
-  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 14px 32px -8px rgba(0, 0, 0, 0.45);
 }
 
-.mn-course-card-icon-box {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+.mn-course-card-illustration-wrap {
+  width: 100%;
+  height: 95px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   transition: transform 0.25s ease;
 }
 
-.mn-course-class-card:hover .mn-course-card-icon-box {
-  transform: scale(1.08);
+.mn-course-class-card:hover .mn-course-card-illustration-wrap {
+  transform: scale(1.05);
+}
+
+.mn-course-card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.mn-course-card-text-col {
+  text-align: left;
+  flex: 1;
+  min-width: 0;
 }
 
 .mn-course-card-class-title {
   font-size: 19px;
-  font-weight: 800;
+  font-weight: 900;
   color: var(--color-text-primary, #0F172A);
-  margin: 0 0 6px;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
 }
 
 [data-theme="dark"] .mn-course-card-class-title {
@@ -170,13 +187,37 @@
 }
 
 .mn-course-card-class-sub {
-  font-size: 13.5px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--color-text-secondary, #64748B);
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 [data-theme="dark"] .mn-course-card-class-sub {
   color: #94A3B8;
+}
+
+.mn-course-card-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mn-course-class-card:hover .mn-course-card-action-btn {
+  transform: scale(1.1) translateX(2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 /* ============================================================
@@ -455,6 +496,207 @@
   opacity: 0.05;
 }
 
+.mn-notes-top-sparkles {
+  position: absolute;
+  top: -18px;
+  right: 18px;
+  pointer-events: none;
+}
+
+/* ============================================================
+   3. NCERT BOOKS LIBRARY SECTION (Matching Reference Image 1)
+   ============================================================ */
+.mn-ncert-library-section {
+  padding: 16px 0 48px;
+  background: var(--color-bg, #FAF8F5);
+  transition: background-color 0.25s ease;
+}
+
+[data-theme="dark"] .mn-ncert-library-section {
+  background: #0A0A0F;
+}
+
+.mn-ncert-banner-card {
+  background: linear-gradient(135deg, #FFF9F3 0%, #FFF3E6 50%, #FEEBD6 100%);
+  border: 1.5px solid #FED7AA;
+  border-radius: 24px;
+  padding: 30px 36px 26px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(234, 88, 12, 0.06);
+}
+
+[data-theme="dark"] .mn-ncert-banner-card {
+  background: linear-gradient(135deg, #18181B 0%, #201D1A 50%, #271E18 100%);
+  border-color: #443427;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.mn-ncert-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.mn-ncert-books-stack-visual {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mn-ncert-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mn-ncert-pill {
+  background: #FFFFFF;
+  border: 1.5px solid #FED7AA;
+  border-radius: 999px;
+  padding: 8px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme="dark"] .mn-ncert-pill {
+  background: #27272A;
+  border-color: #443427;
+}
+
+.mn-ncert-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.12);
+}
+
+.mn-ncert-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mn-pill-red {
+  color: #DC2626;
+}
+
+.mn-pill-orange {
+  color: #EA580C;
+}
+
+.mn-ncert-pill-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0F172A);
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .mn-ncert-pill-text {
+  color: #F8FAFC;
+}
+
+.mn-ncert-cta-wrap {
+  flex-shrink: 0;
+}
+
+.mn-ncert-explore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #EA580C;
+  color: #FFFFFF;
+  padding: 12px 28px;
+  border-radius: 999px;
+  font-size: 14.5px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mn-ncert-explore-btn:hover {
+  background: #C2410C;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.45);
+}
+
+.mn-ncert-btn-arrow {
+  transition: transform 0.2s ease;
+}
+
+.mn-ncert-explore-btn:hover .mn-ncert-btn-arrow {
+  transform: translateX(4px);
+}
+
+/* Bottom Strip of 12 Individual Class Chips */
+.mn-ncert-classes-strip {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(254, 215, 170, 0.6);
+}
+
+[data-theme="dark"] .mn-ncert-classes-strip {
+  border-top-color: rgba(68, 52, 39, 0.8);
+}
+
+.mn-ncert-class-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 4px;
+  border-radius: 12px;
+  border: 1.5px solid;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.mn-ncert-class-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .mn-ncert-class-chip {
+  background-color: #1E1E24 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.mn-ncert-chip-book-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.mn-ncert-class-chip:hover .mn-ncert-chip-book-icon {
+  transform: scale(1.15);
+}
+
+.mn-ncert-chip-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #0F172A;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .mn-ncert-chip-label {
+  color: #F8FAFC;
+}
+
 /* ============================================================
    3. THE MENTORNEARBY APP PROMOTION SECTION
    ============================================================ */
@@ -525,6 +767,15 @@
   color: #EA580C;
   position: relative;
   display: inline-block;
+}
+
+.mn-app-brush-underline {
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 100%;
+  height: 14px;
+  pointer-events: none;
 }
 
 .mn-app-sparkles-svg {
@@ -666,11 +917,27 @@
 
 .mn-phone-mockups-stage {
   position: relative;
-  width: 530px;
+  width: 560px;
   height: 620px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
+}
+
+.mn-mockup-sparkle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.mn-sparkle-left {
+  top: -24px;
+  left: 20px;
+}
+
+.mn-sparkle-right {
+  top: -12px;
+  right: -8px;
 }
 
 .mn-phone-ambient-glow {
@@ -718,7 +985,7 @@
 .mn-phone-back {
   position: absolute;
   top: 15px;
-  left: 195px;
+  left: 230px;
   z-index: 1;
   transform: scale(0.96);
   opacity: 0.98;
@@ -1427,6 +1694,11 @@
     gap: 16px;
   }
 
+  .mn-ncert-classes-strip {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+
   .mn-app-promo-grid {
     grid-template-columns: 1fr;
     gap: 40px;
@@ -1467,6 +1739,15 @@
     flex-direction: column;
     text-align: center;
     gap: 14px;
+  }
+
+  .mn-courses-all-btn {
+    position: static;
+    transform: none;
+  }
+
+  .mn-courses-all-btn:hover {
+    transform: translateY(-1px);
   }
 
   .mn-courses-main-title {
@@ -1513,6 +1794,28 @@
 
   .mn-notes-heading {
     font-size: 23px;
+  }
+
+  /* NCERT Banner Mobile */
+  .mn-ncert-banner-card {
+    padding: 24px 18px 20px;
+  }
+
+  .mn-ncert-banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .mn-ncert-pills-row {
+    justify-content: center;
+  }
+
+  .mn-ncert-classes-strip {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 16px;
   }
 
   /* App Promo Mobile */
@@ -1569,6 +1872,11 @@
 
   .mn-title-accent-bar {
     width: 28px;
+  }
+
+  .mn-ncert-classes-strip {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
   }
 
   .mn-phone-mockups-stage {

@@ -72,6 +72,18 @@
   flex-shrink: 0;
 }
 
+.navbar-logo-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.navbar-logo:hover .navbar-logo-icon-wrap {
+  transform: rotate(-3deg) scale(1.05);
+}
+
 .navbar-logo-text-wrap {
   display: flex;
   flex-direction: column;

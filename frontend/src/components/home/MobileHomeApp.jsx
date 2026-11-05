@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import ExploreCoursesSection from './ExploreCoursesSection';
 import HandwrittenNotesSection from './HandwrittenNotesSection';
+import NcertBooksSection from './NcertBooksSection';
 import './HomeSections.css';
 import './MobileHomeApp.css';
 
@@ -59,7 +60,7 @@ const POPULAR_SUBJECTS = [
 
 const FAQS = [
   {
-    q: 'How does MentorNearby verify tutors?',
+    q: 'How does ProfessorVirus verify tutors?',
     a: 'Tutors submit government-issued IDs, academic degrees, and credentials verified by our verification team. After identity checks, verified tutors earn the Verified badge.',
   },
   {
@@ -599,10 +600,11 @@ const MobileHomeApp = ({ featuredTutors = [], loadingTutors = false, publicStats
       </section>
 
       {/* ============================================================ */}
-      {/* EXPLORE OUR COURSES & HANDWRITTEN NOTES (Mobile Experience)   */}
+      {/* EXPLORE OUR COURSES, NOTES & NCERT (Mobile Experience)       */}
       {/* ============================================================ */}
       <ExploreCoursesSection />
       <HandwrittenNotesSection />
+      <NcertBooksSection />
 
       {/* ============================================================ */}
       {/* 8. FREQUENTLY ASKED QUESTIONS (Preserved Accordion)          */}

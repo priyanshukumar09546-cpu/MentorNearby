@@ -7,6 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 import MobileHomeApp from '../../components/home/MobileHomeApp';
 import ExploreCoursesSection from '../../components/home/ExploreCoursesSection';
 import HandwrittenNotesSection from '../../components/home/HandwrittenNotesSection';
+import NcertBooksSection from '../../components/home/NcertBooksSection';
 import AppPromotionSection from '../../components/home/AppPromotionSection';
 import '../../components/home/HomeSections.css';
 import './HomePage.css';
@@ -51,7 +52,7 @@ const STUDY_RESOURCES_LIST = [
 
 const FAQS = [
   {
-    q: 'How does MentorNearby verify tutors?',
+    q: 'How does ProfessorVirus verify tutors?',
     a: 'Tutors submit government-issued IDs, college degrees, and professional credentials for review by our admin team. After identity and qualification checks, tutors earn a Verified badge.',
   },
   {
@@ -819,7 +820,12 @@ const HomePage = () => {
       <HandwrittenNotesSection />
 
       {/* ============================================================ */}
-      {/* 4. THE MENTORNEARBY APP — DUAL SMARTPHONE MOCKUPS            */}
+      {/* 4. EXPLORE OUR NCERT BOOKS LIBRARY BANNER & CLASSES STRIP    */}
+      {/* ============================================================ */}
+      <NcertBooksSection />
+
+      {/* ============================================================ */}
+      {/* 5. THE PROFESSORVIRUS APP — DUAL SMARTPHONE MOCKUPS          */}
       {/* ============================================================ */}
       <AppPromotionSection />
 

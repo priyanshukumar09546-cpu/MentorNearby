@@ -1,7 +1,7 @@
 // ============================================================
 // components/home/HandwrittenNotesSection.jsx
-// MentorNearby — Handwritten Notes Banner Section (Matching Reference Image 1)
-// Realistic layered notebook sheets, feature checkmarks, and direct notes link
+// ProfessorVirus / MentorNearby — Handwritten Notes Banner Section
+// Matching Reference Image 1 with section heading, notebook illustrations & CTA
 // ============================================================
 
 import React from 'react';
@@ -16,11 +16,36 @@ const NOTES_FEATURES = [
 
 const HandwrittenNotesSection = () => {
   return (
-    <section className="mn-notes-banner-section" aria-label="Handwritten Notes">
+    <section className="mn-notes-banner-section" aria-label="Explore Our Handwritten Notes">
       <div className="mn-container">
+        {/* Section Header with Decorative Accent Lines (Matching Reference Image 1) */}
+        <div className="mn-courses-section-header" style={{ justifyContent: 'center', marginBottom: 24 }}>
+          <div className="mn-courses-header-text">
+            <h2 className="mn-courses-main-title">
+              <span className="mn-title-accent-bar" aria-hidden="true"></span>
+              <span>Explore Our</span>
+              <span className="mn-courses-orange-text">Handwritten Notes</span>
+              <span className="mn-title-accent-bar" aria-hidden="true"></span>
+            </h2>
+            <p className="mn-courses-sub-desc">
+              Clear concepts. Beautifully explained. Exam ready.
+            </p>
+          </div>
+        </div>
+
+        {/* Banner Card */}
         <div className="mn-notes-banner-card">
           {/* Left: 3 Realistic Tilted Handwritten Notes Sheets */}
           <div className="mn-notes-sheets-visual" aria-hidden="true">
+            {/* Decorative Sparkles above notebook sheets */}
+            <div className="mn-notes-top-sparkles">
+              <svg width="40" height="24" viewBox="0 0 40 24" fill="none">
+                <line x1="8" y1="20" x2="3" y2="12" stroke="#EA580C" strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="18" y1="20" x2="18" y2="8" stroke="#EA580C" strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="28" y1="20" x2="33" y2="12" stroke="#EA580C" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+            </div>
+
             {/* Sheet 1: Physics (Tilted Left) */}
             <div className="mn-note-paper mn-note-physics">
               <div className="mn-note-header-strip mn-strip-purple">

@@ -40,6 +40,15 @@ const {
   adminUpdatePricingMatrix,
 } = require('../controllers/studyResourceController');
 
+const {
+  createPrintOrder,
+  verifyPrintPayment,
+  getMyPrintOrders,
+  getPrintOrderById,
+  adminGetPrintOrders,
+  adminUpdatePrintOrderStatus,
+} = require('../controllers/printOrderController');
+
 // Optional Authentication Middleware (attaches user if valid token present, doesn't block guests)
 const optionalAuth = async (req, res, next) => {
   let token;
@@ -87,6 +96,12 @@ router.post('/verify-payment', protect, verifyStudyPayment);
 router.get('/user/my-downloads', protect, getMyDownloads);
 router.get('/user/my-purchases', protect, getMyDownloads);
 
+// Print Orders & Delivery Routes
+router.post('/print-orders', optionalAuth, createPrintOrder);
+router.post('/print-orders/verify', optionalAuth, verifyPrintPayment);
+router.get('/print-orders/my-orders', protect, getMyPrintOrders);
+router.get('/print-orders/:orderId', getPrintOrderById);
+
 // ============================================================
 // 3. ADMIN CONTROL CENTER ROUTES
 // ============================================================
@@ -108,5 +123,8 @@ router.put('/admin/pricing-matrix', protect, authorize('ADMIN'), adminUpdatePric
 
 router.get('/admin/print-providers', protect, authorize('ADMIN'), adminGetPrintProviders);
 router.post('/admin/print-providers', protect, authorize('ADMIN'), adminSavePrintProvider);
+
+router.get('/admin/print-orders', protect, authorize('ADMIN'), adminGetPrintOrders);
+router.put('/admin/print-orders/:orderId/status', protect, authorize('ADMIN'), adminUpdatePrintOrderStatus);
 
 module.exports = router;

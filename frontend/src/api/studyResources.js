@@ -163,3 +163,38 @@ export const adminUpdatePricingMatrix = async (matrix) => {
   const response = await client.put('/study-resources/admin/pricing-matrix', { matrix });
   return response.data;
 };
+
+// ============================================================
+// Direct Print Ordering Client APIs
+// ============================================================
+
+export const createPrintOrder = async (orderData) => {
+  const response = await client.post('/study-resources/print-orders', orderData);
+  return response.data;
+};
+
+export const verifyPrintPayment = async (paymentData) => {
+  const response = await client.post('/study-resources/print-orders/verify', paymentData);
+  return response.data;
+};
+
+export const fetchMyPrintOrders = async () => {
+  const response = await client.get('/study-resources/print-orders/my-orders');
+  return response.data;
+};
+
+export const fetchPrintOrderById = async (orderId) => {
+  const response = await client.get(`/study-resources/print-orders/${orderId}`);
+  return response.data;
+};
+
+export const adminFetchPrintOrders = async (params = {}) => {
+  const response = await client.get('/study-resources/admin/print-orders', { params });
+  return response.data;
+};
+
+export const adminUpdatePrintOrderStatus = async (orderId, updateData) => {
+  const response = await client.put(`/study-resources/admin/print-orders/${orderId}/status`, updateData);
+  return response.data;
+};
+

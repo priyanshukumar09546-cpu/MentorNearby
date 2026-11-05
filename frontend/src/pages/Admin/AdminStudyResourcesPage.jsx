@@ -18,6 +18,8 @@ import {
   adminSavePrintProvider,
   adminFetchPricingMatrix,
   adminUpdatePricingMatrix,
+  adminFetchPrintOrders,
+  adminUpdatePrintOrderStatus,
 } from '../../api/studyResources';
 import { useToast } from '../../context/ToastContext';
 import { getResourceAccess, detectStudyFileType } from '../../utils/studyResourceAccess';
@@ -63,6 +65,26 @@ const AdminStudyResourcesPage = () => {
   // Analytics state
   const [analytics, setAnalytics] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
+  // Print Orders state
+  const [printOrders, setPrintOrders] = useState([]);
+  const [loadingPrintOrders, setLoadingPrintOrders] = useState(false);
+  const [printOrderStatusFilter, setPrintOrderStatusFilter] = useState('ALL');
+  const [printOrderProviderFilter, setPrintOrderProviderFilter] = useState('ALL');
+  const [printOrderSearch, setPrintOrderSearch] = useState('');
+  const [printOrderMetrics, setPrintOrderMetrics] = useState({ totalOrders: 0, totalRevenue: 0, pendingOrders: 0, deliveredOrders: 0 });
+  const [printOrderPage, setPrintOrderPage] = useState(1);
+  const [printOrderPagination, setPrintOrderPagination] = useState({ total: 0, pages: 1 });
+  const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false);
+  const [selectedOrderToUpdate, setSelectedOrderToUpdate] = useState(null);
+  const [savingOrderStatus, setSavingOrderStatus] = useState(false);
+  const [statusFormData, setStatusFormData] = useState({
+    status: 'CONFIRMED',
+    courierPartner: 'Local Partner Express Delivery',
+    trackingNumber: '',
+    notes: '',
+    estimatedDelivery: '',
+  });
 
   // Modal State
   const [resourceModalOpen, setResourceModalOpen] = useState(false);
@@ -135,7 +157,61 @@ const AdminStudyResourcesPage = () => {
     }
     if (activeTab === 'providers') loadProviders();
     if (activeTab === 'analytics') loadAnalytics();
-  }, [activeTab, filterClass, filterSubject, filterType, page]);
+    if (activeTab === 'print_orders') loadAdminPrintOrders();
+  }, [activeTab, filterClass, filterSubject, filterType, page, printOrderStatusFilter, printOrderProviderFilter, printOrderPage]);
+
+  const loadAdminPrintOrders = async () => {
+    try {
+      setLoadingPrintOrders(true);
+      const res = await adminFetchPrintOrders({
+        status: printOrderStatusFilter !== 'ALL' ? printOrderStatusFilter : undefined,
+        provider: printOrderProviderFilter !== 'ALL' ? printOrderProviderFilter : undefined,
+        search: printOrderSearch.trim() || undefined,
+        page: printOrderPage,
+        limit: 20,
+      });
+      setPrintOrders(res.data?.orders || []);
+      setPrintOrderMetrics(res.data?.metrics || { totalOrders: 0, totalRevenue: 0, pendingOrders: 0, deliveredOrders: 0 });
+      setPrintOrderPagination(res.data?.pagination || { total: 0, pages: 1 });
+    } catch (err) {
+      console.error('Failed to load print orders in admin', err);
+      showToast('Failed to load print orders', 'error');
+    } finally {
+      setLoadingPrintOrders(false);
+    }
+  };
+
+  const handleOpenStatusModal = (order) => {
+    setSelectedOrderToUpdate(order);
+    setStatusFormData({
+      status: order.status || 'CONFIRMED',
+      courierPartner: order.tracking?.courierPartner || 'Local Partner Express Delivery',
+      trackingNumber: order.tracking?.trackingNumber || '',
+      notes: order.tracking?.notes || '',
+      estimatedDelivery: order.tracking?.estimatedDelivery
+        ? new Date(order.tracking.estimatedDelivery).toISOString().split('T')[0]
+        : '',
+    });
+    setStatusUpdateModalOpen(true);
+  };
+
+  const handleSaveOrderStatus = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedOrderToUpdate) return;
+    try {
+      setSavingOrderStatus(true);
+      await adminUpdatePrintOrderStatus(selectedOrderToUpdate.orderId, statusFormData);
+      showToast(`Order ${selectedOrderToUpdate.orderId} status updated to ${statusFormData.status}`, 'success');
+      setStatusUpdateModalOpen(false);
+      setSelectedOrderToUpdate(null);
+      loadAdminPrintOrders();
+    } catch (err) {
+      console.error('Failed to update print order status', err);
+      showToast(err.response?.data?.message || 'Failed to update order status', 'error');
+    } finally {
+      setSavingOrderStatus(false);
+    }
+  };
 
   const loadPricingMatrix = async () => {
     try {
@@ -573,6 +649,29 @@ const AdminStudyResourcesPage = () => {
           }}
         >
           📊 Revenue &amp; Sales Analytics
+        </button>
+
+        <button
+          onClick={() => setActiveTab('print_orders')}
+          className={`admin-tab-btn ${activeTab === 'print_orders' ? 'active' : ''}`}
+          style={{
+            padding: '8px 18px',
+            borderRadius: 10,
+            border: 'none',
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+            background: activeTab === 'print_orders' ? '#4F46E5' : '#F1F5F9',
+            color: activeTab === 'print_orders' ? '#FFF' : '#475569',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span>📦</span> Print Orders &amp; Delivery
+          <span style={{ background: activeTab === 'print_orders' ? 'rgba(255,255,255,0.25)' : '#E2E8F0', padding: '1px 7px', borderRadius: 12, fontSize: 11 }}>
+            {printOrderMetrics.totalOrders || printOrders.length}
+          </span>
         </button>
       </div>
 
@@ -1404,6 +1503,285 @@ const AdminStudyResourcesPage = () => {
         </div>
       )}
 
+      {/* ============================================================ */}
+      {/* TAB 5: PRINT ORDERS & DELIVERY FULFILLMENT                   */}
+      {/* ============================================================ */}
+      {activeTab === 'print_orders' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* KPI Summary Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 16 }}>
+            <div style={{ background: '#FFF', padding: 20, borderRadius: 16, border: '1px solid #EEF2F6', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Total Print Orders</span>
+              <h2 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A', margin: '4px 0 0' }}>{printOrderMetrics.totalOrders || 0}</h2>
+              <span style={{ fontSize: 12, color: '#4F46E5', fontWeight: 700 }}>Physical orders placed</span>
+            </div>
+
+            <div style={{ background: '#FFF', padding: 20, borderRadius: 16, border: '1px solid #EEF2F6', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Print Revenue</span>
+              <h2 style={{ fontSize: 28, fontWeight: 900, color: '#15803D', margin: '4px 0 0' }}>₹{printOrderMetrics.totalRevenue || 0}</h2>
+              <span style={{ fontSize: 12, color: '#15803D', fontWeight: 700 }}>Gross print &amp; binding</span>
+            </div>
+
+            <div style={{ background: '#FFF', padding: 20, borderRadius: 16, border: '1px solid #EEF2F6', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Active / In Progress</span>
+              <h2 style={{ fontSize: 28, fontWeight: 900, color: '#D97706', margin: '4px 0 0' }}>{printOrderMetrics.pendingOrders || 0}</h2>
+              <span style={{ fontSize: 12, color: '#D97706', fontWeight: 700 }}>Printing &amp; delivery pending</span>
+            </div>
+
+            <div style={{ background: '#FFF', padding: 20, borderRadius: 16, border: '1px solid #EEF2F6', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Completed / Delivered</span>
+              <h2 style={{ fontSize: 28, fontWeight: 900, color: '#059669', margin: '4px 0 0' }}>{printOrderMetrics.deliveredOrders || 0}</h2>
+              <span style={{ fontSize: 12, color: '#059669', fontWeight: 700 }}>Successfully delivered</span>
+            </div>
+          </div>
+
+          {/* Filters Bar */}
+          <div style={{ background: '#FFF', padding: '16px 20px', borderRadius: 16, border: '1px solid #EEF2F6', display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: '1 1 240px' }}>
+              <input
+                type="text"
+                placeholder="Search by Order ID, student name, phone or notes title..."
+                value={printOrderSearch}
+                onChange={(e) => setPrintOrderSearch(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') loadAdminPrintOrders(); }}
+                style={{ width: '100%', padding: '9px 14px', borderRadius: 10, border: '1.5px solid #CBD5E1', fontSize: 13 }}
+              />
+            </div>
+
+            <div>
+              <select
+                value={printOrderStatusFilter}
+                onChange={(e) => { setPrintOrderStatusFilter(e.target.value); setPrintOrderPage(1); }}
+                style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #CBD5E1', fontSize: 13, fontWeight: 600 }}
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="PLACED">Placed</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="PRINTING">Printing in Progress</option>
+                <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                <option value="DELIVERED">Delivered</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+
+            <div>
+              <select
+                value={printOrderProviderFilter}
+                onChange={(e) => { setPrintOrderProviderFilter(e.target.value); setPrintOrderPage(1); }}
+                style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #CBD5E1', fontSize: 13, fontWeight: 600 }}
+              >
+                <option value="ALL">All Providers</option>
+                <option value="LOCAL_PARTNER">Nearby Print Partner</option>
+                <option value="BLINKIT">Blinkit Print</option>
+                <option value="ZEPTO">Zepto Print</option>
+              </select>
+            </div>
+
+            <button
+              onClick={() => { setPrintOrderPage(1); loadAdminPrintOrders(); }}
+              style={{
+                background: '#4F46E5',
+                color: '#FFF',
+                border: 'none',
+                padding: '9px 18px',
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Search / Refresh
+            </button>
+          </div>
+
+          {/* Orders Table */}
+          <div style={{ background: '#FFF', borderRadius: 16, border: '1px solid #EEF2F6', overflowX: 'auto', padding: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: '0 0 14px' }}>
+              Physical Print Orders List ({printOrderPagination.total || printOrders.length})
+            </h3>
+
+            {loadingPrintOrders ? (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <div style={{ width: 32, height: 32, border: '3px solid #E0E7FF', borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }}></div>
+                <p style={{ fontSize: 13, color: '#64748B' }}>Loading print orders...</p>
+              </div>
+            ) : printOrders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '50px 20px', color: '#64748B' }}>
+                <span style={{ fontSize: 36, display: 'block', marginBottom: 8 }}>📦</span>
+                <h4 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>No Print Orders Found</h4>
+                <p style={{ fontSize: 13, margin: 0 }}>No physical print orders match the active filters.</p>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 920 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1.5px solid #E2E8F0', color: '#64748B', textAlign: 'left' }}>
+                    <th style={{ padding: '10px 12px' }}>Order ID &amp; Date</th>
+                    <th style={{ padding: '10px 12px' }}>Customer &amp; Address</th>
+                    <th style={{ padding: '10px 12px' }}>Document &amp; Specs</th>
+                    <th style={{ padding: '10px 12px' }}>Provider</th>
+                    <th style={{ padding: '10px 12px' }}>Amount &amp; Payment</th>
+                    <th style={{ padding: '10px 12px' }}>Delivery Status</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printOrders.map((order) => {
+                    const isPaid = order.payment?.status === 'PAID' || order.payment?.status === 'COD_VERIFIED';
+                    return (
+                      <tr key={order._id || order.orderId} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        {/* Order ID & Date */}
+                        <td style={{ padding: '12px' }}>
+                          <span style={{ fontWeight: 800, color: '#0F172A', display: 'block' }}>
+                            {order.orderId}
+                          </span>
+                          <span style={{ fontSize: 11, color: '#64748B' }}>
+                            {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </td>
+
+                        {/* Customer & Address */}
+                        <td style={{ padding: '12px' }}>
+                          <div style={{ fontWeight: 700, color: '#0F172A' }}>{order.customer?.name}</div>
+                          <div style={{ fontSize: 11, color: '#4F46E5', fontWeight: 600 }}>📞 {order.customer?.phone}</div>
+                          <div style={{ fontSize: 11, color: '#64748B', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            📍 {order.customer?.address?.street}, {order.customer?.address?.city} - {order.customer?.address?.pincode}
+                          </div>
+                        </td>
+
+                        {/* Document & Specs */}
+                        <td style={{ padding: '12px' }}>
+                          <div style={{ fontWeight: 700, color: '#0F172A', maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {order.document?.title}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#64748B' }}>
+                            {order.specifications?.copies || 1} {order.specifications?.copies === 1 ? 'copy' : 'copies'} • {order.specifications?.colorMode === 'COLOR' ? '🎨 Color' : '⬛ B&W'} • {order.specifications?.printSides === 'SINGLE' ? 'Single-sided' : 'Double-sided'}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#4338CA', fontWeight: 600 }}>
+                            📑 {order.specifications?.binding === 'SPIRAL' ? 'Spiral Bound' : order.specifications?.binding === 'SOFTCOVER' ? 'Softcover Book' : 'Stapled / Loose'}
+                          </div>
+                        </td>
+
+                        {/* Provider */}
+                        <td style={{ padding: '12px' }}>
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            background: order.provider?.code === 'BLINKIT' ? '#FEF08A' : order.provider?.code === 'ZEPTO' ? '#F3E8FF' : '#DCFCE7',
+                            color: order.provider?.code === 'BLINKIT' ? '#854D0E' : order.provider?.code === 'ZEPTO' ? '#6B21A8' : '#15803D',
+                          }}>
+                            {order.provider?.name || 'Local Partner'}
+                          </span>
+                        </td>
+
+                        {/* Amount & Payment */}
+                        <td style={{ padding: '12px' }}>
+                          <div style={{ fontWeight: 900, color: '#0F172A', fontSize: 14 }}>
+                            ₹{order.pricing?.totalAmount}
+                          </div>
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            background: isPaid ? '#DCFCE7' : '#FEF3C7',
+                            color: isPaid ? '#15803D' : '#B45309',
+                          }}>
+                            {order.payment?.method === 'COD' ? '💵 COD' : '💳 Online Paid'}
+                          </span>
+                        </td>
+
+                        {/* Delivery Status */}
+                        <td style={{ padding: '12px' }}>
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 800,
+                            padding: '4px 10px',
+                            borderRadius: 20,
+                            display: 'inline-block',
+                            background:
+                              order.status === 'DELIVERED' ? '#DCFCE7' :
+                              order.status === 'OUT_FOR_DELIVERY' ? '#F3E8FF' :
+                              order.status === 'PRINTING' ? '#E0E7FF' :
+                              order.status === 'CONFIRMED' ? '#DCFCE7' :
+                              order.status === 'CANCELLED' ? '#FEE2E2' : '#FEF3C7',
+                            color:
+                              order.status === 'DELIVERED' ? '#15803D' :
+                              order.status === 'OUT_FOR_DELIVERY' ? '#7E22CE' :
+                              order.status === 'PRINTING' ? '#4338CA' :
+                              order.status === 'CONFIRMED' ? '#15803D' :
+                              order.status === 'CANCELLED' ? '#B91C1C' : '#B45309',
+                          }}>
+                            {order.status === 'DELIVERED' ? '✓ Delivered' :
+                             order.status === 'OUT_FOR_DELIVERY' ? '🚚 Out for Delivery' :
+                             order.status === 'PRINTING' ? '🖨️ Printing' :
+                             order.status === 'CONFIRMED' ? '✓ Confirmed' :
+                             order.status === 'CANCELLED' ? '✕ Cancelled' : '⏳ Placed'}
+                          </span>
+                          {order.tracking?.courierPartner && (
+                            <div style={{ fontSize: 10.5, color: '#64748B', marginTop: 4 }}>
+                              {order.tracking.courierPartner}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Action: Update */}
+                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => handleOpenStatusModal(order)}
+                            style={{
+                              background: '#F1F5F9',
+                              border: '1px solid #CBD5E1',
+                              color: '#1E293B',
+                              padding: '6px 12px',
+                              borderRadius: 8,
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <span>⚙️</span> Manage
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+
+            {/* Pagination Controls */}
+            {printOrderPagination.pages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, paddingTop: 14, borderTop: '1px solid #F1F5F9' }}>
+                <span style={{ fontSize: 12, color: '#64748B' }}>
+                  Page {printOrderPage} of {printOrderPagination.pages} ({printOrderPagination.total} orders)
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    disabled={printOrderPage <= 1}
+                    onClick={() => setPrintOrderPage((p) => Math.max(1, p - 1))}
+                    style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #CBD5E1', background: '#FFF', fontSize: 12, cursor: printOrderPage <= 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    ← Previous
+                  </button>
+                  <button
+                    disabled={printOrderPage >= printOrderPagination.pages}
+                    onClick={() => setPrintOrderPage((p) => Math.min(printOrderPagination.pages, p + 1))}
+                    style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #CBD5E1', background: '#FFF', fontSize: 12, cursor: printOrderPage >= printOrderPagination.pages ? 'not-allowed' : 'pointer' }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Resource Create / Edit Modal */}
       {resourceModalOpen && (
         <div className="admin-modal-overlay" onClick={() => setResourceModalOpen(false)}>
@@ -1964,6 +2342,147 @@ const AdminStudyResourcesPage = () => {
                   className="admin-btn admin-btn-primary"
                 >
                   {submitting ? 'Saving...' : 'Save Provider'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Print Order Status & Courier Management Modal */}
+      {statusUpdateModalOpen && selectedOrderToUpdate && (
+        <div className="admin-modal-overlay" onClick={() => setStatusUpdateModalOpen(false)}>
+          <div className="admin-modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                ⚙️ Manage Print Order — {selectedOrderToUpdate.orderId}
+              </h3>
+              <button
+                onClick={() => setStatusUpdateModalOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748B' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Order summary box */}
+            <div style={{ background: '#F8FAFC', borderRadius: 12, padding: 14, border: '1px solid #E2E8F0', marginBottom: 16, fontSize: 12 }}>
+              <div style={{ fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>
+                {selectedOrderToUpdate.document?.title}
+              </div>
+              <div style={{ color: '#475569' }}>
+                Customer: <strong>{selectedOrderToUpdate.customer?.name}</strong> • 📞 {selectedOrderToUpdate.customer?.phone}
+              </div>
+              <div style={{ color: '#64748B', marginTop: 2 }}>
+                Address: {selectedOrderToUpdate.customer?.address?.street}, {selectedOrderToUpdate.customer?.address?.city} ({selectedOrderToUpdate.customer?.address?.pincode})
+              </div>
+              <div style={{ color: '#15803D', fontWeight: 700, marginTop: 4 }}>
+                Amount: ₹{selectedOrderToUpdate.pricing?.totalAmount} ({selectedOrderToUpdate.payment?.method === 'COD' ? 'Cash on Delivery' : 'Online Paid'})
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveOrderStatus} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: '#334155' }}>
+                  Fulfillment Status *
+                </label>
+                <select
+                  value={statusFormData.status}
+                  onChange={(e) => setStatusFormData({ ...statusFormData, status: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #CBD5E1', fontSize: 13, fontWeight: 600 }}
+                >
+                  <option value="PLACED">⏳ PLACED (Received, pending processing)</option>
+                  <option value="CONFIRMED">✓ CONFIRMED (Accepted by print partner)</option>
+                  <option value="PRINTING">🖨️ PRINTING (Printing &amp; binding underway)</option>
+                  <option value="OUT_FOR_DELIVERY">🚚 OUT_FOR_DELIVERY (Dispatched to customer)</option>
+                  <option value="DELIVERED">🎉 DELIVERED (Successfully handed over)</option>
+                  <option value="CANCELLED">✕ CANCELLED (Order rejected/cancelled)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: '#334155' }}>
+                  Courier / Delivery Partner
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Local Partner Express Delivery, Dunzo, Shadowfax, Delhivery"
+                  value={statusFormData.courierPartner}
+                  onChange={(e) => setStatusFormData({ ...statusFormData, courierPartner: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #CBD5E1', fontSize: 13 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: '#334155' }}>
+                  Tracking Number / AWB (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. TRK-984128912"
+                  value={statusFormData.trackingNumber}
+                  onChange={(e) => setStatusFormData({ ...statusFormData, trackingNumber: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #CBD5E1', fontSize: 13 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: '#334155' }}>
+                  Estimated Delivery Date
+                </label>
+                <input
+                  type="date"
+                  value={statusFormData.estimatedDelivery}
+                  onChange={(e) => setStatusFormData({ ...statusFormData, estimatedDelivery: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #CBD5E1', fontSize: 13 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4, color: '#334155' }}>
+                  Admin Notes (Internal tracking / partner remarks)
+                </label>
+                <textarea
+                  rows="2"
+                  placeholder="Notes about print paper quality, store location, partner dispatch etc."
+                  value={statusFormData.notes}
+                  onChange={(e) => setStatusFormData({ ...statusFormData, notes: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #CBD5E1', fontSize: 13, resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setStatusUpdateModalOpen(false)}
+                  style={{
+                    background: '#F1F5F9',
+                    border: '1px solid #CBD5E1',
+                    color: '#475569',
+                    padding: '9px 18px',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingOrderStatus}
+                  style={{
+                    background: '#4F46E5',
+                    border: 'none',
+                    color: '#FFF',
+                    padding: '9px 20px',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {savingOrderStatus ? 'Saving...' : 'Update Order Status'}
                 </button>
               </div>
             </form>

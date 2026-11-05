@@ -290,7 +290,7 @@ const SubjectResourcesPage = () => {
                 }}
               >
                 <span>🖨️</span>
-                <span>Print My Notes (Coming Soon)</span>
+                <span>Print My Notes</span>
               </button>
             </div>
           </div>
@@ -615,7 +615,7 @@ const SubjectResourcesPage = () => {
               Want a physical copy of your notes?
             </h3>
             <p style={{ fontSize: 13, color: '#94A3B8', margin: 0, maxWidth: 550, lineHeight: 1.45 }}>
-              Get your notes printed and delivered to your doorstep. Printing partnerships are coming soon!
+              Get your notes printed and delivered to your doorstep with fast local and quick-commerce delivery.
             </p>
           </div>
 

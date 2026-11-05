@@ -8,6 +8,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
+import ExploreCoursesSection from './ExploreCoursesSection';
+import HandwrittenNotesSection from './HandwrittenNotesSection';
+import './HomeSections.css';
 import './MobileHomeApp.css';
 
 // 4 Promotional Banners (Slide 1 matches reference design)
@@ -594,6 +597,12 @@ const MobileHomeApp = ({ featuredTutors = [], loadingTutors = false, publicStats
           </Link>
         </div>
       </section>
+
+      {/* ============================================================ */}
+      {/* EXPLORE OUR COURSES & HANDWRITTEN NOTES (Mobile Experience)   */}
+      {/* ============================================================ */}
+      <ExploreCoursesSection />
+      <HandwrittenNotesSection />
 
       {/* ============================================================ */}
       {/* 8. FREQUENTLY ASKED QUESTIONS (Preserved Accordion)          */}

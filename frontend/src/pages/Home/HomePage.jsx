@@ -5,6 +5,10 @@ import { getFeaturedTutors } from '../../api/tutors';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import MobileHomeApp from '../../components/home/MobileHomeApp';
+import ExploreCoursesSection from '../../components/home/ExploreCoursesSection';
+import HandwrittenNotesSection from '../../components/home/HandwrittenNotesSection';
+import AppPromotionSection from '../../components/home/AppPromotionSection';
+import '../../components/home/HomeSections.css';
 import './HomePage.css';
 
 const POPULAR_SUBJECTS = [
@@ -748,14 +752,14 @@ const HomePage = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 3. TRUSTED & VERIFIED PLATFORM BANNER STRIP                  */}
+      {/* 1. TRUSTED & VERIFIED PLATFORM BANNER STRIP                  */}
       {/* ============================================================ */}
       <section className="mn-trust-platform-strip" aria-label="Platform Trust Guarantee">
         <div className="mn-container">
           <div className="mn-trust-strip-card mn-reveal">
             <div className="mn-trust-strip-left">
               <div className="mn-trust-shield-large">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                   <path d="m9 12 2 2 4-4"></path>
                 </svg>
@@ -768,19 +772,35 @@ const HomePage = () => {
 
             <div className="mn-trust-strip-items-row">
               <div className="mn-trust-strip-pill">
-                <span className="mn-trust-pill-icon">👤</span>
+                <span className="mn-trust-pill-icon mn-pill-purple" style={{ color: '#7E22CE' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </span>
                 <span>Verified Tutors</span>
               </div>
               <div className="mn-trust-strip-pill">
-                <span className="mn-trust-pill-icon">🛡️</span>
+                <span className="mn-trust-pill-icon mn-pill-blue" style={{ color: '#2563EB' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+                  </svg>
+                </span>
                 <span>Safe &amp; Secure</span>
               </div>
               <div className="mn-trust-strip-pill">
-                <span className="mn-trust-pill-icon">🔒</span>
+                <span className="mn-trust-pill-icon mn-pill-amber" style={{ color: '#D97706' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                  </svg>
+                </span>
                 <span>100% Privacy</span>
               </div>
               <div className="mn-trust-strip-pill">
-                <span className="mn-trust-pill-icon">👥</span>
+                <span className="mn-trust-pill-icon mn-pill-violet" style={{ color: '#6366F1' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                  </svg>
+                </span>
                 <span>Student First</span>
               </div>
             </div>
@@ -789,7 +809,22 @@ const HomePage = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 4. PRESERVED FAQ SECTION                                     */}
+      {/* 2. EXPLORE OUR COURSES — CLASS 9, 10, 11, 12                 */}
+      {/* ============================================================ */}
+      <ExploreCoursesSection />
+
+      {/* ============================================================ */}
+      {/* 3. HANDWRITTEN NOTES BANNER                                  */}
+      {/* ============================================================ */}
+      <HandwrittenNotesSection />
+
+      {/* ============================================================ */}
+      {/* 4. THE MENTORNEARBY APP — DUAL SMARTPHONE MOCKUPS            */}
+      {/* ============================================================ */}
+      <AppPromotionSection />
+
+      {/* ============================================================ */}
+      {/* 5. PRESERVED FAQ SECTION                                     */}
       {/* ============================================================ */}
       <section className="mn-faq-section" aria-labelledby="faq-title">
         <div className="mn-container">

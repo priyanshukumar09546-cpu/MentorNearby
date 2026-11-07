@@ -1,6 +1,6 @@
 // ============================================================
 // components/home/HandwrittenNotesSection.jsx
-// ProfessorVirus / MentorNearby — Handwritten Notes Banner Section
+// MentorNearby — Handwritten Notes Banner Section
 // Matching Reference Image 1 with section heading, notebook illustrations & CTA
 // ============================================================
 

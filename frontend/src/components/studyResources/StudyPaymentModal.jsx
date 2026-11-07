@@ -85,9 +85,9 @@ const StudyPaymentModal = ({
   const isPpt = Boolean(resource?.resourceType === 'PPT' || resource?.type === 'PPT' || resource?.isPpt);
   const isFormula = !isPpt && Boolean(bundle?.comboType === 'FORMULA_COMBO' || bundle?.type === 'FORMULA' || resource?.resourceType === 'FORMULA_SHEET');
 
-  // Subscription Pricing (Student = ₹99/mo, Tutor = ₹149/mo)
-  const subscriptionPlanPrice = user?.role === 'TUTOR' ? 149 : 99;
-  const subscriptionPlanType = user?.role === 'TUTOR' ? 'teacher' : 'student';
+  // MentorNearby All Access Subscription (₹199/mo)
+  const subscriptionPlanPrice = 199;
+  const subscriptionPlanType = 'all_access';
 
   const singleComboPrice = isFormula ? (isSenior ? 60 : 50) : (isSenior ? 120 : 100);
   const comboPrice = bundle?.price || singleComboPrice;

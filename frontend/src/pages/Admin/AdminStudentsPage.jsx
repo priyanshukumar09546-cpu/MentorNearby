@@ -506,7 +506,7 @@ const AdminStudentsPage = () => {
                             </span>
                           ) : (
                             <span className="inline-block bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10.5px] font-bold">
-                              Free Plan
+                              No Active Plan
                             </span>
                           )}
                           <div className="text-[11px] font-semibold text-[#475569]">

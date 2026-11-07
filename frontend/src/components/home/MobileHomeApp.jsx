@@ -60,12 +60,12 @@ const POPULAR_SUBJECTS = [
 
 const FAQS = [
   {
-    q: 'How does ProfessorVirus verify tutors?',
+    q: 'How does MentorNearby verify tutors?',
     a: 'Tutors submit government-issued IDs, academic degrees, and credentials verified by our verification team. After identity checks, verified tutors earn the Verified badge.',
   },
   {
     q: 'How is contact information protected?',
-    a: 'Phone numbers and emails are never shown publicly. You unlock a tutor contact using free unlocks or nominal coins, protecting families from unwanted spam.',
+    a: 'Phone numbers are never shown publicly to unverified visitors. Subscribe to MentorNearby All Access for ₹199/month to unlock direct phone numbers and WhatsApp details.',
   },
   {
     q: 'How do I find tutors in my area?',

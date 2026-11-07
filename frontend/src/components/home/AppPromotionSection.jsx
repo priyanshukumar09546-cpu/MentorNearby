@@ -1,6 +1,6 @@
 // ============================================================
 // components/home/AppPromotionSection.jsx
-// ProfessorVirus — Mobile App Promotion Section
+// MentorNearby — Mobile App Promotion Section
 // Matching Reference Image 2 with dual realistic iPhone mockups
 // Left: Copy, Feature rows, Store buttons
 // Right: Home Screen & Explore Screen mobile mockups
@@ -59,7 +59,7 @@ const AppPromotionSection = () => {
   };
 
   return (
-    <section className="mn-app-promotion-section" aria-label="The ProfessorVirus App">
+    <section className="mn-app-promotion-section" aria-label="The MentorNearby App">
       <div className="mn-container">
         <div className="mn-app-promo-grid">
           {/* ============================================================ */}
@@ -74,7 +74,7 @@ const AppPromotionSection = () => {
                   <path d="M12 18h.01"></path>
                 </svg>
               </span>
-              <span>THE PROFESSORVIRUS APP</span>
+              <span>THE MENTORNEARBY APP</span>
             </div>
 
             {/* Main Heading with Highlight and Curved Underline */}
@@ -151,7 +151,7 @@ const AppPromotionSection = () => {
             {/* PWA / App Store Guidance Tooltip */}
             {showInstallTip && (
               <div className="mn-app-install-tip">
-                <span>💡 <strong>Tip:</strong> Tap <strong>"Share &amp; App PWA"</strong> on mobile or your browser menu to install the ProfessorVirus app directly to your home screen!</span>
+                <span>💡 <strong>Tip:</strong> Tap <strong>"Share &amp; App PWA"</strong> on mobile or your browser menu to install the MentorNearby app directly to your home screen!</span>
               </div>
             )}
           </div>
@@ -159,7 +159,7 @@ const AppPromotionSection = () => {
           {/* ============================================================ */}
           {/* RIGHT SIDE: TWO REALISTIC SMARTPHONE MOCKUPS                */}
           {/* ============================================================ */}
-          <div className="mn-app-promo-right" aria-label="ProfessorVirus Mobile App Interface">
+          <div className="mn-app-promo-right" aria-label="MentorNearby Mobile App Interface">
             <div className="mn-phone-mockups-stage">
               {/* Decorative Top-Left and Top-Right Sparkles */}
               <div className="mn-mockup-sparkle mn-sparkle-left" aria-hidden="true">
@@ -184,7 +184,7 @@ const AppPromotionSection = () => {
               {/* -------------------------------------------------------- */}
               {/* PHONE 1: FRONT (Showing Upper Mobile Homepage)           */}
               {/* -------------------------------------------------------- */}
-              <div className="mn-phone-frame mn-phone-front" aria-label="ProfessorVirus App Home Screen">
+              <div className="mn-phone-frame mn-phone-front" aria-label="MentorNearby App Home Screen">
                 {/* Dynamic Island Pill */}
                 <div className="mn-phone-notch" aria-hidden="true">
                   <div className="mn-phone-camera"></div>
@@ -209,11 +209,10 @@ const AppPromotionSection = () => {
                   {/* Phone Header */}
                   <div className="mn-ps-header">
                     <div className="mn-ps-logo-wrap">
-                      {/* Stacked books with graduation cap icon */}
-                      <span className="mn-ps-logo-cap" style={{ fontSize: 16 }}>📚</span>
+                      <img src="/logo.png" alt="MentorNearby Logo" style={{ width: 22, height: 22, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
                       <div className="mn-ps-logo-text">
                         <span className="mn-ps-logo-name">
-                          Professor<span style={{ color: '#E11D48' }}>Virus</span>
+                          Mentor<span style={{ color: '#E11D48' }}>Nearby</span>
                         </span>
                         <span className="mn-ps-logo-tag">FIND. LEARN. GROW.</span>
                       </div>
@@ -349,7 +348,7 @@ const AppPromotionSection = () => {
               {/* -------------------------------------------------------- */}
               {/* PHONE 2: BACK / RIGHT (Showing Explore Screen)           */}
               {/* -------------------------------------------------------- */}
-              <div className="mn-phone-frame mn-phone-back" aria-label="ProfessorVirus App Explore Screen">
+              <div className="mn-phone-frame mn-phone-back" aria-label="MentorNearby App Explore Screen">
                 {/* Dynamic Island Pill */}
                 <div className="mn-phone-notch" aria-hidden="true">
                   <div className="mn-phone-camera"></div>
@@ -463,12 +462,12 @@ const AppPromotionSection = () => {
                     </div>
                   </div>
 
-                  {/* Frequently Asked Questions Preview with ProfessorVirus */}
+                  {/* Frequently Asked Questions Preview with MentorNearby */}
                   <div className="mn-ps-section-head">
                     <span className="mn-ps-sec-title">Frequently Asked Questions</span>
                   </div>
                   <div className="mn-ps-faq-mini-item">
-                    <span>How does ProfessorVirus verify tutors?</span>
+                    <span>How does MentorNearby verify tutors?</span>
                     <span className="mn-faq-plus">+</span>
                   </div>
 

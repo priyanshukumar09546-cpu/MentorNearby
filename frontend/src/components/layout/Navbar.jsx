@@ -156,35 +156,21 @@ const Navbar = () => {
         )}
 
         {/* Brand Logo matching Reference */}
-        <Link to="/" className="navbar-logo" aria-label="ProfessorVirus Home">
-          <div className="navbar-logo-icon-wrap" aria-hidden="true">
-            <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Stack of colorful books with graduation cap */}
-              {/* Book 1 (bottom green) */}
-              <rect x="6" y="29" width="28" height="5.5" rx="1.5" fill="#10B981" />
-              <rect x="9" y="30.5" width="22" height="2.5" fill="#D1FAE5" />
-              {/* Book 2 (yellow/orange) */}
-              <rect x="7" y="23" width="26" height="5.5" rx="1.5" fill="#F59E0B" />
-              <rect x="10" y="24.5" width="20" height="2.5" fill="#FEF3C7" />
-              {/* Book 3 (blue) */}
-              <rect x="8" y="17" width="24" height="5.5" rx="1.5" fill="#3B82F6" />
-              <rect x="11" y="18.5" width="18" height="2.5" fill="#DBEAFE" />
-              {/* Book 4 (red) */}
-              <rect x="9" y="11" width="22" height="5.5" rx="1.5" fill="#EF4444" />
-              <rect x="12" y="12.5" width="16" height="2.5" fill="#FEE2E2" />
-              {/* Graduation cap */}
-              <path d="M 20 3 L 33 8 L 20 13 L 7 8 Z" fill="#0F172A" />
-              <path d="M 12 10.5 L 12 14.5 C 12 17, 28 17, 28 14.5 L 28 10.5" stroke="#0F172A" strokeWidth="1.5" fill="#1E293B" />
-              <path d="M 31 8.5 L 34.5 12 L 34.5 17" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="34.5" cy="17" r="1.5" fill="#F59E0B" />
-            </svg>
-          </div>
+        <Link to="/" className="navbar-logo" aria-label="MentorNearby Home">
+          <img
+            src="/logo.png"
+            alt="MentorNearby Logo"
+            className="navbar-logo-img"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
           <div className="navbar-logo-text-wrap">
             <span className="navbar-brand-name">
-              <span className="navbar-brand-mentor">Professor</span>
-              <span className="navbar-brand-nearby">Virus</span>
+              <span className="navbar-brand-mentor">Mentor</span>
+              <span className="navbar-brand-nearby">Nearby</span>
             </span>
-            <span className="navbar-brand-tagline">FIND. LEARN. GROW.</span>
+            <span className="navbar-brand-tagline">Find. Learn. Grow.</span>
           </div>
         </Link>
 
@@ -368,6 +354,14 @@ const Navbar = () => {
             className={`navbar-link-item ${isActive('/safety') ? 'active' : ''}`}
           >
             Safety &amp; Trust
+          </Link>
+
+          {/* All Access Plan */}
+          <Link
+            to="/subscription"
+            className={`navbar-link-item ${isActive('/subscription') ? 'active' : ''}`}
+          >
+            All Access (₹199/mo)
           </Link>
 
           {/* Help & Support with Dropdown */}
@@ -623,6 +617,15 @@ const Navbar = () => {
             className={isActive('/safety') ? 'active' : ''}
           >
             <span>🛡️ Safety &amp; Trust</span>
+            <span>→</span>
+          </Link>
+
+          <Link
+            to="/subscription"
+            onClick={() => setMobileMenuOpen(false)}
+            className={isActive('/subscription') ? 'active' : ''}
+          >
+            <span>⭐ All Access (₹199/mo)</span>
             <span>→</span>
           </Link>
 

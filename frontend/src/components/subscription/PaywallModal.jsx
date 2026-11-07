@@ -148,14 +148,13 @@ const PaywallModal = ({
             lineHeight: 1.3,
           }}
         >
-          {freeLimit} Free {freeLimitLabel.charAt(0).toUpperCase() + freeLimitLabel.slice(1)} Khatam!
+          MentorNearby All Access Required
         </h2>
 
         {/* Subtitle */}
-        <p style={{ fontSize: 15, color: '#475569', margin: '0 0 24px', lineHeight: 1.5 }}>
-          Unlimited {freeLimitLabel} ke liye{' '}
-          <strong style={{ color: '#2563EB' }}>₹{planPrice}/month</strong> lo aur bina ruke
-          connect karo.
+        <p style={{ fontSize: 14, color: '#475569', margin: '0 0 20px', lineHeight: 1.5 }}>
+          Subscribe to <strong style={{ color: '#2563EB' }}>MentorNearby All Access</strong> for{' '}
+          <strong style={{ color: '#2563EB' }}>₹{planPrice}/month</strong> to unlock direct contact numbers, unlimited inquiries, and messaging.
         </p>
 
         {/* Features */}
@@ -169,10 +168,10 @@ const PaywallModal = ({
           }}
         >
           {[
-            `✅ Unlimited ${freeLimitLabel} with ${isTeacher ? 'students' : 'tutors'}`,
-            '✅ Direct contact numbers visible',
-            '✅ Priority listings & badges',
-            '✅ Cancel anytime',
+            `✅ Unlimited ${isTeacher ? 'student lead unlocks' : 'tutor contact reveals'}`,
+            '✅ Direct phone & WhatsApp numbers',
+            '✅ Unlimited direct in-app messaging',
+            '✅ Zero brokerage & cancel anytime',
           ].map((feat) => (
             <p key={feat} style={{ margin: '4px 0', fontSize: 13, color: '#1E40AF', fontWeight: 600 }}>
               {feat}
@@ -196,7 +195,7 @@ const PaywallModal = ({
             color: '#713F12',
           }}
         >
-          🎯 {planLabel} &nbsp;·&nbsp; ₹{planPrice}/month
+          👑 {planLabel} &nbsp;·&nbsp; ₹{planPrice}/month
         </div>
 
         {error && (
@@ -221,7 +220,7 @@ const PaywallModal = ({
             transition: 'background 0.2s',
           }}
         >
-          {loading ? '⏳ Please wait...' : `🚀 Subscribe ₹${planPrice}/month`}
+          {loading ? '⏳ Please wait...' : `Subscribe Now – ₹${planPrice}/month`}
         </button>
 
         <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 12 }}>

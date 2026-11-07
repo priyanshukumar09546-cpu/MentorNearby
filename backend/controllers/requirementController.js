@@ -276,12 +276,24 @@ exports.getRequirements = asyncHandler(async (req, res, next) => {
   const startIndex = (pageNum - 1) * limitNum;
 
   const total = await TuitionRequirement.countDocuments(filter);
-  const requirements = await TuitionRequirement.find(filter)
-    .populate('student', 'name avatar role phone email isVerified')
+  const rawRequirements = await TuitionRequirement.find(filter)
+    .populate('student', 'name avatar role isVerified')
     .sort({ createdAt: -1 })
     .skip(startIndex)
     .limit(limitNum)
     .lean();
+
+  // Protect student private contact details publicly
+  const requirements = rawRequirements.map((r) => {
+    const safeReq = { ...r };
+    delete safeReq.phone;
+    delete safeReq.whatsappNumber;
+    if (safeReq.student && typeof safeReq.student === 'object') {
+      delete safeReq.student.phone;
+      delete safeReq.student.email;
+    }
+    return safeReq;
+  });
 
   return success(res, 'Requirements retrieved successfully', {
     total,

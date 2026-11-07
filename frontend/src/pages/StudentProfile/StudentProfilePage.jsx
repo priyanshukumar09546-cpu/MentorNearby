@@ -9,6 +9,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { UNIFIED_PLAN } from '../../config/subscription';
 import './StudentProfilePage.css';
 
 const StudentProfilePage = () => {
@@ -107,36 +108,140 @@ const StudentProfilePage = () => {
     checkUnlockStatus();
   }, [id, isAuthenticated]);
 
-  // Open the unlock modal
-  const handleUnlockClick = () => {
+  // Open the unlock modal or perform authorized unlock
+  const handleUnlockClick = async () => {
     if (!isAuthenticated) {
       showToast('Please login as a tutor to unlock student contact details', 'info');
       navigate('/login');
       return;
     }
+
+    const isSubscribed = Boolean(
+      user?.role === 'ADMIN' ||
+      (user?.isSubscribed && user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date())
+    );
+
+    if (isSubscribed) {
+      try {
+        setUnlocking(true);
+        const res = await client.post(`/contact-unlocks/unlock/${id}`);
+        if (res.data?.success && res.data?.data?.isUnlocked) {
+          setIsUnlocked(true);
+          setUnlockedContact(res.data.data.contactInfo);
+          showToast('🎉 Student contact details unlocked successfully!', 'success');
+          return;
+        }
+      } catch (err) {
+        console.warn('Direct unlock attempt note:', err);
+      } finally {
+        setUnlocking(false);
+      }
+    }
+
+    // Otherwise show the ₹199 All Access unlock prompt
     setShowUnlockModal(true);
   };
 
-  // Perform Free Contact Unlock (Testing Configuration: ₹99 Plan is ₹0 FREE)
-  const handleActivateFreeUnlock = async () => {
+  // Subscribe to MentorNearby All Access (₹199/month) and unlock contact
+  const handleSubscribeAndUnlock = async () => {
     try {
       setUnlocking(true);
-      const res = await client.post(`/contact-unlocks/unlock/${id}`, {
-        plan: 'single_99',
-        targetId: id,
+      const res = await client.post('/subscription/create-order', {
+        planType: UNIFIED_PLAN.id,
+        tutorId: id,
       });
 
-      if (res.data?.success && res.data?.data?.isUnlocked) {
-        setIsUnlocked(true);
-        setUnlockedContact(res.data.data.contactInfo);
+      const orderData = res.data?.data || res.data || {};
+      const orderId = orderData.orderId || res.data?.orderId;
+      const key =
+        orderData.razorpayKeyId ||
+        res.data?.key ||
+        import.meta.env.VITE_RAZORPAY_KEY ||
+        'rzp_test_placeholder';
+
+      // Fast verification for Test Mode / simulation
+      if (
+        !orderId ||
+        orderData.isTestMode ||
+        orderId.startsWith('order_test_') ||
+        orderId.startsWith('sub_test_') ||
+        !window.Razorpay ||
+        key.includes('test') ||
+        key.includes('placeholder')
+      ) {
+        const verifyRes = await client.post('/subscription/verify', {
+          orderId: orderId || `order_test_${Date.now()}`,
+          paymentId: `pay_test_${Date.now()}`,
+          subscriptionId: orderData.subscriptionId || `sub_test_${Date.now()}`,
+          tutorId: id,
+          planType: UNIFIED_PLAN.id,
+        });
+
+        const contact = verifyRes.data?.contactInfo || verifyRes.data?.data?.contactInfo;
+        if (contact) {
+          setIsUnlocked(true);
+          setUnlockedContact(contact);
+        } else {
+          const unlockRes = await client.post(`/contact-unlocks/unlock/${id}`);
+          if (unlockRes.data?.data?.contactInfo) {
+            setIsUnlocked(true);
+            setUnlockedContact(unlockRes.data.data.contactInfo);
+          }
+        }
         setShowUnlockModal(false);
-        showToast('🎉 Student contact details unlocked successfully!', 'success');
-      } else {
-        throw new Error(res.data?.message || 'Failed to unlock contact');
+        showToast('🎉 MentorNearby All Access activated! Student contact unlocked.', 'success');
+        return;
       }
+
+      // Live Razorpay recurring checkout
+      const options = {
+        key,
+        amount: orderData.amount || UNIFIED_PLAN.amountInPaise,
+        currency: 'INR',
+        name: 'MentorNearby',
+        description: 'MentorNearby All Access — ₹199/month AutoPay',
+        order_id: orderId,
+        subscription_id: orderData.subscriptionId || undefined,
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || '',
+        },
+        handler: async (response) => {
+          try {
+            const verifyRes = await client.post('/subscription/verify', {
+              razorpay_order_id: response.razorpay_order_id || orderId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_subscription_id: response.razorpay_subscription_id || orderData.subscriptionId,
+              razorpay_signature: response.razorpay_signature,
+              tutorId: id,
+              planType: UNIFIED_PLAN.id,
+            });
+            const contact = verifyRes.data?.contactInfo || verifyRes.data?.data?.contactInfo;
+            if (contact) {
+              setIsUnlocked(true);
+              setUnlockedContact(contact);
+            }
+            setShowUnlockModal(false);
+            showToast('🎉 All Access activated! Student contact unlocked.', 'success');
+          } catch (err) {
+            showToast('Payment verification failed', 'error');
+          } finally {
+            setUnlocking(false);
+          }
+        },
+        theme: { color: '#E11D48' },
+        modal: { ondismiss: () => setUnlocking(false) },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (resp) => {
+        showToast(resp.error?.description || 'Payment failed', 'error');
+        setUnlocking(false);
+      });
+      rzp.open();
     } catch (err) {
-      console.error('Contact unlock error:', err);
-      showToast(err.response?.data?.message || err.message || 'Unlock failed. Please try again.', 'error');
+      showToast(err.response?.data?.message || err.message || 'Payment initiation failed', 'error');
     } finally {
       setUnlocking(false);
     }
@@ -483,74 +588,45 @@ const StudentProfilePage = () => {
               💡 <strong>Tutoring Fee Note:</strong> {budget} is the student&apos;s expected monthly tuition fee paid to you upon starting classes.
             </div>
 
-            {/* Plan Cards Grid */}
+            {/* All Access Plan Showcase */}
             <div className="mn-sp-modal-plans">
-              
-              {/* Option A: Single Contact Unlock (₹99 Plan — FREE for Testing) */}
               <div className="mn-sp-plan-option featured">
-                <div className="mn-sp-plan-badge-free">
-                  ✨ SPECIAL TESTING CONFIGURATION — 100% FREE
+                <div className="mn-sp-plan-badge-free" style={{ background: '#E11D48', color: '#FFF' }}>
+                  👑 MENTORNEARBY ALL ACCESS
                 </div>
                 
                 <div className="mn-sp-plan-header">
                   <div>
-                    <h4 className="mn-sp-plan-title">Single Contact Unlock</h4>
-                    <p className="mn-sp-plan-sub">Unlock direct phone &amp; WhatsApp for this specific student lead</p>
+                    <h4 className="mn-sp-plan-title">Unlock Contact Details</h4>
+                    <p className="mn-sp-plan-sub">Subscribe to MentorNearby All Access for ₹{UNIFIED_PLAN.amount}/month to unlock tutor and student contact details.</p>
                   </div>
                   <div className="mn-sp-plan-price-block">
-                    <span className="mn-sp-orig-strikethrough">₹99</span>
-                    <span className="mn-sp-free-price">₹0</span>
+                    <span className="mn-sp-free-price" style={{ color: '#E11D48' }}>₹{UNIFIED_PLAN.amount} <small style={{ fontSize: '12px', color: '#64748B' }}>/mo</small></span>
                   </div>
                 </div>
 
                 <ul className="mn-sp-plan-feature-list">
-                  <li>✓ Direct Parent / Student Phone Number</li>
-                  <li>✓ 1-Click WhatsApp Direct Chat Access</li>
-                  <li>✓ Permanent Lifetime Unlock — Revisit Anytime</li>
+                  <li>✓ Direct Parent / Student Phone Number &amp; WhatsApp</li>
+                  <li>✓ Unlimited Student Enquiries &amp; Lead Unlocks</li>
                   <li>✓ 0% Commission — Retain 100% of your earnings</li>
+                  <li>✓ Priority Search Visibility &amp; Verification Badge</li>
+                  <li>✓ Cancel AutoPay Anytime with 1 Click</li>
                 </ul>
 
                 <button
                   type="button"
-                  onClick={handleActivateFreeUnlock}
+                  onClick={handleSubscribeAndUnlock}
                   disabled={unlocking}
                   className="mn-sp-modal-unlock-act-btn"
+                  style={{ background: '#E11D48', color: '#FFF', fontWeight: 800 }}
                 >
                   {unlocking ? (
-                    <span>⏳ Activating Unlock...</span>
+                    <span>⏳ Processing AutoPay Authorization...</span>
                   ) : (
-                    <span>🔓 Unlock Now (FREE)</span>
+                    <span>Subscribe Now – ₹{UNIFIED_PLAN.amount}/month</span>
                   )}
                 </button>
               </div>
-
-              {/* Option B: Pro Tutor Membership Option */}
-              <div className="mn-sp-plan-option pro-card">
-                <div className="mn-sp-plan-header">
-                  <div>
-                    <h4 className="mn-sp-plan-title">Pro Tutor Membership</h4>
-                    <p className="mn-sp-plan-sub">For teachers seeking multiple student inquiries per month</p>
-                  </div>
-                  <div className="mn-sp-plan-price-block">
-                    <span className="mn-sp-pro-price">₹499 <small>/mo</small></span>
-                  </div>
-                </div>
-
-                <ul className="mn-sp-plan-feature-list">
-                  <li>✓ Unlimited Student Contact Unlocks</li>
-                  <li>✓ Verified Teacher Pro Badge</li>
-                  <li>✓ Top Priority Listing in Search &amp; City Directory</li>
-                </ul>
-
-                <Link
-                  to="/subscription"
-                  onClick={() => setShowUnlockModal(false)}
-                  className="mn-sp-modal-browse-sub-btn"
-                >
-                  Explore All Subscription Plans →
-                </Link>
-              </div>
-
             </div>
 
             <div className="mn-sp-modal-footer">

@@ -39,7 +39,11 @@ const TutorProfileSchema = new mongoose.Schema({
   education: [{
     degree: String,
     institution: String,
-    year: Number,
+    year: {
+      type: Number,
+      min: 1970,
+      max: 2030
+    },
     field: String
   }],
   subjects: [{

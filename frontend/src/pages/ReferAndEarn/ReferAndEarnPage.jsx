@@ -150,7 +150,7 @@ const ReferAndEarnPage = () => {
               <div className="mn-refer-hero-card-content">
                 <h3 className="mn-refer-hero-card-title">Earn 100 Coins</h3>
                 <p className="mn-refer-hero-card-desc">
-                  When your referred tutor purchases a Premium plan.
+                  When your referred tutor purchases the MentorNearby All Access plan.
                 </p>
                 <span className="mn-refer-hero-card-note">
                   *Coins are credited after successful payment and verification.
@@ -264,9 +264,9 @@ const ReferAndEarnPage = () => {
               <div className="mn-step-icon-circle bg-purple">
                 <span className="step-icon">👑</span>
               </div>
-              <h3 className="mn-step-title">They Buy Premium</h3>
+              <h3 className="mn-step-title">They Subscribe</h3>
               <p className="mn-step-desc">
-                When your referred tutor purchases any Premium plan.
+                When your referred tutor purchases the MentorNearby All Access plan.
               </p>
             </div>
 
@@ -396,10 +396,10 @@ const ReferAndEarnPage = () => {
                 <span className="notes-heading">Important Notes</span>
               </div>
               <ul className="mn-notes-list">
-                <li>Coins will be credited only when your referred tutor purchases a Premium plan.</li>
+                <li>Coins will be credited only when your referred tutor purchases the MentorNearby All Access plan.</li>
                 <li>Self-referral or fake accounts will not be rewarded.</li>
                 <li>Coins have no cash value and cannot be withdrawn.</li>
-                <li>Coins can be used for Premium subscriptions and other eligible services on MentorNearby.</li>
+                <li>Coins can be used for All Access subscriptions and other eligible services on MentorNearby.</li>
               </ul>
             </div>
           </div>
@@ -498,7 +498,7 @@ const ReferAndEarnPage = () => {
               <div className="mn-rewards-promo-info">
                 <h3 className="mn-rewards-promo-title">Earn 100 Coins</h3>
                 <p className="mn-rewards-promo-sub">
-                  When your referred tutor purchases a Premium plan.
+                  When your referred tutor purchases the MentorNearby All Access plan.
                 </p>
               </div>
             </div>
@@ -508,14 +508,14 @@ const ReferAndEarnPage = () => {
               <h3 className="mn-utility-title">Where can you use Coins?</h3>
 
               <div className="mn-utility-items-list">
-                {/* Item 1: Premium Subscription */}
+                {/* Item 1: All Access Subscription */}
                 <div className="mn-utility-item">
                   <div className="mn-utility-icon-box purple-bg">
                     <span>👑</span>
                   </div>
                   <div className="mn-utility-item-details">
-                    <span className="utility-name">Premium Subscription</span>
-                    <p className="utility-desc">Use coins to get discounts on Premium plans.</p>
+                    <span className="utility-name">All Access Subscription</span>
+                    <p className="utility-desc">Use coins to get discounts on the All Access plan.</p>
                   </div>
                 </div>
 

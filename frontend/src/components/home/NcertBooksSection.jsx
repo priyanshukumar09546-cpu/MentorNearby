@@ -1,6 +1,6 @@
 // ============================================================
 // components/home/NcertBooksSection.jsx
-// ProfessorVirus / MentorNearby — Explore Our NCERT Books Library Section
+// MentorNearby — Explore Our NCERT Books Library Section
 // Matching Reference Image 1 with exact book stack vector art, pills, and 12 class buttons
 // ============================================================
 

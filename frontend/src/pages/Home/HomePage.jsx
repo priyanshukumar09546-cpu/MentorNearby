@@ -52,20 +52,20 @@ const STUDY_RESOURCES_LIST = [
 
 const FAQS = [
   {
-    q: 'How does ProfessorVirus verify tutors?',
+    q: 'How does MentorNearby verify tutors?',
     a: 'Tutors submit government-issued IDs, college degrees, and professional credentials for review by our admin team. After identity and qualification checks, tutors earn a Verified badge.',
   },
   {
     q: 'How is contact information protected?',
-    a: "Tutor phone numbers and email addresses are never shown publicly. You unlock a tutor's contact using your free unlocks (first 2 unlocks are completely free) or a small nominal fee. This protects both tutors and families from spam.",
+    a: 'Tutor and student mobile numbers are strictly protected. To unlock direct phone and WhatsApp contact details, activate MentorNearby All Access for ₹199/month recurring AutoPay. This ensures verified direct communication with zero middleman commissions.',
   },
   {
     q: 'How do I find tutors in my area?',
     a: 'Simply enter your city, area, or subject into our search bar. You can filter by class, teaching mode (Online, Offline, Hybrid), and budget to discover top-rated tutors near you.',
   },
   {
-    q: 'Is there a fee to use MentorNearby?',
-    a: 'Searching tutors and viewing full profiles is 100% free. Every student gets 2 free contact unlocks upon registration with no hidden subscriptions.',
+    q: 'How do I unlock tutor contact details?',
+    a: 'Direct contact numbers are unlocked via MentorNearby All Access for ₹199/month. You get unlimited direct tutor contact reveals, voice calling, and instant WhatsApp chat.',
   },
   {
     q: 'Can tutors see my private information or address?',
@@ -825,7 +825,7 @@ const HomePage = () => {
       <NcertBooksSection />
 
       {/* ============================================================ */}
-      {/* 5. THE PROFESSORVIRUS APP — DUAL SMARTPHONE MOCKUPS          */}
+      {/* 5. THE MENTORNEARBY APP — DUAL SMARTPHONE MOCKUPS            */}
       {/* ============================================================ */}
       <AppPromotionSection />
 

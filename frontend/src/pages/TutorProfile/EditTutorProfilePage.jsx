@@ -58,6 +58,7 @@ const EditTutorProfilePage = () => {
     degree: '',
     institution: '',
     eduYears: '',
+    passingYear: '',
     certification: '',
     certYear: ''
   });
@@ -145,6 +146,7 @@ const EditTutorProfilePage = () => {
           degree: edu.degree || '',
           institution: edu.institution || '',
           eduYears: edu.year ? `${edu.year - 4} - ${edu.year}` : '',
+          passingYear: edu.year ? String(edu.year) : '',
           certification: cert.name || '',
           certYear: cert.year ? String(cert.year) : '',
         });
@@ -328,12 +330,14 @@ const EditTutorProfilePage = () => {
   const saveExperienceForm = async () => {
     try {
       setSaving(true);
+      const parsedYear = Number(experienceForm.passingYear) || (experienceForm.eduYears ? Number(experienceForm.eduYears.split('–').pop().split('-').pop().trim()) : 2024);
       await updateTutorProfile({
         experience: { years: Number(experienceForm.totalYears) || 0, description: 'Teaching Experience' },
         education: [{
           degree: experienceForm.degree,
           institution: experienceForm.institution,
-          year: 2019
+          year: parsedYear,
+          field: experienceForm.degree
         }],
         certificates: [{
           name: experienceForm.certification,
@@ -1571,6 +1575,28 @@ const EditTutorProfilePage = () => {
                   onChange={(e) => setExperienceForm({ ...experienceForm, institution: e.target.value })}
                   placeholder="e.g. AKTU, Lucknow"
                 />
+              </div>
+
+              <div className="tpm-form-group">
+                <label>Year of Passing</label>
+                <select
+                  value={experienceForm.passingYear}
+                  onChange={(e) => setExperienceForm({ ...experienceForm, passingYear: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1.5px solid #E2E8F0',
+                    fontSize: '14px',
+                    backgroundColor: '#FFFFFF',
+                    color: '#0F172A'
+                  }}
+                >
+                  <option value="">Select Year of Passing</option>
+                  {Array.from({ length: 2030 - 1970 + 1 }, (_, i) => 2030 - i).map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="tpm-form-group">

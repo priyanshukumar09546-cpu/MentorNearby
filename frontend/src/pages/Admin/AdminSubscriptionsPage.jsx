@@ -23,12 +23,14 @@ const AdminSubscriptionsPage = () => {
     activeTutorSubscriptions: 0,
     activeStudentSubscriptions: 0,
     pendingSubscriptions: 0,
+    expiredSubscriptions: 0,
     cancelledSubscriptions: 0,
     failedPayments: 0,
     authorizedAutoPayMandates: 0,
     monthlyRecurringRevenue: 0,
     successfulPaymentCollections: 0,
     upcomingRenewals: 0,
+    contactUnlockActivity: 0,
     unifiedPlanPrice: 199,
   });
   const [loading, setLoading] = useState(true);
@@ -247,6 +249,12 @@ const AdminSubscriptionsPage = () => {
         </div>
 
         <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Expired Subscriptions</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#64748B', marginTop: '4px' }}>{stats.expiredSubscriptions || 0}</div>
+          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Cycle concluded</div>
+        </div>
+
+        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Cancelled Mandates</div>
           <div style={{ fontSize: '24px', fontWeight: '900', color: '#64748B', marginTop: '4px' }}>{stats.cancelledSubscriptions}</div>
           <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>AutoPay stopped</div>
@@ -280,6 +288,12 @@ const AdminSubscriptionsPage = () => {
           <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Upcoming Renewals</div>
           <div style={{ fontSize: '24px', fontWeight: '900', color: '#4F46E5', marginTop: '4px' }}>{stats.upcomingRenewals}</div>
           <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Next 7 days</div>
+        </div>
+
+        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Contact Unlock Activity</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#0F172A', marginTop: '4px' }}>{stats.contactUnlockActivity || 0}</div>
+          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Total unlock events</div>
         </div>
       </div>
 
@@ -355,8 +369,9 @@ const AdminSubscriptionsPage = () => {
             <option value="all">All Statuses</option>
             <option value="active">Active Only</option>
             <option value="pending">Pending Only</option>
-            <option value="cancelled">Cancelled Only</option>
             <option value="expired">Expired Only</option>
+            <option value="cancelled">Cancelled Only</option>
+            <option value="failed">Failed Only</option>
           </select>
         </div>
       </div>

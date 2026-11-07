@@ -6,6 +6,7 @@
 // ============================================================
 
 const crypto = require('crypto');
+const { UNIFIED_PLAN } = require('../config/subscription');
 
 // Only initialize Razorpay if credentials are available
 let razorpay = null;
@@ -122,7 +123,7 @@ const fetchPayment = async (paymentId) => {
       return {
         id: paymentId,
         status: 'captured',
-        amount: 4900, // ₹49 in paise
+        amount: UNIFIED_PLAN.amountInPaise, // ₹199 in paise (19900)
         currency: 'INR',
         _stub: true,
       };

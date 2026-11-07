@@ -408,6 +408,9 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
       if (!formData.phone.trim() || formData.phone.replace(/\D/g, '').length < 10) return 'Please enter a valid 10-digit mobile number.';
       if (!formData.password || formData.password.length < 6) return 'Please set a secure password (min 6 characters).';
       if (formData.password !== formData.confirmPassword) return 'Passwords do not match.';
+      if (!formData.profilePhotoUrl) {
+        return 'Profile photo is required. Please upload your photo to continue.';
+      }
     }
     if (step === 2) {
       if (!formData.headline.trim()) return 'Please enter a professional headline (e.g. Maths Teacher with 5+ Years Experience).';
@@ -466,6 +469,10 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
 
   // Final Submit
   const handleSubmit = async () => {
+    if (!formData.profilePhotoUrl) {
+      setErrorMsg('Profile photo is required. Please upload your photo to continue.');
+      return;
+    }
     if (!formData.agreeTerms) {
       setErrorMsg('Please agree to the Terms & Conditions and Privacy Policy.');
       return;
@@ -633,58 +640,94 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
           {/* ============================================================ */}
           {step === 1 && (
             <div className="mn-step-body">
-              <div className="mn-step-intro-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
-                <div>
-                  <p className="mn-step-intro-text" style={{ margin: 0 }}>
-                    Let's start with your basic account details.
-                  </p>
-                  <p style={{ fontSize: '12px', color: '#D97706', marginTop: '4px', fontWeight: '600' }}>
-                    💡 Face ko beech me rakhein, clear background
-                  </p>
-                </div>
-                <div className="mn-avatar-upload-preview" style={{ flexShrink: 0, position: 'relative', width: '84px', height: '84px', borderRadius: '50%', border: '2.5px solid #2563EB', overflow: 'hidden', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(37, 99, 235, 0.15)' }}>
-                  {uploadingPhoto ? (
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', textAlign: 'center' }}>
-                      ⏳ Saving...
-                    </div>
-                  ) : formData.profilePhotoUrl ? (
-                    <img
-                      src={formData.profilePhotoUrl}
-                      alt="Avatar Preview"
-                      className="mn-avatar-img-preview w-full h-full object-cover object-center"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', borderRadius: '50%' }}
-                    />
-                  ) : (
-                    <span className="mn-avatar-placeholder-icon" style={{ fontSize: '36px' }}>👤</span>
-                  )}
-                  <label
-                    className="mn-avatar-camera-btn"
-                    title="Upload & Adjust Photo"
+              <p className="mn-step-intro-text" style={{ marginBottom: '16px' }}>
+                Let's start with your basic account details and profile photo.
+              </p>
+
+              {/* Mandatory Profile Photo Field */}
+              <div className="mn-form-group" style={{ marginBottom: '22px' }}>
+                <label className="mn-form-lbl" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  Profile Photo <span className="mn-req" style={{ color: '#E11D48', fontWeight: 'bold' }}>*</span>
+                  <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Mandatory — JPG, JPEG, PNG, WEBP)</span>
+                </label>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '18px',
+                  padding: '16px',
+                  background: '#F8FAFC',
+                  borderRadius: '12px',
+                  border: formData.profilePhotoUrl ? '1.5px solid #10B981' : '1.5px dashed #CBD5E1',
+                  marginTop: '6px'
+                }}>
+                  <div
+                    className="mn-avatar-upload-preview"
                     style={{
-                      position: 'absolute',
-                      bottom: '2px',
-                      right: '2px',
-                      background: '#2563EB',
-                      color: '#FFF',
-                      width: '26px',
-                      height: '26px',
+                      flexShrink: 0,
+                      position: 'relative',
+                      width: '84px',
+                      height: '84px',
                       borderRadius: '50%',
+                      border: formData.profilePhotoUrl ? '2.5px solid #10B981' : '2.5px solid #2563EB',
+                      overflow: 'hidden',
+                      background: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.06)'
                     }}
                   >
-                    📷
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/jpg"
-                      onChange={handlePhotoSelect}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
+                    {uploadingPhoto ? (
+                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', textAlign: 'center' }}>
+                        ⏳ Uploading...
+                      </div>
+                    ) : formData.profilePhotoUrl ? (
+                      <img
+                        src={formData.profilePhotoUrl}
+                        alt="Profile Preview"
+                        className="mn-avatar-img-preview"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', borderRadius: '50%' }}
+                      />
+                    ) : (
+                      <span className="mn-avatar-placeholder-icon" style={{ fontSize: '36px', color: '#94A3B8' }}>👤</span>
+                    )}
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 16px',
+                          background: formData.profilePhotoUrl ? '#F1F5F9' : '#2563EB',
+                          color: formData.profilePhotoUrl ? '#0F172A' : '#FFFFFF',
+                          borderRadius: '8px',
+                          fontWeight: 600,
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          border: formData.profilePhotoUrl ? '1px solid #CBD5E1' : 'none'
+                        }}
+                      >
+                        📷 {formData.profilePhotoUrl ? 'Change Photo' : 'Upload Profile Photo *'}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/jpg"
+                          onChange={handlePhotoSelect}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                      {formData.profilePhotoUrl && (
+                        <span style={{ fontSize: '12px', color: '#059669', fontWeight: 600 }}>
+                          ✓ Photo uploaded
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#64748B' }}>
+                      Clear portrait photo. Profile photo upload is mandatory to continue registration.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -774,7 +817,14 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
                     ← Switch Role
                   </button>
                 )}
-                <button type="button" className="mn-step-primary-btn" onClick={handleNext}>
+                <button
+                  type="button"
+                  className="mn-step-primary-btn"
+                  onClick={handleNext}
+                  disabled={!formData.profilePhotoUrl || uploadingPhoto}
+                  style={!formData.profilePhotoUrl || uploadingPhoto ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+                  title={!formData.profilePhotoUrl ? 'Profile photo is required. Please upload your photo to continue.' : ''}
+                >
                   Continue →
                 </button>
               </div>
@@ -910,7 +960,7 @@ const TutorRegistrationWizard = ({ onBackToRoleSelect }) => {
                   value={formData.passingYear}
                   onChange={(e) => setFormData(p => ({ ...p, passingYear: e.target.value }))}
                 >
-                  {Array.from({ length: 30 }, (_, i) => 2026 - i).map(year => (
+                  {Array.from({ length: 2030 - 1970 + 1 }, (_, i) => 2030 - i).map(year => (
                     <option key={year} value={year}>{year}</option>
                   ))}
                 </select>

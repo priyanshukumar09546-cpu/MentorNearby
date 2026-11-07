@@ -1,23 +1,16 @@
 // ============================================================
 // middleware/checkChatLimit.js
-// Freemium gate: 3 free conversation partners for students, 5 free leads for tutors
+// Communication gate: Unlocks & messaging powered by MentorNearby All Access (₹199/month)
 // ============================================================
 
 const User = require('../models/User');
+const Subscription = require('../models/Subscription');
 const asyncHandler = require('../utils/asyncHandler');
 const mongoose = require('mongoose');
+const { UNIFIED_PLAN, hasActiveSubscription } = require('../config/subscription');
 
 /**
- * Helper: check if subscription is still active
- */
-const isActiveSubscriber = (user) => {
-  if (!user.isSubscribed) return false;
-  if (!user.subscriptionExpiry) return false;
-  return new Date(user.subscriptionExpiry) > new Date();
-};
-
-/**
- * Middleware factory — call as checkChatLimit('chat') or checkChatLimit('lead')
+ * Middleware factory — check chat / lead engagement permissions
  * @param {'chat'|'lead'} type
  */
 const checkChatLimit = (type = 'chat') =>
@@ -29,8 +22,8 @@ const checkChatLimit = (type = 'chat') =>
       return res.status(401).json({ success: false, message: 'User not found' });
     }
 
-    // Subscribers always pass through
-    if (isActiveSubscriber(user)) {
+    // Active All Access subscribers always pass through
+    if (hasActiveSubscription(user)) {
       return next();
     }
 
@@ -58,7 +51,7 @@ const checkChatLimit = (type = 'chat') =>
 
     const senderUserObjId = new mongoose.Types.ObjectId(String(userId));
 
-    // If conversation already exists between these 2 users, allow them to continue chatting!
+    // If conversation already exists between these 2 users, allow continuing
     if (receiverUserObjId) {
       const hasExistingHistory = await Message.exists({
         $or: [
@@ -71,16 +64,17 @@ const checkChatLimit = (type = 'chat') =>
       }
     }
 
-    // ── STUDENT / PARENT: 3 free conversations ────────────────────────
+    // ── STUDENT / PARENT: Limit reached prompt ─────────────────
     if (role === 'STUDENT' || role === 'PARENT') {
       const distinctPartners = await Message.distinct('receiver', { sender: senderUserObjId });
       if (distinctPartners.length >= 3) {
         return res.status(403).json({
           success: false,
           paywall: true,
-          plan: 99,
-          planType: 'student',
-          message: 'You have reached your 3 free tutor conversations limit. Upgrade your plan for unlimited chats.',
+          plan: UNIFIED_PLAN.amount,
+          planName: UNIFIED_PLAN.name,
+          planType: UNIFIED_PLAN.id,
+          message: 'Subscribe to MentorNearby All Access for ₹199/month for unlimited direct tutor conversations & contact reveals.',
           freeChatsUsed: distinctPartners.length,
           freeChatsLimit: 3,
         });
@@ -88,16 +82,17 @@ const checkChatLimit = (type = 'chat') =>
       return next();
     }
 
-    // ── TUTOR: 5 free leads ────────────────────────────────────
+    // ── TUTOR: Lead / messaging engagement ──────────────────────
     if (role === 'TUTOR') {
       if (type === 'lead') {
         if (user.freeLeadsUsed >= 5) {
           return res.status(403).json({
             success: false,
             paywall: true,
-            plan: 149,
-            planType: 'teacher',
-            message: '5 free leads limit reached. Upgrade to Pro for unlimited student leads.',
+            plan: UNIFIED_PLAN.amount,
+            planName: UNIFIED_PLAN.name,
+            planType: UNIFIED_PLAN.id,
+            message: 'Subscribe to MentorNearby All Access for ₹199/month for unlimited student leads and contact reveals.',
             freeLeadsUsed: user.freeLeadsUsed,
             freeLeadsLimit: 5,
           });
@@ -113,9 +108,10 @@ const checkChatLimit = (type = 'chat') =>
         return res.status(403).json({
           success: false,
           paywall: true,
-          plan: 149,
-          planType: 'teacher',
-          message: 'Free chat limit reached. Upgrade to Pro for unlimited student connections.',
+          plan: UNIFIED_PLAN.amount,
+          planName: UNIFIED_PLAN.name,
+          planType: UNIFIED_PLAN.id,
+          message: 'Subscribe to MentorNearby All Access for ₹199/month for unlimited direct student messaging & leads.',
           freeChatsUsed: distinctPartners.length,
           freeChatsLimit: 10,
         });

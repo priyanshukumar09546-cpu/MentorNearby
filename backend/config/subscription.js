@@ -1,7 +1,7 @@
 // ============================================================
 // config/subscription.js
 // MentorNearby All Access — Single Source of Truth
-// Exactly ONE active subscription plan: ₹199/month recurring
+// Exactly ONE active subscription plan: ₹199/month recurring AutoPay
 // ============================================================
 
 const UNIFIED_PLAN = {
@@ -13,6 +13,7 @@ const UNIFIED_PLAN = {
   currency: 'INR',
   interval: 'monthly', // Razorpay recurring interval
   period: 'monthly',
+  billingCycle: 'monthly',
   intervalCount: 1, // Every 1 month
   billingCycleDays: 30,
   isActive: true,
@@ -50,10 +51,58 @@ const UNIFIED_PLAN = {
     'Study material downloads',
     'Unlimited tutor contact unlocks',
   ],
+
+  autoPayDisclosure:
+    'By proceeding, you authorize an automatic recurring monthly payment of ₹199 via Razorpay AutoPay. You can cancel AutoPay anytime with 1 click from your dashboard, retaining full All Access benefits until your current billing cycle ends.',
+};
+
+/**
+ * Standard phone number masking for privacy.
+ * Mask format: +91 XXXXXXX123 (preserves country code prefix and last 3 digits)
+ * @param {string} phone
+ * @returns {string}
+ */
+const maskPhoneNumber = (phone) => {
+  if (!phone) return '+91 XXXXXXX123';
+  const cleanDigits = String(phone).replace(/\D/g, '');
+  if (cleanDigits.length >= 3) {
+    const last3 = cleanDigits.slice(-3);
+    return `+91 XXXXXXX${last3}`;
+  }
+  return '+91 XXXXXXX123';
+};
+
+/**
+ * Check whether a user or document has an active, unexpired MentorNearby All Access subscription.
+ * Admins always have access.
+ * @param {Object} userDoc
+ * @returns {boolean}
+ */
+const hasActiveSubscription = (userDoc) => {
+  if (!userDoc) return false;
+  const role = (userDoc.role || '').toString().trim().toUpperCase();
+  if (role === 'ADMIN') return true;
+
+  const now = new Date();
+  if (userDoc.isSubscribed && userDoc.subscriptionExpiry && new Date(userDoc.subscriptionExpiry) > now) {
+    return true;
+  }
+
+  // Handle nested subscription object if present
+  if (
+    userDoc.subscription?.isActive &&
+    userDoc.subscription?.expiry &&
+    new Date(userDoc.subscription.expiry) > now
+  ) {
+    return true;
+  }
+
+  return false;
 };
 
 module.exports = {
   UNIFIED_PLAN,
-  // Helper to ensure backward compatibility while enforcing ₹199 plan
   getPlan: () => UNIFIED_PLAN,
+  maskPhoneNumber,
+  hasActiveSubscription,
 };

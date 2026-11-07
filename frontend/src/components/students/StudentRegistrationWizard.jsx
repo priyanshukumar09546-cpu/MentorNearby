@@ -186,6 +186,9 @@ const StudentRegistrationWizard = ({ onSwitchToTutor }) => {
       if (!formData.password) errs.password = 'Password is required (min 6 characters)';
       else if (formData.password.length < 6) errs.password = 'Password must be at least 6 characters';
       if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match';
+      if (!formData.profilePhotoUrl && !formData.profilePhotoBlob) {
+        errs.photo = 'Profile photo is required. Please upload your photo to continue.';
+      }
     }
 
     if (s === 4) {
@@ -236,6 +239,10 @@ const StudentRegistrationWizard = ({ onSwitchToTutor }) => {
 
   // Submit Final Registration
   const handleFinalSubmit = async () => {
+    if (!formData.profilePhotoUrl && !formData.profilePhotoBlob) {
+      setSubmitError('Profile photo is required. Please upload your photo to continue.');
+      return;
+    }
     if (!validateStep(7)) return;
     setIsSubmitting(true);
     setSubmitError('');
@@ -418,7 +425,9 @@ const StudentRegistrationWizard = ({ onSwitchToTutor }) => {
                 
                 {/* Left Photo Upload Col */}
                 <div className="sr-avatar-col">
-                  <div className="sr-avatar-label">Profile Photo</div>
+                  <div className="sr-avatar-label">
+                    Profile Photo <span className="sr-required-star" style={{ color: '#E11D48', fontWeight: 800 }}>*</span>
+                  </div>
                   <div
                     className="sr-avatar-circle-wrap"
                     onClick={() => fileInputRef.current?.click()}
@@ -569,7 +578,14 @@ const StudentRegistrationWizard = ({ onSwitchToTutor }) => {
                 <button type="button" onClick={handleBack} className="sr-btn-outline">
                   ← Back
                 </button>
-                <button type="button" onClick={handleNext} className="sr-btn-primary">
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="sr-btn-primary"
+                  disabled={!formData.profilePhotoUrl && !formData.profilePhotoBlob}
+                  style={!formData.profilePhotoUrl && !formData.profilePhotoBlob ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+                  title={!formData.profilePhotoUrl && !formData.profilePhotoBlob ? 'Profile photo is required. Please upload your photo to continue.' : ''}
+                >
                   Continue →
                 </button>
               </div>

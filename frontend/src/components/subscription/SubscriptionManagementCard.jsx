@@ -45,11 +45,17 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
     try {
       setCancelling(true);
       const res = await cancelSubscription(cancelReason);
-      showToast(res.data?.message || 'Recurring AutoPay stopped successfully. Benefits preserved till period end.', 'success');
+      showToast(
+        res.data?.message || 'Recurring AutoPay stopped successfully. Benefits preserved till period end.',
+        'success'
+      );
       setShowCancelModal(false);
       await fetchStatus();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to cancel AutoPay. Please try again or contact support.', 'error');
+      showToast(
+        err.response?.data?.message || 'Failed to cancel AutoPay. Please try again or contact support.',
+        'error'
+      );
     } finally {
       setCancelling(false);
     }
@@ -85,7 +91,16 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
       })
     : null;
 
-  const payments = subData?.payments || [];
+  const payments = subData?.paymentHistory || subData?.payments || [];
+  const lastPayment = payments.length > 0 ? payments[0] : null;
+  const lastPaymentDate = subData?.lastPaymentDate || lastPayment?.createdAt || null;
+  const formattedLastPaymentDate = lastPaymentDate
+    ? new Date(lastPaymentDate).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : null;
 
   return (
     <div className="mn-sub-mgmt-card">
@@ -95,7 +110,7 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
           <div>
             <h3 className="mn-sub-mgmt-heading">MentorNearby All Access</h3>
             <p className="mn-sub-mgmt-subheading">
-              ₹{UNIFIED_PLAN.amount}/month • Recurring AutoPay Membership
+              ₹{UNIFIED_PLAN.amount}/month • Monthly Recurring AutoPay
             </p>
           </div>
         </div>
@@ -113,7 +128,7 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
             )
           ) : (
             <span className="mn-status-badge inactive">
-              Free Basic Plan
+              No Active Subscription
             </span>
           )}
         </div>
@@ -124,14 +139,25 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
         <div className="mn-sub-mgmt-grid-item">
           <span className="mn-sub-mgmt-label">Plan Name</span>
           <span className="mn-sub-mgmt-value">
-            {isSubscribed ? 'MentorNearby All Access' : 'Basic Free Tier'}
+            MentorNearby All Access
           </span>
         </div>
 
         <div className="mn-sub-mgmt-grid-item">
-          <span className="mn-sub-mgmt-label">Monthly Price</span>
+          <span className="mn-sub-mgmt-label">Pricing</span>
           <span className="mn-sub-mgmt-value">
-            {isSubscribed ? `₹${UNIFIED_PLAN.amount} / month` : '₹0 (Free Forever)'}
+            ₹{UNIFIED_PLAN.amount} / month
+          </span>
+        </div>
+
+        <div className="mn-sub-mgmt-grid-item">
+          <span className="mn-sub-mgmt-label">Subscription Status</span>
+          <span className="mn-sub-mgmt-value">
+            {isSubscribed ? (
+              <span style={{ color: '#16A34A', fontWeight: 800 }}>Active</span>
+            ) : (
+              <span style={{ color: '#E11D48', fontWeight: 800 }}>Inactive</span>
+            )}
           </span>
         </div>
 
@@ -139,23 +165,30 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
           <span className="mn-sub-mgmt-label">AutoPay Mandate</span>
           <span className="mn-sub-mgmt-value">
             {autoPayActive ? (
-              <strong style={{ color: '#16A34A' }}>✓ Authorized & Active</strong>
+              <strong style={{ color: '#16A34A' }}>✓ Authorized &amp; Active</strong>
             ) : cancelAtPeriodEnd ? (
-              <span style={{ color: '#D97706' }}>Cancelled (No Auto-Deductions)</span>
+              <span style={{ color: '#D97706' }}>Cancelled (No Deductions)</span>
             ) : isSubscribed ? (
               <span style={{ color: '#2563EB' }}>Active</span>
             ) : (
-              <span style={{ color: '#64748B' }}>Not Set</span>
+              <span style={{ color: '#64748B' }}>Not Authorized</span>
             )}
           </span>
         </div>
 
         <div className="mn-sub-mgmt-grid-item">
           <span className="mn-sub-mgmt-label">
-            {cancelAtPeriodEnd ? 'Access Valid Until' : 'Next Auto-Renewal Date'}
+            {cancelAtPeriodEnd ? 'Access Valid Until' : 'Next Billing Date'}
           </span>
           <span className="mn-sub-mgmt-value highlight">
-            {formattedRenewalDate || 'No active renewal'}
+            {isSubscribed ? (formattedRenewalDate || '30 days from cycle start') : 'Pending Subscription'}
+          </span>
+        </div>
+
+        <div className="mn-sub-mgmt-grid-item">
+          <span className="mn-sub-mgmt-label">Last Successful Payment</span>
+          <span className="mn-sub-mgmt-value">
+            {formattedLastPaymentDate ? `${formattedLastPaymentDate} (₹${UNIFIED_PLAN.amount})` : isSubscribed ? `Recent (₹${UNIFIED_PLAN.amount})` : 'No payments yet'}
           </span>
         </div>
       </div>
@@ -163,11 +196,12 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
       {/* Entitlement Summary */}
       <div className="mn-sub-mgmt-benefits-strip">
         <div className="mn-sub-mgmt-benefits-title">
-          {role === 'TUTOR' ? 'Tutor Premium Entitlements:' : 'Student Premium Entitlements:'}
+          {role === 'TUTOR' ? 'Tutor All Access Entitlements:' : 'Student All Access Entitlements:'}
         </div>
         <div className="mn-sub-mgmt-benefits-tags">
-          <span className="mn-benefit-pill">✓ Unlimited Unlocks</span>
-          <span className="mn-benefit-pill">✓ Priority Visibility</span>
+          <span className="mn-benefit-pill">✓ Unlimited Contact Unlocks</span>
+          <span className="mn-benefit-pill">✓ Direct Phone &amp; WhatsApp Call</span>
+          <span className="mn-benefit-pill">✓ Priority Search Visibility</span>
           <span className="mn-benefit-pill">✓ Instant Messaging</span>
           <span className="mn-benefit-pill">✓ Study Downloads</span>
           <span className="mn-benefit-pill">✓ Zero Commission</span>
@@ -184,17 +218,17 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
                 onClick={() => setShowCancelModal(true)}
                 className="mn-sub-cancel-btn"
               >
-                Cancel AutoPay Recurring Billing
+                Cancel Subscription (Stop AutoPay)
               </button>
             ) : (
               <Link to="/subscription" className="mn-sub-upgrade-btn">
-                Reactivate AutoPay (₹199/mo)
+                Reactivate AutoPay (₹199/month) →
               </Link>
             )}
           </>
         ) : (
           <Link to="/subscription" className="mn-sub-upgrade-btn">
-            Upgrade to All Access (₹199/month) →
+            Subscribe Now – ₹199/month →
           </Link>
         )}
       </div>
@@ -202,7 +236,7 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
       {/* Payment History Table (Audit Log) */}
       {payments.length > 0 && (
         <div className="mn-sub-history-section">
-          <h4 className="mn-sub-history-title">Payment & Mandate History</h4>
+          <h4 className="mn-sub-history-title">Payment &amp; Mandate History</h4>
           <div className="mn-sub-history-table-wrap">
             <table className="mn-sub-history-table">
               <thead>
@@ -223,7 +257,7 @@ const SubscriptionManagementCard = ({ role = 'STUDENT' }) => {
                         year: 'numeric',
                       })}
                     </td>
-                    <td>₹{p.amount || 199}</td>
+                    <td>₹{p.amount || UNIFIED_PLAN.amount}</td>
                     <td style={{ fontFamily: 'monospace', fontSize: '11px' }}>
                       {p.razorpayPaymentId || 'pay_online'}
                     </td>

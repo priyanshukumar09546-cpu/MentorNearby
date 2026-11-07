@@ -178,8 +178,8 @@ const SubscriptionPage = () => {
       a: 'MentorNearby All Access is our single, unified premium plan for ₹199/month. Both tutors and students get complete access to unlimited contacts, leads, messaging, demo classes, priority search placement, and study material downloads.',
     },
     {
-      q: 'Is basic registration on MentorNearby free?',
-      a: 'Yes, 100%! Creating an account, publishing a profile listing, and searching for tutors or students is always completely free. The ₹199/month All Access plan is an optional upgrade for unlimited unlocks and priority features.',
+      q: 'Is there a free subscription tier?',
+      a: 'No. MentorNearby operates strictly on a single, transparent plan: MentorNearby All Access for ₹199/month recurring AutoPay. There are zero free subscription tiers, zero basic free plans, and no hidden charges. All members enjoy unlimited verified contact reveals, direct phone calling, and premium features.',
     },
     {
       q: 'How does recurring AutoPay work?',
@@ -379,71 +379,66 @@ const SubscriptionPage = () => {
             </button>
 
             <div className="mn-sub-free-listing-note">
-              🛡️ <strong>Free Forever Guarantee:</strong> Basic account registration and public profile listings are always completely free.
+              🛡️ <strong>Single Unified Plan:</strong> MentorNearby All Access at ₹199/month. Zero hidden fees, zero brokerage, and no alternative plans.
             </div>
 
           </div>
         </div>
 
-        {/* Free vs All Access Comparison Table */}
+        {/* All Access Entitlements Breakdown Table */}
         <section className="mn-sub-comparison-section">
-          <h3 className="mn-sub-comp-title">Free Registration vs. All Access</h3>
-          <p className="mn-sub-comp-subtitle">Compare what is included in standard free membership versus the ₹199/mo All Access upgrade.</p>
+          <h3 className="mn-sub-comp-title">MentorNearby All Access Entitlements</h3>
+          <p className="mn-sub-comp-subtitle">Everything included in your ₹199/month monthly recurring AutoPay membership.</p>
 
           <div className="mn-sub-comp-table-wrap">
             <table className="mn-sub-comp-table">
               <thead>
                 <tr>
-                  <th style={{ width: '46%' }}>Feature</th>
-                  <th style={{ width: '27%', textAlign: 'center' }}>Free Registration</th>
-                  <th style={{ width: '27%', textAlign: 'center', color: '#E11D48' }}>MentorNearby All Access</th>
+                  <th style={{ width: '40%' }}>Core Privilege</th>
+                  <th style={{ width: '30%', textAlign: 'center' }}>Student Account</th>
+                  <th style={{ width: '30%', textAlign: 'center', color: '#E11D48' }}>Tutor Account</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Account Creation & Public Profile Listing</td>
-                  <td style={{ textAlign: 'center' }}>✅ Free Forever</td>
-                  <td style={{ textAlign: 'center' }}>✅ Free Forever</td>
+                  <td>Direct Phone Number &amp; WhatsApp Reveals</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited Tutor Unlocks</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited Student Unlocks</td>
                 </tr>
                 <tr>
-                  <td>Tutor Search & 5km Radius Discovery</td>
-                  <td style={{ textAlign: 'center' }}>✅ Included</td>
-                  <td style={{ textAlign: 'center' }}>✅ Included</td>
+                  <td>Lead &amp; Enquiry Management</td>
+                  <td style={{ textAlign: 'center' }}>✅ Unlimited Enquiries</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited Student Leads</td>
                 </tr>
                 <tr>
-                  <td>Direct Phone & WhatsApp Contact Unlocks</td>
-                  <td style={{ textAlign: 'center', color: '#64748B' }}>Limited / Starter</td>
-                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited Unlocks</td>
+                  <td>Direct In-App Messaging &amp; Calling</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited Chat &amp; Calling</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited Chat &amp; Calling</td>
                 </tr>
                 <tr>
-                  <td>Student Enquiry & Leads Management</td>
-                  <td style={{ textAlign: 'center', color: '#64748B' }}>Limited</td>
-                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited Leads</td>
-                </tr>
-                <tr>
-                  <td>Search Placement & Discoverability</td>
-                  <td style={{ textAlign: 'center', color: '#64748B' }}>Standard</td>
+                  <td>Search Placement &amp; Discoverability</td>
+                  <td style={{ textAlign: 'center' }}>✅ 5km Radius Discovery</td>
                   <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>⭐ Priority Boost Ranking</td>
                 </tr>
                 <tr>
-                  <td>Verified Trust Badge Eligibility</td>
-                  <td style={{ textAlign: 'center', color: '#64748B' }}>Standard Verification</td>
-                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>🛡️ Priority Verification</td>
+                  <td>Verification Trust Badge</td>
+                  <td style={{ textAlign: 'center' }}>🛡️ Student Verified Badge</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>🛡️ KYC Verified Tutor Badge</td>
                 </tr>
                 <tr>
-                  <td>Direct In-App Messaging & Calling</td>
-                  <td style={{ textAlign: 'center', color: '#64748B' }}>Limited</td>
-                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited</td>
-                </tr>
-                <tr>
-                  <td>Study Notes, Formula Sheets & PDF Downloads</td>
-                  <td style={{ textAlign: 'center' }}>✅ Free Reading</td>
+                  <td>Study Notes, Formula Sheets &amp; PDF Downloads</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>📥 Full Unrestricted Downloads</td>
                   <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>📥 Full Unrestricted Downloads</td>
                 </tr>
                 <tr>
                   <td>Monthly Recurring Billing</td>
-                  <td style={{ textAlign: 'center' }}>₹0</td>
                   <td style={{ textAlign: 'center', fontWeight: 800, color: '#E11D48' }}>₹199 / month</td>
+                  <td style={{ textAlign: 'center', fontWeight: 800, color: '#E11D48' }}>₹199 / month</td>
+                </tr>
+                <tr>
+                  <td>AutoPay Mandate Support</td>
+                  <td style={{ textAlign: 'center' }}>✅ Cancel Anytime with 1 Click</td>
+                  <td style={{ textAlign: 'center' }}>✅ Cancel Anytime with 1 Click</td>
                 </tr>
               </tbody>
             </table>

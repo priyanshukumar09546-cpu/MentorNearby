@@ -2426,17 +2426,25 @@ exports.adminGetSubscriptions = asyncHandler(async (req, res, next) => {
     activeTutorSubscriptions,
     activeStudentSubscriptions,
     pendingSubscriptions,
+    expiredSubscriptions,
     cancelledSubscriptions,
     failedPaymentsCount,
     authorizedMandates,
     successfulPaymentsCount,
     upcomingRenewalsCount,
+    contactUnlockActivity,
   ] = await Promise.all([
     Subscription.countDocuments(),
     Subscription.countDocuments({ status: 'ACTIVE', nextBillingDate: { $gt: now } }),
     Subscription.countDocuments({ status: 'ACTIVE', userRole: 'TUTOR', nextBillingDate: { $gt: now } }),
     Subscription.countDocuments({ status: 'ACTIVE', userRole: { $in: ['STUDENT', 'PARENT'] }, nextBillingDate: { $gt: now } }),
     Subscription.countDocuments({ status: { $in: ['PENDING_AUTHORIZATION', 'PENDING_PAYMENT'] } }),
+    Subscription.countDocuments({
+      $or: [
+        { status: 'EXPIRED' },
+        { status: 'ACTIVE', nextBillingDate: { $lte: now } },
+      ],
+    }),
     Subscription.countDocuments({ status: 'CANCELLED' }),
     Payment.countDocuments({ status: 'FAILED' }),
     Subscription.countDocuments({ mandateStatus: 'AUTHORIZED' }),
@@ -2448,6 +2456,7 @@ exports.adminGetSubscriptions = asyncHandler(async (req, res, next) => {
         $lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // Next 7 days
       },
     }),
+    ContactUnlock.countDocuments(),
   ]);
 
   // Monthly Recurring Revenue = Active Subscribers * ₹199
@@ -2465,12 +2474,14 @@ exports.adminGetSubscriptions = asyncHandler(async (req, res, next) => {
       activeTutorSubscriptions,
       activeStudentSubscriptions,
       pendingSubscriptions,
+      expiredSubscriptions,
       cancelledSubscriptions,
       failedPayments: failedPaymentsCount,
       authorizedAutoPayMandates: Math.max(authorizedMandates, effectiveActive),
       monthlyRecurringRevenue,
       successfulPaymentCollections: successfulPaymentsCount,
       upcomingRenewals: upcomingRenewalsCount,
+      contactUnlockActivity,
       unifiedPlanPrice: UNIFIED_PLAN.amount,
       planName: UNIFIED_PLAN.name,
     },

@@ -17,8 +17,8 @@ const ContactUnlockSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['FREE', 'PAID', 'CREDIT', 'PRO_UNLIMITED'],
-    default: 'PAID',
+    enum: ['ALL_ACCESS', 'PAID', 'FREE', 'CREDIT', 'PRO_UNLIMITED'],
+    default: 'ALL_ACCESS',
     required: true
   },
   amount: {
@@ -52,7 +52,7 @@ const ContactUnlockSchema = new mongoose.Schema({
   },
   plan: {
     type: String,
-    default: '₹99 Contact Unlock'
+    default: 'MentorNearby All Access'
   },
   paymentDetails: {
     type: mongoose.Schema.Types.Mixed,

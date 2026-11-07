@@ -14,6 +14,9 @@ const AdminContactUnlocksPage = () => {
     try {
       setLoading(true);
       const res = await client.get('/admin/contact-unlocks');
+      if (res.data?.success) {
+        setUnlocks(res.data.data?.unlocks || res.data.unlocks || []);
+      }
     } catch (e) {
       console.warn('Failed to load contact unlocks:', e?.message);
     } finally {

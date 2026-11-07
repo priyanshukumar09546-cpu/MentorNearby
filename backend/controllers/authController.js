@@ -82,6 +82,13 @@ exports.register = asyncHandler(async (req, res, next) => {
     return error(res, 'Name, email, password, and phone are required', 400);
   }
 
+  // Mandatory Profile Photo Validation
+  const incomingPhoto = req.body.profilePhoto?.url || req.body.profilePhotoUrl || req.body.avatar || (typeof req.body.profilePhoto === 'string' ? req.body.profilePhoto : '');
+  if (!incomingPhoto || !String(incomingPhoto).trim()) {
+    return error(res, 'Profile photo is required. Please upload your photo to continue.', 400);
+  }
+  const cleanPhotoUrl = String(incomingPhoto).trim();
+
   const normalizedEmail = email.trim().toLowerCase();
 
   const existingUser = await User.findOne({ email: normalizedEmail });
@@ -211,6 +218,7 @@ exports.register = asyncHandler(async (req, res, next) => {
     password,
     role,
     phone,
+    avatar: cleanPhotoUrl,
     referredBy: referrerUser ? referrerUser._id : null,
   });
 
@@ -250,7 +258,7 @@ exports.register = asyncHandler(async (req, res, next) => {
       bio: bio || 'Welcome to my MentorNearby teaching profile.',
       gender: gender || 'Other',
       dateOfBirth: dateOfBirth || undefined,
-      education: education && education.length > 0 ? education : [],
+      education: (Array.isArray(education) && education.length > 0) ? education.map(e => ({ ...e, year: e.year ? Number(e.year) : undefined })) : (req.body.passingYear ? [{ degree: req.body.qualification || 'Degree', institution: req.body.institute || 'Institution', year: Number(req.body.passingYear), field: req.body.qualification || '' }] : []),
       subjects: parsedSubjects,
       grades: parsedGrades,
       languages: parsedLanguages,
@@ -259,7 +267,7 @@ exports.register = asyncHandler(async (req, res, next) => {
       fees: fees || { amount: 500, frequency: 'Hour', negotiable: true },
       location: location || { city: 'Not Set', area: 'Not Set', pincode: '000000' },
       serviceAreas: parsedAreas, 
-      profilePhoto: profilePhoto || { url: '', publicId: '' },
+      profilePhoto: { url: cleanPhotoUrl, publicId: profilePhoto?.publicId || '' },
       introVideo: introVideo || { url: '' },
       certificates: certificates || [],
       kycStatus: initialKycStatus,
@@ -342,7 +350,7 @@ exports.register = asyncHandler(async (req, res, next) => {
     const StudentProfile = require('../models/StudentProfile');
     await StudentProfile.create({
       user: user._id,
-      profilePhoto: { url: photoUrl, publicId: profilePhoto?.publicId || '' },
+      profilePhoto: { url: cleanPhotoUrl, publicId: profilePhoto?.publicId || '' },
       whatsappNumber: whatsappNumber || phone,
       location: typeof location === 'string' ? { city: location, area: location } : location,
       studentDetails,

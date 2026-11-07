@@ -6,6 +6,7 @@ const Review = require('../models/Review');
 const TutorRequest = require('../models/TutorRequest');
 const cloudinaryService = require('../services/cloudinaryService');
 const { checkAndPublishListing } = require('../services/listingService');
+const { maskPhoneNumber } = require('../config/subscription');
 
 exports.getTutorProfile = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
@@ -87,24 +88,35 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
   if (currentUserId) {
     const viewer = await User.findById(currentUserId);
     const isAdmin = (viewer?.role || '').toString().trim().toUpperCase() === 'ADMIN';
-    const isPro = viewer?.subscriptionType === 'pro' && viewer?.subscriptionExpiry && new Date(viewer.subscriptionExpiry) > new Date();
+    const isSelf = String(viewer?._id) === String(tutorProfile.user?._id || tutorProfile.user);
 
-    if (isAdmin || isPro || String(viewer?._id) === String(tutorProfile.user?._id || tutorProfile.user)) {
+    if (isAdmin || isSelf) {
       isUnlocked = true;
     } else {
-      const tutorProfileId = tutorProfile._id;
-      const tutorUserId = tutorProfile.user?._id || tutorProfile.user;
-      const queryOr = [{ tutor: tutorProfileId }, { 'paymentDetails.targetId': tutorProfileId }];
-      if (tutorUserId) {
-        queryOr.push({ tutor: tutorUserId });
-        queryOr.push({ 'paymentDetails.targetId': tutorUserId });
+      // Viewer must have an active unexpired MentorNearby All Access subscription
+      const Subscription = require('../models/Subscription');
+      const now = new Date();
+      const hasActiveSub = Boolean(
+        (viewer?.isSubscribed && viewer?.subscriptionExpiry && new Date(viewer.subscriptionExpiry) > now) ||
+        (await Subscription.exists({ user: viewer?._id, status: 'ACTIVE', nextBillingDate: { $gt: now } }))
+      );
+
+      // Only check unlock record if user has an active subscription
+      if (hasActiveSub) {
+        const tutorProfileId = tutorProfile._id;
+        const tutorUserId = tutorProfile.user?._id || tutorProfile.user;
+        const queryOr = [{ tutor: tutorProfileId }, { 'paymentDetails.targetId': tutorProfileId }];
+        if (tutorUserId) {
+          queryOr.push({ tutor: tutorUserId });
+          queryOr.push({ 'paymentDetails.targetId': tutorUserId });
+        }
+        const existingUnlock = await ContactUnlock.findOne({
+          user: currentUserId,
+          $or: queryOr,
+          paymentStatus: 'COMPLETED',
+        });
+        if (existingUnlock) isUnlocked = true;
       }
-      const existingUnlock = await ContactUnlock.findOne({
-        user: currentUserId,
-        $or: queryOr,
-        paymentStatus: 'COMPLETED'
-      });
-      if (existingUnlock) isUnlocked = true;
     }
   }
 
@@ -112,10 +124,10 @@ exports.getTutorProfile = asyncHandler(async (req, res, next) => {
   const profileObj = tutorProfile.toObject ? tutorProfile.toObject() : { ...tutorProfile };
 
   if (!isUnlocked) {
-    profileObj.phone = '**********';
+    profileObj.phone = maskPhoneNumber(rawPhone);
     profileObj.whatsappNumber = null;
     if (profileObj.user && typeof profileObj.user === 'object') {
-      profileObj.user.phone = '**********';
+      profileObj.user.phone = maskPhoneNumber(rawPhone);
     }
   } else {
     profileObj.phone = rawPhone;
@@ -413,7 +425,7 @@ exports.getFeaturedTutors = asyncHandler(async (req, res, next) => {
       t.user = { _id: t._id, name: t.name || 'Verified Tutor', role: 'TUTOR' };
     }
     // Mask sensitive contact details publicly
-    t.phone = '**********';
+    t.phone = maskPhoneNumber(t.phone);
     t.whatsappNumber = null;
     return t;
   });

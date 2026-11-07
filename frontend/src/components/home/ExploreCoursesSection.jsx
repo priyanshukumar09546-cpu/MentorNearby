@@ -1,6 +1,6 @@
 // ============================================================
 // components/home/ExploreCoursesSection.jsx
-// ProfessorVirus / MentorNearby — Explore Our Courses Section
+// MentorNearby — Explore Our Courses Section
 // Clean 4-card layout for Class 9, Class 10, Class 11, Class 12
 // Matching Reference Image 1 with exact vector illustrations & circular buttons
 // ============================================================

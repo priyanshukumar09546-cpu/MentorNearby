@@ -10,6 +10,7 @@ const StudyPurchase = require('../models/StudyPurchase');
 const ContactUnlock = require('../models/ContactUnlock');
 const TutorRequest = require('../models/TutorRequest');
 const Review = require('../models/Review');
+const { maskPhoneNumber, hasActiveSubscription } = require('../config/subscription');
 
 exports.getProfile = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user.id).select('+phone');
@@ -76,11 +77,21 @@ exports.getProfile = asyncHandler(async (req, res, next) => {
       };
 
       // 4. Real Recent Bookings
-      recentBookings = await TutorRequest.find({ student: user._id })
+      const rawBookings = await TutorRequest.find({ student: user._id })
         .sort({ createdAt: -1 })
         .limit(5)
         .populate('tutor', 'name avatar email phone')
-        .populate('requirement', 'subject class tuitionType');
+        .populate('requirement', 'subject class tuitionType')
+        .lean();
+
+      const userSubActive = hasActiveSubscription(user);
+      recentBookings = rawBookings.map((b) => {
+        const item = { ...b };
+        if (!userSubActive && item.tutor && item.tutor.phone) {
+          item.tutor.phone = maskPhoneNumber(item.tutor.phone);
+        }
+        return item;
+      });
 
       // 5. Real Reviews Written by Student
       reviewsGiven = await Review.find({ reviewer: user._id })
@@ -131,11 +142,21 @@ exports.getProfile = asyncHandler(async (req, res, next) => {
         totalReviews
       };
 
-      recentBookings = await TutorRequest.find({ tutor: user._id })
+      const rawTutorBookings = await TutorRequest.find({ tutor: user._id })
         .sort({ createdAt: -1 })
         .limit(5)
         .populate('student', 'name avatar email phone')
-        .populate('requirement', 'subject class');
+        .populate('requirement', 'subject class')
+        .lean();
+
+      const tutorSubActive = hasActiveSubscription(user);
+      recentBookings = rawTutorBookings.map((b) => {
+        const item = { ...b };
+        if (!tutorSubActive && item.student && item.student.phone) {
+          item.student.phone = maskPhoneNumber(item.student.phone);
+        }
+        return item;
+      });
 
       reviewsGiven = tutorReviews;
     } catch (e) {

@@ -130,6 +130,7 @@ const DEFAULT_CONFIG = {
       links: [
         { label: 'Browse Tutors', path: '/tutors', enabled: true },
         { label: 'Find Students (For Tutors)', path: '/find-students', enabled: true },
+        { label: 'All Access Plan (₹199/mo)', path: '/subscription', enabled: true },
         { label: 'By Subject', path: '/tutors?filter=subject', enabled: true },
         { label: 'By Location', path: '/tutors?filter=location', enabled: true },
         { label: 'Verified Tutors', path: '/tutors?verified=true', enabled: true },

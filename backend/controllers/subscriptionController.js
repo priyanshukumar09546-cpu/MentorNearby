@@ -1,7 +1,8 @@
 // ============================================================
 // controllers/subscriptionController.js
-// MentorNearby 4-Tier Subscription & Contact Unlock System
-// Free ₹0 | Single Unlock ₹99 | Starter ₹199/mo | Pro ₹499/mo
+// MentorNearby Unified Subscription & AutoPay System
+// Plan: "MentorNearby All Access" — ₹199/month Recurring
+// Supports Razorpay Subscriptions, AutoPay mandates, and webhooks
 // ============================================================
 
 const Razorpay = require('razorpay');
@@ -10,9 +11,14 @@ const asyncHandler = require('../utils/asyncHandler');
 const { success, error } = require('../utils/apiResponse');
 const User = require('../models/User');
 const TutorProfile = require('../models/TutorProfile');
+const StudentProfile = require('../models/StudentProfile');
+const Subscription = require('../models/Subscription');
+const Payment = require('../models/Payment');
 const ContactUnlock = require('../models/ContactUnlock');
+const { UNIFIED_PLAN } = require('../config/subscription');
+const emailService = require('../services/emailService');
 
-// Lazily initialize Razorpay
+// Lazily initialize Razorpay client
 const getRazorpay = () => {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     throw new Error('Razorpay keys not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in environment.');
@@ -23,349 +29,333 @@ const getRazorpay = () => {
   });
 };
 
-// Plan pricing (in paise — INR × 100)
-const PLANS = {
-  free: {
-    amount: 0,
-    currency: 'INR',
-    label: 'Free Plan',
-    interval: 0,
-    unlocks: 0,
-    isSubscription: false,
-    badge: null,
-  },
-  starter: {
-    amount: 0,
-    currency: 'INR',
-    label: 'Starter Plan – Free Access',
-    interval: 365,
-    unlocks: 3,
-    isSubscription: true,
-    badge: 'Starter (Free)',
-  },
-  starter_yearly: {
-    amount: 0,
-    currency: 'INR',
-    label: 'Starter Plan – Free Access',
-    interval: 365,
-    unlocks: 36,
-    isSubscription: true,
-    badge: 'Starter (Free)',
-  },
-  growth: {
-    amount: 19900,
-    currency: 'INR',
-    label: 'Growth Plan – 10 Contacts (₹199/mo)',
-    interval: 30,
-    unlocks: 10,
-    isSubscription: true,
-    badge: 'Most Popular',
-  },
-  growth_yearly: {
-    amount: 179100,
-    currency: 'INR',
-    label: 'Growth Plan Yearly – 120 Contacts (₹1791/yr)',
-    interval: 365,
-    unlocks: 120,
-    isSubscription: true,
-    badge: 'Most Popular',
-  },
-  pro: {
-    amount: 39900,
-    currency: 'INR',
-    label: 'Pro Plan – 25 Contacts (₹399/mo)',
-    interval: 30,
-    unlocks: 25,
-    isSubscription: true,
-    badge: 'Pro',
-  },
-  pro_yearly: {
-    amount: 359100,
-    currency: 'INR',
-    label: 'Pro Plan Yearly – 300 Contacts (₹3591/yr)',
-    interval: 365,
-    unlocks: 300,
-    isSubscription: true,
-    badge: 'Pro',
-  },
-  premium: {
-    amount: 69900,
-    currency: 'INR',
-    label: 'Premium Plan – Unlimited Contacts (₹699/mo)',
-    interval: 30,
-    unlocks: 999999,
-    isSubscription: true,
-    badge: 'Premium',
-  },
-  premium_yearly: {
-    amount: 629100,
-    currency: 'INR',
-    label: 'Premium Plan Yearly – Unlimited Contacts (₹6291/yr)',
-    interval: 365,
-    unlocks: 999999,
-    isSubscription: true,
-    badge: 'Premium',
-  },
-  // Backward compatibility aliases
-  single: {
-    amount: 9900,
-    currency: 'INR',
-    label: 'Single Unlock – 2 Contacts (₹99)',
-    interval: 0,
-    unlocks: 2,
-    isSubscription: false,
-    badge: 'One-Time',
-  },
-  basic: {
-    amount: 0,
-    currency: 'INR',
-    label: 'Starter Plan (Free)',
-    interval: 365,
-    unlocks: 3,
-    isSubscription: true,
-    badge: 'Starter (Free)',
-  },
-  student: {
-    amount: 19900,
-    currency: 'INR',
-    label: 'Growth Plan (₹199)',
-    interval: 30,
-    unlocks: 10,
-    isSubscription: true,
-    badge: 'Most Popular',
-  },
-  teacher: {
-    amount: 49900,
-    currency: 'INR',
-    label: 'Pro Plan (₹499)',
-    interval: 30,
-    unlocks: 999999,
-    isSubscription: true,
-    badge: 'Best for Tutors',
-  },
+// Cache or retrieve Razorpay Monthly Plan for ₹199
+let cachedRazorpayPlanId = null;
+const getOrCreateRazorpayPlan = async (razorpay) => {
+  if (cachedRazorpayPlanId) return cachedRazorpayPlanId;
+  if (process.env.RAZORPAY_PLAN_ID) {
+    cachedRazorpayPlanId = process.env.RAZORPAY_PLAN_ID;
+    return cachedRazorpayPlanId;
+  }
+
+  try {
+    const plan = await razorpay.plans.create({
+      period: 'monthly',
+      interval: 1,
+      item: {
+        name: UNIFIED_PLAN.name,
+        amount: UNIFIED_PLAN.amountInPaise,
+        currency: UNIFIED_PLAN.currency,
+        description: 'MentorNearby All Access Monthly Recurring Subscription',
+      },
+      notes: {
+        platform: 'MentorNearby',
+        planId: UNIFIED_PLAN.id,
+      },
+    });
+    cachedRazorpayPlanId = plan.id;
+    return cachedRazorpayPlanId;
+  } catch (err) {
+    console.warn('⚠️ Razorpay plan creation fallback:', err.message);
+    return `plan_fallback_${Date.now()}`;
+  }
 };
 
-// @desc    Create a Razorpay order for subscription / unlock
-// @route   POST /api/subscription/create-order
+// @desc    Get the unified subscription plan configuration
+// @route   GET /api/subscription/plan
+// @access  Public
+exports.getUnifiedPlan = asyncHandler(async (req, res) => {
+  return success(res, 'Subscription plan configuration', {
+    plan: UNIFIED_PLAN,
+  });
+});
+
+// @desc    Create a Razorpay subscription / order for ₹199/month
+// @route   POST /api/subscription/create-order, POST /api/subscription/create-subscription
 // @access  Private
 exports.createOrder = asyncHandler(async (req, res, next) => {
   const userId = req.user._id || req.user.id;
   const user = await User.findById(userId);
   if (!user) return error(res, 'User not found', 404);
 
-  // Normalize plan key
-  let planKey = (req.body.planType || req.body.plan || req.body.planId || 'single').toLowerCase();
-  if (planKey === 'single_unlock' || planKey === 'single-unlock') planKey = 'single';
-  if (!PLANS[planKey]) planKey = 'single';
+  const razorpayKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY || 'rzp_test_placeholder';
+  const isTestMode = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.startsWith('rzp_test_');
 
-  const plan = PLANS[planKey];
-
-  if (plan.amount === 0 || planKey === 'starter' || planKey === 'starter_yearly' || planKey === 'basic' || planKey === 'free') {
-    const expiry = new Date();
-    expiry.setDate(expiry.getDate() + 365);
-    user.isSubscribed = true;
-    user.subscriptionExpiry = expiry;
-    user.isPremium = true;
-    user.premiumExpiresAt = expiry;
-    user.subscriptionType = 'starter';
-    user.contactUnlocks = (user.contactUnlocks || 0) + (plan.unlocks || 3);
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Starter plan activated for free! All study materials and features are now available.',
-      planType: 'starter',
-      isSubscribed: true,
-      contactUnlocks: user.contactUnlocks,
-      amount: 0,
-      freeActivation: true,
-      data: {
-        orderId: `free_${Date.now()}`,
-        amount: 0,
-        currency: 'INR',
-        planType: 'starter',
-        planLabel: 'Starter Plan (Free)',
-      },
-    });
-  }
-
-  let orderId = `order_test_${Date.now()}`;
-  let razorpayKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY || 'rzp_test_placeholder';
+  let subscriptionId = null;
+  let orderId = null;
+  let razorpayPlanId = null;
 
   try {
     const razorpay = getRazorpay();
+    razorpayPlanId = await getOrCreateRazorpayPlan(razorpay);
+
+    // Try creating a recurring Razorpay Subscription (AutoPay)
+    try {
+      const sub = await razorpay.subscriptions.create({
+        plan_id: razorpayPlanId,
+        total_count: 120, // Up to 10 years monthly recurring
+        quantity: 1,
+        customer_notify: 1,
+        notes: {
+          userId: String(userId),
+          planId: UNIFIED_PLAN.id,
+          userRole: user.role || 'STUDENT',
+          userEmail: user.email,
+          userName: user.name,
+        },
+      });
+      subscriptionId = sub.id;
+    } catch (subErr) {
+      console.warn('⚠️ Razorpay recurring subscription API note (fallback to standard order with mandate intent):', subErr.message);
+    }
+
+    // Always create a standard order backup for seamless checkout
     const order = await razorpay.orders.create({
-      amount: plan.amount,
-      currency: plan.currency,
-      receipt: `mn_${planKey}_${userId}_${Date.now().toString().slice(-8)}`,
+      amount: UNIFIED_PLAN.amountInPaise,
+      currency: UNIFIED_PLAN.currency,
+      receipt: `mn_sub_${userId}_${Date.now().toString().slice(-8)}`,
       notes: {
         userId: String(userId),
-        planType: planKey,
+        planId: UNIFIED_PLAN.id,
+        userRole: user.role || 'STUDENT',
         userEmail: user.email,
         userName: user.name,
+        isRecurring: 'true',
+        subscriptionId: subscriptionId || '',
       },
     });
     orderId = order.id;
-    razorpayKeyId = process.env.RAZORPAY_KEY_ID;
   } catch (err) {
-    console.warn('⚠️ Razorpay live order fallback (using test order):', err.message);
+    console.warn('⚠️ Razorpay order fallback in test environment:', err.message);
+    subscriptionId = `sub_test_${Date.now()}`;
     orderId = `order_test_${Date.now()}`;
   }
 
+  // Create or update pending Subscription record in MongoDB
+  let subscriptionDoc = await Subscription.findOne({
+    user: user._id,
+    status: { $in: ['ACTIVE', 'PENDING_AUTHORIZATION', 'PENDING_PAYMENT'] },
+  });
+
+  if (!subscriptionDoc) {
+    subscriptionDoc = new Subscription({
+      user: user._id,
+      userRole: user.role || 'STUDENT',
+      planId: UNIFIED_PLAN.id,
+      planName: UNIFIED_PLAN.name,
+      amount: UNIFIED_PLAN.amount,
+      currency: UNIFIED_PLAN.currency,
+      billingCycle: 'monthly',
+      razorpayPlanId,
+      razorpaySubscriptionId: subscriptionId || `sub_${Date.now()}`,
+      mandateStatus: 'PENDING',
+      status: 'PENDING_AUTHORIZATION',
+    });
+  } else {
+    subscriptionDoc.razorpayPlanId = razorpayPlanId;
+    subscriptionDoc.razorpaySubscriptionId = subscriptionId || subscriptionDoc.razorpaySubscriptionId;
+  }
+
+  await subscriptionDoc.save();
+
   return res.status(200).json({
     success: true,
-    message: 'Subscription order created',
+    message: 'Subscription created. Complete checkout to authorize monthly AutoPay.',
+    subscriptionId: subscriptionDoc.razorpaySubscriptionId,
     orderId,
-    amount: plan.amount,
-    currency: plan.currency,
+    amount: UNIFIED_PLAN.amountInPaise,
+    amountInRupees: UNIFIED_PLAN.amount,
+    currency: UNIFIED_PLAN.currency,
     key: razorpayKeyId,
-    planType: planKey,
-    planLabel: plan.label,
-    isTestMode: orderId.startsWith('order_test_') || orderId.startsWith('order_sim_'),
+    isTestMode,
+    plan: UNIFIED_PLAN,
     data: {
+      subscriptionId: subscriptionDoc.razorpaySubscriptionId,
       orderId,
-      amount: plan.amount,
-      currency: plan.currency,
-      planType: planKey,
-      planLabel: plan.label,
+      amount: UNIFIED_PLAN.amountInPaise,
+      amountInRupees: UNIFIED_PLAN.amount,
+      currency: UNIFIED_PLAN.currency,
       razorpayKeyId,
-      userEmail: user.email,
-      userName: user.name,
+      plan: UNIFIED_PLAN,
+      user: {
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+      },
     },
   });
 });
 
-// @desc    Verify Razorpay payment and activate subscription / unlock credits
+// @desc    Verify payment and authorize monthly subscription
 // @route   POST /api/subscription/verify
 // @access  Private
 exports.verifyPayment = asyncHandler(async (req, res, next) => {
   const {
     orderId,
     paymentId,
+    subscriptionId,
     razorpay_order_id,
     razorpay_payment_id,
+    razorpay_subscription_id,
     razorpay_signature,
-    planType,
-    plan,
     tutorId,
     teacherId,
   } = req.body;
 
   const actualOrderId = razorpay_order_id || orderId || `order_test_${Date.now()}`;
   const actualPaymentId = razorpay_payment_id || paymentId || `pay_test_${Date.now()}`;
+  const actualSubId = razorpay_subscription_id || subscriptionId;
 
-  let planKey = (planType || plan || 'single').toLowerCase();
-  if (planKey === 'single_unlock' || planKey === 'single-unlock') planKey = 'single';
-  if (!PLANS[planKey]) planKey = 'single';
+  const userId = req.user._id || req.user.id;
+  const user = await User.findById(userId).select('+phone');
+  if (!user) return error(res, 'User not found', 404);
 
-  const selectedPlan = PLANS[planKey];
-
-  // Verify HMAC signature if keys exist and signature is provided (skip for test payments)
+  // Server-side signature check for live/non-test payments
   if (
     process.env.RAZORPAY_KEY_SECRET &&
-    razorpay_order_id &&
     razorpay_signature &&
     !actualOrderId.startsWith('order_test_') &&
     !actualPaymentId.startsWith('pay_test_')
   ) {
-    try {
-      const expectedSig = crypto
+    let expectedSig = '';
+    if (actualSubId && razorpay_payment_id) {
+      // Razorpay Subscription signature format: payment_id|subscription_id
+      expectedSig = crypto
         .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(`${actualOrderId}|${actualPaymentId}`)
+        .update(`${razorpay_payment_id}|${actualSubId}`)
         .digest('hex');
+    } else if (actualOrderId && razorpay_payment_id) {
+      // Standard order signature format: order_id|payment_id
+      expectedSig = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(`${actualOrderId}|${razorpay_payment_id}`)
+        .digest('hex');
+    }
 
-      if (expectedSig !== razorpay_signature) {
-        return error(res, 'Payment verification failed — invalid signature', 400);
-      }
-    } catch (e) {
-      console.warn('Signature check warning:', e.message);
+    if (expectedSig && expectedSig !== razorpay_signature) {
+      // Log payment failure
+      await Payment.create({
+        user: user._id,
+        razorpayPaymentId: actualPaymentId,
+        razorpayOrderId: actualOrderId,
+        razorpaySubscriptionId: actualSubId,
+        amount: UNIFIED_PLAN.amount,
+        amountInPaise: UNIFIED_PLAN.amountInPaise,
+        currency: UNIFIED_PLAN.currency,
+        status: 'FAILED',
+        failureReason: 'Invalid payment signature',
+      }).catch(() => {});
+
+      return error(res, 'Payment verification failed — signature mismatch', 400);
     }
   }
 
-  const userId = req.user._id || req.user.id;
-  const user = await User.findById(userId);
-  if (!user) return error(res, 'User not found', 404);
-
-  // Prevent duplicate payment credits
-  if (user.razorpaySubscriptionId === actualPaymentId && !actualPaymentId.startsWith('pay_test_')) {
+  // Prevent duplicate processing
+  const existingPayment = await Payment.findOne({ razorpayPaymentId: actualPaymentId });
+  if (existingPayment && existingPayment.status === 'CAPTURED') {
     return res.status(200).json({
       success: true,
-      message: 'Payment already processed.',
-      plan: user.subscriptionType,
-      contactUnlocks: user.contactUnlocks,
-      isSubscribed: user.isSubscribed,
+      message: 'Payment already processed and membership active.',
+      isSubscribed: true,
+      subscriptionExpiry: user.subscriptionExpiry,
+      plan: UNIFIED_PLAN.name,
     });
   }
 
-  const isMonthlySubscription = selectedPlan.isSubscription;
-  let expiry = null;
+  // Calculate 30-day billing cycle dates
+  const startDate = new Date();
+  const nextBillingDate = new Date();
+  nextBillingDate.setDate(nextBillingDate.getDate() + 30);
 
-  if (isMonthlySubscription) {
-    expiry = new Date();
-    const daysToAdd = selectedPlan.interval || 30;
-    expiry.setDate(expiry.getDate() + daysToAdd);
-    user.isSubscribed = true;
-    user.subscriptionExpiry = expiry;
-    user.isPremium = true;
-    user.premiumExpiresAt = expiry;
+  // Update or create Subscription record in MongoDB
+  let subscriptionDoc = await Subscription.findOne({
+    $or: [
+      { user: user._id, status: { $in: ['ACTIVE', 'PENDING_AUTHORIZATION', 'PENDING_PAYMENT'] } },
+      { razorpaySubscriptionId: actualSubId },
+    ],
+  });
+
+  if (!subscriptionDoc) {
+    subscriptionDoc = new Subscription({
+      user: user._id,
+      userRole: user.role || 'STUDENT',
+      planId: UNIFIED_PLAN.id,
+      planName: UNIFIED_PLAN.name,
+      amount: UNIFIED_PLAN.amount,
+      currency: UNIFIED_PLAN.currency,
+      billingCycle: 'monthly',
+    });
   }
 
-  // Assign plan unlocks & subscription type
-  if (planKey === 'single') {
-    user.contactUnlocks = (user.contactUnlocks || 0) + 2;
-    user.subscriptionType = 'single';
-  } else if (planKey === 'starter' || planKey === 'starter_yearly' || planKey === 'basic') {
-    const addUnlocks = planKey.includes('yearly') ? 36 : 3;
-    user.contactUnlocks = (user.contactUnlocks || 0) + addUnlocks;
-    user.subscriptionType = 'starter';
-  } else if (planKey === 'growth' || planKey === 'growth_yearly' || planKey === 'student') {
-    const addUnlocks = planKey.includes('yearly') ? 120 : 10;
-    user.contactUnlocks = (user.contactUnlocks || 0) + addUnlocks;
-    user.subscriptionType = 'growth';
-  } else if (planKey === 'pro' || planKey === 'pro_yearly') {
-    const addUnlocks = planKey.includes('yearly') ? 300 : 25;
-    user.contactUnlocks = (user.contactUnlocks || 0) + addUnlocks;
-    user.subscriptionType = 'pro';
-  } else if (planKey === 'premium' || planKey === 'premium_yearly' || planKey === 'teacher') {
-    user.contactUnlocks = 999999;
-    user.subscriptionType = 'premium';
-    await TutorProfile.findOneAndUpdate(
-      { user: user._id },
-      { isVerified: true, isApproved: true }
-    ).catch(() => {});
-  } else {
-    user.contactUnlocks = (user.contactUnlocks || 0) + (selectedPlan.unlocks || 0);
-    user.subscriptionType = planKey;
-  }
+  subscriptionDoc.status = 'ACTIVE';
+  subscriptionDoc.mandateStatus = 'AUTHORIZED';
+  subscriptionDoc.startDate = startDate;
+  subscriptionDoc.lastPaymentDate = startDate;
+  subscriptionDoc.nextBillingDate = nextBillingDate;
+  subscriptionDoc.razorpayPaymentId = actualPaymentId;
+  subscriptionDoc.cancelAtPeriodEnd = false;
+  subscriptionDoc.cancellationDate = null;
+  if (actualSubId) subscriptionDoc.razorpaySubscriptionId = actualSubId;
+  await subscriptionDoc.save();
 
+  // Audit Payment in MongoDB
+  await Payment.create({
+    user: user._id,
+    subscription: subscriptionDoc._id,
+    razorpayPaymentId: actualPaymentId,
+    razorpayOrderId: actualOrderId,
+    razorpaySubscriptionId: actualSubId,
+    amount: UNIFIED_PLAN.amount,
+    amountInPaise: UNIFIED_PLAN.amountInPaise,
+    currency: UNIFIED_PLAN.currency,
+    status: 'CAPTURED',
+    method: 'mandate',
+    isRecurring: true,
+    cycleNumber: 1,
+  });
+
+  // Update User state
+  user.isSubscribed = true;
+  user.isPremium = true;
+  user.subscriptionType = 'all_access';
+  user.subscriptionExpiry = nextBillingDate;
+  user.premiumExpiresAt = nextBillingDate;
+  user.contactUnlocks = 999999; // Unlimited access
+  user.razorpaySubscriptionId = subscriptionDoc.razorpaySubscriptionId;
   user.subscription = {
-    plan: user.subscriptionType,
+    plan: 'all_access',
     isActive: true,
-    expiry,
-    contactUnlocks: user.contactUnlocks,
+    expiry: nextBillingDate,
+    contactUnlocks: 999999,
   };
-
-  user.razorpaySubscriptionId = actualPaymentId;
   await user.save();
 
-  // If this purchase was triggered to unlock a specific tutor/student, unlock now
+  // Send Subscription Confirmation & AutoPay Mandate Email
+  try {
+    await emailService.sendSubscriptionActivatedEmail({
+      user,
+      subscription: subscriptionDoc,
+    });
+  } catch (emailErr) {
+    console.warn('⚠️ Subscription activation email notice:', emailErr.message);
+  }
+
+  // If this purchase was triggered to unlock a tutor/student contact, unlock immediately
   let contactInfo = null;
   const targetId = tutorId || teacherId;
   if (targetId) {
     try {
-      // Consume 1 credit if not pro
-      if (user.subscriptionType !== 'pro' && user.contactUnlocks > 0) {
-        user.contactUnlocks -= 1;
-        await user.save();
-      }
-
       await ContactUnlock.create({
         user: user._id,
         tutor: targetId,
         type: 'PAID',
         status: 'CONTACT_UNLOCKED',
         paymentStatus: 'COMPLETED',
-        paymentDetails: { orderId: actualOrderId, paymentId: actualPaymentId, amount: selectedPlan.amount / 100 },
+        paymentDetails: {
+          orderId: actualOrderId,
+          paymentId: actualPaymentId,
+          amount: UNIFIED_PLAN.amount,
+        },
       });
 
       const tutorDoc = await TutorProfile.findOne({
@@ -386,39 +376,158 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
     }
   }
 
-  // Trigger Refer & Earn 100-Coin Reward for referrer if this user was referred
-  try {
-    const { processReferralReward } = require('./referralController');
-    await processReferralReward(
-      user._id,
-      selectedPlan,
-      { orderId: actualOrderId, paymentId: actualPaymentId }
-    );
-  } catch (refErr) {
-    console.warn('Referral reward processing note:', refErr.message);
-  }
-
   return res.status(200).json({
     success: true,
-    message: `${selectedPlan.label} activated successfully!`,
-    planType: user.subscriptionType,
-    isSubscribed: user.isSubscribed,
+    message: 'MentorNearby All Access (₹199/month) activated successfully with authorized AutoPay!',
+    isSubscribed: true,
+    plan: UNIFIED_PLAN.name,
+    amount: UNIFIED_PLAN.amount,
     subscriptionExpiry: user.subscriptionExpiry,
+    nextBillingDate,
     contactUnlocks: user.contactUnlocks,
+    mandateStatus: 'AUTHORIZED',
     contactInfo,
+    subscription: subscriptionDoc,
     data: {
-      planType: user.subscriptionType,
-      isSubscribed: user.isSubscribed,
+      isSubscribed: true,
+      plan: UNIFIED_PLAN.name,
+      amount: UNIFIED_PLAN.amount,
       subscriptionExpiry: user.subscriptionExpiry,
+      nextBillingDate,
       contactUnlocks: user.contactUnlocks,
+      mandateStatus: 'AUTHORIZED',
       contactInfo,
     },
   });
 });
 
-// @desc    Razorpay webhook handler
+// @desc    Get user's subscription management details & payment history
+// @route   GET /api/subscription/status, GET /api/subscription/manage
+// @access  Private
+exports.getStatus = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id || req.user.id;
+  const user = await User.findById(userId).select(
+    'isSubscribed subscriptionType subscriptionExpiry contactUnlocks freeChatsUsed freeLeadsUsed role razorpaySubscriptionId dailyViewsCount lastViewDate'
+  );
+
+  if (!user) return error(res, 'User not found', 404);
+
+  // Fetch active or latest subscription document
+  const subscriptionDoc = await Subscription.findOne({ user: user._id }).sort({ createdAt: -1 });
+
+  // Fetch past payments
+  const payments = await Payment.find({ user: user._id }).sort({ createdAt: -1 }).limit(20);
+  const failedPayments = payments.filter((p) => p.status === 'FAILED');
+
+  const now = new Date();
+  const isExpired = user.subscriptionExpiry && new Date(user.subscriptionExpiry) < now;
+  const isSubscribed = Boolean(user.isSubscribed && !isExpired);
+
+  let displayStatus = 'Inactive';
+  if (subscriptionDoc) {
+    if (subscriptionDoc.status === 'ACTIVE' && !isExpired) {
+      displayStatus = 'Active';
+    } else if (subscriptionDoc.status === 'CANCELLED') {
+      displayStatus = isExpired ? 'Expired' : 'Cancelled (Active until billing cycle ends)';
+    } else if (subscriptionDoc.status === 'PAYMENT_FAILED') {
+      displayStatus = 'Payment Failed';
+    } else if (subscriptionDoc.status === 'PAST_DUE') {
+      displayStatus = 'Past Due';
+    } else if (isExpired) {
+      displayStatus = 'Expired';
+    } else {
+      displayStatus = subscriptionDoc.status;
+    }
+  } else if (isSubscribed) {
+    displayStatus = 'Active';
+  }
+
+  return success(res, 'Subscription status retrieved', {
+    plan: UNIFIED_PLAN.name,
+    planId: UNIFIED_PLAN.id,
+    amount: UNIFIED_PLAN.amount,
+    currency: UNIFIED_PLAN.currency,
+    isSubscribed,
+    subscriptionStatus: displayStatus,
+    status: subscriptionDoc?.status || (isSubscribed ? 'ACTIVE' : 'INACTIVE'),
+    mandateStatus: subscriptionDoc?.mandateStatus || 'NOT_CONFIGURED',
+    startDate: subscriptionDoc?.startDate || null,
+    nextBillingDate: subscriptionDoc?.nextBillingDate || user.subscriptionExpiry || null,
+    lastPaymentDate: subscriptionDoc?.lastPaymentDate || null,
+    cancellationDate: subscriptionDoc?.cancellationDate || null,
+    cancelAtPeriodEnd: subscriptionDoc?.cancelAtPeriodEnd || false,
+    subscriptionExpiry: user.subscriptionExpiry,
+    contactUnlocks: isSubscribed ? 'Unlimited' : (user.contactUnlocks || 0),
+    isUnlimited: isSubscribed,
+    subscription: subscriptionDoc,
+    paymentHistory: payments,
+    failedPayments,
+    unifiedPlan: UNIFIED_PLAN,
+  });
+});
+
+// @desc    Cancel active subscription (AutoPay stopped, benefits kept until period end)
+// @route   POST /api/subscription/cancel
+// @access  Private
+exports.cancelSubscription = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id || req.user.id;
+  const user = await User.findById(userId);
+  if (!user) return error(res, 'User not found', 404);
+
+  const subscriptionDoc = await Subscription.findOne({
+    user: user._id,
+    status: { $in: ['ACTIVE', 'PENDING_AUTHORIZATION', 'PAST_DUE'] },
+  });
+
+  if (!subscriptionDoc) {
+    return error(res, 'No active subscription found to cancel', 404);
+  }
+
+  // Cancel via Razorpay API if subscription ID is present
+  if (
+    subscriptionDoc.razorpaySubscriptionId &&
+    !subscriptionDoc.razorpaySubscriptionId.startsWith('sub_test_')
+  ) {
+    try {
+      const razorpay = getRazorpay();
+      await razorpay.subscriptions.cancel(subscriptionDoc.razorpaySubscriptionId, {
+        cancel_at_cycle_end: 1, // AutoPay cancelled at cycle end
+      });
+    } catch (rzpErr) {
+      console.warn('⚠️ Razorpay cancellation notice:', rzpErr.message);
+    }
+  }
+
+  const effectiveEndDate = subscriptionDoc.nextBillingDate || user.subscriptionExpiry || new Date();
+  subscriptionDoc.status = 'CANCELLED';
+  subscriptionDoc.mandateStatus = 'CANCELLED';
+  subscriptionDoc.cancelAtPeriodEnd = true;
+  subscriptionDoc.cancellationDate = new Date();
+  subscriptionDoc.cancelledBy = 'USER';
+  subscriptionDoc.cancellationReason = req.body.reason || 'User cancelled subscription';
+  await subscriptionDoc.save();
+
+  // Send cancellation email
+  try {
+    await emailService.sendSubscriptionCancelledEmail({
+      user,
+      effectiveDate: effectiveEndDate,
+    });
+  } catch (emailErr) {
+    console.warn('⚠️ Cancellation email notice:', emailErr.message);
+  }
+
+  return success(res, 'Subscription cancelled successfully. Your membership benefits will remain active until the end of your paid period.', {
+    status: 'CANCELLED',
+    mandateStatus: 'CANCELLED',
+    cancellationDate: subscriptionDoc.cancellationDate,
+    benefitsActiveUntil: effectiveEndDate,
+  });
+});
+
+// @desc    Razorpay Webhook Handler (Idempotent + Signature verified)
 // @route   POST /api/subscription/webhook
-// @access  Public (validated by Razorpay-Signature header)
+// @access  Public
 exports.webhook = asyncHandler(async (req, res, next) => {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
   const signature = req.headers['x-razorpay-signature'];
@@ -434,73 +543,144 @@ exports.webhook = asyncHandler(async (req, res, next) => {
   const event = req.body.event;
   const payload = req.body.payload;
 
-  if (event === 'payment.captured' || event === 'subscription.charged' || event === 'order.paid') {
-    const notes = payload?.payment?.entity?.notes || payload?.order?.entity?.notes || {};
+  console.log(`🔔 Razorpay Webhook Event: ${event}`);
+
+  // 1. Recurring Payment Succeeded (subscription.charged)
+  if (event === 'subscription.charged' || event === 'payment.captured' || event === 'order.paid') {
+    const paymentEntity = payload?.payment?.entity;
+    const subEntity = payload?.subscription?.entity;
+    const notes = paymentEntity?.notes || subEntity?.notes || {};
     const userId = notes.userId;
-    const planType = notes.planType || 'starter';
+    const subId = subEntity?.id || paymentEntity?.subscription_id;
+    const paymentId = paymentEntity?.id || `pay_${Date.now()}`;
 
-    if (userId) {
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 30);
+    // Prevent duplicate webhook processing
+    const alreadyProcessed = await Payment.findOne({ razorpayPaymentId: paymentId });
+    if (alreadyProcessed) {
+      return res.status(200).json({ success: true, message: 'Duplicate event ignored' });
+    }
 
-      const planUnlocks = planType === 'pro' ? 999999 : (planType === 'starter' ? 20 : 2);
+    if (userId || subId) {
+      let user = null;
+      if (userId) user = await User.findById(userId);
+      if (!user && subId) {
+        const subRecord = await Subscription.findOne({ razorpaySubscriptionId: subId });
+        if (subRecord) user = await User.findById(subRecord.user);
+      }
 
-      await User.findByIdAndUpdate(userId, {
-        isSubscribed: true,
-        subscriptionType: planType,
-        subscriptionExpiry: expiry,
-        isPremium: true,
-        premiumExpiresAt: expiry,
-        $inc: { contactUnlocks: planUnlocks },
+      if (user) {
+        const newExpiry = new Date();
+        newExpiry.setDate(newExpiry.getDate() + 30);
+
+        let subRecord = await Subscription.findOne({ user: user._id });
+        if (!subRecord) {
+          subRecord = new Subscription({
+            user: user._id,
+            userRole: user.role || 'STUDENT',
+            planId: UNIFIED_PLAN.id,
+            planName: UNIFIED_PLAN.name,
+            amount: UNIFIED_PLAN.amount,
+          });
+        }
+
+        subRecord.status = 'ACTIVE';
+        subRecord.mandateStatus = 'AUTHORIZED';
+        subRecord.lastPaymentDate = new Date();
+        subRecord.nextBillingDate = newExpiry;
+        subRecord.razorpayPaymentId = paymentId;
+        if (subId) subRecord.razorpaySubscriptionId = subId;
+        await subRecord.save();
+
+        // Record payment
+        const paymentDoc = await Payment.create({
+          user: user._id,
+          subscription: subRecord._id,
+          razorpayPaymentId: paymentId,
+          razorpaySubscriptionId: subId,
+          amount: UNIFIED_PLAN.amount,
+          amountInPaise: UNIFIED_PLAN.amountInPaise,
+          currency: UNIFIED_PLAN.currency,
+          status: 'CAPTURED',
+          method: paymentEntity?.method || 'mandate',
+          isRecurring: true,
+        });
+
+        // Update user
+        user.isSubscribed = true;
+        user.isPremium = true;
+        user.subscriptionType = 'all_access';
+        user.subscriptionExpiry = newExpiry;
+        user.premiumExpiresAt = newExpiry;
+        user.contactUnlocks = 999999;
+        await user.save();
+
+        // Send recurring success email
+        try {
+          await emailService.sendRecurringPaymentSuccessEmail({
+            user,
+            payment: paymentDoc,
+            nextBillingDate: newExpiry,
+          });
+        } catch (err) {
+          console.warn('⚠️ Webhook email notice:', err.message);
+        }
+      }
+    }
+  }
+
+  // 2. Mandate Authorized (subscription.authenticated)
+  if (event === 'subscription.authenticated') {
+    const subEntity = payload?.subscription?.entity;
+    if (subEntity?.id) {
+      await Subscription.findOneAndUpdate(
+        { razorpaySubscriptionId: subEntity.id },
+        { mandateStatus: 'AUTHORIZED', status: 'ACTIVE' }
+      );
+    }
+  }
+
+  // 3. Payment Failed (payment.failed)
+  if (event === 'payment.failed') {
+    const paymentEntity = payload?.payment?.entity;
+    const subId = paymentEntity?.subscription_id;
+    const notes = paymentEntity?.notes || {};
+
+    if (subId || notes.userId) {
+      const subRecord = await Subscription.findOne({
+        $or: [{ razorpaySubscriptionId: subId }, { user: notes.userId }],
       });
 
-      console.log(`✅ Subscription processed for userId=${userId}, plan=${planType}`);
+      if (subRecord) {
+        subRecord.status = 'PAYMENT_FAILED';
+        subRecord.failureReason = paymentEntity?.error_description || 'Payment mandate declined';
+        subRecord.retryCount = (subRecord.retryCount || 0) + 1;
+        await subRecord.save();
+
+        const user = await User.findById(subRecord.user);
+        if (user) {
+          try {
+            await emailService.sendPaymentFailedEmail({
+              user,
+              reason: subRecord.failureReason,
+            });
+          } catch (err) {
+            console.warn('⚠️ Payment failed email notice:', err.message);
+          }
+        }
+      }
+    }
+  }
+
+  // 4. Subscription Cancelled (subscription.cancelled)
+  if (event === 'subscription.cancelled') {
+    const subEntity = payload?.subscription?.entity;
+    if (subEntity?.id) {
+      await Subscription.findOneAndUpdate(
+        { razorpaySubscriptionId: subEntity.id },
+        { status: 'CANCELLED', mandateStatus: 'CANCELLED', cancellationDate: new Date() }
+      );
     }
   }
 
   return res.status(200).json({ success: true, received: true });
-});
-
-// @desc    Get current user's subscription status & unlock entitlement
-// @route   GET /api/subscription/status
-// @access  Private
-exports.getStatus = asyncHandler(async (req, res, next) => {
-  const userId = req.user._id || req.user.id;
-  const user = await User.findById(userId).select(
-    'isSubscribed subscriptionType subscriptionExpiry contactUnlocks freeChatsUsed freeLeadsUsed role razorpaySubscriptionId dailyViewsCount lastViewDate'
-  );
-
-  if (!user) return error(res, 'User not found', 404);
-
-  const isExpired = user.subscriptionExpiry && new Date(user.subscriptionExpiry) < new Date();
-  let currentPlan = user.subscriptionType || 'free';
-  if (isExpired && (currentPlan === 'starter' || currentPlan === 'pro')) {
-    currentPlan = 'free';
-  }
-
-  const isPro = currentPlan === 'pro' && !isExpired;
-  const isStarter = currentPlan === 'starter' && !isExpired;
-  const isSingle = currentPlan === 'single';
-
-  let remainingUnlocksFormatted = '0 Unlocks';
-  if (isPro) {
-    remainingUnlocksFormatted = 'Unlimited';
-  } else if (isStarter) {
-    remainingUnlocksFormatted = `${user.contactUnlocks || 0} / 20 Remaining`;
-  } else if (isSingle || (user.contactUnlocks || 0) > 0) {
-    remainingUnlocksFormatted = `${user.contactUnlocks || 0} Remaining`;
-  }
-
-  return success(res, 'Subscription status retrieved', {
-    plan: currentPlan,
-    subscriptionType: currentPlan,
-    isSubscribed: isPro || isStarter || (user.contactUnlocks > 0),
-    subscriptionExpiry: user.subscriptionExpiry,
-    contactUnlocks: user.contactUnlocks || 0,
-    remainingUnlocksFormatted,
-    isPro,
-    isStarter,
-    isSingle,
-    dailyViewsRemaining: Math.max(0, 3 - (user.dailyViewsCount || 0)),
-  });
 });

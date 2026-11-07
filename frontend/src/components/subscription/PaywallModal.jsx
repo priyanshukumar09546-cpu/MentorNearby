@@ -21,8 +21,8 @@ const loadRazorpay = () =>
 const PaywallModal = ({
   isOpen,
   onClose,
-  planType = 'student',   // 'student' | 'teacher'
-  planPrice = 99,
+  planType = 'all_access_monthly',
+  planPrice = 199,
   onSuccess,
   user,
 }) => {
@@ -31,8 +31,8 @@ const PaywallModal = ({
 
   if (!isOpen) return null;
 
-  const isTeacher = planType === 'teacher';
-  const planLabel = isTeacher ? 'Teacher Plan' : 'Student Plan';
+  const isTeacher = user?.role === 'TUTOR' || planType === 'teacher';
+  const planLabel = 'MentorNearby All Access';
   const freeLimit = isTeacher ? 5 : 3;
   const freeLimitLabel = isTeacher ? 'leads' : 'chats';
 
@@ -47,7 +47,7 @@ const PaywallModal = ({
         return;
       }
 
-      const orderRes = await createSubscriptionOrder(planType);
+      const orderRes = await createSubscriptionOrder({ planType: 'all_access_monthly' });
       const { orderId, amount, currency, razorpayKeyId, userEmail, userName } =
         orderRes.data.data;
 

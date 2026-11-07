@@ -92,15 +92,15 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
     try {
       // 1. Create order from backend
       const res = await client.post('/subscription/create-order', {
-        amount: 99,
-        planType: 'basic',
+        amount: 199,
+        planType: 'all_access_monthly',
         tutorId,
       });
 
       const orderData = res.data?.data || res.data || {};
       const orderId = orderData.orderId || res.data?.orderId;
       const key = orderData.razorpayKeyId || res.data?.key || import.meta.env.VITE_RAZORPAY_KEY || 'rzp_test_placeholder';
-      const amount = orderData.amount || 9900;
+      const amount = orderData.amount || 19900;
 
       // 2. TEST MODE - Instant verification without popup
       if (
@@ -153,7 +153,7 @@ const UnlockContactModal = ({ isOpen, onClose, tutorId }) => {
         amount: typeof amount === 'number' && amount < 1000 ? amount * 100 : amount,
         currency: 'INR',
         name: 'MentorNearby',
-        description: 'Unlock 5 Tutor Contacts (₹99)',
+        description: 'MentorNearby All Access — ₹199/month',
         order_id: orderId,
         prefill: {
           name: user?.name || '',

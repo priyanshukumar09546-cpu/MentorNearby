@@ -736,6 +736,195 @@ const sendPaymentConfirmationEmail = async (user, paymentDetails) => {
   });
 };
 
+const sendTutorPublicationEmail = async ({ tutorName, email, subjects, experience }) => {
+  const subjectList = Array.isArray(subjects) ? subjects.join(', ') : (subjects || 'General Subjects');
+  const expText = experience?.years ? `${experience.years} Years` : (typeof experience === 'string' ? experience : 'Experienced');
+
+  const content = `
+    <h2>Your MentorNearby Tutor Profile is Now Live! 🎉</h2>
+    <p>Hello <strong>${tutorName}</strong>,</p>
+    <p>Congratulations!</p>
+    <p>Your tutor profile has been successfully published on MentorNearby.</p>
+    <p>Your profile is now available for students to discover, and you can start receiving student enquiries.</p>
+
+    <div style="background: #f8fafc; border-left: 4px solid #10b981; border-radius: 8px; padding: 18px; margin: 20px 0;">
+      <h3 style="margin-top: 0; color: #0f172a; font-size: 16px;">Profile Details:</h3>
+      <p style="margin: 6px 0; font-size: 14px;">• <strong>Name:</strong> ${tutorName}</p>
+      <p style="margin: 6px 0; font-size: 14px;">• <strong>Subjects:</strong> ${subjectList}</p>
+      <p style="margin: 6px 0; font-size: 14px;">• <strong>Teaching Experience:</strong> ${expText}</p>
+      <p style="margin: 6px 0; font-size: 14px;">• <strong>Profile Status:</strong> <span style="color: #059669; font-weight: 700;">Published</span></p>
+    </div>
+
+    <p>Complete your profile and start connecting with students.</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${process.env.FRONTEND_URL || 'https://www.mentornearby.com'}/tutor/dashboard" class="btn" style="display: inline-block; background: #e11d48; color: #ffffff; padding: 12px 28px; border-radius: 999px; text-decoration: none; font-weight: 700;">Go to Tutor Dashboard</a>
+    </div>
+
+    <p style="margin-top: 24px;">Thank you for joining MentorNearby.</p>
+    <p style="font-weight: 700; color: #0f172a; margin-bottom: 2px;">Find. Learn. Grow.</p>
+    <p style="color: #64748b; margin-top: 0;">Team MentorNearby</p>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Your MentorNearby Tutor Profile is Now Live!',
+    html: emailTemplates.base(content, { previewText: 'Your tutor profile is now live and published on MentorNearby.' }),
+    text: `Hello ${tutorName},\n\nCongratulations!\nYour tutor profile has been successfully published on MentorNearby.\n\nProfile Details:\n- Name: ${tutorName}\n- Subjects: ${subjectList}\n- Teaching Experience: ${expText}\n- Profile Status: Published\n\nThank you for joining MentorNearby.\nFind. Learn. Grow.\nTeam MentorNearby`,
+  });
+};
+
+const sendStudentPublicationEmail = async ({ studentName, email }) => {
+  const content = `
+    <h2>Welcome to MentorNearby! 🎉</h2>
+    <p>Hello <strong>${studentName}</strong>,</p>
+    <p>Welcome to MentorNearby!</p>
+    <p>Your student profile has been successfully published.</p>
+
+    <div style="background: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 18px; margin: 20px 0;">
+      <h3 style="margin-top: 0; color: #0f172a; font-size: 16px;">You can now:</h3>
+      <p style="margin: 6px 0; font-size: 14px;">• Explore verified tutors near you (within 5km)</p>
+      <p style="margin: 6px 0; font-size: 14px;">• Send tutor enquiries</p>
+      <p style="margin: 6px 0; font-size: 14px;">• Request demo classes</p>
+      <p style="margin: 6px 0; font-size: 14px;">• Connect with tutors</p>
+      <p style="margin: 6px 0; font-size: 14px;">• Access available study resources, notes &amp; formula sheets</p>
+    </div>
+
+    <p>Your account is ready to use.</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${process.env.FRONTEND_URL || 'https://www.mentornearby.com'}/search" class="btn" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 12px 28px; border-radius: 999px; text-decoration: none; font-weight: 700;">Find Tutors Near You</a>
+    </div>
+
+    <p style="margin-top: 24px;">Thank you for joining MentorNearby.</p>
+    <p style="font-weight: 700; color: #0f172a; margin-bottom: 2px;">Find. Learn. Grow.</p>
+    <p style="color: #64748b; margin-top: 0;">Team MentorNearby</p>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Your MentorNearby Profile is Successfully Published!',
+    html: emailTemplates.base(content, { previewText: 'Your student profile is now published on MentorNearby.' }),
+    text: `Hello ${studentName},\n\nWelcome to MentorNearby!\nYour student profile has been successfully published.\n\nYour account is ready to use.\n\nThank you for joining MentorNearby.\nTeam MentorNearby`,
+  });
+};
+
+const sendSubscriptionActivatedEmail = async ({ user, subscription }) => {
+  const content = `
+    <h2>MentorNearby All Access Activated! 🚀</h2>
+    <p>Hello <strong>${user.name}</strong>,</p>
+    <p>Your <strong>MentorNearby All Access</strong> subscription has been successfully activated with authorized monthly recurring payments.</p>
+
+    <div style="background: #f8fafc; border-left: 4px solid #ea580c; border-radius: 8px; padding: 18px; margin: 20px 0;">
+      <h3 style="margin-top: 0; color: #0f172a; font-size: 16px;">Subscription Details:</h3>
+      <p style="margin: 6px 0; font-size: 14px;">• <strong>Plan:</strong> MentorNearby All Access</p>
+      <p style="margin: 6px 0; font-size: 14px;">• <strong>Price:</strong> ₹199 / month</p>
+      <p style="margin: 6px 0; font-size: 14px;">• <strong>Billing:</strong> Monthly recurring via AutoPay mandate</p>
+      <p style="margin: 6px 0; font-size: 14px;">• <strong>Next Billing Date:</strong> ${subscription?.nextBillingDate ? new Date(subscription.nextBillingDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'In 30 days'}</p>
+      <p style="margin: 6px 0; font-size: 14px;">• <strong>Status:</strong> <span style="color: #059669; font-weight: 700;">Active</span></p>
+    </div>
+
+    <p>All premium features, unlimited enquiries, contact unlocks, and study materials are now fully unlocked on your account.</p>
+    <p style="font-size: 13px; color: #64748b;">You can manage or cancel your subscription at any time directly from your dashboard.</p>
+
+    <p style="margin-top: 24px;">Find. Learn. Grow.<br/>Team MentorNearby</p>
+  `;
+
+  return sendEmail({
+    to: user.email,
+    subject: 'Your MentorNearby All Access Membership is Active! (₹199/month)',
+    html: emailTemplates.base(content, { previewText: 'Your MentorNearby All Access monthly subscription is now active.' }),
+  });
+};
+
+const sendRecurringPaymentSuccessEmail = async ({ user, payment, nextBillingDate }) => {
+  const content = `
+    <h2>Monthly Subscription Renewed ✅</h2>
+    <p>Hello <strong>${user.name}</strong>,</p>
+    <p>Your monthly subscription for <strong>MentorNearby All Access</strong> has been successfully renewed via your authorized AutoPay mandate.</p>
+
+    <div style="background: #f8fafc; border-radius: 8px; padding: 18px; margin: 20px 0;">
+      <p style="margin: 4px 0; font-size: 14px;">• <strong>Amount Charged:</strong> ₹${payment.amount || 199}</p>
+      <p style="margin: 4px 0; font-size: 14px;">• <strong>Payment ID:</strong> ${payment.razorpayPaymentId}</p>
+      <p style="margin: 4px 0; font-size: 14px;">• <strong>Next Renewal Date:</strong> ${nextBillingDate ? new Date(nextBillingDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Next month'}</p>
+    </div>
+
+    <p>Thank you for continuing with MentorNearby!</p>
+    <p style="margin-top: 24px;">Team MentorNearby</p>
+  `;
+
+  return sendEmail({
+    to: user.email,
+    subject: 'Monthly Subscription Renewed — MentorNearby All Access',
+    html: emailTemplates.base(content),
+  });
+};
+
+const sendPaymentFailedEmail = async ({ user, reason }) => {
+  const content = `
+    <h2 style="color: #e11d48;">Payment Failed for Subscription Renewal ⚠️</h2>
+    <p>Hello <strong>${user.name}</strong>,</p>
+    <p>We were unable to process your recurring monthly payment of <strong>₹199</strong> for MentorNearby All Access.</p>
+    <p><strong>Reason:</strong> ${reason || 'Card/mandate authorization declined by bank'}</p>
+    <p>Your access will remain active during the grace retry period. Please visit your dashboard to update your payment method or re-authorize AutoPay.</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${process.env.FRONTEND_URL || 'https://www.mentornearby.com'}/dashboard" class="btn" style="background: #e11d48; color: #fff; padding: 12px 24px; border-radius: 999px; text-decoration: none; font-weight: 700;">Manage Subscription</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: user.email,
+    subject: 'Payment Failed – MentorNearby All Access Renewal',
+    html: emailTemplates.base(content),
+  });
+};
+
+const sendSubscriptionCancelledEmail = async ({ user, effectiveDate }) => {
+  const content = `
+    <h2>Subscription Cancellation Notice</h2>
+    <p>Hello <strong>${user.name}</strong>,</p>
+    <p>Your <strong>MentorNearby All Access</strong> subscription has been cancelled.</p>
+    <p>You will not be charged any further monthly payments. Your premium benefits will remain accessible until the end of your current billing period: <strong>${effectiveDate ? new Date(effectiveDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'end of billing period'}</strong>.</p>
+    <p>Your profile and saved resources remain completely intact. You can resubscribe anytime from your dashboard.</p>
+  `;
+
+  return sendEmail({
+    to: user.email,
+    subject: 'MentorNearby All Access Subscription Cancelled',
+    html: emailTemplates.base(content),
+  });
+};
+
+const sendListingSuspendedEmail = async ({ user, reason }) => {
+  const content = `
+    <h2 style="color: #e11d48;">Notice Regarding Your MentorNearby Listing</h2>
+    <p>Hello <strong>${user.name}</strong>,</p>
+    <p>Your listing on MentorNearby has been suspended by our administration team.</p>
+    <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0; color: #991b1b;"><strong>Reason:</strong> ${reason || 'Policy violation or profile review'}</p>
+    </div>
+    <p>Your listing is currently hidden from public discovery. If you believe this was in error, please contact our support team with your registered email.</p>
+  `;
+
+  return sendEmail({
+    to: user.email,
+    subject: 'Important Notice Regarding Your MentorNearby Listing',
+    html: emailTemplates.base(content),
+  });
+};
+
+const sendListingRestoredEmail = async ({ user }) => {
+  const content = `
+    <h2>Your MentorNearby Listing Has Been Restored! 🎉</h2>
+    <p>Hello <strong>${user.name}</strong>,</p>
+    <p>Your listing has been reviewed and restored by our administration team. It is now publicly published and active on MentorNearby.</p>
+  `;
+
+  return sendEmail({
+    to: user.email,
+    subject: 'Your MentorNearby Listing Has Been Restored',
+    html: emailTemplates.base(content),
+  });
+};
+
 const sendSystemTestEmail = async ({ to, recipientName = 'Admin', testMessage = '' }) => {
   const senderFrom = await getEmailSender();
   const content = `
@@ -767,6 +956,14 @@ const sendSystemTestEmail = async ({ to, recipientName = 'Admin', testMessage = 
 module.exports = {
   sendEmail,
   sendSystemTestEmail,
+  sendTutorPublicationEmail,
+  sendStudentPublicationEmail,
+  sendSubscriptionActivatedEmail,
+  sendRecurringPaymentSuccessEmail,
+  sendPaymentFailedEmail,
+  sendSubscriptionCancelledEmail,
+  sendListingSuspendedEmail,
+  sendListingRestoredEmail,
   sendTutorApprovalEmail,
   sendTutorUnapprovalEmail,
   sendPasswordResetEmail,

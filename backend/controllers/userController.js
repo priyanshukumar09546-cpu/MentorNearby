@@ -224,7 +224,15 @@ exports.updateStudentProfile = asyncHandler(async (req, res, next) => {
     });
   }
 
-  return success(res, 'Student profile updated successfully', { studentProfile });
+  // Automatic publication check (Part 6 & Part 7)
+  const publishResult = await checkAndPublishListing(req.user.id, 'STUDENT');
+  if (publishResult.published) {
+    studentProfile = await StudentProfile.findById(studentProfile._id);
+  }
+  return success(res, publishResult.message || 'Student profile updated successfully', {
+    studentProfile,
+    publication: publishResult
+  });
 });
 
 exports.deleteAccount = asyncHandler(async (req, res, next) => {
@@ -289,9 +297,18 @@ exports.markAllNotificationsRead = asyncHandler(async (req, res, next) => {
 // @access  Public
 exports.getFeaturedStudents = asyncHandler(async (req, res, next) => {
   const TuitionRequirement = require('../models/TuitionRequirement');
-  const requirements = await TuitionRequirement.find({
+  const StudentProfile = require('../models/StudentProfile');
+  const suspendedStudents = await StudentProfile.find({ listingStatus: { $in: ['Suspended', 'Rejected'] } }, 'user').lean();
+  const suspendedUserIds = suspendedStudents.map(s => s.user).filter(Boolean);
+
+  const filter = {
     status: { $in: ['OPEN', 'Open'] }
-  })
+  };
+  if (suspendedUserIds.length > 0) {
+    filter.student = { $nin: suspendedUserIds };
+  }
+
+  const requirements = await TuitionRequirement.find(filter)
     .sort({ createdAt: -1 })
     .limit(10)
     .lean();
@@ -335,6 +352,10 @@ exports.getPublicStudentProfile = asyncHandler(async (req, res, next) => {
 
   if (!studentUser && !requirement && !studentProfile) {
     return error(res, 'Student profile not found', 404);
+  }
+
+  if (studentProfile && (studentProfile.listingStatus === 'Suspended' || studentProfile.listingStatus === 'Rejected')) {
+    return error(res, 'This student profile is currently unavailable', 404);
   }
 
   // Fetch their open requirements if not already loaded

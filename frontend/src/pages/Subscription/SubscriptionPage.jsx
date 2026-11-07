@@ -1,17 +1,17 @@
 // ============================================================
 // pages/Subscription/SubscriptionPage.jsx
-// MentorNearby Official Subscription & Contact Unlock Plans
-// Pixel-Perfect Replica of Master Reference Design
+// MentorNearby All Access — Unified ₹199/month Subscription
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import client from '../../api/client';
+import { UNIFIED_PLAN } from '../../config/subscription';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import './SubscriptionPage.css';
 
-// Helper to dynamically load Razorpay script
+// Helper to dynamically load Razorpay checkout script
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     if (window.Razorpay) {
@@ -32,14 +32,12 @@ const SubscriptionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'yearly'
-  const [loadingPlan, setLoadingPlan] = useState(null);
+  const [activeTab, setActiveTab] = useState(
+    user?.role === 'TUTOR' ? 'tutor' : 'student'
+  );
+  const [loading, setLoading] = useState(false);
   const [subStatus, setSubStatus] = useState(null);
-
-  // Coupon state
-  const [showCouponModal, setShowCouponModal] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [appliedDiscount, setAppliedDiscount] = useState(0);
+  const [showFaqIndex, setShowFaqIndex] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -54,63 +52,40 @@ const SubscriptionPage = () => {
     }
   }, [isAuthenticated]);
 
-  const handleApplyCoupon = (e) => {
-    e.preventDefault();
-    const code = couponCode.trim().toUpperCase();
-    if (!code) return;
+  const isSubscribed = Boolean(
+    subStatus?.isSubscribed ||
+      (user?.isSubscribed &&
+        user?.subscriptionExpiry &&
+        new Date(user.subscriptionExpiry) > new Date())
+  );
 
-    if (code === 'MENTOR25' || code === 'SAVE25') {
-      setAppliedDiscount(25);
-      showToast('Coupon applied! 25% discount activated on all plans.', 'success');
-      setShowCouponModal(false);
-    } else if (code === 'WELCOME10' || code === 'TUTOR10') {
-      setAppliedDiscount(10);
-      showToast('Coupon applied! 10% discount activated.', 'success');
-      setShowCouponModal(false);
-    } else {
-      showToast('Invalid or expired coupon code.', 'error');
-    }
-  };
-
-  const handleSubscribe = async (planKey) => {
+  const handleSubscribe = async () => {
     if (!isAuthenticated) {
-      showToast('Please sign in or register to choose a plan.', 'info');
+      showToast('Please sign in or register to activate All Access.', 'info');
       navigate(`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`);
       return;
     }
 
-    // Determine actual backend plan key
-    const actualPlanKey = billingCycle === 'yearly' ? `${planKey}_yearly` : planKey;
-    setLoadingPlan(planKey);
+    if (isSubscribed) {
+      showToast('You already have an active MentorNearby All Access subscription!', 'info');
+      const dest = user?.role === 'TUTOR' ? '/tutor-dashboard' : '/student-dashboard';
+      navigate(dest);
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      // Free Starter Plan: Instant activation without Razorpay payment
-      if (planKey === 'starter' || actualPlanKey.startsWith('starter') || planKey === 'basic') {
-        const res = await client.post('/subscription/create-order', {
-          planType: actualPlanKey,
-          billingCycle,
-          discountPercent: 0,
-        });
-        const orderData = res.data?.data || res.data;
-        showToast(orderData.message || 'Starter Plan activated for FREE! Enjoy full access. 🎉', 'success');
-        setLoadingPlan(null);
-        const params = new URLSearchParams(location.search);
-        const redirectUrl = params.get('redirect') || '/student-dashboard';
-        navigate(redirectUrl);
-        return;
-      }
-
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
         showToast('Could not load payment gateway. Please check your internet connection.', 'error');
-        setLoadingPlan(null);
+        setLoading(false);
         return;
       }
 
+      // Create subscription order / mandate on backend
       const res = await client.post('/subscription/create-order', {
-        planType: actualPlanKey,
-        billingCycle,
-        discountPercent: appliedDiscount,
+        planType: UNIFIED_PLAN.id,
       });
 
       const orderData = res.data?.data || res.data;
@@ -119,73 +94,67 @@ const SubscriptionPage = () => {
         throw new Error(res.data?.message || 'Failed to create payment order');
       }
 
-      if (orderData.freeActivation || orderData.amount === 0) {
-        showToast(orderData.message || 'Plan activated for FREE! 🎉', 'success');
-        setLoadingPlan(null);
-        const params = new URLSearchParams(location.search);
-        const redirectUrl = params.get('redirect') || '/student-dashboard';
-        navigate(redirectUrl);
-        return;
-      }
-
-      // If test order simulation (Render/Local test keys)
-      if (orderData.isTestMode || orderData.orderId.startsWith('order_test_')) {
-        showToast('Processing test activation...', 'info');
+      // If test order simulation (Render / Local test keys fallback)
+      if (orderData.isTestMode || orderData.orderId.startsWith('order_test_') || orderData.orderId.startsWith('sub_sim_')) {
+        showToast('Processing AutoPay mandate test authorization...', 'info');
         const verifyRes = await client.post('/subscription/verify', {
           orderId: orderData.orderId,
           paymentId: `pay_test_${Date.now()}`,
-          planType: actualPlanKey,
+          subscriptionId: orderData.subscriptionId || `sub_test_${Date.now()}`,
+          planType: UNIFIED_PLAN.id,
         });
 
-        showToast(verifyRes.data?.message || 'Plan activated successfully!', 'success');
-        setLoadingPlan(null);
+        showToast(verifyRes.data?.message || 'MentorNearby All Access activated successfully! 🎉', 'success');
+        setLoading(false);
 
         const params = new URLSearchParams(location.search);
-        const redirectUrl = params.get('redirect') || '/student-dashboard';
+        const redirectUrl = params.get('redirect') || (user?.role === 'TUTOR' ? '/tutor-dashboard' : '/student-dashboard');
         navigate(redirectUrl);
         return;
       }
 
       const options = {
         key: orderData.razorpayKeyId || orderData.key || import.meta.env.VITE_RAZORPAY_KEY || 'rzp_test_placeholder',
-        amount: orderData.amount,
+        amount: orderData.amount || UNIFIED_PLAN.amountInPaise,
         currency: orderData.currency || 'INR',
         name: 'MentorNearby',
-        description: orderData.planLabel || `${planKey.toUpperCase()} Plan`,
+        description: 'MentorNearby All Access — ₹199/month AutoPay',
         order_id: orderData.orderId,
+        subscription_id: orderData.subscriptionId || undefined,
         prefill: {
           name: user?.name || '',
           email: user?.email || '',
           contact: user?.phone || '',
         },
         theme: {
-          color: planKey === 'growth' ? '#F59E0B' : '#2563EB',
+          color: '#E11D48',
         },
         handler: async (response) => {
           try {
-            showToast('Verifying payment and activating your plan...', 'info');
+            showToast('Verifying AutoPay authorization & activating plan...', 'info');
             const verifyRes = await client.post('/subscription/verify', {
               razorpay_order_id: response.razorpay_order_id || orderData.orderId,
               razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
+              razorpay_subscription_id: response.razorpay_subscription_id || orderData.subscriptionId,
               razorpay_signature: response.razorpay_signature || 'simulated_sig',
-              planType: actualPlanKey,
+              planType: UNIFIED_PLAN.id,
             });
 
-            showToast(verifyRes.data?.message || 'Plan activated successfully!', 'success');
+            showToast(verifyRes.data?.message || 'MentorNearby All Access activated successfully! 🎉', 'success');
 
             const params = new URLSearchParams(location.search);
-            const redirectUrl = params.get('redirect') || '/student-dashboard';
+            const redirectUrl = params.get('redirect') || (user?.role === 'TUTOR' ? '/tutor-dashboard' : '/student-dashboard');
             navigate(redirectUrl);
           } catch (err) {
             showToast(err.response?.data?.message || 'Payment verification failed', 'error');
           } finally {
-            setLoadingPlan(null);
+            setLoading(false);
           }
         },
         modal: {
           ondismiss: () => {
-            showToast('Payment cancelled.', 'info');
-            setLoadingPlan(null);
+            showToast('AutoPay setup was cancelled.', 'info');
+            setLoading(false);
           },
         },
       };
@@ -193,31 +162,48 @@ const SubscriptionPage = () => {
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', (response) => {
         showToast(`Payment failed: ${response.error?.description || 'Transaction declined'}`, 'error');
-        setLoadingPlan(null);
+        setLoading(false);
       });
       rzp.open();
     } catch (err) {
       console.error('Subscription error:', err);
-      showToast(err.response?.data?.message || err.message || 'Payment checkout error', 'error');
-      setLoadingPlan(null);
+      showToast(err.response?.data?.message || err.message || 'Payment setup failed', 'error');
+      setLoading(false);
     }
   };
 
-  const isYearly = billingCycle === 'yearly';
-  const currentPlan = subStatus?.plan || user?.subscriptionType || 'free';
-  const hasActiveCredits = (subStatus?.contactUnlocks ?? user?.contactUnlocks ?? 0) > 0;
-  const isSubscribed = Boolean(
-    subStatus?.isSubscribed ||
-      (user?.isSubscribed && user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date())
-  );
+  const faqs = [
+    {
+      q: 'What is MentorNearby All Access?',
+      a: 'MentorNearby All Access is our single, unified premium plan for ₹199/month. Both tutors and students get complete access to unlimited contacts, leads, messaging, demo classes, priority search placement, and study material downloads.',
+    },
+    {
+      q: 'Is basic registration on MentorNearby free?',
+      a: 'Yes, 100%! Creating an account, publishing a profile listing, and searching for tutors or students is always completely free. The ₹199/month All Access plan is an optional upgrade for unlimited unlocks and priority features.',
+    },
+    {
+      q: 'How does recurring AutoPay work?',
+      a: 'When you activate All Access, a recurring monthly mandate of ₹199 is set up via Razorpay AutoPay. Your plan renews automatically every 30 days so your connections and leads are never interrupted.',
+    },
+    {
+      q: 'Can I cancel my subscription anytime?',
+      a: 'Yes, absolutely. You can cancel recurring AutoPay with one click directly from your Tutor or Student Dashboard at any time. When cancelled, you retain all All Access benefits until the end of your current 30-day billing period.',
+    },
+    {
+      q: 'What payment methods are supported for AutoPay?',
+      a: 'Razorpay AutoPay supports all major Indian debit cards, credit cards, UPI AutoPay (Google Pay, PhonePe, Paytm, BHIM), and NetBanking e-mandates.',
+    },
+    {
+      q: 'Are handwritten notes and study resources included?',
+      a: 'Yes! All Access members get full unrestricted access to read, explore, and download all chapter-wise study notes, formula sheets, NCERT books, and revision materials.',
+    },
+  ];
 
   return (
     <div className="mn-sub-root">
       <div className="mn-sub-container">
         
-        {/* ============================================================ */}
-        {/* TOP BRAND & GUARANTEE HEADER                                 */}
-        {/* ============================================================ */}
+        {/* Top Header */}
         <header className="mn-sub-top-header">
           <Link to="/" className="mn-sub-brand-logo">
             <div>
@@ -232,505 +218,306 @@ const SubscriptionPage = () => {
             <svg className="mn-sub-guarantee-icon" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" />
             </svg>
-            <span>All plans come with a 7-day money back guarantee</span>
+            <span>7-Day Money Back Guarantee • Cancel Anytime</span>
           </div>
         </header>
 
-        {/* ============================================================ */}
-        {/* CENTER HERO & TITLE                                          */}
-        {/* ============================================================ */}
+        {/* Hero Section */}
         <section className="mn-sub-hero">
           <div className="mn-sub-tag-pill">
             <span>👑</span>
-            <span>Subscription Plans</span>
+            <span>One Unified Plan</span>
           </div>
 
           <h1 className="mn-sub-title">
-            Choose the <span className="mn-sub-title-highlight">Perfect Plan</span> for Your Learning Journey
+            MentorNearby <span className="mn-sub-title-highlight">All Access</span>
           </h1>
 
           <p className="mn-sub-subtitle">
-            Unlock tutor contacts, connect instantly and take the next step towards your success.
+            One simple, powerful membership for Tutors and Students. Unlock unlimited contacts, student leads, priority search, and premium study materials.
           </p>
 
-          {/* Social Proof (Left) & Billing Cycle Toggle (Right) Row */}
-          <div className="mn-sub-controls-row">
-            
-            {/* Left Floating Social Proof */}
-            <div className="mn-sub-social-proof-card">
-              <div className="mn-sub-avatars-group">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=faces"
-                  alt="Student"
-                  className="mn-sub-avatar-img"
-                />
-                <img
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=faces"
-                  alt="Student"
-                  className="mn-sub-avatar-img"
-                />
-                <img
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=faces"
-                  alt="Student"
-                  className="mn-sub-avatar-img"
-                />
-              </div>
+          {/* Active Entitlement Banner */}
+          {isSubscribed && (
+            <div className="mn-sub-active-banner">
               <div>
-                <div className="mn-sub-social-title">Trusted by 50K+ Students</div>
-                <div className="mn-sub-social-sub">Connecting students with the best tutors across India</div>
+                <div className="mn-sub-active-title">
+                  <span>✨ Active Subscription:</span>
+                  <span className="mn-sub-active-pill">MentorNearby All Access</span>
+                </div>
+                <div className="mn-sub-active-text">
+                  Unlimited contact reveals & leads active
+                  {user?.subscriptionExpiry && (
+                    <span> • Renews on: {new Date(user.subscriptionExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  )}
+                </div>
               </div>
-            </div>
-
-            {/* Right Billing Toggle */}
-            <div className="mn-sub-toggle-wrap">
-              <span
-                className={`mn-sub-toggle-label ${!isYearly ? 'active' : ''}`}
-                onClick={() => setBillingCycle('monthly')}
-              >
-                Monthly
-              </span>
 
               <button
                 type="button"
-                role="switch"
-                aria-checked={isYearly}
-                onClick={() => setBillingCycle(isYearly ? 'monthly' : 'yearly')}
-                className={`mn-sub-toggle-switch ${isYearly ? 'yearly-active' : ''}`}
+                onClick={() => navigate(user?.role === 'TUTOR' ? '/tutor-dashboard' : '/student-dashboard')}
+                className="mn-sub-btn growth"
+                style={{ width: 'auto', padding: '10px 20px', fontSize: '13px' }}
               >
-                <span className="mn-sub-toggle-circle"></span>
+                Go to Dashboard →
               </button>
-
-              <span
-                className={`mn-sub-toggle-label ${isYearly ? 'active' : ''}`}
-                onClick={() => setBillingCycle('yearly')}
-              >
-                Yearly
-              </span>
-
-              <span className="mn-sub-save-badge">Save up to 25%</span>
             </div>
+          )}
 
+          {/* Role Switcher Tabs */}
+          <div className="mn-sub-role-tabs">
+            <button
+              type="button"
+              className={`mn-sub-role-tab ${activeTab === 'tutor' ? 'active' : ''}`}
+              onClick={() => setActiveTab('tutor')}
+            >
+              👨‍🏫 For Tutors & Teachers
+            </button>
+            <button
+              type="button"
+              className={`mn-sub-role-tab ${activeTab === 'student' ? 'active' : ''}`}
+              onClick={() => setActiveTab('student')}
+            >
+              🎓 For Students & Parents
+            </button>
+            <button
+              type="button"
+              className={`mn-sub-role-tab ${activeTab === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveTab('all')}
+            >
+              🌟 All Benefits Combined
+            </button>
           </div>
         </section>
 
-        {/* ============================================================ */}
-        {/* ACTIVE ENTITLEMENT BANNER (If user already has active plan) */}
-        {/* ============================================================ */}
-        {(isSubscribed || hasActiveCredits) && (
-          <div className="mn-sub-active-banner">
-            <div>
-              <div className="mn-sub-active-title">
-                <span>✨ Active Entitlement:</span>
-                <span className="mn-sub-active-pill">{currentPlan}</span>
+        {/* Centerpiece Plan Showcase Card */}
+        <div className="mn-sub-unified-showcase">
+          <div className="mn-sub-unified-card">
+            
+            <div className="mn-sub-card-ribbon">
+              <span>UNIFIED ALL ACCESS</span>
+            </div>
+
+            <div className="mn-sub-card-main-header">
+              <div className="mn-sub-badge-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 28, height: 28 }}>
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
               </div>
-              <div className="mn-sub-active-text">
-                Available Contact Unlocks: <strong>{subStatus?.remainingUnlocksFormatted || `${user?.contactUnlocks ?? 0} Remaining`}</strong>
-                {user?.subscriptionExpiry && (
-                  <span> • Valid till: {new Date(user.subscriptionExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                )}
+
+              <div>
+                <h2 className="mn-sub-unified-title">MentorNearby All Access</h2>
+                <p className="mn-sub-unified-desc">
+                  Full unrestricted access to India's most trusted home & online tutoring network.
+                </p>
               </div>
             </div>
 
+            <div className="mn-sub-unified-pricing">
+              <div className="mn-sub-price-num-wrap">
+                <span className="mn-sub-currency">₹</span>
+                <span className="mn-sub-amount">{UNIFIED_PLAN.amount}</span>
+                <span className="mn-sub-cycle">/month</span>
+              </div>
+              <div className="mn-sub-cycle-desc">
+                Recurring monthly AutoPay • Zero hidden charges • Cancel anytime
+              </div>
+            </div>
+
+            {/* Features Checklist */}
+            <div className="mn-sub-unified-features">
+              <h4 className="mn-sub-features-heading">
+                {activeTab === 'tutor'
+                  ? 'Everything Included for Tutors & Teachers:'
+                  : activeTab === 'student'
+                  ? 'Everything Included for Students & Parents:'
+                  : 'Complete Unified Features List:'}
+              </h4>
+
+              <div className="mn-sub-features-columns">
+                {(activeTab === 'tutor'
+                  ? UNIFIED_PLAN.tutorBenefits
+                  : activeTab === 'student'
+                  ? UNIFIED_PLAN.studentBenefits
+                  : [...UNIFIED_PLAN.tutorBenefits.slice(0, 6), ...UNIFIED_PLAN.studentBenefits.slice(0, 6)]
+                ).map((benefit, idx) => (
+                  <div key={idx} className="mn-sub-feature-row">
+                    <span className="mn-sub-check-badge">✓</span>
+                    <span className="mn-sub-feature-text">{benefit}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* AutoPay Disclosure Notice */}
+            <div className="mn-sub-autopay-disclosure">
+              <div className="mn-sub-autopay-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>Recurring AutoPay Terms</span>
+              </div>
+              <p className="mn-sub-autopay-text">
+                {UNIFIED_PLAN.autoPayDisclosure}
+              </p>
+            </div>
+
+            {/* CTA Subscribe Button */}
             <button
               type="button"
-              onClick={() => navigate('/student-dashboard')}
-              className="mn-sub-btn growth"
-              style={{ width: 'auto', padding: '8px 16px', fontSize: '12px' }}
+              onClick={handleSubscribe}
+              disabled={loading || isSubscribed}
+              className="mn-sub-cta-btn"
             >
-              View in Dashboard →
+              {loading
+                ? 'Connecting to Razorpay AutoPay...'
+                : isSubscribed
+                ? 'All Access Active (Subscribed)'
+                : `Activate All Access for ₹${UNIFIED_PLAN.amount}/month →`}
             </button>
-          </div>
-        )}
 
-        {/* ============================================================ */}
-        {/* 4 PRICING CARDS (Starter | Growth | Pro | Premium)           */}
-        {/* ============================================================ */}
-        <div className="mn-sub-cards-grid">
-          
-          {/* ────────────────────────────────────────────────────────── */}
-          {/* CARD 1: STARTER (Green)                                     */}
-          {/* ────────────────────────────────────────────────────────── */}
-          <div className="mn-sub-card">
-            <div>
-              <div className="mn-sub-card-header">
-                <div className="mn-sub-plan-icon-wrap starter">
-                  {/* Paper Plane / Rocket Icon */}
-                  <svg style={{ width: 22, height: 22 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="mn-sub-plan-title">Starter</h3>
-                  <p className="mn-sub-plan-subtitle">Perfect to get started</p>
-                </div>
-              </div>
-
-              <div className="mn-sub-price-block">
-                <div className="mn-sub-price-row">
-                  <span className="mn-sub-price-num starter" style={{ fontSize: '32px', color: '#16A34A', fontWeight: 900 }}>
-                    FREE
-                  </span>
-                </div>
-                <div className="mn-sub-price-billed" style={{ color: '#16A34A', fontWeight: 700 }}>
-                  100% Free Forever
-                </div>
-              </div>
-
-              <ul className="mn-sub-features-list">
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon starter">✓</span>
-                  <span><strong>All Notes, PPTs & Formula Sheets (Free)</strong></span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon starter">✓</span>
-                  <span>Unlock {isYearly ? '36' : '3'} Tutor Contacts</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon starter">✓</span>
-                  <span>View Tutor Profiles</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon starter">✓</span>
-                  <span>Basic Search Filters</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon starter">✓</span>
-                  <span>Chat Support</span>
-                </li>
-              </ul>
+            <div className="mn-sub-free-listing-note">
+              🛡️ <strong>Free Forever Guarantee:</strong> Basic account registration and public profile listings are always completely free.
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleSubscribe('starter')}
-              disabled={loadingPlan === 'starter'}
-              className="mn-sub-btn starter"
-              style={{ background: '#16A34A', borderColor: '#16A34A' }}
-            >
-              {loadingPlan === 'starter' ? 'Activating Free Plan...' : 'Get Started Free'}
-            </button>
           </div>
-
-          {/* ────────────────────────────────────────────────────────── */}
-          {/* CARD 2: GROWTH (Gold / Most Popular Highlighted)            */}
-          {/* ────────────────────────────────────────────────────────── */}
-          <div className="mn-sub-card most-popular">
-            <div className="mn-sub-popular-badge">
-              <span>👑</span>
-              <span>Most Popular</span>
-            </div>
-
-            <div>
-              <div className="mn-sub-card-header">
-                <div className="mn-sub-plan-icon-wrap growth">
-                  {/* Rocket Icon */}
-                  <svg style={{ width: 22, height: 22 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
-                    <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
-                    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
-                    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="mn-sub-plan-title">Growth</h3>
-                  <p className="mn-sub-plan-subtitle">For serious learners</p>
-                </div>
-              </div>
-
-              <div className="mn-sub-price-block">
-                <div className="mn-sub-price-row">
-                  <span className="mn-sub-price-num growth">
-                    ₹{isYearly ? 149 : 199}
-                  </span>
-                  <span className="mn-sub-price-period">/month</span>
-                </div>
-                <div className="mn-sub-price-billed">
-                  {isYearly ? 'Billed ₹1,791 yearly' : 'Billed monthly'}
-                </div>
-              </div>
-
-              <ul className="mn-sub-features-list">
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon growth">✓</span>
-                  <span>Unlock {isYearly ? '120' : '10'} Tutor Contacts / {isYearly ? 'year' : 'month'}</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon growth">✓</span>
-                  <span>Advanced Search Filters</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon growth">✓</span>
-                  <span>Priority Support</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon growth">✓</span>
-                  <span>Save Favorite Tutors</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon growth">✓</span>
-                  <span>View Tutor Availability</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleSubscribe('growth')}
-              disabled={loadingPlan === 'growth'}
-              className="mn-sub-btn growth"
-            >
-              {loadingPlan === 'growth' ? 'Opening Gateway...' : 'Choose Growth'}
-            </button>
-          </div>
-
-          {/* ────────────────────────────────────────────────────────── */}
-          {/* CARD 3: PRO (Purple)                                        */}
-          {/* ────────────────────────────────────────────────────────── */}
-          <div className="mn-sub-card">
-            <div>
-              <div className="mn-sub-card-header">
-                <div className="mn-sub-plan-icon-wrap pro">
-                  {/* Diamond / Gem Icon */}
-                  <svg style={{ width: 22, height: 22 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 3h12l4 6-10 13L2 9Z"></path>
-                    <path d="M11 3 8 9l4 13 4-13-3-6"></path>
-                    <path d="M2 9h20"></path>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="mn-sub-plan-title">Pro</h3>
-                  <p className="mn-sub-plan-subtitle">For dedicated students</p>
-                </div>
-              </div>
-
-              <div className="mn-sub-price-block">
-                <div className="mn-sub-price-row">
-                  <span className="mn-sub-price-num pro">
-                    ₹{isYearly ? 299 : 399}
-                  </span>
-                  <span className="mn-sub-price-period">/month</span>
-                </div>
-                <div className="mn-sub-price-billed">
-                  {isYearly ? 'Billed ₹3,591 yearly' : 'Billed monthly'}
-                </div>
-              </div>
-
-              <ul className="mn-sub-features-list">
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon pro">✓</span>
-                  <span>Unlock {isYearly ? '300' : '25'} Tutor Contacts / {isYearly ? 'year' : 'month'}</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon pro">✓</span>
-                  <span>All Advanced Features</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon pro">✓</span>
-                  <span>Direct Chat with Tutors</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon pro">✓</span>
-                  <span>Priority Support</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon pro">✓</span>
-                  <span>No Ads Experience</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon pro">✓</span>
-                  <span>Early Access to New Features</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleSubscribe('pro')}
-              disabled={loadingPlan === 'pro'}
-              className="mn-sub-btn pro"
-            >
-              {loadingPlan === 'pro' ? 'Opening Gateway...' : 'Choose Pro'}
-            </button>
-          </div>
-
-          {/* ────────────────────────────────────────────────────────── */}
-          {/* CARD 4: PREMIUM (Blue)                                      */}
-          {/* ────────────────────────────────────────────────────────── */}
-          <div className="mn-sub-card">
-            <div>
-              <div className="mn-sub-card-header">
-                <div className="mn-sub-plan-icon-wrap premium">
-                  {/* Crown / Shield Icon */}
-                  <svg style={{ width: 22, height: 22 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="mn-sub-plan-title">Premium</h3>
-                  <p className="mn-sub-plan-subtitle">Unlimited opportunities</p>
-                </div>
-              </div>
-
-              <div className="mn-sub-price-block">
-                <div className="mn-sub-price-row">
-                  <span className="mn-sub-price-num premium">
-                    ₹{isYearly ? 524 : 699}
-                  </span>
-                  <span className="mn-sub-price-period">/month</span>
-                </div>
-                <div className="mn-sub-price-billed">
-                  {isYearly ? 'Billed ₹6,291 yearly' : 'Billed monthly'}
-                </div>
-              </div>
-
-              <ul className="mn-sub-features-list">
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon premium">✓</span>
-                  <span><strong>Unlimited Tutor Contacts</strong></span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon premium">✓</span>
-                  <span>All Premium Features</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon premium">✓</span>
-                  <span>Personalized Recommendations</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon premium">✓</span>
-                  <span>Priority Support</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon premium">✓</span>
-                  <span>No Ads Experience</span>
-                </li>
-                <li className="mn-sub-feature-item">
-                  <span className="mn-sub-check-icon premium">✓</span>
-                  <span>Early Access to New Features</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleSubscribe('premium')}
-              disabled={loadingPlan === 'premium'}
-              className="mn-sub-btn premium"
-            >
-              {loadingPlan === 'premium' ? 'Opening Gateway...' : 'Choose Premium'}
-            </button>
-          </div>
-
         </div>
 
-        {/* ============================================================ */}
-        {/* BOTTOM TRUST & COUPON STRIP                                  */}
-        {/* ============================================================ */}
-        <footer className="mn-sub-trust-strip">
+        {/* Free vs All Access Comparison Table */}
+        <section className="mn-sub-comparison-section">
+          <h3 className="mn-sub-comp-title">Free Registration vs. All Access</h3>
+          <p className="mn-sub-comp-subtitle">Compare what is included in standard free membership versus the ₹199/mo All Access upgrade.</p>
+
+          <div className="mn-sub-comp-table-wrap">
+            <table className="mn-sub-comp-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '46%' }}>Feature</th>
+                  <th style={{ width: '27%', textAlign: 'center' }}>Free Registration</th>
+                  <th style={{ width: '27%', textAlign: 'center', color: '#E11D48' }}>MentorNearby All Access</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Account Creation & Public Profile Listing</td>
+                  <td style={{ textAlign: 'center' }}>✅ Free Forever</td>
+                  <td style={{ textAlign: 'center' }}>✅ Free Forever</td>
+                </tr>
+                <tr>
+                  <td>Tutor Search & 5km Radius Discovery</td>
+                  <td style={{ textAlign: 'center' }}>✅ Included</td>
+                  <td style={{ textAlign: 'center' }}>✅ Included</td>
+                </tr>
+                <tr>
+                  <td>Direct Phone & WhatsApp Contact Unlocks</td>
+                  <td style={{ textAlign: 'center', color: '#64748B' }}>Limited / Starter</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited Unlocks</td>
+                </tr>
+                <tr>
+                  <td>Student Enquiry & Leads Management</td>
+                  <td style={{ textAlign: 'center', color: '#64748B' }}>Limited</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited Leads</td>
+                </tr>
+                <tr>
+                  <td>Search Placement & Discoverability</td>
+                  <td style={{ textAlign: 'center', color: '#64748B' }}>Standard</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>⭐ Priority Boost Ranking</td>
+                </tr>
+                <tr>
+                  <td>Verified Trust Badge Eligibility</td>
+                  <td style={{ textAlign: 'center', color: '#64748B' }}>Standard Verification</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>🛡️ Priority Verification</td>
+                </tr>
+                <tr>
+                  <td>Direct In-App Messaging & Calling</td>
+                  <td style={{ textAlign: 'center', color: '#64748B' }}>Limited</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>✨ Unlimited</td>
+                </tr>
+                <tr>
+                  <td>Study Notes, Formula Sheets & PDF Downloads</td>
+                  <td style={{ textAlign: 'center' }}>✅ Free Reading</td>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: '#16A34A' }}>📥 Full Unrestricted Downloads</td>
+                </tr>
+                <tr>
+                  <td>Monthly Recurring Billing</td>
+                  <td style={{ textAlign: 'center' }}>₹0</td>
+                  <td style={{ textAlign: 'center', fontWeight: 800, color: '#E11D48' }}>₹199 / month</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Trust Badges Bar */}
+        <section className="mn-sub-trust-strip">
           <div className="mn-sub-trust-items">
-            
-            {/* 1. Secure Payments */}
             <div className="mn-sub-trust-item">
-              <svg className="mn-sub-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="mn-sub-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
               <div>
-                <div className="mn-sub-trust-main">Secure Payments</div>
-                <div className="mn-sub-trust-sub">100% Safe & Encrypted</div>
+                <div className="mn-sub-trust-main">Razorpay AutoPay</div>
+                <div className="mn-sub-trust-sub">RBI-compliant bank mandates</div>
               </div>
             </div>
 
-            {/* 2. Instant Access */}
             <div className="mn-sub-trust-item">
-              <svg className="mn-sub-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              <div>
-                <div className="mn-sub-trust-main">Instant Access</div>
-                <div className="mn-sub-trust-sub">Start using immediately</div>
-              </div>
-            </div>
-
-            {/* 3. Cancel Anytime */}
-            <div className="mn-sub-trust-item">
-              <svg className="mn-sub-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="mn-sub-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
               </svg>
               <div>
                 <div className="mn-sub-trust-main">Cancel Anytime</div>
-                <div className="mn-sub-trust-sub">No questions asked</div>
+                <div className="mn-sub-trust-sub">1-click dashboard cancellation</div>
               </div>
             </div>
 
-            {/* 4. Trusted Platform */}
             <div className="mn-sub-trust-item">
-              <svg className="mn-sub-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              <svg className="mn-sub-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
               <div>
-                <div className="mn-sub-trust-main">Trusted Platform</div>
-                <div className="mn-sub-trust-sub">50K+ students trust us</div>
+                <div className="mn-sub-trust-main">Instant Activation</div>
+                <div className="mn-sub-trust-sub">Immediate unlock access</div>
               </div>
             </div>
 
-          </div>
-
-          {/* Right Coupon Code Action */}
-          <button
-            type="button"
-            onClick={() => setShowCouponModal(true)}
-            className="mn-sub-coupon-link"
-          >
-            <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-              <line x1="7" y1="7" x2="7.01" y2="7"></line>
-            </svg>
-            <span>Have a coupon code? <span className="mn-sub-coupon-apply">Apply Now</span></span>
-          </button>
-        </footer>
-
-        {/* ============================================================ */}
-        {/* COUPON CODE MODAL                                            */}
-        {/* ============================================================ */}
-        {showCouponModal && (
-          <div className="mn-coupon-modal-overlay" onClick={() => setShowCouponModal(false)}>
-            <div className="mn-coupon-modal-card" onClick={(e) => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 800 }}>Apply Promo Coupon</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowCouponModal(false)}
-                  style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94A3B8' }}
-                >
-                  ✕
-                </button>
+            <div className="mn-sub-trust-item">
+              <svg className="mn-sub-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <div>
+                <div className="mn-sub-trust-main">Zero Commission</div>
+                <div className="mn-sub-trust-sub">100% earnings go to tutors</div>
               </div>
-              <p style={{ fontSize: '12px', color: '#64748B', marginTop: '6px' }}>
-                Enter your promo code below to get instant discounts on MentorNearby plans.
-              </p>
-
-              <form onSubmit={handleApplyCoupon} className="mn-coupon-input-row">
-                <input
-                  type="text"
-                  placeholder="e.g. MENTOR25"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  className="mn-coupon-input"
-                  autoFocus
-                />
-                <button type="submit" className="mn-coupon-apply-btn">
-                  Apply
-                </button>
-              </form>
             </div>
           </div>
-        )}
+        </section>
+
+        {/* FAQs Section */}
+        <section className="mn-sub-faq-section">
+          <h3 className="mn-sub-faq-title">Frequently Asked Questions</h3>
+          <div className="mn-sub-faq-grid">
+            {faqs.map((faq, idx) => (
+              <div
+                key={idx}
+                className={`mn-sub-faq-card ${showFaqIndex === idx ? 'expanded' : ''}`}
+                onClick={() => setShowFaqIndex(showFaqIndex === idx ? null : idx)}
+              >
+                <div className="mn-sub-faq-header">
+                  <span className="mn-sub-faq-q">{faq.q}</span>
+                  <span className="mn-sub-faq-toggle">{showFaqIndex === idx ? '−' : '+'}</span>
+                </div>
+                {showFaqIndex === idx && (
+                  <p className="mn-sub-faq-a">{faq.a}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
 
       </div>
     </div>

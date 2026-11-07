@@ -141,6 +141,37 @@ const TutorProfileSchema = new mongoose.Schema({
     type: String,
     default: 'pending'
   },
+  listingStatus: {
+    type: String,
+    enum: ['Draft', 'Published', 'Suspended', 'Rejected'],
+    default: 'Draft',
+    index: true
+  },
+  publishedAt: {
+    type: Date,
+    default: null
+  },
+  suspendedAt: {
+    type: Date,
+    default: null
+  },
+  suspensionReason: {
+    type: String,
+    default: ''
+  },
+  suspendedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  rejectedAt: {
+    type: Date,
+    default: null
+  },
+  rejectionReason: {
+    type: String,
+    default: ''
+  },
   kycStatus: {
     type: String,
     enum: ['NOT_SUBMITTED', 'PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'RESUBMISSION_REQUIRED', 'PENDING_ADMIN_REVIEW', 'APPROVED_BY_ADMIN'],

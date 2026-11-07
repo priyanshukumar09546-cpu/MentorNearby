@@ -4,6 +4,7 @@ import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import ThemeSwitcher from '../../components/layout/ThemeSwitcher';
+import SubscriptionManagementCard from '../../components/subscription/SubscriptionManagementCard';
 import './TutorDashboard.css';
 
 /* ── Clean Inline SVG Graphics & Illustrations ── */
@@ -291,6 +292,15 @@ const TutorDashboardPage = () => {
               </li>
 
               <li className="td-nav-item">
+                <a href="#subscription" className="td-nav-link">
+                  <div className="td-nav-left">
+                    <span className="td-nav-icon">👑</span>
+                    <span>All Access (₹199)</span>
+                  </div>
+                </a>
+              </li>
+
+              <li className="td-nav-item">
                 <a href="#earnings" className="td-nav-link">
                   <div className="td-nav-left">
                     <span className="td-nav-icon">💳</span>
@@ -476,6 +486,13 @@ const TutorDashboardPage = () => {
               <TutorHeroIllustration />
             </div>
           </section>
+
+          {/* ========================================================
+              DEDICATED SUBSCRIPTION & AUTOPAY MANAGEMENT
+              ======================================================== */}
+          <div id="subscription">
+            <SubscriptionManagementCard role="TUTOR" />
+          </div>
 
           {/* ========================================================
               2. FIVE STAT / KPI CARDS (REAL DATA ONLY)

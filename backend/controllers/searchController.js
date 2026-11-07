@@ -12,7 +12,10 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
     page = 1, limit = 12, sort = 'relevance'
   } = req.query;
 
-  const andConditions = [{ profileVisibility: { $ne: false } }];
+  const andConditions = [
+    { profileVisibility: { $ne: false } },
+    { listingStatus: { $nin: ['Suspended', 'Rejected'] } }
+  ];
 
   // General text search (q or search parameter)
   const generalSearch = (req.query.q || req.query.search || '').trim();
@@ -140,7 +143,7 @@ exports.searchTutors = asyncHandler(async (req, res, next) => {
     .lean();
 
   // Filter out any suspended or orphaned profiles
-  const activeTutors = tutors.filter(t => t.user && !t.user.isSuspended);
+  const activeTutors = tutors.filter(t => t.user && !t.user.isSuspended && t.listingStatus !== 'Suspended' && t.listingStatus !== 'Rejected');
 
   // Helper: check active subscription
   const isUserSubscribed = (t) =>

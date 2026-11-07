@@ -1,0 +1,43 @@
+/* TutorDiscoveryHubPage.css */
+.discovery-hub-container {
+  min-height: 100vh;
+  background-color: #FAF9F6;
+  color: #1E293B;
+  display: flex;
+  flex-direction: column;
+}
+
+.discovery-hub-max-w {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.discovery-hub-hero {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAF9F6 100%);
+  border-bottom: 1px solid #E2E8F0;
+}
+
+/* Dark theme overrides */
+.dark .discovery-hub-container {
+  background-color: #0F172A;
+  color: #F8FAFC;
+}
+
+.dark .discovery-hub-hero {
+  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  border-color: #334155;
+}
+
+.dark .discovery-features-strip {
+  background-color: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+.dark .discovery-features-strip div {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+  color: #F8FAFC !important;
+}

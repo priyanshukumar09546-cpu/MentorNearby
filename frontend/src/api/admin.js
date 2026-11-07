@@ -43,6 +43,12 @@ export const deleteStudentPermanently = (id, data) => client.delete(`/admin/stud
 
 // Subscription Management APIs
 export const getAdminSubscriptions = (params) => client.get('/admin/subscriptions', { params });
+export const getAdminSubscriptionPayments = (subId) => client.get(`/admin/subscriptions/${subId}/payments`);
+export const exportAdminSubscriptionsCsv = () => client.get('/admin/subscriptions/export/csv', { responseType: 'blob' });
 export const grantUserSubscription = (id, data) => client.post(`/admin/users/${id}/grant-subscription`, data);
 export const revokeUserSubscription = (id) => client.post(`/admin/users/${id}/revoke-subscription`);
 
+// Listing Management APIs (Moderation & Auto-Publishing Controls)
+export const getAdminListingStats = () => client.get('/admin/listings/stats');
+export const suspendListing = (data) => client.post('/admin/listings/suspend', data);
+export const restoreListing = (data) => client.post('/admin/listings/restore', data);

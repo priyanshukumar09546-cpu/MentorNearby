@@ -1,25 +1,35 @@
 // ============================================================
 // pages/Admin/AdminSubscriptionsPage.jsx
-// MentorNearby Admin Subscriptions & Freemium Management
+// MentorNearby Admin — Subscriptions & AutoPay Management Center
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   getAdminSubscriptions,
+  getAdminSubscriptionPayments,
   grantUserSubscription,
   revokeUserSubscription,
 } from '../../api/admin';
+import { UNIFIED_PLAN } from '../../config/subscription';
 import { useToast } from '../../context/ToastContext';
 
 const AdminSubscriptionsPage = () => {
   const { showToast } = useToast();
 
-  const [subscribers, setSubscribers] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [stats, setStats] = useState({
-    totalActive: 0,
-    totalStudentsSubscribed: 0,
-    totalTutorsSubscribed: 0,
-    estimatedMonthlyRevenue: 0,
+    totalSubscribers: 0,
+    activeSubscribers: 0,
+    activeTutorSubscriptions: 0,
+    activeStudentSubscriptions: 0,
+    pendingSubscriptions: 0,
+    cancelledSubscriptions: 0,
+    failedPayments: 0,
+    authorizedAutoPayMandates: 0,
+    monthlyRecurringRevenue: 0,
+    successfulPaymentCollections: 0,
+    upcomingRenewals: 0,
+    unifiedPlanPrice: 199,
   });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -28,12 +38,19 @@ const AdminSubscriptionsPage = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Grant Modal state
+  // Detail Modal State (Audit Log)
+  const [detailModal, setDetailModal] = useState({
+    isOpen: false,
+    subscription: null,
+    payments: [],
+    loadingPayments: false,
+  });
+
+  // Grant Modal State
   const [grantModal, setGrantModal] = useState({
     isOpen: false,
     user: null,
     days: 30,
-    planType: 'student',
   });
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -49,7 +66,8 @@ const AdminSubscriptionsPage = () => {
       });
 
       if (res.data?.success) {
-        setSubscribers(res.data.data.subscribers || []);
+        const subs = res.data.data.subscriptions || res.data.data.subscribers || [];
+        setSubscriptions(subs);
         setTotalPages(res.data.data.pages || 1);
         if (res.data.data.stats) {
           setStats(res.data.data.stats);
@@ -67,17 +85,47 @@ const AdminSubscriptionsPage = () => {
     fetchSubscriptions();
   }, [fetchSubscriptions]);
 
+  const handleExportCSV = () => {
+    window.open('/api/admin/subscriptions/export/csv', '_blank');
+    showToast('Exporting subscriptions CSV report...', 'info');
+  };
+
+  const handleViewDetails = async (sub) => {
+    const subId = sub._id || sub.user?._id;
+    setDetailModal({
+      isOpen: true,
+      subscription: sub,
+      payments: [],
+      loadingPayments: true,
+    });
+
+    try {
+      const res = await getAdminSubscriptionPayments(subId);
+      setDetailModal((prev) => ({
+        ...prev,
+        payments: res.data?.data?.payments || [],
+        loadingPayments: false,
+      }));
+    } catch (err) {
+      console.error('Error fetching payments:', err);
+      setDetailModal((prev) => ({
+        ...prev,
+        loadingPayments: false,
+      }));
+    }
+  };
+
   const handleGrant = async () => {
     if (!grantModal.user) return;
     try {
       setActionLoading(true);
       const res = await grantUserSubscription(grantModal.user._id, {
         days: grantModal.days,
-        planType: grantModal.planType,
+        planType: 'all_access_monthly',
       });
       if (res.data?.success) {
         showToast(res.data.message || 'Subscription granted successfully!', 'success');
-        setGrantModal({ isOpen: false, user: null, days: 30, planType: 'student' });
+        setGrantModal({ isOpen: false, user: null, days: 30 });
         fetchSubscriptions();
       }
     } catch (err) {
@@ -88,7 +136,8 @@ const AdminSubscriptionsPage = () => {
   };
 
   const handleRevoke = async (user) => {
-    if (!window.confirm(`Are you sure you want to revoke the subscription for ${user.name}?`)) {
+    const userName = user.name || 'User';
+    if (!window.confirm(`Are you sure you want to revoke the subscription for ${userName}?`)) {
       return;
     }
     try {
@@ -107,63 +156,130 @@ const AdminSubscriptionsPage = () => {
 
   return (
     <div className="admin-page-container" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      
+      {/* Top Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
-            💳 Subscriptions &amp; Monetization
+          <h1 style={{ fontSize: '24px', fontWeight: '900', color: '#0F172A', margin: 0 }}>
+            👑 MentorNearby All Access Subscriptions
           </h1>
-          <p style={{ fontSize: '14px', color: '#64748B', margin: '4px 0 0' }}>
-            Manage active premium members, free lead counters, and manual subscription overrides.
+          <p style={{ fontSize: '13.5px', color: '#64748B', margin: '4px 0 0' }}>
+            Unified ₹199/month recurring AutoPay subscriptions, bank mandate authorizations &amp; payment audit trail.
           </p>
         </div>
-        <button
-          onClick={fetchSubscriptions}
-          style={{
-            background: '#F8FAFC',
-            border: '1px solid #CBD5E1',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            fontSize: '13px',
-            fontWeight: '600',
-            cursor: 'pointer',
-          }}
-        >
-          🔄 Refresh
-        </button>
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            style={{
+              background: '#0F172A',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '9px 16px',
+              fontSize: '13px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <span>📥</span> Export to CSV
+          </button>
+
+          <button
+            type="button"
+            onClick={fetchSubscriptions}
+            style={{
+              background: '#F8FAFC',
+              border: '1px solid #CBD5E1',
+              borderRadius: '8px',
+              padding: '9px 16px',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+            }}
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards (11 Stats) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '14px',
           marginBottom: '24px',
         }}
       >
-        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Active Subscribers</div>
-          <div style={{ fontSize: '28px', fontWeight: '900', color: '#0F172A', marginTop: '4px' }}>{stats.totalActive}</div>
-          <div style={{ fontSize: '11px', color: '#16A34A', marginTop: '4px', fontWeight: '600' }}>Active Paid Members</div>
+        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Total Subscribers</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#0F172A', marginTop: '4px' }}>{stats.totalSubscribers}</div>
+          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>All-time registered</div>
         </div>
 
-        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Students Subscribed</div>
-          <div style={{ fontSize: '28px', fontWeight: '900', color: '#2563EB', marginTop: '4px' }}>{stats.totalStudentsSubscribed}</div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>₹99 / month Plan</div>
+        <div style={{ background: '#FFF', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#166534', textTransform: 'uppercase' }}>Active Subscribers</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#16A34A', marginTop: '4px' }}>{stats.activeSubscribers}</div>
+          <div style={{ fontSize: '11px', color: '#16A34A', marginTop: '2px', fontWeight: '600' }}>Active All Access</div>
         </div>
 
-        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Teachers Subscribed</div>
-          <div style={{ fontSize: '28px', fontWeight: '900', color: '#D97706', marginTop: '4px' }}>{stats.totalTutorsSubscribed}</div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>₹149 / month Plan</div>
+        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Active Tutors</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#D97706', marginTop: '4px' }}>{stats.activeTutorSubscriptions}</div>
+          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Subscribed educators</div>
         </div>
 
-        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Est. Monthly Revenue</div>
-          <div style={{ fontSize: '28px', fontWeight: '900', color: '#16A34A', marginTop: '4px' }}>₹{stats.estimatedMonthlyRevenue.toLocaleString('en-IN')}</div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>Recurring MRR</div>
+        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Active Students</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#2563EB', marginTop: '4px' }}>{stats.activeStudentSubscriptions}</div>
+          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Subscribed learners</div>
+        </div>
+
+        <div style={{ background: '#FFF', border: '1px solid #FEF08A', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#854D0E', textTransform: 'uppercase' }}>Pending Subscriptions</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#CA8A04', marginTop: '4px' }}>{stats.pendingSubscriptions}</div>
+          <div style={{ fontSize: '11px', color: '#854D0E', marginTop: '2px' }}>Awaiting mandate auth</div>
+        </div>
+
+        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Cancelled Mandates</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#64748B', marginTop: '4px' }}>{stats.cancelledSubscriptions}</div>
+          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>AutoPay stopped</div>
+        </div>
+
+        <div style={{ background: '#FFF', border: '1px solid #FECACA', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#991B1B', textTransform: 'uppercase' }}>Failed Payments</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#DC2626', marginTop: '4px' }}>{stats.failedPayments}</div>
+          <div style={{ fontSize: '11px', color: '#DC2626', marginTop: '2px' }}>Declined transactions</div>
+        </div>
+
+        <div style={{ background: '#FFF', border: '1px solid #BFDBFE', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#1E40AF', textTransform: 'uppercase' }}>AutoPay Mandates</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#2563EB', marginTop: '4px' }}>{stats.authorizedAutoPayMandates}</div>
+          <div style={{ fontSize: '11px', color: '#1E40AF', marginTop: '2px' }}>Active bank mandates</div>
+        </div>
+
+        <div style={{ background: '#FFF1F2', border: '1px solid #FDA4AF', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#9F1239', textTransform: 'uppercase' }}>Monthly Recurring (MRR)</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#E11D48', marginTop: '4px' }}>₹{stats.monthlyRecurringRevenue?.toLocaleString('en-IN')}</div>
+          <div style={{ fontSize: '11px', color: '#9F1239', marginTop: '2px', fontWeight: '600' }}>Active × ₹199 / month</div>
+        </div>
+
+        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Successful Collections</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#16A34A', marginTop: '4px' }}>{stats.successfulPaymentCollections}</div>
+          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Captured payments</div>
+        </div>
+
+        <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Upcoming Renewals</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#4F46E5', marginTop: '4px' }}>{stats.upcomingRenewals}</div>
+          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Next 7 days</div>
         </div>
       </div>
 
@@ -181,10 +297,10 @@ const AdminSubscriptionsPage = () => {
           marginBottom: '20px',
         }}
       >
-        <div style={{ flex: '1 1 240px' }}>
+        <div style={{ flex: '1 1 260px' }}>
           <input
             type="text"
-            placeholder="Search by name, email, or phone..."
+            placeholder="Search by name, email, phone, or Sub ID..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -192,7 +308,7 @@ const AdminSubscriptionsPage = () => {
             }}
             style={{
               width: '100%',
-              padding: '8px 12px',
+              padding: '9px 12px',
               border: '1px solid #CBD5E1',
               borderRadius: '8px',
               fontSize: '13px',
@@ -208,7 +324,7 @@ const AdminSubscriptionsPage = () => {
               setPage(1);
             }}
             style={{
-              padding: '8px 12px',
+              padding: '9px 12px',
               border: '1px solid #CBD5E1',
               borderRadius: '8px',
               fontSize: '13px',
@@ -216,8 +332,8 @@ const AdminSubscriptionsPage = () => {
             }}
           >
             <option value="">All Roles</option>
-            <option value="STUDENT">Students</option>
             <option value="TUTOR">Tutors</option>
+            <option value="STUDENT">Students</option>
           </select>
         </div>
 
@@ -229,73 +345,75 @@ const AdminSubscriptionsPage = () => {
               setPage(1);
             }}
             style={{
-              padding: '8px 12px',
+              padding: '9px 12px',
               border: '1px solid #CBD5E1',
               borderRadius: '8px',
               fontSize: '13px',
               background: '#FFF',
             }}
           >
-            <option value="all">All Subscriptions</option>
+            <option value="all">All Statuses</option>
             <option value="active">Active Only</option>
+            <option value="pending">Pending Only</option>
+            <option value="cancelled">Cancelled Only</option>
             <option value="expired">Expired Only</option>
           </select>
         </div>
       </div>
 
-      {/* Subscribers Table */}
+      {/* Table */}
       <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         {loading ? (
           <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
-            <div className="spinner" style={{ margin: '0 auto 12px' }}></div>
-            Loading subscriptions...
+            Loading subscriptions &amp; AutoPay mandates...
           </div>
-        ) : subscribers.length === 0 ? (
+        ) : subscriptions.length === 0 ? (
           <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
-            <span style={{ fontSize: '36px' }}>💳</span>
+            <span style={{ fontSize: '36px' }}>👑</span>
             <h3 style={{ margin: '12px 0 4px', color: '#0F172A' }}>No Subscriptions Found</h3>
-            <p style={{ margin: 0, fontSize: '13px' }}>Try clearing filters or search queries.</p>
+            <p style={{ margin: 0, fontSize: '13px' }}>Try adjusting your search or status filters.</p>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: '700' }}>
-                  <th style={{ padding: '12px 16px' }}>User</th>
+                  <th style={{ padding: '12px 16px' }}>Subscriber</th>
                   <th style={{ padding: '12px 16px' }}>Role</th>
-                  <th style={{ padding: '12px 16px' }}>Plan / Fee</th>
-                  <th style={{ padding: '12px 16px' }}>Freemium Usage</th>
-                  <th style={{ padding: '12px 16px' }}>Expiry Date</th>
+                  <th style={{ padding: '12px 16px' }}>Plan &amp; Billing</th>
+                  <th style={{ padding: '12px 16px' }}>AutoPay Mandate</th>
+                  <th style={{ padding: '12px 16px' }}>Next Billing Date</th>
                   <th style={{ padding: '12px 16px' }}>Status</th>
                   <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {subscribers.map((sub) => {
+                {subscriptions.map((sub) => {
+                  const u = sub.user && typeof sub.user === 'object' ? sub.user : sub;
                   const isActive = Boolean(
-                    sub.isSubscribed &&
-                    sub.subscriptionExpiry &&
-                    new Date(sub.subscriptionExpiry) > new Date()
+                    sub.status === 'ACTIVE' ||
+                    (u.isSubscribed && u.subscriptionExpiry && new Date(u.subscriptionExpiry) > new Date())
                   );
-                  const expiryDateStr = sub.subscriptionExpiry
-                    ? new Date(sub.subscriptionExpiry).toLocaleDateString('en-IN', {
+                  const isCancelled = sub.status === 'CANCELLED' || sub.cancelAtPeriodEnd;
+                  const mandateStatus = sub.mandateStatus || (isActive ? 'AUTHORIZED' : 'NONE');
+
+                  const nextBillDate = sub.nextBillingDate || u.subscriptionExpiry;
+                  const formattedNextBill = nextBillDate
+                    ? new Date(nextBillDate).toLocaleDateString('en-IN', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
                       })
                     : 'N/A';
 
-                  const daysRemaining = sub.subscriptionExpiry
-                    ? Math.ceil((new Date(sub.subscriptionExpiry) - new Date()) / (1000 * 60 * 60 * 24))
-                    : 0;
-
                   return (
-                    <tr key={sub._id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <tr key={sub._id || u._id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                       <td style={{ padding: '12px 16px' }}>
-                        <div style={{ fontWeight: '700', color: '#0F172A' }}>{sub.name}</div>
-                        <div style={{ fontSize: '11px', color: '#64748B' }}>{sub.email}</div>
-                        {sub.phone && <div style={{ fontSize: '11px', color: '#64748B' }}>📞 {sub.phone}</div>}
+                        <div style={{ fontWeight: '700', color: '#0F172A' }}>{u.name || 'User'}</div>
+                        <div style={{ fontSize: '11px', color: '#64748B' }}>{u.email}</div>
+                        {u.phone && <div style={{ fontSize: '11px', color: '#64748B' }}>📞 {u.phone}</div>}
                       </td>
+
                       <td style={{ padding: '12px 16px' }}>
                         <span
                           style={{
@@ -304,40 +422,67 @@ const AdminSubscriptionsPage = () => {
                             borderRadius: '6px',
                             fontSize: '11px',
                             fontWeight: '700',
-                            background: sub.role === 'TUTOR' ? '#FEF3C7' : '#DBEAFE',
-                            color: sub.role === 'TUTOR' ? '#92400E' : '#1E40AF',
+                            background: (sub.userRole || u.role) === 'TUTOR' ? '#FEF3C7' : '#DBEAFE',
+                            color: (sub.userRole || u.role) === 'TUTOR' ? '#92400E' : '#1E40AF',
                           }}
                         >
-                          {sub.role === 'TUTOR' ? '👨‍🏫 Teacher' : '👨‍🎓 Student'}
+                          {(sub.userRole || u.role) === 'TUTOR' ? '👨‍🏫 Tutor' : '👨‍🎓 Student'}
                         </span>
                       </td>
+
                       <td style={{ padding: '12px 16px' }}>
-                        <div style={{ fontWeight: '600', color: '#0F172A' }}>
-                          {sub.role === 'TUTOR' ? '₹149 / mo' : '₹99 / mo'}
+                        <div style={{ fontWeight: '700', color: '#E11D48' }}>
+                          ₹{sub.amount || UNIFIED_PLAN.amount} / month
                         </div>
                         <div style={{ fontSize: '11px', color: '#64748B' }}>
-                          {sub.subscriptionType || 'standard'}
+                          MentorNearby All Access
                         </div>
                       </td>
+
                       <td style={{ padding: '12px 16px' }}>
-                        {sub.role === 'TUTOR' ? (
-                          <div>
-                            <span style={{ fontWeight: '600' }}>{sub.freeLeadsUsed ?? 0}</span> Leads Used
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            background:
+                              mandateStatus === 'AUTHORIZED'
+                                ? '#DCFCE7'
+                                : mandateStatus === 'CANCELLED'
+                                ? '#FEF3C7'
+                                : '#F1F5F9',
+                            color:
+                              mandateStatus === 'AUTHORIZED'
+                                ? '#166534'
+                                : mandateStatus === 'CANCELLED'
+                                ? '#B45309'
+                                : '#475569',
+                          }}
+                        >
+                          {mandateStatus === 'AUTHORIZED'
+                            ? '✓ Authorized'
+                            : mandateStatus === 'CANCELLED'
+                            ? 'Cancelled'
+                            : mandateStatus}
+                        </span>
+                      </td>
+
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ fontWeight: '600', color: '#0F172A' }}>{formattedNextBill}</div>
+                        {isActive && !isCancelled && (
+                          <div style={{ fontSize: '11px', color: '#16A34A', fontWeight: '600' }}>
+                            Auto-Renewing
                           </div>
-                        ) : (
-                          <div>
-                            <span style={{ fontWeight: '600' }}>{sub.freeChatsUsed ?? 0}</span> / 3 Chats
+                        )}
+                        {isCancelled && (
+                          <div style={{ fontSize: '11px', color: '#D97706', fontWeight: '600' }}>
+                            Ends on billing date
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ fontWeight: '600', color: '#0F172A' }}>{expiryDateStr}</div>
-                        {isActive && (
-                          <div style={{ fontSize: '11px', color: daysRemaining < 5 ? '#DC2626' : '#16A34A', fontWeight: '600' }}>
-                            {daysRemaining > 0 ? `${daysRemaining} days left` : 'Expiring today'}
-                          </div>
-                        )}
-                      </td>
+
                       <td style={{ padding: '12px 16px' }}>
                         <span
                           style={{
@@ -346,28 +491,35 @@ const AdminSubscriptionsPage = () => {
                             borderRadius: '12px',
                             fontSize: '11px',
                             fontWeight: '800',
-                            background: isActive ? '#DCFCE7' : '#FEE2E2',
-                            color: isActive ? '#166534' : '#991B1B',
+                            background: isActive
+                              ? isCancelled
+                                ? '#FEF3C7'
+                                : '#DCFCE7'
+                              : '#FEE2E2',
+                            color: isActive
+                              ? isCancelled
+                                ? '#B45309'
+                                : '#166534'
+                              : '#991B1B',
                           }}
                         >
-                          {isActive ? '● Active' : '○ Expired'}
+                          {isActive
+                            ? isCancelled
+                              ? '● AutoPay Cancelled'
+                              : '● Active'
+                            : '○ Expired'}
                         </span>
                       </td>
+
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <button
-                          onClick={() =>
-                            setGrantModal({
-                              isOpen: true,
-                              user: sub,
-                              days: 30,
-                              planType: sub.role === 'TUTOR' ? 'teacher' : 'student',
-                            })
-                          }
+                          type="button"
+                          onClick={() => handleViewDetails(sub)}
                           style={{
-                            background: '#F0FDF4',
-                            border: '1px solid #86EFAC',
-                            color: '#15803D',
-                            padding: '5px 10px',
+                            background: '#F8FAFC',
+                            border: '1px solid #CBD5E1',
+                            color: '#334155',
+                            padding: '5px 9px',
                             borderRadius: '6px',
                             fontSize: '11.5px',
                             fontWeight: '700',
@@ -375,16 +527,42 @@ const AdminSubscriptionsPage = () => {
                             marginRight: '6px',
                           }}
                         >
-                          + Grant Days
+                          👁️ Details
                         </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setGrantModal({
+                              isOpen: true,
+                              user: u,
+                              days: 30,
+                            })
+                          }
+                          style={{
+                            background: '#F0FDF4',
+                            border: '1px solid #86EFAC',
+                            color: '#15803D',
+                            padding: '5px 9px',
+                            borderRadius: '6px',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            marginRight: '6px',
+                          }}
+                        >
+                          + Grant
+                        </button>
+
                         {isActive && (
                           <button
-                            onClick={() => handleRevoke(sub)}
+                            type="button"
+                            onClick={() => handleRevoke(u)}
                             style={{
                               background: '#FEF2F2',
                               border: '1px solid #FECACA',
                               color: '#B91C1C',
-                              padding: '5px 10px',
+                              padding: '5px 9px',
                               borderRadius: '6px',
                               fontSize: '11.5px',
                               fontWeight: '700',
@@ -402,125 +580,168 @@ const AdminSubscriptionsPage = () => {
             </table>
           </div>
         )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px', gap: '8px', borderTop: '1px solid #E2E8F0' }}>
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', background: '#FFF', cursor: 'pointer' }}
-            >
-              Previous
-            </button>
-            <span style={{ padding: '6px 12px', fontSize: '13px', color: '#64748B' }}>
-              Page {page} of {totalPages}
-            </span>
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', background: '#FFF', cursor: 'pointer' }}
-            >
-              Next
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Grant Subscription Modal */}
+      {/* Detail Modal with Payment Audit Logs */}
+      {detailModal.isOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={() => setDetailModal({ isOpen: false, subscription: null, payments: [], loadingPayments: false })}
+        >
+          <div
+            style={{
+              background: '#FFF',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '650px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0 }}>
+                Subscription &amp; Payment Audit Details
+              </h3>
+              <button
+                type="button"
+                onClick={() => setDetailModal({ isOpen: false, subscription: null, payments: [], loadingPayments: false })}
+                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94A3B8' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {detailModal.subscription && (
+              <div style={{ background: '#F8FAFC', borderRadius: '10px', padding: '14px', marginBottom: '20px', fontSize: '13px' }}>
+                <div><strong>User:</strong> {detailModal.subscription.user?.name || detailModal.subscription.name} ({detailModal.subscription.user?.email || detailModal.subscription.email})</div>
+                <div style={{ marginTop: '4px' }}><strong>Plan:</strong> MentorNearby All Access (₹199/month)</div>
+                <div style={{ marginTop: '4px' }}><strong>Mandate Status:</strong> {detailModal.subscription.mandateStatus || 'N/A'}</div>
+                <div style={{ marginTop: '4px' }}><strong>Razorpay Subscription ID:</strong> <code>{detailModal.subscription.razorpaySubscriptionId || 'N/A'}</code></div>
+              </div>
+            )}
+
+            <h4 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '10px' }}>
+              Payment Audit History
+            </h4>
+
+            {detailModal.loadingPayments ? (
+              <p style={{ fontSize: '13px', color: '#64748B' }}>Loading payment audit records...</p>
+            ) : detailModal.payments.length === 0 ? (
+              <p style={{ fontSize: '13px', color: '#64748B' }}>No payment audit records recorded yet.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                  <thead>
+                    <tr style={{ background: '#F1F5F9', textAlign: 'left' }}>
+                      <th style={{ padding: '8px' }}>Date</th>
+                      <th style={{ padding: '8px' }}>Amount</th>
+                      <th style={{ padding: '8px' }}>Payment ID</th>
+                      <th style={{ padding: '8px' }}>Cycle</th>
+                      <th style={{ padding: '8px' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detailModal.payments.map((p, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '8px' }}>{new Date(p.createdAt).toLocaleDateString('en-IN')}</td>
+                        <td style={{ padding: '8px', fontWeight: '700' }}>₹{p.amount || 199}</td>
+                        <td style={{ padding: '8px', fontFamily: 'monospace' }}>{p.razorpayPaymentId || 'pay_test'}</td>
+                        <td style={{ padding: '8px' }}>#{p.cycleNumber || 1}</td>
+                        <td style={{ padding: '8px' }}>
+                          <span style={{ color: p.status === 'CAPTURED' ? '#16A34A' : '#DC2626', fontWeight: '700' }}>
+                            {p.status || 'CAPTURED'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Grant Modal */}
       {grantModal.isOpen && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
             background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 9999,
             padding: '16px',
           }}
+          onClick={() => setGrantModal({ isOpen: false, user: null, days: 30 })}
         >
-          <div style={{ background: '#FFF', borderRadius: '16px', maxWidth: '440px', width: '100%', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
-              Grant Subscription
+          <div
+            style={{
+              background: '#FFF',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '420px',
+              width: '100%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 8px' }}>
+              Grant MentorNearby All Access
             </h3>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px' }}>
-              Granting subscription to <strong>{grantModal.user?.name}</strong> ({grantModal.user?.email}).
+              Granting subscription to <strong>{grantModal.user?.name}</strong>.
             </p>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
-                Subscription Duration (Days)
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
+                Duration (Days)
               </label>
-              <select
+              <input
+                type="number"
+                min="1"
+                max="365"
                 value={grantModal.days}
-                onChange={(e) => setGrantModal((m) => ({ ...m, days: Number(e.target.value) }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '13px' }}
-              >
-                <option value={7}>7 Days (1 Week)</option>
-                <option value={15}>15 Days (2 Weeks)</option>
-                <option value={30}>30 Days (1 Month)</option>
-                <option value={60}>60 Days (2 Months)</option>
-                <option value={90}>90 Days (3 Months)</option>
-                <option value={180}>180 Days (6 Months)</option>
-                <option value={365}>365 Days (1 Year)</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
-                Plan Type
-              </label>
-              <select
-                value={grantModal.planType}
-                onChange={(e) => setGrantModal((m) => ({ ...m, planType: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '13px' }}
-              >
-                <option value="student">Student Plan (₹99/mo)</option>
-                <option value="teacher">Teacher Plan (₹149/mo)</option>
-                <option value="vip">VIP Unlimited</option>
-              </select>
+                onChange={(e) => setGrantModal({ ...grantModal, days: Number(e.target.value) })}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }}
+              />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               <button
-                disabled={actionLoading}
-                onClick={() => setGrantModal({ isOpen: false, user: null, days: 30, planType: 'student' })}
-                style={{
-                  background: '#F1F5F9',
-                  border: '1px solid #CBD5E1',
-                  color: '#475569',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                }}
+                type="button"
+                onClick={() => setGrantModal({ isOpen: false, user: null, days: 30 })}
+                style={{ background: '#F1F5F9', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
               >
                 Cancel
               </button>
               <button
-                disabled={actionLoading}
+                type="button"
                 onClick={handleGrant}
-                style={{
-                  background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
-                  border: 'none',
-                  color: '#FFF',
-                  padding: '8px 18px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)',
-                }}
+                disabled={actionLoading}
+                style={{ background: '#E11D48', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
               >
-                {actionLoading ? 'Granting...' : 'Confirm Grant'}
+                {actionLoading ? 'Granting...' : 'Grant All Access'}
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };

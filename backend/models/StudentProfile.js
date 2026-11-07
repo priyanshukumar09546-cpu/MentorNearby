@@ -113,6 +113,33 @@ const StudentProfileSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  listingStatus: {
+    type: String,
+    enum: ['Draft', 'Published', 'Suspended', 'Rejected'],
+    default: 'Draft',
+    index: true
+  },
+  publishedAt: {
+    type: Date,
+    default: null
+  },
+  suspendedAt: {
+    type: Date,
+    default: null
+  },
+  suspensionReason: {
+    type: String,
+    default: ''
+  },
+  suspendedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  rejectedAt: {
+    type: Date,
+    default: null
+  },
   isVerified: {
     type: Boolean,
     default: false

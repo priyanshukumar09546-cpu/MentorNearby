@@ -5,6 +5,7 @@ const ContactUnlock = require('../models/ContactUnlock');
 const Review = require('../models/Review');
 const TutorRequest = require('../models/TutorRequest');
 const cloudinaryService = require('../services/cloudinaryService');
+const { checkAndPublishListing } = require('../services/listingService');
 
 exports.getTutorProfile = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
@@ -155,7 +156,15 @@ exports.updateTutorProfile = asyncHandler(async (req, res, next) => {
     runValidators: true
   });
 
-  return success(res, 'Profile updated successfully', { tutorProfile });
+  // Automatic publication check (Part 6 & Part 7)
+  const publishResult = await checkAndPublishListing(req.user.id, 'TUTOR');
+  if (publishResult.published) {
+    tutorProfile = await TutorProfile.findById(tutorProfile._id);
+  }
+  return success(res, publishResult.message || 'Profile updated successfully', {
+    tutorProfile,
+    publication: publishResult
+  });
 });
 
 exports.uploadProfilePhoto = asyncHandler(async (req, res, next) => {
@@ -178,7 +187,13 @@ exports.uploadProfilePhoto = asyncHandler(async (req, res, next) => {
 
   await User.findByIdAndUpdate(req.user._id || req.user.id, { avatar: photoUrl });
 
-  return success(res, 'Profile photo uploaded successfully', { url: photoUrl, publicId });
+  // Automatic publication check now that photo is uploaded
+  const publishResult = await checkAndPublishListing(req.user.id, 'TUTOR');
+  return success(res, 'Profile photo uploaded successfully', {
+    url: photoUrl,
+    publicId,
+    publication: publishResult
+  });
 });
 
 exports.uploadIntroVideo = asyncHandler(async (req, res, next) => {
@@ -355,20 +370,23 @@ exports.getTutorStats = asyncHandler(async (req, res, next) => {
 // @route   GET /api/tutors/featured
 // @access  Public
 exports.getFeaturedTutors = asyncHandler(async (req, res, next) => {
-  const tutors = await TutorProfile.find({ profileVisibility: { $ne: false } })
-    .populate('user', 'name email avatar profilePic role isSuspended subscriptionType subscriptionExpiry')
+  const tutors = await TutorProfile.find({
+    profileVisibility: { $ne: false },
+    listingStatus: { $nin: ['Suspended', 'Rejected'] }
+  })
+    .populate('user', 'name email avatar profilePic role isSuspended isSubscribed subscriptionType subscriptionExpiry')
     .limit(30)
     .lean();
 
   const now = new Date();
 
-  // Exclude suspended / deleted accounts
-  const activeTutors = tutors.filter(t => !t.user || !t.user.isSuspended);
+  // Exclude suspended / deleted accounts and suspended listings
+  const activeTutors = tutors.filter(t => (!t.user || !t.user.isSuspended) && t.listingStatus !== 'Suspended' && t.listingStatus !== 'Rejected');
 
-  // Sorting rank: Pro tutors first, then verified, then profile completion %, then rating & newest
+  // Sorting rank: All Access / Pro tutors first, then verified, then profile completion %, then rating & newest
   activeTutors.sort((a, b) => {
-    const aIsPro = a.user?.subscriptionType === 'pro' && a.user?.subscriptionExpiry && new Date(a.user.subscriptionExpiry) > now;
-    const bIsPro = b.user?.subscriptionType === 'pro' && b.user?.subscriptionExpiry && new Date(b.user.subscriptionExpiry) > now;
+    const aIsPro = (a.user?.subscriptionType === 'all_access' || a.user?.subscriptionType === 'pro' || a.user?.isSubscribed) && a.user?.subscriptionExpiry && new Date(a.user.subscriptionExpiry) > now;
+    const bIsPro = (b.user?.subscriptionType === 'all_access' || b.user?.subscriptionType === 'pro' || b.user?.isSubscribed) && b.user?.subscriptionExpiry && new Date(b.user.subscriptionExpiry) > now;
     if (aIsPro && !bIsPro) return -1;
     if (!aIsPro && bIsPro) return 1;
 

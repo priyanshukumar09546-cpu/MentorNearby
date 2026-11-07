@@ -4,6 +4,7 @@ import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import ThemeSwitcher from '../../components/layout/ThemeSwitcher';
+import SubscriptionManagementCard from '../../components/subscription/SubscriptionManagementCard';
 import './StudentDashboard.css';
 
 /* ── Clean Inline SVG Graphics & Icons ── */
@@ -258,6 +259,15 @@ const StudentDashboardPage = () => {
               </li>
 
               <li className="sd-nav-item">
+                <a href="#subscription" className="sd-nav-link">
+                  <div className="sd-nav-left">
+                    <span className="sd-nav-icon">👑</span>
+                    <span>All Access (₹199)</span>
+                  </div>
+                </a>
+              </li>
+
+              <li className="sd-nav-item">
                 <Link to="/saved-tutors" className="sd-nav-link">
                   <div className="sd-nav-left">
                     <span className="sd-nav-icon">⭐</span>
@@ -457,34 +467,10 @@ const StudentDashboardPage = () => {
           </section>
 
           {/* ========================================================
-              MEMBERSHIP & UNLOCK ENTITLEMENT STATUS BANNER
+              MEMBERSHIP & UNLOCK ENTITLEMENT STATUS (ALL ACCESS)
               ======================================================== */}
-          <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase font-extrabold tracking-wider px-2.5 py-0.5 bg-blue-500/30 text-blue-200 border border-blue-400/30 rounded-md">
-                  Active Plan: {user?.subscriptionType === 'single' ? 'SINGLE UNLOCK' : (user?.subscriptionType ? user.subscriptionType.toUpperCase() : 'FREE')}
-                </span>
-                {user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date() && (
-                  <span className="text-xs text-blue-200">
-                    • Valid till {new Date(user.subscriptionExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
-                )}
-              </div>
-              <h3 className="text-lg font-bold text-white mt-1.5 flex items-center gap-2">
-                <span>⚡ Available Unlocks:</span>
-                <span className="text-emerald-300 font-extrabold">
-                  {user?.subscriptionType === 'pro' ? 'Unlimited' : `${user?.contactUnlocks ?? 0} Remaining`}
-                </span>
-              </h3>
-            </div>
-            <Link
-              to="/subscription"
-              className="bg-white hover:bg-blue-50 text-blue-900 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition flex items-center gap-1.5 whitespace-nowrap"
-            >
-              <span>👑</span>
-              <span>Upgrade Plan / Buy Unlocks</span>
-            </Link>
+          <div id="subscription">
+            <SubscriptionManagementCard role="STUDENT" />
           </div>
 
           {/* ========================================================

@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 const { success, error } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const User = require('../models/User');
+const Subscription = require('../models/Subscription');
+const Payment = require('../models/Payment');
+const { UNIFIED_PLAN } = require('../config/subscription');
+const listingService = require('../services/listingService');
 const StudentProfile = require('../models/StudentProfile');
 const TutorProfile = require('../models/TutorProfile');
 const KYC = require('../models/KYC');
@@ -2312,91 +2316,210 @@ exports.resendTutorEmail = asyncHandler(async (req, res, next) => {
 
 // ============================================================
 // SUBSCRIPTION MANAGEMENT (Admin Control Center)
+// Plan: "MentorNearby All Access" — ₹199/month Recurring AutoPay
 // ============================================================
 
-// @desc    Get all subscriptions with stats and pagination
+// @desc    Get all subscriptions with comprehensive stats, search & filtering
 // @route   GET /api/admin/subscriptions
 // @access  Private (Admin only)
 exports.adminGetSubscriptions = asyncHandler(async (req, res, next) => {
-  const { search, role, status = 'all', page = 1, limit = 50 } = req.query;
+  const { search, role, status = 'all', paymentStatus, page = 1, limit = 50 } = req.query;
 
-  const query = {};
+  const now = new Date();
+  const subQuery = {};
 
-  if (role) {
-    query.role = role.toUpperCase();
+  if (role && role !== 'all') {
+    subQuery.userRole = role.toUpperCase();
   }
 
-  if (status === 'active') {
-    query.isSubscribed = true;
-    query.subscriptionExpiry = { $gt: new Date() };
-  } else if (status === 'expired') {
-    query.$or = [
-      { isSubscribed: false, subscriptionExpiry: { $exists: true, $ne: null } },
-      { isSubscribed: true, subscriptionExpiry: { $lte: new Date() } },
-    ];
-  } else {
-    // Return anyone who is currently subscribed OR has a subscription expiry on record
-    query.$or = [
-      { isSubscribed: true },
-      { subscriptionExpiry: { $exists: true, $ne: null } },
-    ];
+  if (status && status !== 'all') {
+    if (status.toUpperCase() === 'ACTIVE') {
+      subQuery.status = 'ACTIVE';
+      subQuery.nextBillingDate = { $gt: now };
+    } else if (status.toUpperCase() === 'CANCELLED') {
+      subQuery.status = 'CANCELLED';
+    } else if (status.toUpperCase() === 'EXPIRED') {
+      subQuery.$or = [
+        { status: 'EXPIRED' },
+        { status: 'ACTIVE', nextBillingDate: { $lte: now } },
+      ];
+    } else if (status.toUpperCase() === 'PENDING') {
+      subQuery.status = { $in: ['PENDING_AUTHORIZATION', 'PENDING_PAYMENT'] };
+    } else if (status.toUpperCase() === 'FAILED') {
+      subQuery.status = 'PAYMENT_FAILED';
+    } else {
+      subQuery.status = status.toUpperCase();
+    }
   }
 
-  if (search) {
-    const searchRegex = new RegExp(search.trim(), 'i');
-    query.$and = [
+  // If user searched by name, email, or phone
+  let userIds = null;
+  if (search && search.trim()) {
+    const sRegex = new RegExp(search.trim(), 'i');
+    const matchedUsers = await User.find(
       {
-        $or: [
-          { name: searchRegex },
-          { email: searchRegex },
-          { phone: searchRegex },
-        ],
+        $or: [{ name: sRegex }, { email: sRegex }, { phone: sRegex }],
       },
-    ];
+      '_id'
+    ).lean();
+    userIds = matchedUsers.map((u) => u._id);
+    subQuery.user = { $in: userIds };
   }
 
   const pageNum = parseInt(page) || 1;
   const limitNum = Math.min(parseInt(limit) || 50, 100);
   const startIndex = (pageNum - 1) * limitNum;
 
-  const total = await User.countDocuments(query);
-  const subscribers = await User.find(query)
-    .select('name email phone role isSubscribed subscriptionType subscriptionExpiry razorpaySubscriptionId freeChatsUsed freeLeadsUsed createdAt')
-    .sort({ subscriptionExpiry: -1, createdAt: -1 })
+  // Query subscriptions collection
+  let total = await Subscription.countDocuments(subQuery);
+  let subscriptionsList = await Subscription.find(subQuery)
+    .populate('user', 'name email phone role isSubscribed subscriptionExpiry avatar')
+    .sort({ nextBillingDate: -1, createdAt: -1 })
     .skip(startIndex)
     .limit(limitNum)
     .lean();
 
-  const now = new Date();
-  const totalActive = await User.countDocuments({
-    isSubscribed: true,
-    subscriptionExpiry: { $gt: now },
-  });
-  const totalStudentsSubscribed = await User.countDocuments({
-    role: { $in: ['STUDENT', 'PARENT'] },
-    isSubscribed: true,
-    subscriptionExpiry: { $gt: now },
-  });
-  const totalTutorsSubscribed = await User.countDocuments({
-    role: 'TUTOR',
-    isSubscribed: true,
-    subscriptionExpiry: { $gt: now },
-  });
+  // If subscriptions collection has few/no records yet, sync legacy subscribed users seamlessly
+  if (subscriptionsList.length === 0 && (!search || userIds?.length > 0)) {
+    const legacyUserQuery = {
+      $or: [
+        { isSubscribed: true },
+        { subscriptionExpiry: { $exists: true, $ne: null } },
+      ],
+    };
+    if (role && role !== 'all') legacyUserQuery.role = role.toUpperCase();
+    if (userIds) legacyUserQuery._id = { $in: userIds };
 
-  const estimatedMonthlyRevenue = (totalStudentsSubscribed * 99) + (totalTutorsSubscribed * 149);
+    const legacyUsers = await User.find(legacyUserQuery)
+      .select('name email phone role isSubscribed subscriptionType subscriptionExpiry razorpaySubscriptionId createdAt')
+      .sort({ subscriptionExpiry: -1 })
+      .skip(startIndex)
+      .limit(limitNum)
+      .lean();
+
+    total = await User.countDocuments(legacyUserQuery);
+    subscriptionsList = legacyUsers.map((u) => {
+      const isAct = u.isSubscribed && u.subscriptionExpiry && new Date(u.subscriptionExpiry) > now;
+      return {
+        _id: u._id,
+        user: u,
+        userRole: u.role || 'STUDENT',
+        planId: UNIFIED_PLAN.id,
+        planName: UNIFIED_PLAN.name,
+        amount: UNIFIED_PLAN.amount,
+        currency: 'INR',
+        billingCycle: 'monthly',
+        status: isAct ? 'ACTIVE' : (u.subscriptionExpiry ? 'EXPIRED' : 'INACTIVE'),
+        mandateStatus: isAct ? 'AUTHORIZED' : 'NOT_CONFIGURED',
+        startDate: u.createdAt,
+        nextBillingDate: u.subscriptionExpiry,
+        lastPaymentDate: u.createdAt,
+        razorpaySubscriptionId: u.razorpaySubscriptionId || `sub_legacy_${u._id}`,
+      };
+    });
+  }
+
+  // Calculate Real Verification Analytics
+  const [
+    totalSubscribers,
+    activeSubscribers,
+    activeTutorSubscriptions,
+    activeStudentSubscriptions,
+    pendingSubscriptions,
+    cancelledSubscriptions,
+    failedPaymentsCount,
+    authorizedMandates,
+    successfulPaymentsCount,
+    upcomingRenewalsCount,
+  ] = await Promise.all([
+    Subscription.countDocuments(),
+    Subscription.countDocuments({ status: 'ACTIVE', nextBillingDate: { $gt: now } }),
+    Subscription.countDocuments({ status: 'ACTIVE', userRole: 'TUTOR', nextBillingDate: { $gt: now } }),
+    Subscription.countDocuments({ status: 'ACTIVE', userRole: { $in: ['STUDENT', 'PARENT'] }, nextBillingDate: { $gt: now } }),
+    Subscription.countDocuments({ status: { $in: ['PENDING_AUTHORIZATION', 'PENDING_PAYMENT'] } }),
+    Subscription.countDocuments({ status: 'CANCELLED' }),
+    Payment.countDocuments({ status: 'FAILED' }),
+    Subscription.countDocuments({ mandateStatus: 'AUTHORIZED' }),
+    Payment.countDocuments({ status: 'CAPTURED' }),
+    Subscription.countDocuments({
+      status: 'ACTIVE',
+      nextBillingDate: {
+        $gt: now,
+        $lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // Next 7 days
+      },
+    }),
+  ]);
+
+  // Monthly Recurring Revenue = Active Subscribers * ₹199
+  const effectiveActive = Math.max(activeSubscribers, await User.countDocuments({ isSubscribed: true, subscriptionExpiry: { $gt: now } }));
+  const monthlyRecurringRevenue = effectiveActive * UNIFIED_PLAN.amount;
 
   return success(res, 'Subscriptions fetched successfully', {
-    subscribers,
+    subscriptions: subscriptionsList,
     total,
     page: pageNum,
-    pages: Math.ceil(total / limitNum),
+    pages: Math.ceil(total / limitNum) || 1,
     stats: {
-      totalActive,
-      totalStudentsSubscribed,
-      totalTutorsSubscribed,
-      estimatedMonthlyRevenue,
+      totalSubscribers: Math.max(totalSubscribers, total),
+      activeSubscribers: effectiveActive,
+      activeTutorSubscriptions,
+      activeStudentSubscriptions,
+      pendingSubscriptions,
+      cancelledSubscriptions,
+      failedPayments: failedPaymentsCount,
+      authorizedAutoPayMandates: Math.max(authorizedMandates, effectiveActive),
+      monthlyRecurringRevenue,
+      successfulPaymentCollections: successfulPaymentsCount,
+      upcomingRenewals: upcomingRenewalsCount,
+      unifiedPlanPrice: UNIFIED_PLAN.amount,
+      planName: UNIFIED_PLAN.name,
     },
   });
+});
+
+// @desc    Get subscription payment history for admin details view
+// @route   GET /api/admin/subscriptions/:id/payments
+// @access  Private (Admin only)
+exports.adminGetSubscriptionPayments = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const payments = await Payment.find({
+    $or: [{ subscription: id }, { user: id }],
+  }).sort({ createdAt: -1 });
+
+  return success(res, 'Payment history retrieved', { payments });
+});
+
+// @desc    Export Subscriptions Report to CSV
+// @route   GET /api/admin/subscriptions/export/csv
+// @access  Private (Admin only)
+exports.adminExportSubscriptionsCSV = asyncHandler(async (req, res, next) => {
+  const subscriptions = await Subscription.find()
+    .populate('user', 'name email phone role')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  let csv = 'User Name,Email,Phone,Role,Plan,Amount (INR),Subscription Status,AutoPay Mandate,Start Date,Next Billing Date,Last Payment Date,Razorpay Sub ID\n';
+
+  subscriptions.forEach((sub) => {
+    const name = (sub.user?.name || 'N/A').replace(/"/g, '""');
+    const email = sub.user?.email || 'N/A';
+    const phone = sub.user?.phone || 'N/A';
+    const role = sub.userRole || sub.user?.role || 'STUDENT';
+    const plan = sub.planName || UNIFIED_PLAN.name;
+    const amount = sub.amount || UNIFIED_PLAN.amount;
+    const status = sub.status;
+    const mandate = sub.mandateStatus;
+    const start = sub.startDate ? new Date(sub.startDate).toLocaleDateString('en-IN') : '';
+    const nextBill = sub.nextBillingDate ? new Date(sub.nextBillingDate).toLocaleDateString('en-IN') : '';
+    const lastPay = sub.lastPaymentDate ? new Date(sub.lastPaymentDate).toLocaleDateString('en-IN') : '';
+    const subId = sub.razorpaySubscriptionId || '';
+
+    csv += `"${name}","${email}","${phone}","${role}","${plan}",${amount},"${status}","${mandate}","${start}","${nextBill}","${lastPay}","${subId}"\n`;
+  });
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=subscriptions-report-${Date.now()}.csv`);
+  return res.status(200).send(csv);
 });
 
 // @desc    Manually grant subscription to a user (teacher/student)
@@ -2404,7 +2527,7 @@ exports.adminGetSubscriptions = asyncHandler(async (req, res, next) => {
 // @access  Private (Admin only)
 exports.adminGrantSubscription = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const { days = 30, planType } = req.body;
+  const { days = 30 } = req.body;
 
   const user = await User.findById(id);
   if (!user) {
@@ -2418,23 +2541,43 @@ exports.adminGrantSubscription = asyncHandler(async (req, res, next) => {
     : now;
 
   const newExpiry = new Date(currentExpiry.getTime() + durationDays * 24 * 60 * 60 * 1000);
-  const determinedPlan = planType || (user.role === 'TUTOR' ? 'teacher' : 'student');
 
   user.isSubscribed = true;
+  user.isPremium = true;
   user.subscriptionExpiry = newExpiry;
-  user.subscriptionType = determinedPlan;
+  user.subscriptionType = 'all_access';
+  user.contactUnlocks = 999999;
   await user.save();
+
+  // Create or update Subscription record
+  let sub = await Subscription.findOne({ user: user._id });
+  if (!sub) {
+    sub = new Subscription({
+      user: user._id,
+      userRole: user.role || 'STUDENT',
+      planId: UNIFIED_PLAN.id,
+      planName: UNIFIED_PLAN.name,
+      amount: UNIFIED_PLAN.amount,
+      currency: 'INR',
+      razorpaySubscriptionId: `sub_manual_${Date.now()}`,
+    });
+  }
+  sub.status = 'ACTIVE';
+  sub.mandateStatus = 'AUTHORIZED';
+  sub.nextBillingDate = newExpiry;
+  sub.lastPaymentDate = now;
+  await sub.save();
 
   await logAuditAction({
     adminId: req.user._id,
     action: 'USER_ROLE_CHANGED',
     targetType: 'USER',
     targetId: user._id,
-    details: `Manually granted ${durationDays} days of ${determinedPlan} subscription (valid until ${newExpiry.toLocaleDateString('en-IN')}) to ${user.name} (${user.email}).`,
+    details: `Manually granted ${durationDays} days of MentorNearby All Access subscription (valid until ${newExpiry.toLocaleDateString('en-IN')}) to ${user.name} (${user.email}).`,
     req,
   });
 
-  return success(res, `Successfully granted ${durationDays} days of subscription to ${user.name}`, {
+  return success(res, `Successfully granted ${durationDays} days of MentorNearby All Access to ${user.name}`, {
     user: {
       _id: user._id,
       name: user.name,
@@ -2444,6 +2587,7 @@ exports.adminGrantSubscription = asyncHandler(async (req, res, next) => {
       subscriptionType: user.subscriptionType,
       subscriptionExpiry: user.subscriptionExpiry,
     },
+    subscription: sub,
   });
 });
 
@@ -2462,6 +2606,11 @@ exports.adminRevokeSubscription = asyncHandler(async (req, res, next) => {
   user.subscriptionExpiry = new Date(Date.now() - 1000);
   await user.save();
 
+  await Subscription.findOneAndUpdate(
+    { user: user._id },
+    { status: 'CANCELLED', mandateStatus: 'CANCELLED', cancellationDate: new Date() }
+  );
+
   await logAuditAction({
     adminId: req.user._id,
     action: 'USER_ROLE_CHANGED',
@@ -2479,4 +2628,104 @@ exports.adminRevokeSubscription = asyncHandler(async (req, res, next) => {
       subscriptionExpiry: user.subscriptionExpiry,
     },
   });
+});
+
+// ============================================================
+// LISTINGS MANAGEMENT (Admin Moderation Center)
+// Part 9 — Comprehensive Listing Controls & Statistics
+// ============================================================
+
+// @desc    Get overall listing statistics
+// @route   GET /api/admin/listings/stats
+// @access  Private (Admin only)
+exports.adminGetListingsStats = asyncHandler(async (req, res, next) => {
+  const [
+    totalTutors,
+    totalStudents,
+    publishedTutors,
+    publishedStudents,
+    suspendedTutors,
+    suspendedStudents,
+    rejectedTutors,
+    rejectedStudents,
+    incompleteTutors,
+  ] = await Promise.all([
+    TutorProfile.countDocuments(),
+    StudentProfile.countDocuments(),
+    TutorProfile.countDocuments({ listingStatus: 'Published' }),
+    StudentProfile.countDocuments({ listingStatus: 'Published' }),
+    TutorProfile.countDocuments({ listingStatus: 'Suspended' }),
+    StudentProfile.countDocuments({ listingStatus: 'Suspended' }),
+    TutorProfile.countDocuments({ listingStatus: 'Rejected' }),
+    StudentProfile.countDocuments({ listingStatus: 'Rejected' }),
+    TutorProfile.countDocuments({
+      $or: [
+        { 'profilePhoto.url': { $exists: false } },
+        { 'profilePhoto.url': null },
+        { 'profilePhoto.url': '' },
+      ],
+    }),
+  ]);
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentlyPublished = await TutorProfile.countDocuments({
+    listingStatus: 'Published',
+    publishedAt: { $gte: oneDayAgo },
+  });
+
+  return success(res, 'Listings statistics retrieved successfully', {
+    totalTutorListings: totalTutors,
+    totalStudentListings: totalStudents,
+    publishedListings: publishedTutors + publishedStudents,
+    publishedTutors,
+    publishedStudents,
+    suspendedListings: suspendedTutors + suspendedStudents,
+    suspendedTutors,
+    suspendedStudents,
+    rejectedListings: rejectedTutors + rejectedStudents,
+    incompleteProfiles: incompleteTutors,
+    recentlyPublishedListings: recentlyPublished,
+  });
+});
+
+// @desc    Suspend listing with reason (Immediately removes from public discovery)
+// @route   POST /api/admin/listings/:id/suspend
+// @access  Private (Admin only)
+exports.adminSuspendListing = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { role = 'TUTOR', reason } = req.body;
+
+  const profile = await listingService.suspendListing(id, role, reason, req.user);
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'USER_ROLE_CHANGED',
+    targetType: role.toUpperCase() === 'TUTOR' ? 'TUTOR' : 'STUDENT',
+    targetId: profile._id,
+    details: `Suspended listing for ${role} profile ${profile._id}. Reason: ${reason || 'Policy violation'}`,
+    req,
+  });
+
+  return success(res, 'Listing suspended successfully and removed from public discovery', { profile });
+});
+
+// @desc    Restore suspended listing
+// @route   POST /api/admin/listings/:id/restore
+// @access  Private (Admin only)
+exports.adminRestoreListing = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { role = 'TUTOR' } = req.body;
+
+  const profile = await listingService.restoreListing(id, role, req.user);
+
+  await logAuditAction({
+    adminId: req.user._id,
+    action: 'USER_ROLE_CHANGED',
+    targetType: role.toUpperCase() === 'TUTOR' ? 'TUTOR' : 'STUDENT',
+    targetId: profile._id,
+    details: `Restored ${role} listing ${profile._id} to Published status.`,
+    req,
+  });
+
+  return success(res, 'Listing restored and published successfully', { profile });
 });

@@ -141,7 +141,7 @@ const UserSchema = new mongoose.Schema({
   },
   subscriptionType: {
     type: String,
-    enum: ['free', 'single', 'single_unlock', 'starter', 'pro', 'student', 'teacher', 'basic', 'premium', 'vip', null],
+    enum: ['free', 'all_access', 'single', 'single_unlock', 'starter', 'pro', 'student', 'teacher', 'basic', 'premium', 'vip', null],
     default: 'free'
   },
   subscriptionExpiry: {

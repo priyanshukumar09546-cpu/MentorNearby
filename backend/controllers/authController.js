@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const { success, error } = require('../utils/apiResponse');
+const { checkAndPublishListing } = require('../services/listingService');
 const asyncHandler = require('../utils/asyncHandler');
 const { generateToken, sendTokenResponse, setTokenCookie } = require('../utils/generateToken');
 const User = require('../models/User');
@@ -494,7 +495,9 @@ exports.verifyEmail = asyncHandler(async (req, res, next) => {
   user.emailVerificationExpires = undefined;
   await user.save({ validateBeforeSave: false });
 
-  return success(res, 'Email verified successfully');
+  // Automatic publication check now that email is verified
+  const publishResult = await checkAndPublishListing(user._id, user.role);
+  return success(res, 'Email verified successfully', { publication: publishResult });
 });
 
 // Explicit trusted origins for secure password reset links

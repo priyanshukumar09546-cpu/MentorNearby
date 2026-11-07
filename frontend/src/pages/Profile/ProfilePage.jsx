@@ -575,6 +575,48 @@ const ProfilePage = () => {
 
         {/* Content Canvas */}
         <main className="sp-content">
+
+          {/* Mandatory Profile Photo Banner */}
+          {!photoUrl && (
+            <div style={{
+              background: '#FFFBEB',
+              border: '1px solid #FDE68A',
+              borderRadius: '12px',
+              padding: '14px 18px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>📸</span>
+                <div>
+                  <strong style={{ color: '#92400E', fontSize: '13.5px' }}>Profile Photo Required for Auto-Publishing:</strong>
+                  <p style={{ color: '#B45309', fontSize: '12px', margin: '2px 0 0' }}>
+                    Upload a profile photo so tutors can recognize you and your tuition requirements can be automatically published.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  background: '#D97706',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+              >
+                Upload Photo Now
+              </button>
+            </div>
+          )}
           
           {/* 1. TOP PROFILE HERO CARD */}
           <section className="sp-hero-card">

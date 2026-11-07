@@ -645,6 +645,48 @@ const EditTutorProfilePage = () => {
         {/* Dashboard Body */}
         <main className="tpm-body">
 
+          {/* Profile Photo Required Banner for Auto-Publishing */}
+          {(!tUser.avatar && !tProfile.profilePhoto?.url) && (
+            <div style={{
+              background: '#FFFBEB',
+              border: '1px solid #FDE68A',
+              borderRadius: '12px',
+              padding: '14px 18px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>📸</span>
+                <div>
+                  <strong style={{ color: '#92400E', fontSize: '13.5px' }}>Profile Photo Required for Auto-Publishing:</strong>
+                  <p style={{ color: '#B45309', fontSize: '12px', margin: '2px 0 0' }}>
+                    Upload a clear profile photo to automatically publish your listing on the public search marketplace.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  background: '#D97706',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+              >
+                Upload Photo Now
+              </button>
+            </div>
+          )}
+
           {/* ========================================================
               1. TOP PROFILE HEADER ROW (Hero Left + Completion Right)
               ======================================================== */}

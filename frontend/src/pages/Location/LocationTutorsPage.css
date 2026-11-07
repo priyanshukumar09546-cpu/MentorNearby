@@ -1,0 +1,58 @@
+/* LocationTutorsPage.css */
+.location-page-container {
+  min-height: 100vh;
+  background-color: #FAF9F6;
+  color: #1E293B;
+  display: flex;
+  flex-direction: column;
+}
+
+.location-max-w {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.location-breadcrumbs {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.location-hero {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAF9F6 100%);
+  border-bottom: 1px solid #E2E8F0;
+}
+
+/* Dark mode overrides if dark theme is active */
+.dark .location-page-container {
+  background-color: #0F172A;
+  color: #F8FAFC;
+}
+
+.dark .location-breadcrumbs {
+  background-color: #1E293B;
+  border-color: #334155;
+}
+
+.dark .location-hero {
+  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  border-color: #334155;
+}
+
+.dark .location-localities-section {
+  background-color: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+.dark .location-localities-section a {
+  background-color: #0F172A !important;
+  color: #CBD5E1 !important;
+  border-color: #334155 !important;
+}
+
+.dark .location-localities-section a:hover {
+  background-color: #334155 !important;
+  color: #FBBF24 !important;
+}

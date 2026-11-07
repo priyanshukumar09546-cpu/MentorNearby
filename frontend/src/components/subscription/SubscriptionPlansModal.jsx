@@ -1,17 +1,17 @@
 // ============================================================
 // components/subscription/SubscriptionPlansModal.jsx
-// Multi-Tier Subscription & Contact Unlock Modal
+// MentorNearby All Access — Unified Plan Unlock Modal
 // ============================================================
 
 import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import client from '../../api/client';
+import { UNIFIED_PLAN } from '../../config/subscription';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
 
 const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnlockSuccess }) => {
-  const [selectedPlan, setSelectedPlan] = useState('basic');
   const [isProcessing, setIsProcessing] = useState(false);
   const [unlockedContact, setUnlockedContact] = useState(null);
 
@@ -19,37 +19,7 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const plans = [
-    {
-      id: 'basic',
-      name: 'Starter Plan',
-      price: 0,
-      duration: '30 Days',
-      unlocks: '3 Contact Unlocks',
-      features: ['3 Direct Phone Numbers', 'Unlimited Direct Chats', 'Full Watermarked PDF Notes (Free)'],
-      popular: false,
-    },
-    {
-      id: 'premium',
-      name: 'Value Pack',
-      price: 199,
-      duration: '60 Days',
-      unlocks: '15 Contact Unlocks',
-      features: ['15 Direct Phone Numbers', 'Unlimited Direct Chats', 'All PYQs & Video Solutions', 'Priority Tutor Matching'],
-      popular: true,
-    },
-    {
-      id: 'pro',
-      name: 'Pro Master',
-      price: 499,
-      duration: '90 Days',
-      unlocks: '30 Contact Unlocks',
-      features: ['30 Direct Phone Numbers', 'Unlimited Chats with all Tutors', 'VIP 24/7 Academic Support', 'All Study Materials'],
-      popular: false,
-    },
-  ];
-
-  const handlePayPlan = async (planKey) => {
+  const handlePayPlan = async () => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
@@ -57,44 +27,9 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
 
     setIsProcessing(true);
     try {
-      // Free Starter Plan: activate immediately
-      if (planKey === 'basic') {
-        await client.post('/subscription/create-order', {
-          planType: 'basic',
-          amount: 0,
-          tutorId: teacherId,
-        });
-
-        if (teacherId) {
-          try {
-            const tutorRes = await client.get(`/tutors/${teacherId}`);
-            const tData = tutorRes.data?.data?.tutorProfile || tutorRes.data?.data;
-            const realPhone = tData?.phone || tData?.user?.phone || '';
-            setUnlockedContact({
-              name: tData?.name || tData?.user?.name || teacherName || 'Teacher',
-              phone: realPhone,
-              whatsappNumber: tData?.whatsappNumber || realPhone,
-              email: tData?.user?.email || tData?.email || '',
-            });
-          } catch (_) {
-            setUnlockedContact({
-              name: teacherName || 'Teacher',
-              phone: '',
-              whatsappNumber: '',
-              email: '',
-            });
-          }
-        }
-        showToast('🎉 Starter Plan activated for FREE! Contact unlocked.', 'success');
-        if (onUnlockSuccess) onUnlockSuccess();
-        setIsProcessing(false);
-        return;
-      }
-
-      // 1. Create order on backend
+      // Create subscription order / mandate on backend
       const res = await client.post('/subscription/create-order', {
-        planType: planKey,
-        amount: planKey === 'pro' ? 499 : planKey === 'premium' ? 199 : 99,
+        planType: UNIFIED_PLAN.id,
         tutorId: teacherId,
       });
 
@@ -102,12 +37,12 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
       const orderId = orderData.orderId || res.data?.orderId;
       const key = orderData.razorpayKeyId || res.data?.key || import.meta.env.VITE_RAZORPAY_KEY || 'rzp_test_placeholder';
 
-      // 2. Test mode / Fast verification fallback
+      // Test mode / Simulation fast verification
       if (
         !orderId ||
         orderId.startsWith('order_test_') ||
         orderId.startsWith('order_sim_') ||
-        orderId.startsWith('order_mn_') ||
+        orderId.startsWith('sub_sim_') ||
         !window.Razorpay ||
         key.includes('test') ||
         key.includes('placeholder')
@@ -115,8 +50,9 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
         const verifyRes = await client.post('/subscription/verify', {
           orderId: orderId || `order_test_${Date.now()}`,
           paymentId: `pay_test_${Date.now()}`,
+          subscriptionId: orderData.subscriptionId || `sub_test_${Date.now()}`,
           tutorId: teacherId,
-          plan: planKey,
+          planType: UNIFIED_PLAN.id,
         });
 
         const contact = verifyRes.data?.contactInfo || verifyRes.data?.data?.contactInfo;
@@ -143,20 +79,21 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
           }
         }
 
-        showToast('🎉 Plan activated successfully! Contact number unlocked.', 'success');
+        showToast('🎉 MentorNearby All Access activated! Contact number unlocked.', 'success');
         if (onUnlockSuccess) onUnlockSuccess();
         setIsProcessing(false);
         return;
       }
 
-      // 3. Live Razorpay Integration
+      // Live Razorpay recurring checkout
       const options = {
         key: key,
-        amount: (planKey === 'pro' ? 499 : planKey === 'premium' ? 199 : 99) * 100,
+        amount: orderData.amount || UNIFIED_PLAN.amountInPaise,
         currency: 'INR',
         name: 'MentorNearby',
-        description: `${planKey.toUpperCase()} Plan Unlock`,
+        description: 'MentorNearby All Access — ₹199/month AutoPay',
         order_id: orderId,
+        subscription_id: orderData.subscriptionId || undefined,
         prefill: {
           name: user?.name || '',
           email: user?.email || '',
@@ -165,16 +102,17 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
         handler: async function (response) {
           try {
             const verifyRes = await client.post('/subscription/verify', {
-              razorpay_order_id: response.razorpay_order_id,
+              razorpay_order_id: response.razorpay_order_id || orderId,
               razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_subscription_id: response.razorpay_subscription_id || orderData.subscriptionId,
               razorpay_signature: response.razorpay_signature,
               tutorId: teacherId,
-              plan: planKey,
+              planType: UNIFIED_PLAN.id,
             });
 
             const contact = verifyRes.data?.contactInfo || verifyRes.data?.data?.contactInfo;
             setUnlockedContact(contact || { phone: '', whatsappNumber: '' });
-            showToast('🎉 Plan activated & contact unlocked!', 'success');
+            showToast('🎉 All Access activated & contact unlocked!', 'success');
             if (onUnlockSuccess) onUnlockSuccess();
           } catch (err) {
             showToast('Payment verification failed', 'error');
@@ -182,7 +120,7 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
             setIsProcessing(false);
           }
         },
-        theme: { color: '#4F46E5' },
+        theme: { color: '#E11D48' },
         modal: {
           ondismiss: () => {
             setIsProcessing(false);
@@ -203,92 +141,75 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Choose Plan to Unlock">
-      <div className="p-2 sm:p-4 text-center max-w-xl mx-auto">
+    <Modal isOpen={isOpen} onClose={onClose} title="Unlock Direct Contact">
+      <div className="p-2 sm:p-4 text-center max-w-lg mx-auto">
         {!unlockedContact ? (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div>
-              <span className="text-xs font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1 rounded-full">
-                ⭐ 100% Direct Contact Guarantee
+              <span className="text-xs font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-full">
+                👑 MentorNearby All Access
               </span>
-              <h3 className="text-2xl font-extrabold text-gray-900 mt-2">
+              <h3 className="text-xl sm:text-2xl font-black text-gray-900 mt-2">
                 Unlock {teacherName ? `${teacherName}'s` : 'Teacher'} Direct Phone Number
               </h3>
               <p className="text-xs text-gray-600 mt-1 max-w-md mx-auto">
-                Select a plan to unlock verified phone numbers and chat with teachers near you. Zero middleman brokerage.
+                Get unlimited tutor contact reveals, instant chat & calling, and study resource downloads with MentorNearby All Access.
               </p>
             </div>
 
-            {/* Plan Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-left">
-              {plans.map((p) => {
-                const isSelected = selectedPlan === p.id;
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => setSelectedPlan(p.id)}
-                    className={`relative p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
-                      isSelected
-                        ? 'border-indigo-600 bg-indigo-50/40 shadow-md'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    {p.popular && (
-                      <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full shadow-xs">
-                        ⭐ Popular
-                      </span>
-                    )}
+            {/* Unified Plan Card */}
+            <div className="p-5 rounded-2xl border-2 border-rose-600 bg-rose-50/40 shadow-sm text-left relative">
+              <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">
+                ⭐ ALL INCLUSIVE
+              </span>
 
-                    <div className="space-y-2">
-                      <p className="text-xs font-bold text-gray-500 uppercase">{p.name}</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-2xl font-black ${p.price === 0 ? 'text-emerald-600' : 'text-gray-900'}`}>
-                          {p.price === 0 ? 'FREE' : `₹${p.price}`}
-                        </span>
-                        <span className="text-[11px] text-gray-500">/ {p.duration}</span>
-                      </div>
-                      <p className="text-xs font-extrabold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md inline-block">
-                        {p.unlocks}
-                      </p>
+              <div className="flex items-baseline justify-between mb-2">
+                <div>
+                  <h4 className="text-base font-extrabold text-gray-900">MentorNearby All Access</h4>
+                  <p className="text-xs text-gray-500">Recurring monthly AutoPay • Cancel anytime</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-3xl font-black text-rose-600">₹{UNIFIED_PLAN.amount}</span>
+                  <span className="text-xs text-gray-500">/mo</span>
+                </div>
+              </div>
 
-                      <ul className="text-[11px] text-gray-600 space-y-1 pt-2 border-t border-gray-100">
-                        {p.features.map((f, i) => (
-                          <li key={i} className="flex items-center gap-1.5">
-                            <span className="text-emerald-600 font-bold">✓</span> {f}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+              <div className="pt-3 border-t border-rose-100 text-xs text-gray-700 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span><strong>Unlimited</strong> tutor contact reveals (Phone & WhatsApp)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span>Instant in-app chat & direct calling</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span>Full access to chapter notes & formula sheets</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span>Zero commission or middleman charges</span>
+                </div>
+              </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePayPlan(p.id);
-                      }}
-                      disabled={isProcessing}
-                      className={`mt-4 w-full py-2.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer border-none ${
-                        p.price === 0
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          : isSelected
-                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
-                      }`}
-                    >
-                      {isProcessing && selectedPlan === p.id
-                        ? 'Processing...'
-                        : p.price === 0
-                        ? 'Get Started Free'
-                        : `Unlock for ₹${p.price}`}
-                    </button>
-                  </div>
-                );
-              })}
+              <div className="mt-4 pt-3 border-t border-rose-100 text-[11px] text-amber-800 bg-amber-50 rounded-lg p-2.5 border border-amber-200">
+                ⚡ Automatically renews at ₹199/month. You can cancel AutoPay anytime with 1 click from your dashboard.
+              </div>
+
+              <button
+                type="button"
+                onClick={handlePayPlan}
+                disabled={isProcessing}
+                className="mt-4 w-full py-3 rounded-xl text-sm font-extrabold transition shadow-md cursor-pointer border-none bg-rose-600 hover:bg-rose-700 text-white"
+              >
+                {isProcessing ? 'Connecting to AutoPay...' : `Unlock with All Access (₹${UNIFIED_PLAN.amount}/mo) →`}
+              </button>
             </div>
 
             <div className="pt-2 flex items-center justify-between text-xs text-gray-500 border-t border-gray-100">
-              <span>🔒 Secure 256-bit encrypted checkout</span>
-              <span>⚡ Instant contact reveal</span>
+              <span>🔒 256-bit Bank Grade Security</span>
+              <span>⚡ Instant Unlocking</span>
             </div>
           </div>
         ) : (
@@ -307,7 +228,7 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
                 <span className="text-2xl">📞</span>
                 <div>
                   <p className="text-[11px] font-bold uppercase text-gray-500">Phone Number</p>
-                  <a href={`tel:${unlockedContact.phone}`} className="text-lg font-black text-gray-900 hover:text-indigo-600">
+                  <a href={`tel:${unlockedContact.phone}`} className="text-lg font-black text-gray-900 hover:text-rose-600">
                     {unlockedContact.phone}
                   </a>
                 </div>
@@ -348,7 +269,7 @@ const SubscriptionPlansModal = ({ isOpen, onClose, teacherId, teacherName, onUnl
                   onClose();
                   navigate(`/messages?user=${teacherId}&recipient=${teacherId}`);
                 }}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 rounded-xl transition shadow-xs cursor-pointer"
+                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 rounded-xl transition shadow-xs cursor-pointer"
               >
                 💬 Start Chat with Teacher
               </button>

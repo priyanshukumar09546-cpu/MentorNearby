@@ -48,6 +48,11 @@ const {
   adminGetSubscriptions,
   adminGrantSubscription,
   adminRevokeSubscription,
+  adminGetSubscriptionPayments,
+  adminExportSubscriptionsCSV,
+  adminGetListingsStats,
+  adminSuspendListing,
+  adminRestoreListing,
 } = require('../controllers/adminController');
 const {
   adminGetKycList,

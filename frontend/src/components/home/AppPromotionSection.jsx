@@ -1,17 +1,17 @@
 // ============================================================
 // components/home/AppPromotionSection.jsx
-// MentorNearby — Mobile App Promotion Section
-// Matching Reference Image 2 with dual realistic iPhone mockups
-// Left: Copy, Feature rows, Store buttons
-// Right: Home Screen & Explore Screen mobile mockups
+// MentorNearby — Mobile App Showcase Section
+// Matching Reference Image Composition with Triple Real iPhone Mockups:
+// 1. Left Phone (Offset Back): Real Find Tutors Screen
+// 2. Center Phone (Front & Center): Real Mobile Home Screen
+// 3. Right Phone (Offset Back): Real Study Resources Screen
 // ============================================================
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 
 const APP_FEATURES = [
   {
-    title: 'Discover tutors and connect with students.',
+    title: 'Discover verified tutors and students.',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -60,12 +60,48 @@ const AppPromotionSection = () => {
 
   return (
     <section className="mn-app-promotion-section" aria-label="The MentorNearby App">
+      {/* Decorative Top-Left Burgundy & Golden Wave */}
+      <svg className="mn-app-corner-wave mn-corner-top-left" viewBox="0 0 320 220" fill="none" aria-hidden="true">
+        <path d="M -40 -40 L 220 -40 C 180 40, 140 120, 60 180 C 20 210, -40 220, -40 220 Z" fill="#6B0F24" />
+        <path d="M -40 -20 C 170 30, 130 130, 50 195" stroke="#F59E0B" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.9" />
+      </svg>
+
+      {/* Decorative Bottom-Right Burgundy & Golden Wave */}
+      <svg className="mn-app-corner-wave mn-corner-bottom-right" viewBox="0 0 320 220" fill="none" aria-hidden="true">
+        <path d="M 360 260 L 100 260 C 140 180, 180 100, 260 40 C 300 10, 360 0, 360 0 Z" fill="#6B0F24" />
+        <path d="M 360 240 C 150 190, 190 90, 270 25" stroke="#F59E0B" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.9" />
+      </svg>
+
+      {/* Decorative Bottom-Left Golden Accent Wave */}
+      <svg className="mn-app-corner-wave mn-corner-bottom-left" viewBox="0 0 280 140" fill="none" aria-hidden="true">
+        <path d="M -20 140 C 60 120, 160 90, 260 130" stroke="#F59E0B" strokeWidth="3" fill="none" opacity="0.7" />
+        <path d="M -20 150 C 50 105, 130 80, 220 145" stroke="#FBBF24" strokeWidth="1.5" fill="none" opacity="0.45" />
+      </svg>
+
+      {/* Decorative Top-Right Golden Accent Arc */}
+      <svg className="mn-app-corner-wave mn-corner-top-right" viewBox="0 0 220 120" fill="none" aria-hidden="true">
+        <path d="M 240 -20 C 170 20, 110 70, 50 110" stroke="#F59E0B" strokeWidth="2.5" fill="none" opacity="0.6" />
+      </svg>
+
       <div className="mn-container">
         <div className="mn-app-promo-grid">
           {/* ============================================================ */}
           {/* LEFT SIDE: Heading, Features, Store Download Buttons        */}
           {/* ============================================================ */}
           <div className="mn-app-promo-left">
+            {/* Brand Logo matching Reference */}
+            <div className="mn-app-brand-badge">
+              <img
+                src="/logo.png"
+                alt="MentorNearby Logo"
+                className="mn-app-brand-logo-img"
+              />
+              <div className="mn-app-brand-text">
+                <span className="mn-app-brand-title">MentorNearby</span>
+                <span className="mn-app-brand-subtitle">FIND. LEARN. GROW.</span>
+              </div>
+            </div>
+
             {/* Small Pill Eyebrow */}
             <div className="mn-app-eyebrow-pill">
               <span className="mn-app-phone-icon">
@@ -74,19 +110,20 @@ const AppPromotionSection = () => {
                   <path d="M12 18h.01"></path>
                 </svg>
               </span>
-              <span>THE MENTORNEARBY APP</span>
+              <span>The MentorNearby App</span>
             </div>
 
             {/* Main Heading with Highlight and Curved Underline */}
             <h2 className="mn-app-main-heading">
               Learn Smarter. Grow<br />
               <span className="mn-app-orange-word">
-                Faster. Anywhere.
+                Faster.
                 {/* Curved Orange Underline Brush */}
-                <svg className="mn-app-brush-underline" viewBox="0 0 260 20" fill="none" aria-hidden="true">
-                  <path d="M 5 14 C 70 4, 190 4, 255 12" stroke="#EA580C" strokeWidth="3.5" strokeLinecap="round" />
+                <svg className="mn-app-brush-underline" viewBox="0 0 160 16" fill="none" aria-hidden="true">
+                  <path d="M 4 11 C 45 4, 115 4, 156 11" stroke="#EA580C" strokeWidth="3.5" strokeLinecap="round" />
                 </svg>
-              </span>
+              </span>{' '}
+              <span className="mn-app-heading-dark">Anywhere.</span>
             </h2>
 
             {/* Subtitle Description */}
@@ -157,10 +194,11 @@ const AppPromotionSection = () => {
           </div>
 
           {/* ============================================================ */}
-          {/* RIGHT SIDE: TWO REALISTIC SMARTPHONE MOCKUPS                */}
+          {/* RIGHT SIDE: THREE OVERLAPPING REALISTIC IPHONE MOCKUPS      */}
+          {/* Featuring Genuine Production MentorNearby Screenshots        */}
           {/* ============================================================ */}
-          <div className="mn-app-promo-right" aria-label="MentorNearby Mobile App Interface">
-            <div className="mn-phone-mockups-stage">
+          <div className="mn-app-promo-right" aria-label="MentorNearby Real Mobile Application Interface">
+            <div className="mn-phone-mockups-stage-3">
               {/* Decorative Top-Left and Top-Right Sparkles */}
               <div className="mn-mockup-sparkle mn-sparkle-left" aria-hidden="true">
                 <svg width="45" height="35" viewBox="0 0 45 35" fill="none">
@@ -182,325 +220,119 @@ const AppPromotionSection = () => {
               <div className="mn-phone-ambient-glow" aria-hidden="true"></div>
 
               {/* -------------------------------------------------------- */}
-              {/* PHONE 1: FRONT (Showing Upper Mobile Homepage)           */}
+              {/* PHONE 1: LEFT PHONE (Actual Find Tutors Screen)           */}
               {/* -------------------------------------------------------- */}
-              <div className="mn-phone-frame mn-phone-front" aria-label="MentorNearby App Home Screen">
-                {/* Dynamic Island Pill */}
-                <div className="mn-phone-notch" aria-hidden="true">
-                  <div className="mn-phone-camera"></div>
-                </div>
-
-                {/* Status Bar */}
-                <div className="mn-phone-status-bar" aria-hidden="true">
-                  <span className="mn-status-time">10:38</span>
-                  <div className="mn-status-icons">
-                    <svg width="12" height="10" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/>
-                    </svg>
-                    <svg width="13" height="10" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98A16.88 16.88 0 0 0 12 4z"/>
-                    </svg>
-                    <span className="mn-status-battery">73%</span>
-                  </div>
-                </div>
-
-                {/* Inside Phone Screen (Genuine Mobile Home UI) */}
-                <div className="mn-phone-screen-content">
-                  {/* Phone Header */}
-                  <div className="mn-ps-header">
-                    <div className="mn-ps-logo-wrap">
-                      <img src="/logo.png" alt="MentorNearby Logo" style={{ width: 22, height: 22, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
-                      <div className="mn-ps-logo-text">
-                        <span className="mn-ps-logo-name">
-                          Mentor<span style={{ color: '#E11D48' }}>Nearby</span>
-                        </span>
-                        <span className="mn-ps-logo-tag">FIND. LEARN. GROW.</span>
-                      </div>
+              <div className="mn-phone-3d-frame mn-phone-pos-left" aria-label="MentorNearby Find Tutors Mobile Screen">
+                <div className="mn-phone-inner-screen">
+                  {/* Dedicated iOS Status Bar with Dynamic Island */}
+                  <div className="mn-phone-status-bar-ios" aria-hidden="true">
+                    <span className="mn-status-time">10:38</span>
+                    <div className="mn-phone-island-pill">
+                      <div className="mn-phone-island-cam"></div>
                     </div>
-                    <div className="mn-ps-header-actions">
-                      <span className="mn-ps-header-icon">☀️</span>
-                      <span className="mn-ps-header-icon mn-ps-bell">
-                        🔔<span className="mn-ps-bell-dot">1</span>
-                      </span>
-                      <span className="mn-ps-header-icon">☰</span>
+                    <div className="mn-status-icons">
+                      <svg width="12" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/>
+                      </svg>
+                      <svg width="13" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98A16.88 16.88 0 0 0 12 4z"/>
+                      </svg>
+                      <span className="mn-status-battery">73%</span>
                     </div>
                   </div>
 
-                  {/* Search Bar */}
-                  <div className="mn-ps-search-bar">
-                    <span className="mn-ps-search-icon">🔍</span>
-                    <span className="mn-ps-search-placeholder">Search for subjects, classes or tutors...</span>
-                    <span className="mn-ps-filter-icon">⚙️</span>
-                  </div>
-
-                  {/* 3 Quick Action Cards */}
-                  <div className="mn-ps-action-cards-row">
-                    <div className="mn-ps-action-card">
-                      <div className="mn-ps-card-avatar mn-avatar-pink">
-                        <img src="/images/home/card-find-tutor-art.png" alt="Find a Tutor" onError={(e) => { e.target.style.display='none'; }} />
-                        <span className="mn-ps-fallback-emoji">👩‍🎓</span>
-                      </div>
-                      <div className="mn-ps-card-title">Find a Tutor</div>
-                      <div className="mn-ps-card-sub">Get the best tutors near you</div>
-                      <div className="mn-ps-card-btn mn-btn-coral">›</div>
-                    </div>
-
-                    <div className="mn-ps-action-card">
-                      <div className="mn-ps-card-avatar mn-avatar-gold">
-                        <img src="/images/home/card-become-tutor-art.png" alt="Become a Tutor" onError={(e) => { e.target.style.display='none'; }} />
-                        <span className="mn-ps-fallback-emoji">👨‍🏫</span>
-                      </div>
-                      <div className="mn-ps-card-title">Become a Tutor</div>
-                      <div className="mn-ps-card-sub">Share knowledge earn &amp; grow</div>
-                      <div className="mn-ps-card-btn mn-btn-green">›</div>
-                    </div>
-
-                    <div className="mn-ps-action-card">
-                      <div className="mn-ps-card-avatar mn-avatar-blue">
-                        <img src="/images/home/card-find-students-art.png" alt="Find Students" onError={(e) => { e.target.style.display='none'; }} />
-                        <span className="mn-ps-fallback-emoji">👨‍👩‍👧</span>
-                      </div>
-                      <div className="mn-ps-card-title">Find Students</div>
-                      <div className="mn-ps-card-sub">Get more students for classes</div>
-                      <div className="mn-ps-card-btn mn-btn-green">›</div>
-                    </div>
-                  </div>
-
-                  {/* Promotional Carousel Card */}
-                  <div className="mn-ps-promo-banner">
-                    <div className="mn-ps-promo-info">
-                      <div className="mn-ps-promo-title">Learn Smarter with <span className="mn-text-coral">Verified Tutors</span></div>
-                      <div className="mn-ps-promo-sub">Personalized learning. Real results. Online or Offline.</div>
-                      <div className="mn-ps-promo-cta">Explore Tutors →</div>
-                    </div>
-                    <div className="mn-ps-promo-img-wrap">
-                      <img src="/images/home/banner-student-girl.png" alt="Student" onError={(e) => { e.target.src='/images/home/hero-mentor-student.png'; }} />
-                    </div>
-                    <div className="mn-ps-promo-dots">
-                      <span className="mn-ps-dot active"></span>
-                      <span className="mn-ps-dot"></span>
-                      <span className="mn-ps-dot"></span>
-                      <span className="mn-ps-dot"></span>
-                    </div>
-                  </div>
-
-                  {/* Platform Stats Row */}
-                  <div className="mn-ps-stats-strip">
-                    <div className="mn-ps-stat-item">
-                      <div className="mn-ps-stat-icon mn-stat-coral">👥</div>
-                      <div className="mn-ps-stat-num">12+</div>
-                      <div className="mn-ps-stat-lbl">Happy Students</div>
-                    </div>
-                    <div className="mn-ps-stat-item">
-                      <div className="mn-ps-stat-icon mn-stat-green">🛡️</div>
-                      <div className="mn-ps-stat-num">100%</div>
-                      <div className="mn-ps-stat-lbl">Verified Tutors</div>
-                    </div>
-                    <div className="mn-ps-stat-item">
-                      <div className="mn-ps-stat-icon mn-stat-amber">⭐</div>
-                      <div className="mn-ps-stat-num">4.1/5</div>
-                      <div className="mn-ps-stat-lbl">Average Rating</div>
-                    </div>
-                    <div className="mn-ps-stat-item">
-                      <div className="mn-ps-stat-icon mn-stat-purple">📍</div>
-                      <div className="mn-ps-stat-num">7+</div>
-                      <div className="mn-ps-stat-lbl">Nearby Tutors</div>
-                    </div>
-                  </div>
-
-                  {/* Featured Tutors Header Preview */}
-                  <div className="mn-ps-section-head">
-                    <span className="mn-ps-sec-title">Featured Tutors</span>
-                    <span className="mn-ps-sec-link">View All &gt;</span>
-                  </div>
-
-                  {/* Floating PWA Install Pill */}
-                  <div className="mn-ps-floating-pwa">
-                    <span>✨ Share &amp; App <strong className="mn-pwa-badge">PWA</strong></span>
-                  </div>
-                </div>
-
-                {/* Bottom App Navigation (Home Active) */}
-                <div className="mn-phone-bottom-nav" aria-hidden="true">
-                  <div className="mn-pnav-item active">
-                    <span className="mn-pnav-icon">🏠</span>
-                    <span className="mn-pnav-label">Home</span>
-                  </div>
-                  <div className="mn-pnav-item">
-                    <span className="mn-pnav-icon">🔍</span>
-                    <span className="mn-pnav-label">Explore</span>
-                  </div>
-                  <div className="mn-pnav-item mn-pnav-post">
-                    <div className="mn-pnav-plus-circle">+</div>
-                    <span className="mn-pnav-label">Post/Ask</span>
-                  </div>
-                  <div className="mn-pnav-item">
-                    <span className="mn-pnav-icon">💬</span>
-                    <span className="mn-pnav-label">Messages</span>
-                  </div>
-                  <div className="mn-pnav-item">
-                    <span className="mn-pnav-icon">👤</span>
-                    <span className="mn-pnav-label">Profile</span>
+                  {/* Genuine Application Screenshot */}
+                  <div className="mn-phone-screenshot-wrap">
+                    <picture>
+                      <source srcSet="/images/app-mockups/screen-find-tutors.webp" type="image/webp" />
+                      <img
+                        src="/images/app-mockups/screen-find-tutors.png"
+                        alt="Actual MentorNearby Find Tutors Page"
+                        className="mn-phone-screenshot-img"
+                        loading="lazy"
+                      />
+                    </picture>
                   </div>
                 </div>
               </div>
 
               {/* -------------------------------------------------------- */}
-              {/* PHONE 2: BACK / RIGHT (Showing Explore Screen)           */}
+              {/* PHONE 2: CENTER PHONE (Actual Student Home Screen)       */}
               {/* -------------------------------------------------------- */}
-              <div className="mn-phone-frame mn-phone-back" aria-label="MentorNearby App Explore Screen">
-                {/* Dynamic Island Pill */}
-                <div className="mn-phone-notch" aria-hidden="true">
-                  <div className="mn-phone-camera"></div>
-                </div>
-
-                {/* Status Bar */}
-                <div className="mn-phone-status-bar" aria-hidden="true">
-                  <span className="mn-status-time">10:38</span>
-                  <div className="mn-status-icons">
-                    <svg width="12" height="10" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/>
-                    </svg>
-                    <span className="mn-status-battery">73%</span>
-                  </div>
-                </div>
-
-                {/* Inside Phone Screen (Explore Screen Content) */}
-                <div className="mn-phone-screen-content">
-                  {/* Featured Tutors Header */}
-                  <div className="mn-ps-section-head">
-                    <span className="mn-ps-sec-title">Featured Tutors</span>
-                    <span className="mn-ps-sec-link">View All &gt;</span>
-                  </div>
-
-                  {/* 2 Real Tutor Cards in Row */}
-                  <div className="mn-ps-tutors-row">
-                    {/* Tutor 1: Rajender kumar */}
-                    <div className="mn-ps-tutor-mini-card">
-                      <div className="mn-ps-tutor-avatar-wrap">
-                        <div className="mn-ps-tutor-avatar-circle mn-bg-avatar-1">👨‍🏫</div>
-                        <span className="mn-ps-verified-pill-dot" title="Verified">✓</span>
-                      </div>
-                      <div className="mn-ps-tutor-name">Rajender kumar</div>
-                      <div className="mn-ps-tutor-sub">English • Class 1-12</div>
-                      <div className="mn-ps-tutor-loc">📍 Hapur</div>
-                      <div className="mn-ps-tutor-tags">
-                        <span className="mn-tag-online">Online</span>
-                        <span className="mn-tag-offline">Offline</span>
-                      </div>
-                      <div className="mn-ps-tutor-btn">View Profile →</div>
+              <div className="mn-phone-3d-frame mn-phone-pos-center" aria-label="MentorNearby Mobile Home Screen">
+                <div className="mn-phone-inner-screen">
+                  {/* Dedicated iOS Status Bar with Dynamic Island */}
+                  <div className="mn-phone-status-bar-ios" aria-hidden="true">
+                    <span className="mn-status-time">10:38</span>
+                    <div className="mn-phone-island-pill">
+                      <div className="mn-phone-island-cam"></div>
                     </div>
-
-                    {/* Tutor 2: Priyanshu Kumar */}
-                    <div className="mn-ps-tutor-mini-card">
-                      <div className="mn-ps-tutor-avatar-wrap">
-                        <div className="mn-ps-tutor-avatar-circle mn-bg-avatar-2">🧑‍💻</div>
-                        <span className="mn-ps-verified-pill-dot" title="Verified">✓</span>
-                      </div>
-                      <div className="mn-ps-tutor-name">Priyanshu Kumar</div>
-                      <div className="mn-ps-tutor-sub">Mathematics, Physics • Cl...</div>
-                      <div className="mn-ps-tutor-loc">📍 HAPUR &amp; Ghaziabad</div>
-                      <div className="mn-ps-tutor-tags">
-                        <span className="mn-tag-online">Online</span>
-                        <span className="mn-tag-offline">Offline</span>
-                      </div>
-                      <div className="mn-ps-tutor-btn">View Profile →</div>
+                    <div className="mn-status-icons">
+                      <svg width="12" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/>
+                      </svg>
+                      <svg width="13" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98A16.88 16.88 0 0 0 12 4z"/>
+                      </svg>
+                      <span className="mn-status-battery">73%</span>
                     </div>
                   </div>
 
-                  {/* Popular Subjects */}
-                  <div className="mn-ps-section-head">
-                    <span className="mn-ps-sec-title">Popular Subjects</span>
-                    <span className="mn-ps-sec-link">View All</span>
-                  </div>
-
-                  <div className="mn-ps-subjects-chips-row">
-                    <div className="mn-ps-sub-chip mn-chip-blue">
-                      <span className="mn-chip-icon">π</span>
-                      <span className="mn-chip-txt">Mathematics</span>
-                    </div>
-                    <div className="mn-ps-sub-chip mn-chip-red">
-                      <span className="mn-chip-icon">⚛️</span>
-                      <span className="mn-chip-txt">Physics</span>
-                    </div>
-                    <div className="mn-ps-sub-chip mn-chip-green">
-                      <span className="mn-chip-icon">🧪</span>
-                      <span className="mn-chip-txt">Chemistry</span>
-                    </div>
-                    <div className="mn-ps-sub-chip mn-chip-purple">
-                      <span className="mn-chip-icon">🧬</span>
-                      <span className="mn-chip-txt">Biology</span>
-                    </div>
-                    <div className="mn-ps-sub-chip mn-chip-amber">
-                      <span className="mn-chip-icon">📖</span>
-                      <span className="mn-chip-txt">English</span>
-                    </div>
-                  </div>
-
-                  {/* Free Study Materials */}
-                  <div className="mn-ps-section-head">
-                    <span className="mn-ps-sec-title">Free Study Materials</span>
-                    <span className="mn-ps-sec-link">Explore All</span>
-                  </div>
-
-                  <div className="mn-ps-study-cards-col">
-                    <div className="mn-ps-study-item">
-                      <span className="mn-study-icon mn-bg-blue">📘</span>
-                      <div className="mn-study-meta">
-                        <div className="mn-study-name">NCERT Book...</div>
-                        <div className="mn-study-desc">Class 1 to 12</div>
-                      </div>
-                      <span className="mn-study-arrow">›</span>
-                    </div>
-                    <div className="mn-ps-study-item">
-                      <span className="mn-study-icon mn-bg-green">📑</span>
-                      <div className="mn-study-meta">
-                        <div className="mn-study-name">Revision Not...</div>
-                        <div className="mn-study-desc">Chapter-wise</div>
-                      </div>
-                      <span className="mn-study-arrow">›</span>
-                    </div>
-                  </div>
-
-                  {/* Frequently Asked Questions Preview with MentorNearby */}
-                  <div className="mn-ps-section-head">
-                    <span className="mn-ps-sec-title">Frequently Asked Questions</span>
-                  </div>
-                  <div className="mn-ps-faq-mini-item">
-                    <span>How does MentorNearby verify tutors?</span>
-                    <span className="mn-faq-plus">+</span>
-                  </div>
-
-                  {/* Floating PWA Install Pill */}
-                  <div className="mn-ps-floating-pwa">
-                    <span>✨ Share &amp; App <strong className="mn-pwa-badge">PWA</strong></span>
-                  </div>
-                </div>
-
-                {/* Bottom App Navigation (Explore Active) */}
-                <div className="mn-phone-bottom-nav" aria-hidden="true">
-                  <div className="mn-pnav-item">
-                    <span className="mn-pnav-icon">🏠</span>
-                    <span className="mn-pnav-label">Home</span>
-                  </div>
-                  <div className="mn-pnav-item active">
-                    <span className="mn-pnav-icon">🔍</span>
-                    <span className="mn-pnav-label">Explore</span>
-                  </div>
-                  <div className="mn-pnav-item mn-pnav-post">
-                    <div className="mn-pnav-plus-circle">+</div>
-                    <span className="mn-pnav-label">Post/Ask</span>
-                  </div>
-                  <div className="mn-pnav-item">
-                    <span className="mn-pnav-icon">💬</span>
-                    <span className="mn-pnav-label">Messages</span>
-                  </div>
-                  <div className="mn-pnav-item">
-                    <span className="mn-pnav-icon">👤</span>
-                    <span className="mn-pnav-label">Profile</span>
+                  {/* Genuine Application Screenshot */}
+                  <div className="mn-phone-screenshot-wrap">
+                    <picture>
+                      <source srcSet="/images/app-mockups/screen-mobile-home.webp" type="image/webp" />
+                      <img
+                        src="/images/app-mockups/screen-mobile-home.png"
+                        alt="Actual MentorNearby Mobile Home Dashboard"
+                        className="mn-phone-screenshot-img"
+                        loading="eager"
+                      />
+                    </picture>
                   </div>
                 </div>
               </div>
+
+              {/* -------------------------------------------------------- */}
+              {/* PHONE 3: RIGHT PHONE (Actual Study Resources Screen)     */}
+              {/* -------------------------------------------------------- */}
+              <div className="mn-phone-3d-frame mn-phone-pos-right" aria-label="MentorNearby Study Resources Screen">
+                <div className="mn-phone-inner-screen">
+                  {/* Dedicated iOS Status Bar with Dynamic Island */}
+                  <div className="mn-phone-status-bar-ios" aria-hidden="true">
+                    <span className="mn-status-time">10:38</span>
+                    <div className="mn-phone-island-pill">
+                      <div className="mn-phone-island-cam"></div>
+                    </div>
+                    <div className="mn-status-icons">
+                      <svg width="12" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/>
+                      </svg>
+                      <svg width="13" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98A16.88 16.88 0 0 0 12 4z"/>
+                      </svg>
+                      <span className="mn-status-battery">73%</span>
+                    </div>
+                  </div>
+
+                  {/* Genuine Application Screenshot */}
+                  <div className="mn-phone-screenshot-wrap">
+                    <picture>
+                      <source srcSet="/images/app-mockups/screen-study-resources.webp" type="image/webp" />
+                      <img
+                        src="/images/app-mockups/screen-study-resources.png"
+                        alt="Actual MentorNearby Study Resources Page"
+                        className="mn-phone-screenshot-img"
+                        loading="lazy"
+                      />
+                    </picture>
+                  </div>
+                </div>
+              </div>
+
+              {/* Realistic Ground Floor Shadow */}
+              <div className="mn-phone-floor-shadow" aria-hidden="true"></div>
+
             </div>
           </div>
         </div>
